@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "module": "NodeNext",  // Changed from Node16
+    "moduleResolution": "NodeNext",  // Required for ESM
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "sourceMap": true,
+    "strict": true,
+    "esModuleInterop": true,  // Crucial for ESM-CJS interop
+    "skipLibCheck": true,  // Recommended for node-fetch
+    "allowSyntheticDefaultImports": true,  // Helps with default imports
+    "resolveJsonModule": true,  // If you use JSON imports
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  },
+  "exclude": ["node_modules"]
+}
