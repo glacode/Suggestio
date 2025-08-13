@@ -1,0 +1,15 @@
+{
+  "activeProvider": "llm7",
+  "providers": {
+    "llm7": {
+      "endpoint": "https://api.llm7.io/v1/chat/completions",
+      "model": "qwen2.5-coder-32b-instruct",
+      "apiKey": "unused"
+    },
+    "openrouter": {
+      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+      "model": "deepseek/deepseek-chat-v3-0324:free",
+      "apiKey": "${OPENROUTER_API_KEY}"
+    }
+  }
+}
