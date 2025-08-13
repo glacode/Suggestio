@@ -1,0 +1,38 @@
+// See https://go.microsoft.com/fwlink/?LinkId=733558
+// for the documentation about the tasks.json format
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "lint",
+        "type-check",
+        "bundle"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "type-check",
+      "type": "npm",
+      "script": "check-types",
+      "problemMatcher": "$tsc"
+    },
+    {
+      "label": "lint",
+      "type": "npm",
+      "script": "lint",
+      "problemMatcher": "$eslint-compact"
+    },
+    {
+      "label": "bundle",
+      "type": "npm",
+      "script": "compile",
+      "problemMatcher": "$esbuild"
+    }
+  ]
+}
