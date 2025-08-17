@@ -1,3 +1,9 @@
+<div align="center">
+  <img src="resources/logo.png" width="128" alt="Suggestio Logo">
+  <h1>Suggestio</h1>
+  <p>AI-Powered in line suggestions</p>
+</div>
+
 # Suggestio
 
 **Suggestio** is a VS Code extension that provides inline code completions using LLM (Large Language Model) APIs.  
