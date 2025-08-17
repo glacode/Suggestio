@@ -1,7 +1,7 @@
-<div align="center">
-  <img src="resources/logo.png" width="128" alt="Suggestio Logo">
-  <h1>Suggestio</h1>
-  <p>AI-Powered in line suggestions</p>
+<div align="center" style="margin:0; padding:0;">
+  <img src="resources/logo.png" width="128" alt="Suggestio Logo" style="margin:0; padding:0;">
+  <h1 style="margin:0; padding:0;">Suggestio</h1>
+  <p style="margin:0; padding:0;">AI-Powered in line suggestions</p>
 </div>
 
 # Suggestio
