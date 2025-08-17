@@ -4,8 +4,6 @@
   <p>AI-Powered in line suggestions </p>
 </div>
 
-# Suggestio
-
 **Suggestio** is a VS Code extension that provides inline code completions using LLM (Large Language Model) APIs.  
 It’s lightweight, open-source, and does not require login or cloud accounts unless you configure it to use one.
 
