@@ -6,7 +6,7 @@ import { debounce } from './completion/debounceManager.js';
 import { getActiveProvider } from './providers/providerFactory.js';
 import { fetchCompletion } from './completion/completionHandler.js';
 
-const DEBOUNCE_DELAY_MS = 1000;
+const DEBOUNCE_DELAY_MS = 500;
 
 // Top-level helper function to handle cancellation
 function handleCancellation(

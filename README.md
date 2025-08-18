@@ -7,6 +7,8 @@
 **Suggestio** is a VS Code extension that provides inline code completions using LLM (Large Language Model) APIs.  
 It’s lightweight, open-source, and does not require login or cloud accounts unless you configure it to use one.
 
+![Demo GIF](resources/demo.gif)
+
 ---
 
 ## ✨ Features
