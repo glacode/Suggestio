@@ -68,18 +68,22 @@ Here’s a minimal example of a config file:
 
 ```json
 {
+  "activeProvider": "groq-llama17",
   "providers": {
-    "openrouter": {
-      "endpoint": "https://openrouter.ai/api/v1",
-      "models": ["gpt-4o-mini", "mistral-7b", "llama-3-70b"]
+    "llm7": {
+      "endpoint": "https://api.llm7.io/v1/chat/completions",
+      "model": "qwen2.5-coder-32b-instruct",
+      "apiKey": "unused"
     },
-    "ollama": {
-      "endpoint": "http://localhost:11434/api/generate",
-      "models": ["llama2", "phi3"]
-    }
-  },
-  "defaultProvider": "openrouter",
-  "defaultModel": "gpt-4o-mini"
+    "groq-llama17": {
+      "endpoint": "https://api.groq.com/openai/v1/chat/completions",
+      "model": "openai/gpt-oss-20b",
+      "apiKey": "${GROQ_API_KEY}"
+    },
+    "openrouter": {
+      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+      "model": "deepseek/deepseek-chat-v3-0324:free",
+      "apiKey": "${OPENROUTER_API_KEY}
 }
 ```
 
