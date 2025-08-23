@@ -20,6 +20,22 @@ export function getConfigPath(context: vscode.ExtensionContext): string {
   return path.join(context.extensionPath, 'config.json');
 }
 
+function loadAPIKey(activeProviderKey: any, providers: any) {
+  if (activeProviderKey && providers && providers[activeProviderKey]) {
+    const activeProviderConfig = providers[activeProviderKey];
+
+    // 2. Directly check if 'apiKey' exists and is a string
+    if (activeProviderConfig.apiKey && typeof activeProviderConfig.apiKey === 'string') {
+
+      // 3. Substitute the variable in the 'apiKey' field only
+      activeProviderConfig.apiKey = (<string>(activeProviderConfig.apiKey)).replace(
+        /\$\{(\w+)\}/g,
+        (_, name) => process.env[name] ?? ''
+      );
+    }
+  }
+}
+
 export function loadConfig(context: vscode.ExtensionContext): any {
   const configPath = getConfigPath(context);
   try {
@@ -30,19 +46,7 @@ export function loadConfig(context: vscode.ExtensionContext): any {
     const providers = config.providers;
 
     // 1. Check if the active provider configuration exists
-    if (activeProviderKey && providers && providers[activeProviderKey]) {
-      const activeProviderConfig = providers[activeProviderKey];
-
-      // 2. Directly check if 'apiKey' exists and is a string
-      if (activeProviderConfig.apiKey && typeof activeProviderConfig.apiKey === 'string') {
-        
-        // 3. Substitute the variable in the 'apiKey' field only
-        activeProviderConfig.apiKey = (<string>(activeProviderConfig.apiKey)).replace(
-          /\$\{(\w+)\}/g,
-          (_, name) => process.env[name] ?? ''
-        );
-      }
-    }
+    loadAPIKey(activeProviderKey, providers);
 
     return config;
   } catch (err) {
