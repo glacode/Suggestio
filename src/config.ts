@@ -20,27 +20,31 @@ export function getConfigPath(context: vscode.ExtensionContext): string {
   return path.join(context.extensionPath, 'config.json');
 }
 
-function substituteEnvVars(obj: any): any {
-  if (typeof obj === 'string') {
-    return obj.replace(/\$\{(\w+)\}/g, (_, name) => process.env[name] ?? '');
-  } else if (Array.isArray(obj)) {
-    return obj.map(substituteEnvVars);
-  } else if (typeof obj === 'object' && obj !== null) {
-    const out: any = {};
-    for (const key of Object.keys(obj)) {
-      out[key] = substituteEnvVars(obj[key]);
-    }
-    return out;
-  }
-  return obj;
-}
-
 export function loadConfig(context: vscode.ExtensionContext): any {
   const configPath = getConfigPath(context);
   try {
     const raw = fs.readFileSync(configPath, 'utf8');
-    const parsed = JSON.parse(raw);
-    return substituteEnvVars(parsed);
+    const config = JSON.parse(raw);
+
+    const activeProviderKey = config.activeProvider;
+    const providers = config.providers;
+
+    // 1. Check if the active provider configuration exists
+    if (activeProviderKey && providers && providers[activeProviderKey]) {
+      const activeProviderConfig = providers[activeProviderKey];
+
+      // 2. Directly check if 'apiKey' exists and is a string
+      if (activeProviderConfig.apiKey && typeof activeProviderConfig.apiKey === 'string') {
+        
+        // 3. Substitute the variable in the 'apiKey' field only
+        activeProviderConfig.apiKey = (<string>(activeProviderConfig.apiKey)).replace(
+          /\$\{(\w+)\}/g,
+          (_, name) => process.env[name] ?? ''
+        );
+      }
+    }
+
+    return config;
   } catch (err) {
     vscode.window.showErrorMessage(`Failed to load config.json: ${err}`);
     return {};
