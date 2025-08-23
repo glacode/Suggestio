@@ -20,23 +20,69 @@ export function getConfigPath(context: vscode.ExtensionContext): string {
   return path.join(context.extensionPath, 'config.json');
 }
 
-function loadAPIKey(activeProviderKey: any, providers: any) {
+async function loadAPIKey(context: vscode.ExtensionContext, activeProviderKey: any, providers: any) {
   if (activeProviderKey && providers && providers[activeProviderKey]) {
     const activeProviderConfig = providers[activeProviderKey];
 
-    // 2. Directly check if 'apiKey' exists and is a string
     if (activeProviderConfig.apiKey && typeof activeProviderConfig.apiKey === 'string') {
+      let apiKeyValue : string = <string>activeProviderConfig.apiKey;
 
-      // 3. Substitute the variable in the 'apiKey' field only
-      activeProviderConfig.apiKey = (<string>(activeProviderConfig.apiKey)).replace(
+      // Substitute environment variables
+      apiKeyValue = apiKeyValue.replace(
         /\$\{(\w+)\}/g,
         (_, name) => process.env[name] ?? ''
       );
+
+      // If API key still contains variables or is empty, get from secret or prompt user
+      if (apiKeyValue.includes('${') || apiKeyValue.trim() === '') {
+        activeProviderConfig.apiKey = await getOrRequestAPIKey(context, activeProviderKey);
+      } else {
+        activeProviderConfig.apiKey = apiKeyValue;
+      }
     }
   }
 }
 
-export function loadConfig(context: vscode.ExtensionContext): any {
+async function getOrRequestAPIKey(context: vscode.ExtensionContext, providerKey: string): Promise<string> {
+  const secretKey = `${providerKey}_API_KEY`;
+  
+  // Try to retrieve from secrets first
+  const storedApiKey = await getSecret(context, secretKey);
+  
+  if (storedApiKey) {
+    return storedApiKey;
+  }
+  
+  // If not found, prompt user
+  const userApiKey = await promptForAPIKey(providerKey);
+  
+  if (userApiKey) {
+    // Store the API key in secrets
+    await storeSecret(context, secretKey, userApiKey);
+    return userApiKey;
+  } else {
+    throw new Error(`API key for ${providerKey} is required for this feature to work.`);
+  }
+}
+
+async function getSecret(context: vscode.ExtensionContext, key: string): Promise<string | undefined> {
+  return await context.secrets.get(key);
+}
+
+async function storeSecret(context: vscode.ExtensionContext, key: string, value: string): Promise<void> {
+  await context.secrets.store(key, value);
+}
+
+async function promptForAPIKey(providerKey: string): Promise<string | undefined> {
+  return await vscode.window.showInputBox({
+    prompt: `Enter your ${providerKey} API Key`,
+    placeHolder: `Your ${providerKey} API key here...`,
+    password: true,
+    ignoreFocusOut: true
+  });
+}
+
+export async function loadConfig(context: vscode.ExtensionContext): Promise<any> {
   const configPath = getConfigPath(context);
   try {
     const raw = fs.readFileSync(configPath, 'utf8');
@@ -46,7 +92,7 @@ export function loadConfig(context: vscode.ExtensionContext): any {
     const providers = config.providers;
 
     // 1. Check if the active provider configuration exists
-    loadAPIKey(activeProviderKey, providers);
+    await loadAPIKey(context, activeProviderKey, providers);
 
     return config;
   } catch (err) {

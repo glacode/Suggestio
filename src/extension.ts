@@ -22,9 +22,15 @@ function handleCancellation(
   return false;
 }
 
+interface Provider {
+  endpoint: string;
+  apiKey: string;
+  model: string;
+}
+
 // Top-level named function to generate the debounced callback
 function createDebounceCallback(
-  activeProvider: ReturnType<typeof getActiveProvider>,
+  activeProvider: Provider,
   document: vscode.TextDocument,
   position: vscode.Position,
   token: vscode.CancellationToken | undefined,
@@ -60,7 +66,7 @@ function createDebounceCallback(
 
 // Top-level function for providing inline completions
 function provideInlineCompletionItems(
-  activeProvider: ReturnType<typeof getActiveProvider>,
+  activeProvider: Provider,
   document: vscode.TextDocument,
   position: vscode.Position,
   _context: vscode.InlineCompletionContext,
@@ -71,11 +77,11 @@ function provideInlineCompletionItems(
   });
 }
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
   console.log("Suggestio: Activate");
   vscode.window.showInformationMessage("Suggestio Activated!");
 
-  const activeProvider = getActiveProvider(context);
+  const activeProvider = await getActiveProvider(context);
   if (!activeProvider) {
     return;
   }
