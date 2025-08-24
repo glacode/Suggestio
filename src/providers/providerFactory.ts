@@ -1,8 +1,13 @@
-import { loadConfig } from '../config.js';
+import { Config } from '../config.js';
 import * as vscode from 'vscode';
 
-export async function getActiveProvider(context: vscode.ExtensionContext) {
-  const config = await loadConfig(context);
+export interface Provider {
+  endpoint: string;
+  apiKey: string;
+  model: string;
+}
+
+export async function getActiveProvider(config: Config) {
   const activeProviderName = config.activeProvider;
   const activeProvider = config.providers?.[activeProviderName];
 

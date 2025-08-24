@@ -2,6 +2,21 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 
+export interface Config {
+    activeProvider: string;
+    providers: {
+        [key: string]: {
+            endpoint: string;
+            model: string;
+            apiKey: string;
+        }
+    };
+    anonymizer: {
+        enabled: boolean;
+        words: string[];
+    };
+}
+
 export function getConfigPath(context: vscode.ExtensionContext): string {
   const workspaceConfig = vscode.workspace.workspaceFolders?.[0]
     ? path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, 'suggestio.config.json')
@@ -82,7 +97,7 @@ async function promptForAPIKey(providerKey: string): Promise<string | undefined>
   });
 }
 
-export async function loadConfig(context: vscode.ExtensionContext): Promise<any> {
+export async function loadConfig(context: vscode.ExtensionContext): Promise<Config> {
   const configPath = getConfigPath(context);
   try {
     const raw = fs.readFileSync(configPath, 'utf8');
@@ -97,6 +112,13 @@ export async function loadConfig(context: vscode.ExtensionContext): Promise<any>
     return config;
   } catch (err) {
     vscode.window.showErrorMessage(`Failed to load config.json: ${err}`);
-    return {};
+    return {
+      activeProvider: '',
+      providers: {},
+      anonymizer: {
+        enabled: false,
+        words: []
+      }
+    };
   }
 }

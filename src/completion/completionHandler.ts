@@ -1,5 +1,6 @@
 import fetch from 'node-fetch';
 import * as vscode from 'vscode';
+import { Anonymizer } from '../anonymizer/anonymizer.js';
 
 type OpenRouterResponse = {
   choices?: { message?: { content?: string } }[];
@@ -13,8 +14,12 @@ export async function fetchCompletion(
   apiKey: string,
   model: string,
   prompt: string,
-  position: vscode.Position
+  position: vscode.Position,
+  anonymizer?: Anonymizer // Add optional anonymizer parameter
 ): Promise<vscode.InlineCompletionItem[]> {
+  // Anonymize the prompt if an anonymizer is provided
+  const processedPrompt = anonymizer ? anonymizer.anonymize(prompt) : prompt;
+
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
@@ -25,7 +30,7 @@ export async function fetchCompletion(
       model,
       messages: [
         { role: 'system', content: 'You are a helpful coding assistant.' },
-        { role: 'user', content: prompt }
+        { role: 'user', content: processedPrompt }
       ],
       max_tokens: 300
     })
@@ -34,11 +39,16 @@ export async function fetchCompletion(
   const json = (await response.json()) as OpenRouterResponse;
   console.log("Response:", JSON.stringify(json, null, 2));
 
-  const content = json.choices?.[0]?.message?.content?.trim();
+  let content = json.choices?.[0]?.message?.content?.trim();
   console.log("Content:", content);
 
   if (!content) {
     return [];
+  }
+
+  // Deanonymize the content if an anonymizer is provided
+  if (anonymizer) {
+    content = anonymizer.deanonymize(content);
   }
 
   return [

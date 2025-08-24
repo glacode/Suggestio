@@ -3,8 +3,10 @@ import './env.js';
 import * as vscode from 'vscode';
 import { buildPrompt } from './promptBuilder/promptBuilder.js';
 import { debounce } from './completion/debounceManager.js';
-import { getActiveProvider } from './providers/providerFactory.js';
+import { getActiveProvider, Provider } from './providers/providerFactory.js';
 import { fetchCompletion } from './completion/completionHandler.js';
+import { Config, loadConfig } from './config.js';
+import { getAnonymizer } from './anonymizer/anonymizer.js';
 
 const DEBOUNCE_DELAY_MS = 500;
 
@@ -22,15 +24,10 @@ function handleCancellation(
   return false;
 }
 
-interface Provider {
-  endpoint: string;
-  apiKey: string;
-  model: string;
-}
-
 // Top-level named function to generate the debounced callback
 function createDebounceCallback(
   activeProvider: Provider,
+  config: Config,
   document: vscode.TextDocument,
   position: vscode.Position,
   token: vscode.CancellationToken | undefined,
@@ -44,12 +41,15 @@ function createDebounceCallback(
     console.log(`Seconds: ${Math.floor(now / 1000)}, Milliseconds: ${now % 1000}`);
     console.log("Prompt:", prompt);
 
+    const anonymizer = getAnonymizer(config);
+
     fetchCompletion(
       activeProvider.endpoint,
       activeProvider.apiKey,
       activeProvider.model,
       prompt,
-      position
+      position,
+      anonymizer
     )
       .then(function (items) {
         if (handleCancellation(token, resolve, 'after')) { return; }
@@ -67,28 +67,31 @@ function createDebounceCallback(
 // Top-level function for providing inline completions
 function provideInlineCompletionItems(
   activeProvider: Provider,
+  config: Config,
   document: vscode.TextDocument,
   position: vscode.Position,
   _context: vscode.InlineCompletionContext,
   token?: vscode.CancellationToken
 ): Promise<vscode.InlineCompletionItem[]> {
   return new Promise<vscode.InlineCompletionItem[]>(function (resolve) {
-    debounce(createDebounceCallback(activeProvider, document, position, token, resolve), DEBOUNCE_DELAY_MS);
+    debounce(createDebounceCallback(activeProvider, config, document, position, token, resolve), DEBOUNCE_DELAY_MS);
   });
 }
 
 export async function activate(context: vscode.ExtensionContext) {
   console.log("Suggestio: Activate");
   vscode.window.showInformationMessage("Suggestio Activated!");
+  
+  const config = await loadConfig(context);
 
-  const activeProvider = await getActiveProvider(context);
+  const activeProvider = await getActiveProvider(config);
   if (!activeProvider) {
     return;
   }
 
   const provider: vscode.InlineCompletionItemProvider = {
     provideInlineCompletionItems: function (document, position, context, token) {
-      return provideInlineCompletionItems(activeProvider, document, position, context, token);
+      return provideInlineCompletionItems(activeProvider, config, document, position, context, token);
     }
   };
 
