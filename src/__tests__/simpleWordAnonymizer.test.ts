@@ -60,4 +60,17 @@ describe('SimpleWordAnonymizer', () => {
     const keys = Array.from((anonymizer as any).mapping.keys());
     expect(keys).toEqual(['ANON_0', 'ANON_1', 'ANON_2', 'ANON_3']);
   });
+
+  test('anonymizes word that appears multiple times with same placeholder', () => {
+    const anonymizer = new SimpleWordAnonymizer(['secret']);
+    const input = 'This is a secret message with another secret word';
+    
+    const anonymized = anonymizer.anonymize(input);
+    // Both occurrences should be replaced with the same placeholder
+    expect(anonymized).toBe('This is a ANON_0 message with another ANON_1 word');
+    expect(anonymized).not.toContain('secret');
+    
+    const deanonymized = anonymizer.deanonymize(anonymized);
+    expect(deanonymized).toBe(input);
+  });
 });
