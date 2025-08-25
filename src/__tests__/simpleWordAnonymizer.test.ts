@@ -67,7 +67,7 @@ describe('SimpleWordAnonymizer', () => {
     
     const anonymized = anonymizer.anonymize(input);
     // Both occurrences should be replaced with the same placeholder
-    expect(anonymized).toBe('This is a ANON_0 message with another ANON_1 word');
+    expect(anonymized).toBe('This is a ANON_0 message with another ANON_0 word');
     expect(anonymized).not.toContain('secret');
     
     const deanonymized = anonymizer.deanonymize(anonymized);
