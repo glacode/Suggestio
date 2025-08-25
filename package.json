@@ -54,7 +54,8 @@
         "pretest": "npm run compile-tests && npm run compile && npm run lint",
         "check-types": "tsc --noEmit",
         "lint": "eslint src",
-        "test": "vscode-test"
+        "test": "node --experimental-vm-modules node_modules/.bin/jest",
+        "test:debug": "node --inspect --experimental-vm-modules node_modules/.bin/jest --runInBand --debug"
     },
     "dependencies": {
         "dotenv": "^17.2.1",
@@ -62,6 +63,7 @@
     },
     "devDependencies": {
         "@types/dotenv": "^6.1.1",
+        "@types/jest": "^30.0.0",
         "@types/mocha": "^10.0.10",
         "@types/node": "22.x",
         "@types/vscode": "^1.102.0",
@@ -71,7 +73,9 @@
         "@vscode/test-electron": "^2.5.2",
         "esbuild": "^0.25.8",
         "eslint": "^9.32.0",
+        "jest": "^30.0.5",
         "npm-run-all": "^4.1.5",
+        "ts-jest": "^29.4.1",
         "typescript": "^5.9.2"
     }
 }
