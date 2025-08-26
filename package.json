@@ -3,10 +3,26 @@
     "type": "module",
     "displayName": "Suggestio",
     "description": "Inline autocomplete using free LLMs without API keys",
+    "icon": "resources/logo.png",
     "version": "0.0.1",
     "engines": {
         "vscode": "^1.75.0"
     },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/glacode/suggestio.git"
+    },
+    "homepage": "https://github.com/glacode/suggestio",
+    "bugs": { "url": "https://github.com/glacode/suggestio/issues" },
+    "license": "MIT",
+    "keywords": [
+        "autocomplete",
+        "LLM",
+        "inline",
+        "code",
+        "suggestions",
+        "AI"
+    ],
     "activationEvents": [
         "onLanguage:javascript",
         "onLanguage:typescript",
