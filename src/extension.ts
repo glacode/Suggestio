@@ -34,6 +34,7 @@ function createDebounceCallback(
   resolve: (items: vscode.InlineCompletionItem[]) => void
 ): () => void {
   return function performCompletion() {
+    
     if (handleCancellation(token, resolve, 'before')) { return; }
 
     const prompt = buildPrompt(document, position);
@@ -81,7 +82,7 @@ function provideInlineCompletionItems(
 export async function activate(context: vscode.ExtensionContext) {
   console.log("Suggestio: Activate");
   vscode.window.showInformationMessage("Suggestio Activated!");
-  
+
   const config = await loadConfig(context);
 
   const activeProvider = await getActiveProvider(config);
@@ -97,7 +98,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.languages.registerInlineCompletionItemProvider(
-      [{ language: 'javascript' }, { language: 'typescript' }],
+      { scheme: '*', language: '*' },
       provider
     )
   );

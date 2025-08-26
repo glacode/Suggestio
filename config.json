@@ -1,5 +1,5 @@
 {
-  "activeProvider": "groq-llama370",
+  "activeProvider": "llm7",
   "providers": {
     "llm7": {
       "endpoint": "https://api.llm7.io/v1/chat/completions",

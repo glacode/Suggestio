@@ -9,36 +9,80 @@
     },
     "activationEvents": [
         "onLanguage:javascript",
-        "onLanguage:typescript"
+        "onLanguage:typescript",
+        "onLanguage:python",
+        "onLanguage:java",
+        "onLanguage:c",
+        "onLanguage:cpp",
+        "onLanguage:csharp",
+        "onLanguage:go",
+        "onLanguage:php",
+        "onLanguage:ruby",
+        "onLanguage:rust",
+        "onLanguage:html",
+        "onLanguage:css",
+        "onLanguage:json",
+        "onLanguage:markdown",
+        "onLanguage:shellscript",
+        "onLanguage:yaml",
+        "onLanguage:sql"
     ],
     "main": "./dist/extension.js",
     "contributes": {
-        "languages": [
-            {
-                "id": "javascript",
-                "aliases": [
-                    "JavaScript"
-                ],
-                "extensions": [
-                    ".js"
-                ]
-            },
-            {
-                "id": "typescript",
-                "aliases": [
-                    "TypeScript"
-                ],
-                "extensions": [
-                    ".ts"
-                ]
-            }
-        ],
         "inlineCompletions": [
             {
                 "language": "javascript"
             },
             {
                 "language": "typescript"
+            },
+            {
+                "language": "python"
+            },
+            {
+                "language": "java"
+            },
+            {
+                "language": "c"
+            },
+            {
+                "language": "cpp"
+            },
+            {
+                "language": "csharp"
+            },
+            {
+                "language": "go"
+            },
+            {
+                "language": "php"
+            },
+            {
+                "language": "ruby"
+            },
+            {
+                "language": "rust"
+            },
+            {
+                "language": "html"
+            },
+            {
+                "language": "css"
+            },
+            {
+                "language": "json"
+            },
+            {
+                "language": "markdown"
+            },
+            {
+                "language": "shellscript"
+            },
+            {
+                "language": "yaml"
+            },
+            {
+                "language": "sql"
             }
         ]
     },
