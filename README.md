@@ -1,11 +1,12 @@
 <div align="center">
   <img src="resources/logo.png" width="128" alt="Suggestio Logo">
   <h1>Suggestio</h1>
-  <p>AI-Powered in line suggestions </p>
+  <p>AI-Powered inline suggestions</p>
 </div>
 
 **Suggestio** is a VS Code extension that provides inline code completions using LLM (Large Language Model) APIs.  
-It’s lightweight, open-source, and does not require login or cloud accounts unless you configure it to use one.
+It’s lightweight, open-source, and does not require login, cloud accounts, or API keys — it works out of the box.  
+(You can optionally configure your own providers and API keys if you want more control.)
 
 ![Demo GIF](resources/demo.gif)
 
@@ -14,7 +15,9 @@ It’s lightweight, open-source, and does not require login or cloud accounts un
 ## ✨ Features
 
 - Inline code suggestions as you type, powered by configurable LLM providers.  
-- Works out of the box with sensible defaults.  
+- **Works out of the box — no API key required.**  
+- Automatic **secret management**: if an API key is missing, Suggestio securely prompts you once and stores it in VS Code’s secret storage.  
+- Built-in **anonymizer**: automatically masks sensitive data (emails, tokens, IDs, etc.) before sending prompts to providers.  
 - Supports multiple providers/models — add your own with simple JSON config.  
 - Three levels of configuration (project, user, built-in defaults).  
 
@@ -75,15 +78,17 @@ Here’s a minimal example of a config file:
       "model": "qwen2.5-coder-32b-instruct",
       "apiKey": "unused"
     },
-    "groq-llama17": {
+    "groq-llama370": {
       "endpoint": "https://api.groq.com/openai/v1/chat/completions",
-      "model": "openai/gpt-oss-20b",
+      "model": "llama3-70b-8192",
       "apiKey": "${GROQ_API_KEY}"
     },
     "openrouter": {
       "endpoint": "https://openrouter.ai/api/v1/chat/completions",
       "model": "deepseek/deepseek-chat-v3-0324:free",
-      "apiKey": "${OPENROUTER_API_KEY}
+      "apiKey": "${OPENROUTER_API_KEY}"
+    }
+  }
 }
 ```
 
@@ -97,11 +102,27 @@ You can reference environment variables in your config, e.g.:
 
 ---
 
-## 🔑 API Keys & Secrets
+## 🔑 API Keys & Secret Management
 
+- By default, Suggestio works without API keys (using built-in providers).  
+- If a provider requires an API key:
+  - Suggestio first tries to load it from environment variables.  
+  - If it’s not found, Suggestio will securely **prompt you once** for the key and save it in VS Code’s [Secret Storage](https://code.visualstudio.com/api/references/vscode-api#SecretStorage).  
 - Never hardcode API keys into workspace configs if you share the repo.  
-- Instead, use environment variables like `${MY_API_KEY}`.  
-- Suggestio automatically substitutes them when loading config.  
+
+---
+
+## 🔒 Anonymizer
+
+To protect your privacy, Suggestio includes a built-in **anonymizer**:  
+it automatically masks sensitive values such as emails, tokens, file paths, and IDs before sending text to external LLM providers.  
+The anonymizer only replaces words and patterns explicitly listed in your config file.  
+
+By default, it comes preloaded with common placeholders like names, emails, and IP addresses.  
+You can extend this list with any custom terms that should be anonymized before sending text to the model.  
+
+All terms that are anonymized in the outgoing prompt are **deanonymized when the response comes back**,  
+so the completion you see in your editor always contains your original values.
 
 ---
 
@@ -135,4 +156,3 @@ Then press `F5` in VS Code to launch a new window with the extension loaded.
 ## 📜 License
 
 MIT © [Glauco Siliprandi](https://github.com/glacode)
-

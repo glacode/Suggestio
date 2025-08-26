@@ -29,7 +29,8 @@
       "doe",
       "john.doe@example.com",
       "192.168.1.1",
-      "<my_social_security_number>"
+      "<social_security_number>",
+      "<street_address>"
     ]
   }
 }
