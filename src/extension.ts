@@ -1,5 +1,3 @@
-import './env.js';
-
 import * as vscode from 'vscode';
 import { buildPrompt } from './promptBuilder/promptBuilder.js';
 import { debounce } from './completion/debounceManager.js';

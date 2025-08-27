@@ -30,6 +30,7 @@ async function main() {
 		],
 		bundle: true,
 		format: 'esm',
+		packages: 'bundle',
 		minify: production,
 		sourcemap: !production,
 		sourcesContent: false,

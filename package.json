@@ -6,7 +6,7 @@
     "publisher": "glacode",
     "author": "Glauco Siliprandi",
     "icon": "resources/logo.png",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "engines": {
         "vscode": "^1.102.0"
     },
@@ -122,11 +122,9 @@
         "test:debug": "node --inspect --experimental-vm-modules node_modules/.bin/jest --runInBand --debug"
     },
     "dependencies": {
-        "dotenv": "^17.2.1",
         "node-fetch": "^3.3.2"
     },
     "devDependencies": {
-        "@types/dotenv": "^6.1.1",
         "@types/jest": "^30.0.0",
         "@types/mocha": "^10.0.10",
         "@types/node": "22.x",
