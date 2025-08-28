@@ -7,7 +7,7 @@ import { fetchCompletion } from './completion/completionHandler.js';
 import { Config, loadConfig } from './config.js';
 import { getAnonymizer } from './anonymizer/anonymizer.js';
 
-const DEBOUNCE_DELAY_MS = 500;
+const DEBOUNCE_DELAY_MS = 1000;
 
 // Top-level helper function to handle cancellation
 function handleCancellation(
@@ -16,7 +16,7 @@ function handleCancellation(
   stage: 'before' | 'after'
 ): boolean {
   if (token?.isCancellationRequested) {
-    console.warn(`❌ Suggestio: Request cancelled ${stage} LLM call`);
+    log(`❌ Suggestio: Request cancelled ${stage} LLM call`);
     resolve([]);
     return true;
   }
@@ -37,8 +37,7 @@ function createDebounceCallback(
     if (handleCancellation(token, resolve, 'before')) { return; }
 
     const prompt = buildPrompt(document, position);
-    const now = Date.now();
-    log(`Seconds: ${Math.floor(now / 1000)}, Milliseconds: ${now % 1000}`);
+    log(`Using provider: ${config.activeProvider} with model: ${activeProvider.model}`);
     log("Prompt: " + prompt);
 
     const anonymizer = getAnonymizer(config);

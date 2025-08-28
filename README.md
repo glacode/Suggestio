@@ -71,7 +71,7 @@ Here’s a minimal example of a config file:
 
 ```json
 {
-  "activeProvider": "groq-llama17",
+  "activeProvider": "groq-llama370",
   "providers": {
     "llm7": {
       "endpoint": "https://api.llm7.io/v1/chat/completions",

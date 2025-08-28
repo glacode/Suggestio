@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 export function extractPrefix(
   document: vscode.TextDocument,
   position: vscode.Position,
-  maxLines = 10
+  maxLines = 100
 ): string {
   const startLine = Math.max(0, position.line - maxLines);
   const lines: string[] = [];
