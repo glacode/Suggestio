@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { initLogger, log } from './logger.js';
 import { buildPrompt } from './promptBuilder/promptBuilder.js';
 import { debounce } from './completion/debounceManager.js';
 import { getActiveProvider, Provider } from './providers/providerFactory.js';
@@ -32,13 +33,13 @@ function createDebounceCallback(
   resolve: (items: vscode.InlineCompletionItem[]) => void
 ): () => void {
   return function performCompletion() {
-    
+
     if (handleCancellation(token, resolve, 'before')) { return; }
 
     const prompt = buildPrompt(document, position);
     const now = Date.now();
-    console.log(`Seconds: ${Math.floor(now / 1000)}, Milliseconds: ${now % 1000}`);
-    console.log("Prompt:", prompt);
+    log(`Seconds: ${Math.floor(now / 1000)}, Milliseconds: ${now % 1000}`);
+    log("Prompt: " + prompt);
 
     const anonymizer = getAnonymizer(config);
 
@@ -53,11 +54,11 @@ function createDebounceCallback(
       .then(function (items) {
         if (handleCancellation(token, resolve, 'after')) { return; }
 
-        console.log('✅ Suggestio: Returning completion to VS Code');
+        log('✅ Suggestio: Returning completion to VS Code');
         resolve(items);
       })
       .catch(function (err) {
-        console.error("Error fetching completion:", err);
+        log("Error fetching completion: " + err);
         resolve([]);
       });
   };
@@ -78,7 +79,8 @@ function provideInlineCompletionItems(
 }
 
 export async function activate(context: vscode.ExtensionContext) {
-  console.log("Suggestio: Activate");
+  initLogger();
+  log("Suggestio: Activate");
   vscode.window.showInformationMessage("Suggestio Activated!");
 
   const config = await loadConfig(context);
