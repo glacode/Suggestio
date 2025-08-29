@@ -1,7 +1,7 @@
 {
-  "activeProvider": "llm7",
+  "activeProvider": "llm7-qwen32",
   "providers": {
-    "llm7": {
+    "llm7-qwen32": {
       "endpoint": "https://api.llm7.io/v1/chat/completions",
       "model": "qwen2.5-coder-32b-instruct",
       "apiKey": "unused"
@@ -11,7 +11,7 @@
       "model": "llama3-70b-8192",
       "apiKey": "${GROQ_API_KEY}"
     },
-    "openrouter": {
+    "openrouter-deepseekv3": {
       "endpoint": "https://openrouter.ai/api/v1/chat/completions",
       "model": "deepseek/deepseek-chat-v3-0324:free",
       "apiKey": "${OPENROUTER_API_KEY}"

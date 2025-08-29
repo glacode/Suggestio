@@ -23,6 +23,20 @@ It’s lightweight, open-source, and does not require login, cloud accounts, or 
 
 ---
 
+## 🔒 Anonymizer
+
+To protect your privacy, Suggestio includes a built-in **anonymizer**:  
+it automatically masks sensitive values such as emails, tokens, file paths, and IDs before sending text to external LLM providers.  
+The anonymizer only replaces words and patterns explicitly listed in your config file.  
+
+By default, it comes preloaded with common placeholders like names, emails, and IP addresses.  
+You can extend this list with any custom terms that should be anonymized before sending text to the model.  
+
+All terms that are anonymized in the outgoing prompt are **deanonymized when the response comes back**,  
+so the completion you see in your editor always contains your original values.
+
+---
+
 ## 🚀 Installation
 
 1. Install **Suggestio** from the [VS Code Marketplace](https://marketplace.visualstudio.com/).  
@@ -71,9 +85,9 @@ Here’s a minimal example of a config file:
 
 ```json
 {
-  "activeProvider": "groq-llama370",
+  "activeProvider": "llm7-qwen32",
   "providers": {
-    "llm7": {
+    "llm7-qwen32": {
       "endpoint": "https://api.llm7.io/v1/chat/completions",
       "model": "qwen2.5-coder-32b-instruct",
       "apiKey": "unused"
@@ -83,11 +97,27 @@ Here’s a minimal example of a config file:
       "model": "llama3-70b-8192",
       "apiKey": "${GROQ_API_KEY}"
     },
-    "openrouter": {
+    "openrouter-deepseekv3": {
       "endpoint": "https://openrouter.ai/api/v1/chat/completions",
       "model": "deepseek/deepseek-chat-v3-0324:free",
       "apiKey": "${OPENROUTER_API_KEY}"
+    },
+    "hf-lama38": {
+      "endpoint": "https://api-inference.huggingface.co/v1/chat/completions",
+      "model": "meta-llama/Llama-3-8B-Instruct",
+      "apiKey": "${HF_API_KEY}"
     }
+  },
+  "anonymizer": {
+    "enabled": true,
+    "words": [
+      "john",
+      "doe",
+      "john.doe@example.com",
+      "192.168.1.1",
+      "<social_security_number>",
+      "<street_address>"
+    ]
   }
 }
 ```
@@ -102,30 +132,6 @@ You can reference environment variables in your config, e.g.:
 
 ---
 
-## 🔑 API Keys & Secret Management
-
-- By default, Suggestio works without API keys (using built-in providers).  
-- If a provider requires an API key:
-  - Suggestio first tries to load it from environment variables.  
-  - If it’s not found, Suggestio will securely **prompt you once** for the key and save it in VS Code’s [Secret Storage](https://code.visualstudio.com/api/references/vscode-api#SecretStorage).  
-- Never hardcode API keys into workspace configs if you share the repo.  
-
----
-
-## 🔒 Anonymizer
-
-To protect your privacy, Suggestio includes a built-in **anonymizer**:  
-it automatically masks sensitive values such as emails, tokens, file paths, and IDs before sending text to external LLM providers.  
-The anonymizer only replaces words and patterns explicitly listed in your config file.  
-
-By default, it comes preloaded with common placeholders like names, emails, and IP addresses.  
-You can extend this list with any custom terms that should be anonymized before sending text to the model.  
-
-All terms that are anonymized in the outgoing prompt are **deanonymized when the response comes back**,  
-so the completion you see in your editor always contains your original values.
-
----
-
 ## 📂 Where is the Global Config Folder?
 
 VS Code stores global extension data in different places depending on your OS:
@@ -135,6 +141,16 @@ VS Code stores global extension data in different places depending on your OS:
 - **Windows:** `%APPDATA%\Code\User\globalStorage\glacode.suggestio\`
 
 You usually don’t need to remember this path — just use **Suggestio: Edit Global Config** from the command palette.
+
+---
+
+## 🔑 API Keys & Secret Management
+
+- By default, Suggestio works without API keys (using built-in providers).  
+- If a provider requires an API key:
+  - Suggestio first tries to load it from environment variables.  
+  - If it’s not found, Suggestio will securely **prompt you once** for the key and save it in VS Code’s [Secret Storage](https://code.visualstudio.com/api/references/vscode-api#SecretStorage).  
+- Never hardcode API keys into workspace configs if you share the repo.  
 
 ---
 
