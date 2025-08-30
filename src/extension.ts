@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { initLogger, log } from './logger.js';
-import { loadConfig } from './config.js';
+import { loadConfig } from './config/config.js';
 import { getActiveProvider } from './providers/providerFactory.js';
 import { registerCompletionProvider } from './registrations/completionRegistration.js';
 import { registerCommands } from './registrations/commandRegistration.js';

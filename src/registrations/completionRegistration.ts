@@ -2,7 +2,7 @@
 import * as vscode from 'vscode';
 import { provideInlineCompletionItems } from '../completion/completionProvider.js';
 import { Provider } from '../providers/providerFactory.js';
-import { Config } from '../config.js';
+import { Config } from '../config/config.js';
 
 export function registerCompletionProvider(
   context: vscode.ExtensionContext,
