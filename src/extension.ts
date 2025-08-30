@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import { initLogger, log } from './logger.js';
-import { getActiveProvider } from './providers/providerFactory.js';
 import { loadConfig } from './config.js';
-import { editGlobalConfig } from './config/editGlobalConfig.js';
-import { provideInlineCompletionItems } from './completion/completionProvider.js'; // ⟵ NEW
+import { getActiveProvider } from './providers/providerFactory.js';
+import { registerCompletionProvider } from './registrations/completionRegistration.js';
+import { registerCommands } from './registrations/commandRegistration.js';
 
 export async function activate(context: vscode.ExtensionContext) {
   initLogger();
@@ -14,23 +14,8 @@ export async function activate(context: vscode.ExtensionContext) {
   const activeProvider = await getActiveProvider(config);
   if (!activeProvider) { return; }
 
-  const provider: vscode.InlineCompletionItemProvider = {
-    provideInlineCompletionItems: (document, position, context, token) =>
-      provideInlineCompletionItems(activeProvider, config, document, position, context, token)
-  };
-
-  context.subscriptions.push(
-    vscode.languages.registerInlineCompletionItemProvider(
-      { scheme: '*', language: '*' },
-      provider
-    )
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand("suggestio.editGlobalConfig", () =>
-      editGlobalConfig(context, config)
-    )
-  );
+  registerCompletionProvider(context, activeProvider, config);
+  registerCommands(context, config);
 }
 
 export function deactivate() { }
