@@ -6,7 +6,7 @@
     "publisher": "glacode",
     "author": "Glauco Siliprandi",
     "icon": "resources/logo.png",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "engines": {
         "vscode": "^1.102.0"
     },
@@ -103,6 +103,12 @@
             },
             {
                 "language": "sql"
+            }
+        ],
+        "commands": [
+            {
+                "command": "suggestio.editGlobalConfig",
+                "title": "Suggestio: Edit Global Config"
             }
         ]
     },

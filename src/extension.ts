@@ -6,6 +6,7 @@ import { getActiveProvider, Provider } from './providers/providerFactory.js';
 import { fetchCompletion } from './completion/completionHandler.js';
 import { Config, loadConfig } from './config.js';
 import { getAnonymizer } from './anonymizer/anonymizer.js';
+import { editGlobalConfig } from './config/editGlobalConfig.js';
 
 const DEBOUNCE_DELAY_MS = 1000;
 
@@ -99,6 +100,11 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.languages.registerInlineCompletionItemProvider(
       { scheme: '*', language: '*' },
       provider
+    )
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand("suggestio.editGlobalConfig", () =>
+      editGlobalConfig(context, config)
     )
   );
 }
