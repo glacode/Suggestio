@@ -7,7 +7,7 @@ import { debounce } from './debounceManager.js';
 import { handleCancellation } from './cancellation.js';
 import { log } from '../logger.js';
 import { Provider } from '../providers/providerFactory.js';
-import { Config } from '../config/config.js';
+import { Config } from '../config/types.js';
 
 const DEBOUNCE_DELAY_MS = 1000;
 

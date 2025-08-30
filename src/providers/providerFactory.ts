@@ -1,4 +1,4 @@
-import { Config } from '../config/config.js';
+import { Config } from '../config/types.js';
 import * as vscode from 'vscode';
 
 export interface Provider {

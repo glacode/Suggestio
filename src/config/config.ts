@@ -1,21 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-
-export interface Config {
-    activeProvider: string;
-    providers: {
-        [key: string]: {
-            endpoint: string;
-            model: string;
-            apiKey: string;
-        }
-    };
-    anonymizer: {
-        enabled: boolean;
-        words: string[];
-    };
-}
+import { Config } from './types.js';
 
 export function getConfigPath(context: vscode.ExtensionContext): string {
   const workspaceConfig = vscode.workspace.workspaceFolders?.[0]

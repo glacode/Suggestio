@@ -1,4 +1,4 @@
-import { Config } from "../config/config.js";
+import { Config } from "../config/types.js";
 import { SimpleWordAnonymizer } from "./simpleWordAnonymizer.js";
 
 export interface Anonymizer {
