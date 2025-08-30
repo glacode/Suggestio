@@ -109,6 +109,14 @@
             {
                 "command": "suggestio.editGlobalConfig",
                 "title": "Suggestio: Edit Global Config"
+            },
+            {
+                "command": "suggestio.updateApiKey",
+                "title": "Suggestio: Update API Key"
+            },
+            {
+                "command": "suggestio.deleteApiKey",
+                "title": "Suggestio: Delete API Key"
             }
         ]
     },

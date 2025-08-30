@@ -1,6 +1,7 @@
 import fetch from 'node-fetch';
 import * as vscode from 'vscode';
 import { Anonymizer } from '../anonymizer/anonymizer.js';
+import { log } from '../logger.js';
 
 type OpenRouterResponse = {
   choices?: { message?: { content?: string } }[];
@@ -37,7 +38,7 @@ export async function fetchCompletion(
   });
 
   const json = (await response.json()) as OpenRouterResponse;
-  console.log("Response:", JSON.stringify(json, null, 2));
+  log("Response:" + JSON.stringify(json, null, 2));
 
   let content = json.choices?.[0]?.message?.content?.trim();
   console.log("Content:", content);

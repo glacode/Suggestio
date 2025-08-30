@@ -8,6 +8,26 @@ export async function storeSecret(context: vscode.ExtensionContext, key: string,
   await context.secrets.store(key, value);
 }
 
+export async function deleteSecret(context: vscode.ExtensionContext, key: string): Promise<void> {
+  await context.secrets.delete(key);
+}
+
+export async function updateAPIKey(context: vscode.ExtensionContext, providerKey: string): Promise<void> {
+  const secretKey = `${providerKey}_API_KEY`;
+
+  const newApiKey = await vscode.window.showInputBox({
+    prompt: `Enter new API key for ${providerKey}`,
+    placeHolder: `Your ${providerKey} API key here...`,
+    password: true,
+    ignoreFocusOut: true
+  });
+
+  if (newApiKey && newApiKey.trim() !== '') {
+    await storeSecret(context, secretKey, newApiKey.trim());
+    vscode.window.showInformationMessage(`API key for ${providerKey} updated.`);
+  }
+}
+
 export async function getOrRequestAPIKey(context: vscode.ExtensionContext, providerKey: string): Promise<string> {
   const secretKey = `${providerKey}_API_KEY`;
 
