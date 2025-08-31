@@ -2,7 +2,8 @@
 import * as vscode from 'vscode';
 import { editGlobalConfig } from '../config/editGlobalConfig.js';
 import { Config } from '../config/types.js';
-import { updateAPIKey, deleteSecret } from '../config/secretManager.js';
+import { handleUpdateApiKeyCommand, handleDeleteApiKeyCommand } from '../config/secretManager.js';
+import { extractApiKeyPlaceholders } from '../config/apiKeyPlaceholders.js';
 
 export function registerCommands(context: vscode.ExtensionContext, config: Config) {
   context.subscriptions.push(
@@ -11,28 +12,17 @@ export function registerCommands(context: vscode.ExtensionContext, config: Confi
     )
   );
 
-  // Update API Key command
+  const apiKeyPlaceholders = extractApiKeyPlaceholders(config);
+
   context.subscriptions.push(
-    vscode.commands.registerCommand('suggestio.updateApiKey', async () => {
-      const provider = await vscode.window.showQuickPick(Object.keys(config.providers), {
-        placeHolder: 'Select a provider to update its API key'
-      });
-      if (provider) {
-        await updateAPIKey(context, provider);
-      }
-    })
+    vscode.commands.registerCommand("suggestio.updateApiKey", () =>
+      handleUpdateApiKeyCommand(context, apiKeyPlaceholders)
+    )
   );
 
-  // Delete API Key command
   context.subscriptions.push(
-    vscode.commands.registerCommand('suggestio.deleteApiKey', async () => {
-      const provider = await vscode.window.showQuickPick(Object.keys(config.providers), {
-        placeHolder: 'Select a provider to delete its API key'
-      });
-      if (provider) {
-        await deleteSecret(context, `${provider}_API_KEY`);
-        vscode.window.showInformationMessage(`API key for ${provider} deleted.`);
-      }
-    })
+    vscode.commands.registerCommand("suggestio.deleteApiKey", () =>
+      handleDeleteApiKeyCommand(context, apiKeyPlaceholders)
+    )
   );
 }

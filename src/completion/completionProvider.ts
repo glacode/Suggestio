@@ -6,13 +6,13 @@ import { fetchCompletion } from './completionHandler.js';
 import { debounce } from './debounceManager.js';
 import { handleCancellation } from './cancellation.js';
 import { log } from '../logger.js';
-import { Provider } from '../providers/providerFactory.js';
+import { ProviderConfig } from '../config/types.js';
 import { Config } from '../config/types.js';
 
 const DEBOUNCE_DELAY_MS = 1000;
 
 function createDebounceCallback(
-    activeProvider: Provider,
+    activeProvider: ProviderConfig,
     config: Config,
     document: vscode.TextDocument,
     position: vscode.Position,
@@ -30,7 +30,7 @@ function createDebounceCallback(
 
         fetchCompletion(
             activeProvider.endpoint,
-            activeProvider.apiKey,
+            activeProvider.resolvedApiKey || '',
             activeProvider.model,
             prompt,
             position,
@@ -49,7 +49,7 @@ function createDebounceCallback(
 }
 
 export function provideInlineCompletionItems(
-    activeProvider: Provider,
+    activeProvider: ProviderConfig,
     config: Config,
     document: vscode.TextDocument,
     position: vscode.Position,

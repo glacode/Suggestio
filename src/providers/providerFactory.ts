@@ -1,12 +1,6 @@
 import { Config } from '../config/types.js';
 import * as vscode from 'vscode';
 
-export interface Provider {
-  endpoint: string;
-  apiKey: string;
-  model: string;
-}
-
 export async function getActiveProvider(config: Config) {
   const activeProviderName = config.activeProvider;
   const activeProvider = config.providers?.[activeProviderName];

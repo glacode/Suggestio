@@ -11,6 +11,7 @@ const jestConfig: JestConfigWithTsJest = {
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
     '^(\\.{1,2}/.*)\\.ts$': '$1',
+    '^vscode$': '<rootDir>/src/__mocks__/vscode.ts'
   },
 
   testPathIgnorePatterns: [
