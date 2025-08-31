@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.3] - 2025-08-31
+
+### Added
+-   New VS Code commands for API key management (`updateApiKey`, `deleteApiKey`), allowing secure updates and deletions without editing config files.
+-   Command to edit global configuration (`suggestio.editGlobalConfig`) with automatic config file creation if missing.
+-   `SecretManager` abstraction with support for secure key storage and deletion.
+-   Comprehensive Jest tests for config processing and API key placeholder handling.
+-   New `ConfigProcessor` with support for resolving API keys from environment variables, placeholders, or VS Code secret storage.
+-   Dedicated cancellation module for more consistent handling of completion cancellation events.
+
+### Changed
+-   **Config & Secret Management Refactor:** Extracted API key logic into `secretManager.ts`, introduced `apiKeyPlaceholder` and `resolvedApiKey` fields, and improved error handling.
+-   **Architecture Improvements:**  
+    - Moved `Config` interface into its own `types.ts` file for clarity.  
+    - Relocated `config.ts` into a dedicated `config/` directory.  
+    - Split extension activation logic into `commandRegistration.ts` and `completionRegistration.ts`.  
+    - Modularized completion provider into `completionProvider.ts`.  
+-   Updated Groq provider model to `llama-3.3-70b-versatile`.
+-   Improved testability by adding a Jest mock for the VS Code API.
+-   Changed test output directory from `out` → `dist` for consistency.
+
+### Fixed
+-   N/A (This release focused on architecture, testing, and new features).
+
 ## [0.0.2] - 2025-08-30
 
 ### Added
