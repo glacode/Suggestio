@@ -4,6 +4,7 @@ import { editGlobalConfig } from '../config/editGlobalConfig.js';
 import { Config } from '../config/types.js';
 import { handleUpdateApiKeyCommand, handleDeleteApiKeyCommand } from '../config/secretManager.js';
 import { extractApiKeyPlaceholders } from '../config/apiKeyPlaceholders.js';
+import { Chat } from '../chat/chat.js';
 
 export function registerCommands(context: vscode.ExtensionContext, config: Config) {
   context.subscriptions.push(
@@ -24,5 +25,11 @@ export function registerCommands(context: vscode.ExtensionContext, config: Confi
     vscode.commands.registerCommand("suggestio.deleteApiKey", () =>
       handleDeleteApiKeyCommand(context, apiKeyPlaceholders)
     )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('suggestio.openChat', () => {
+        new Chat();
+    })
   );
 }
