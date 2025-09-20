@@ -11,7 +11,7 @@ export async function activate(context: vscode.ExtensionContext) {
   vscode.window.showInformationMessage("Suggestio Activated!");
 
   const config = await loadConfig(context);
-  const activeProvider = await getActiveProvider(config);
+  const activeProvider = getActiveProvider(config);
   if (!activeProvider) { return; }
 
   registerCompletionProvider(context, activeProvider, config);

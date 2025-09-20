@@ -1,12 +1,13 @@
 import * as vscode from 'vscode';
 import { getChatWebviewContent } from './chatWebview.js';
 import { ChatLogicHandler } from './chatLogic.js';
+import { Config } from '../config/types.js';
 
 export class Chat {
     private readonly _view: vscode.WebviewPanel;
     private readonly _logicHandler: ChatLogicHandler;
 
-    constructor() {
+    constructor( config: Config ) {
         this._view = vscode.window.createWebviewPanel(
             'suggestioChat',
             'Suggestio Chat',
@@ -17,7 +18,7 @@ export class Chat {
             }
         );
 
-        this._logicHandler = new ChatLogicHandler();
+        this._logicHandler = new ChatLogicHandler(config);
         this._view.webview.html = getChatWebviewContent();
         
         this.setupMessageHandler();

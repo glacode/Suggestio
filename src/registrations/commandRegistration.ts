@@ -29,7 +29,7 @@ export function registerCommands(context: vscode.ExtensionContext, config: Confi
 
   context.subscriptions.push(
     vscode.commands.registerCommand('suggestio.openChat', () => {
-        new Chat();
+        new Chat(config);
     })
   );
 }
