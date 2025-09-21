@@ -1,5 +1,5 @@
-import { Config } from "../config/types.js";
-import { extractApiKeyPlaceholders } from "../config/apiKeyPlaceholders.js";
+import { Config } from "../../src/config/types.js";
+import { extractApiKeyPlaceholders } from "../../src/config/apiKeyPlaceholders.js";
 
 describe("extractApiKeyPlaceholders", () => {
   it("should extract placeholders from providers with ${VARNAME}", () => {

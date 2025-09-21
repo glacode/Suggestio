@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import { processConfig, SecretManager } from '../config/configProcessor.js';
-import { Config } from '../config/types.js';
+import { processConfig, SecretManager } from '../../src/config/configProcessor.js';
+import { Config } from '../../src/config/types.js';
 
 describe('processConfig', () => {
   let mockSecretManager: SecretManager;

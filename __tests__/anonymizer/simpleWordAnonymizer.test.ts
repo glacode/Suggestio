@@ -1,4 +1,4 @@
-import { SimpleWordAnonymizer } from '../anonymizer/simpleWordAnonymizer.js';
+import { SimpleWordAnonymizer } from '../../src/anonymizer/simpleWordAnonymizer.js';
 
 describe('SimpleWordAnonymizer', () => {
   test('anonymizes and deanonymizes single word', () => {

@@ -7,7 +7,7 @@ import { processConfig, SecretManager } from './configProcessor.js';
 
 let cachedConfig: Config | null = null;
 
-export function getConfigPath(context: vscode.ExtensionContext): string {
+function getConfigPath(context: vscode.ExtensionContext): string {
   const workspaceConfig = vscode.workspace.workspaceFolders?.[0]
     ? path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, 'suggestio.config.json')
     : null;
