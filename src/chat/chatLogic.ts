@@ -1,5 +1,4 @@
-import * as vscode from 'vscode';
-import { fetchCompletion } from '../completion/completionHandler.js';
+import { queryLlm } from '../llm/queryLlm.js';
 import { getAnonymizer } from '../anonymizer/anonymizer.js';
 import { ProviderConfig, Config } from '../config/types.js';
 import { log } from '../logger.js';
@@ -21,24 +20,22 @@ export class ChatLogicHandler {
             log(`Chat: Using provider ${this.config.activeProvider} with model ${this.activeProvider.model}`);
             log("Chat prompt: " + prompt);
 
-            const items = await fetchCompletion(
+            const response: string | null = await queryLlm(
                 this.activeProvider.endpoint,
-                this.activeProvider.resolvedApiKey || '',
+                this.activeProvider.apiKey,
                 this.activeProvider.model,
                 prompt,
-                new vscode.Position(0, 0), // Position is not relevant for chat
                 this.anonymizer
             );
 
-            if (items && items.length > 0) {
-                return items[0].insertText.toString();
+            if (response) {
+                log("Chat response: " + response);
+                return response;
+            } else {
+                return 'No response received from LLM';
             }
-
-            throw new Error('No response received from LLM');
-
         } catch (error) {
-            log("Error in chat processing: " + error);
-            throw new Error('Failed to process message: ' + error);
+            return 'Error processing message: ' + error;
         }
     }
 }

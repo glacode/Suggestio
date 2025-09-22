@@ -38,7 +38,7 @@ export class Chat {
                         } catch (error) {
                             this._view.webview.postMessage({
                                 sender: 'assistant',
-                                text: 'Sorry, there was an error processing your request.'
+                                text: 'Sorry, there was an error processing your request: ' + error
                             });
                         }
                         break;
