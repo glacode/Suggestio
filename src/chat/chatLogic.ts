@@ -22,7 +22,7 @@ export class ChatLogicHandler {
 
             const response: string | null = await queryLlm(
                 this.activeProvider.endpoint,
-                this.activeProvider.apiKey,
+                this.activeProvider.resolvedApiKey || '',
                 this.activeProvider.model,
                 prompt,
                 this.anonymizer

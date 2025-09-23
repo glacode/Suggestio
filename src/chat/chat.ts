@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { getChatWebviewContent } from './chatWebview.js';
 import { ChatLogicHandler } from './chatLogic.js';
 import { Config } from '../config/types.js';
+import { buildContext } from './context.js';
 
 export class Chat {
     private readonly _view: vscode.WebviewPanel;
@@ -30,7 +31,8 @@ export class Chat {
                 switch (message.command) {
                     case 'sendMessage':
                         try {
-                            const response = await this._logicHandler.processMessage(message.text);
+                            const promptWithContext = `${message.text}\n\n${buildContext()}`;
+                            const response = await this._logicHandler.processMessage(promptWithContext);
                             this._view.webview.postMessage({
                                 sender: 'assistant',
                                 text: response
