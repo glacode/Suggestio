@@ -133,7 +133,7 @@ export function getChatWebviewContent(): string {
                         
                         const msg = document.createElement('div');
                         msg.className = 'message ' + sender;
-                        msg.textContent = text;
+                        msg.innerText = text;
                         
                         container.appendChild(label);
                         container.appendChild(msg);
