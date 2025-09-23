@@ -151,6 +151,16 @@ export function getChatWebviewContent(): string {
                         const { sender, text } = event.data;
                         appendMessage(sender, text);
                     });
+
+                    const messageInput = document.getElementById('messageInput');
+
+                    // Auto-focus the chat input field when the webview loads
+                    messageInput.focus();
+
+                    // Refocus the chat input field when the window regains focus
+                    window.addEventListener('focus', () => {
+                        setTimeout(() => messageInput.focus(), 50);
+                    });
                 </script>
             </body>
         </html>
