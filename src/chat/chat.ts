@@ -8,7 +8,7 @@ export class Chat {
     private readonly _view: vscode.WebviewPanel;
     private readonly _logicHandler: ChatLogicHandler;
 
-    constructor( config: Config ) {
+    constructor(context: vscode.ExtensionContext, config: Config) {
         this._view = vscode.window.createWebviewPanel(
             'suggestioChat',
             'Suggestio Chat',
@@ -20,8 +20,15 @@ export class Chat {
         );
 
         this._logicHandler = new ChatLogicHandler(config);
-        this._view.webview.html = getChatWebviewContent();
-        
+
+        // Build the URI for the webview script
+        const scriptUri = this._view.webview.asWebviewUri(
+            vscode.Uri.joinPath(context.extensionUri, 'builtResources', 'renderMarkDown.js')
+        );
+
+        // Set the HTML content
+        this._view.webview.html = getChatWebviewContent(scriptUri);
+
         this.setupMessageHandler();
     }
 

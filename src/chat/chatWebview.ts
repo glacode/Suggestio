@@ -1,4 +1,6 @@
-export function getChatWebviewContent(): string {
+import * as vscode from 'vscode';
+
+export function getChatWebviewContent(scriptUri: vscode.Uri): string {
     return `
         <!DOCTYPE html>
         <html>
@@ -109,6 +111,7 @@ export function getChatWebviewContent(): string {
                     </div>
                 </div>
 
+                <script src="${scriptUri}"></script>
                 <script>
                     const vscode = acquireVsCodeApi();
 
@@ -133,7 +136,10 @@ export function getChatWebviewContent(): string {
                         
                         const msg = document.createElement('div');
                         msg.className = 'message ' + sender;
-                        msg.innerText = text;
+
+                        // Render Markdown for assistant messages
+                        if (sender === 'assistant') msg.innerHTML = window.renderMarkdown(text);
+                        else msg.innerText = text;
                         
                         container.appendChild(label);
                         container.appendChild(msg);

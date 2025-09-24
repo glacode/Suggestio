@@ -31,7 +31,7 @@ export async function queryLlm(
         { role: 'system', content: 'You are a helpful coding assistant.' },
         { role: 'user', content: processedPrompt },
       ],
-      max_tokens: 300,
+      max_tokens: 10000,
     }),
   });
 
