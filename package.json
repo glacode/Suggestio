@@ -6,7 +6,7 @@
     "publisher": "glacode",
     "author": "Glauco Siliprandi",
     "icon": "resources/logo.png",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "engines": {
         "vscode": "^1.102.0"
     },
@@ -147,6 +147,7 @@
         "watch:webview": "esbuild src/webView/renderMarkDown.ts --bundle --outfile=builtResources/renderMarkDown.js --format=iife --watch"
     },
     "dependencies": {
+        "highlight.js": "^11.11.1",
         "marked": "^16.3.0",
         "node-fetch": "^3.3.2"
     },

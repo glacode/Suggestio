@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-export function getChatWebviewContent(scriptUri: vscode.Uri): string {
+export function getChatWebviewContent(scriptUri: vscode.Uri, highlightCssUri: vscode.Uri): string {
     return `
         <!DOCTYPE html>
         <html>
@@ -110,7 +110,8 @@ export function getChatWebviewContent(scriptUri: vscode.Uri): string {
                         <button onclick="sendMessage()">Send</button>
                     </div>
                 </div>
-
+                
+                <link rel="stylesheet" href="${highlightCssUri}">
                 <script src="${scriptUri}"></script>
                 <script>
                     const vscode = acquireVsCodeApi();

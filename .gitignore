@@ -142,3 +142,7 @@ vite.config.ts.timestamp-*
 
 # Generated webview / built resources
 builtResources/
+
+# created with the command:
+# cp node_modules/highlight.js/styles/vs2015.css media/highlight.css
+media/highlight.css

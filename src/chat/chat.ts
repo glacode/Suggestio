@@ -26,8 +26,12 @@ export class Chat {
             vscode.Uri.joinPath(context.extensionUri, 'builtResources', 'renderMarkDown.js')
         );
 
+        const highlightCssUri = this._view.webview.asWebviewUri(
+            vscode.Uri.joinPath(context.extensionUri, 'media', 'highlight.css')
+        );
+
         // Set the HTML content
-        this._view.webview.html = getChatWebviewContent(scriptUri);
+        this._view.webview.html = getChatWebviewContent(scriptUri, highlightCssUri);
 
         this.setupMessageHandler();
     }
