@@ -134,8 +134,8 @@
         "watch": "npm-run-all -p watch:*",
         "watch:esbuild": "node esbuild.js --watch",
         "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
-        "compile": "npm run check-types && npm run lint && npm run build:webview && node esbuild.js",
-        "package": "npm run check-types && npm run lint && npm run build:webview && node esbuild.js --production",
+        "compile": "npm run check-types && npm run lint && npm run build:webview && npm run copy-css && node esbuild.js",
+        "package": "npm run check-types && npm run lint && npm run build:webview && npm run copy-css && node esbuild.js --production",
         "compile-tests": "tsc -p . --outDir dist",
         "watch-tests": "tsc -p . -w --outDir dist",
         "pretest": "npm run compile-tests && npm run compile && npm run lint",
@@ -144,7 +144,8 @@
         "test": "node --experimental-vm-modules node_modules/.bin/jest",
         "test:debug": "node --inspect --experimental-vm-modules node_modules/.bin/jest --runInBand --debug",
         "build:webview": "esbuild src/webView/renderMarkDown.ts --bundle --outfile=builtResources/renderMarkDown.js --format=iife",
-        "watch:webview": "esbuild src/webView/renderMarkDown.ts --bundle --outfile=builtResources/renderMarkDown.js --format=iife --watch"
+        "watch:webview": "esbuild src/webView/renderMarkDown.ts --bundle --outfile=builtResources/renderMarkDown.js --format=iife --watch",
+        "copy-css": "node ./scripts/copyCss.js"
     },
     "dependencies": {
         "highlight.js": "^11.11.1",
