@@ -43,7 +43,7 @@ export class Chat {
                     case 'sendMessage':
                         try {
                             const promptWithContext = `${message.text}\n\n${buildContext()}`;
-                            const response = await this._logicHandler.processMessage(promptWithContext);
+                            const response = await this._logicHandler.fetchCompletion(promptWithContext);
                             this._view.webview.postMessage({
                                 sender: 'assistant',
                                 text: response

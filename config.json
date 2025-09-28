@@ -20,6 +20,11 @@
       "endpoint": "https://api-inference.huggingface.co/v1/chat/completions",
       "model": "meta-llama/Llama-3-8B-Instruct",
       "apiKey": "${HF_API_KEY}"
+    },
+    "gemini-flash": {
+      "type": "gemini",
+      "model": "gemini-2.5-flash-lite",
+      "apiKey": "${GEMINI_API_KEY}"
     }
   },
   "anonymizer": {

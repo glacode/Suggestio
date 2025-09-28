@@ -1,9 +1,10 @@
 export interface ProviderConfig {
-  endpoint: string;
+  endpoint?: string; // optional because Gemini doesn’t use it
   model: string;
   apiKey: string;             // raw value from config.json
   apiKeyPlaceholder?: string; // extracted placeholder, optional
   resolvedApiKey?: string;    // actual key used at runtime
+  type?: "openai-compatible" | "gemini"; // defaults to openai-compatible
 }
 
 export interface Config {
