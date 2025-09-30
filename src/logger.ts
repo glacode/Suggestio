@@ -1,3 +1,4 @@
+// logger.ts
 import * as vscode from 'vscode';
 
 let outputChannel: vscode.OutputChannel | undefined;
@@ -14,6 +15,10 @@ export function log(message: string) {
   if (outputChannel) {
     outputChannel.appendLine(`[${timestamp}] ${message}`);
   }
-  // keep console.log too if you like
   console.log(`[Suggestio] ${message}`);
+}
+
+// 👇 Only used in tests to clear the singleton
+export function __resetLogger() {
+  outputChannel = undefined;
 }
