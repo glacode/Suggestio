@@ -4,59 +4,94 @@ import { ChatLogicHandler } from './chatLogicHandler.js';
 import { Config } from '../config/types.js';
 import { buildContext } from './context.js';
 
-export class Chat {
-    private readonly _view: vscode.WebviewPanel;
-    private readonly _logicHandler: ChatLogicHandler;
+export interface IVscodeLike {
+    window: {
+        createWebviewPanel: (
+            viewType: string,
+            title: string,
+            showOptions: any,
+            options?: any
+        ) => any;
+    };
+    ViewColumn: { Beside: any };
+    Uri: { joinPath: (...args: any[]) => any };
+}
 
-    constructor(context: vscode.ExtensionContext, config: Config) {
-        this._view = vscode.window.createWebviewPanel(
+// Minimal interface for testing Chat
+interface IWebviewPanelLike {
+    webview: {
+        html: string;
+        postMessage(msg: any): Thenable<boolean>;
+        onDidReceiveMessage(handler: (msg: any) => void): void;
+        asWebviewUri(uri: any): any;
+    };
+}
+
+export interface IChatParams {
+    context: vscode.ExtensionContext;
+    config: Config;
+    vscode?: IVscodeLike; // optional, mainly for tests
+    webViewPanel?: IWebviewPanelLike; // optional, mainly for tests
+    logicHandler?: ChatLogicHandler; // optional, mainly for tests
+    getWebviewContent?: (scriptUri: vscode.Uri, cssUri: vscode.Uri) => string; // optional, mainly for tests
+    buildContext?: () => string; // optional, mainly for tests
+}
+
+export class Chat {
+    private readonly _webViewPanel: vscode.WebviewPanel;
+    private readonly _logicHandler: ChatLogicHandler;
+    private readonly _buildContext: () => string;
+
+    constructor(params: IChatParams) {
+        const vscodeModule = params.vscode ?? vscode; // use injected VSCode or real one
+
+        this._webViewPanel = params.webViewPanel ?? vscodeModule.window.createWebviewPanel(
             'suggestioChat',
             'Suggestio Chat',
-            vscode.ViewColumn.Beside,
+            vscodeModule.ViewColumn.Beside,
             {
                 enableScripts: true,
                 retainContextWhenHidden: true
             }
         );
 
-        this._logicHandler = new ChatLogicHandler(config);
+        this._logicHandler = params.logicHandler ?? new ChatLogicHandler(params.config);
+        this._buildContext = params.buildContext ?? buildContext;
 
         // Build the URI for the webview script
-        const scriptUri = this._view.webview.asWebviewUri(
-            vscode.Uri.joinPath(context.extensionUri, 'builtResources', 'renderMarkDown.js')
+        const scriptUri = this._webViewPanel.webview.asWebviewUri(
+            vscodeModule.Uri.joinPath(params.context.extensionUri, 'builtResources', 'renderMarkDown.js')
         );
 
-        const highlightCssUri = this._view.webview.asWebviewUri(
-            vscode.Uri.joinPath(context.extensionUri, 'media', 'highlight.css')
+        const highlightCssUri = this._webViewPanel.webview.asWebviewUri(
+            vscodeModule.Uri.joinPath(params.context.extensionUri, 'media', 'highlight.css')
         );
 
         // Set the HTML content
-        this._view.webview.html = getChatWebviewContent(scriptUri, highlightCssUri);
+        this._webViewPanel.webview.html = params.getWebviewContent
+            ? params.getWebviewContent(scriptUri, highlightCssUri)
+            : getChatWebviewContent(scriptUri, highlightCssUri);
 
         this.setupMessageHandler();
     }
 
     private setupMessageHandler() {
-        this._view.webview.onDidReceiveMessage(
-            async message => {
-                switch (message.command) {
-                    case 'sendMessage':
-                        try {
-                            const promptWithContext = `${message.text}\n\n${buildContext()}`;
-                            const response = await this._logicHandler.fetchCompletion(promptWithContext);
-                            this._view.webview.postMessage({
-                                sender: 'assistant',
-                                text: response
-                            });
-                        } catch (error) {
-                            this._view.webview.postMessage({
-                                sender: 'assistant',
-                                text: 'Sorry, there was an error processing your request: ' + error
-                            });
-                        }
-                        break;
+        this._webViewPanel.webview.onDidReceiveMessage(async message => {
+            if (message.command === 'sendMessage') {
+                try {
+                    const promptWithContext = `${message.text}\n\n${this._buildContext()}`;
+                    const response = await this._logicHandler.fetchCompletion(promptWithContext);
+                    this._webViewPanel.webview.postMessage({
+                        sender: 'assistant',
+                        text: response
+                    });
+                } catch (error) {
+                    this._webViewPanel.webview.postMessage({
+                        sender: 'assistant',
+                        text: 'Sorry, there was an error processing your request: ' + error
+                    });
                 }
             }
-        );
+        });
     }
 }

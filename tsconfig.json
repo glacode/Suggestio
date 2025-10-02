@@ -4,6 +4,7 @@
     "moduleResolution": "NodeNext",  // Required for ESM
     "target": "ES2022",
     "lib": ["ES2022", "DOM"],
+    "isolatedModules": true,
     "outDir": "./dist",
     "rootDir": ".",
     "sourceMap": true,
