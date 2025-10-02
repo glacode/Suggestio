@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { getChatWebviewContent } from './chatWebview.js';
-import { ChatLogicHandler } from './chatLogic.js';
+import { ChatLogicHandler } from './chatLogicHandler.js';
 import { Config } from '../config/types.js';
 import { buildContext } from './context.js';
 
