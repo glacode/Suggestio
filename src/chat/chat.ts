@@ -70,7 +70,7 @@ export class Chat {
         // Set the HTML content
         this._webViewPanel.webview.html = params.getWebviewContent
             ? params.getWebviewContent(scriptUri, highlightCssUri)
-            : getChatWebviewContent(scriptUri, highlightCssUri);
+            : getChatWebviewContent(params.context.extensionUri, scriptUri, highlightCssUri);
 
         this.setupMessageHandler();
     }
