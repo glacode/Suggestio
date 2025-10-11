@@ -3,6 +3,8 @@ import { getChatWebviewContent } from './chatWebview.js';
 import { ChatLogicHandler } from './chatLogicHandler.js';
 import { Config } from '../config/types.js';
 import { buildContext } from './context.js';
+import { getActiveProvider } from '../providers/providerFactory.js';
+import { log } from '../logger.js';
 
 export interface IVscodeLike {
     window: {
@@ -55,7 +57,7 @@ export class Chat {
             }
         );
 
-        this._logicHandler = params.logicHandler ?? new ChatLogicHandler(params.config);
+        this._logicHandler = params.logicHandler ?? new ChatLogicHandler(params.config, getActiveProvider(params.config)!,log);
         this._buildContext = params.buildContext ?? buildContext;
 
         // Build the URI for the webview script
