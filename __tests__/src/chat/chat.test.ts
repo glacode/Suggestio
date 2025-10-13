@@ -37,6 +37,9 @@ class FakeLogicHandler {
     async fetchCompletion(prompt: string) {
         return 'FAKE_RESPONSE: ' + prompt;
     }
+    async fetchStreamCompletion(prompt: string, onToken: (token: string) => void) {
+        onToken('FAKE_RESPONSE: ' + prompt);
+    }
 }
 
 // Minimal fake VSCode module
@@ -97,7 +100,14 @@ test('Chat should handle sendMessage', async () => {
     // Assertions
     expect(fakePanel.webview.lastMessage).toBeDefined();
     expect(fakePanel.webview.lastMessage.sender).toBe('assistant');
-    expect(fakePanel.webview.lastMessage.text).toContain('FAKE_RESPONSE');
+    if (fakePanel.webview.lastMessage.type === 'token') {
+        expect(fakePanel.webview.lastMessage.text).toContain('FAKE_RESPONSE');
+    } else if (fakePanel.webview.lastMessage.type === 'completion') {
+        // In the streaming version, the completion message is empty
+        expect(fakePanel.webview.lastMessage.text).toBe('');
+    } else {
+        expect(fakePanel.webview.lastMessage.text).toContain('FAKE_RESPONSE');
+    }
     expect(fakePanel.webview.html).toBe('<html>Test</html>');
 });
 
@@ -123,6 +133,9 @@ test('Chat should handle errors in sendMessage', async () => {
     // Logic handler that throws
     class ErrorLogicHandler {
         async fetchCompletion(_prompt: string) {
+            throw new Error('Simulated failure');
+        }
+        async fetchStreamCompletion(_prompt: string, _onToken: (token: string) => void) {
             throw new Error('Simulated failure');
         }
     }

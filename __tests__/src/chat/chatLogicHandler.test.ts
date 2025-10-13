@@ -8,8 +8,11 @@ class FakeProvider {
         if (this.shouldThrow) { throw new Error("Simulated failure"); }
         return this.reply;
     }
-}
 
+    async queryStream(_prompt: string, _onToken: (token: string) => void): Promise<void> {
+        return Promise.resolve();
+    }
+}
 describe("ChatLogicHandler (DI) simple tests", () => {
     let logs: string[];
     let logger: (msg: string) => void;

@@ -82,10 +82,17 @@ export class Chat {
             if (message.command === 'sendMessage') {
                 try {
                     const promptWithContext = `${message.text}\n\n${this._buildContext()}`;
-                    const response = await this._logicHandler.fetchCompletion(promptWithContext);
+                    await this._logicHandler.fetchStreamCompletion(promptWithContext, (token) => {
+                        this._webViewPanel.webview.postMessage({
+                            sender: 'assistant',
+                            type: 'token',
+                            text: token
+                        });
+                    });
                     this._webViewPanel.webview.postMessage({
                         sender: 'assistant',
-                        text: response
+                        type: 'completion',
+                        text: ''
                     });
                 } catch (error) {
                     this._webViewPanel.webview.postMessage({

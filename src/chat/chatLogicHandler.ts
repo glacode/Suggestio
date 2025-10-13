@@ -26,4 +26,15 @@ export class ChatLogicHandler {
       throw err;
     }
   }
+
+  async fetchStreamCompletion(userPrompt: string, onToken: (token: string) => void): Promise<void> {
+    try {
+      this.log(`Fetching stream completion from ${this.config.activeProvider}...`);
+      await this.provider.queryStream(userPrompt, onToken);
+      this.log("Stream completion finished.");
+    } catch (err: any) {
+      this.log(`Error fetching stream completion: ${err.message}`);
+      throw err;
+    }
+  }
 }

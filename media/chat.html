@@ -156,8 +156,39 @@
             });
 
             window.addEventListener('message', event => {
-                const { sender, text } = event.data;
-                appendMessage(sender, text);
+                const { sender, type, text } = event.data;
+
+                if (sender === 'assistant') {
+                    if (type === 'token') {
+                        const allAssistantMessages = document.querySelectorAll('.message.assistant');
+                        let lastMessage = allAssistantMessages.length > 0 ? allAssistantMessages[allAssistantMessages.length - 1] : null;
+
+                        if (!lastMessage || lastMessage.dataset.streaming === 'false') {
+                            // Start of a new stream
+                            appendMessage('assistant', text);
+                            const newAllMessages = document.querySelectorAll('.message.assistant');
+                            const newLastMessage = newAllMessages[newAllMessages.length - 1];
+                            newLastMessage.dataset.fullText = text;
+                            newLastMessage.dataset.streaming = 'true';
+                        } else {
+                            // Continuing a stream
+                            lastMessage.dataset.fullText += text;
+                            lastMessage.innerHTML = window.renderMarkdown(lastMessage.dataset.fullText);
+                        }
+                        const chat = document.getElementById('chat');
+                        chat.scrollTop = chat.scrollHeight;
+                    } else if (type === 'completion') {
+                        const allAssistantMessages = document.querySelectorAll('.message.assistant');
+                        let lastMessage = allAssistantMessages.length > 0 ? allAssistantMessages[allAssistantMessages.length - 1] : null;
+                        if (lastMessage && lastMessage.dataset.streaming === 'true') {
+                            lastMessage.dataset.streaming = 'false';
+                        }
+                    } else {
+                        appendMessage(sender, text);
+                    }
+                } else {
+                    appendMessage(sender, text);
+                }
             });
 
             const messageInput = document.getElementById('messageInput');
