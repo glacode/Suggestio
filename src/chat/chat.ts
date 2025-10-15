@@ -57,7 +57,7 @@ export class Chat {
             }
         );
 
-        this._logicHandler = params.logicHandler ?? new ChatLogicHandler(params.config, getActiveProvider(params.config)!,log);
+        this._logicHandler = params.logicHandler ?? new ChatLogicHandler(params.config, getActiveProvider(params.config)!, log);
         this._buildContext = params.buildContext ?? buildContext;
 
         // Build the URI for the webview script
