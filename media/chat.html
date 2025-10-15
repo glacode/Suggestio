@@ -114,12 +114,20 @@
         <script>
             const vscode = acquireVsCodeApi();
 
+            let userMessageElement;
+
             function sendMessage() {
                 const input = document.getElementById('messageInput');
                 const text = input.value.trim();
                 if (!text) return;
 
+
                 appendMessage('user', text);
+                const chat = document.getElementById('chat');
+                userMessageElement = chat.lastElementChild;
+                if (userMessageElement) {
+                    userMessageElement.scrollIntoView();
+                }
                 vscode.postMessage({ command: 'sendMessage', text });
                 input.value = '';
             }
@@ -146,7 +154,6 @@
                 container.appendChild(label);
                 container.appendChild(msg);
                 chat.appendChild(container);
-                chat.scrollTop = chat.scrollHeight;
             }
 
             document.getElementById('messageInput').addEventListener('keypress', (e) => {
@@ -174,9 +181,15 @@
                             // Continuing a stream
                             lastMessage.dataset.fullText += text;
                             lastMessage.innerHTML = window.renderMarkdown(lastMessage.dataset.fullText);
+
+                            if (userMessageElement) {
+                                const userMessageRect = userMessageElement.getBoundingClientRect();
+                                if (userMessageRect.top > 0) {
+                                    chat.scrollTop += 20; // Adjust scroll speed as needed
+                                }
+                            }
                         }
-                        const chat = document.getElementById('chat');
-                        chat.scrollTop = chat.scrollHeight;
+
                     } else if (type === 'completion') {
                         const allAssistantMessages = document.querySelectorAll('.message.assistant');
                         let lastMessage = allAssistantMessages.length > 0 ? allAssistantMessages[allAssistantMessages.length - 1] : null;
