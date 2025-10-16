@@ -4,6 +4,7 @@ import { getConfig } from './config/config.js';
 import { getActiveProvider } from './providers/providerFactory.js';
 import { registerCompletionProvider } from './registrations/completionRegistration.js';
 import { registerCommands } from './registrations/commandRegistration.js';
+import './chat/activeEditorTracker.js';
 
 export async function activate(context: vscode.ExtensionContext) {
   initLogger();
