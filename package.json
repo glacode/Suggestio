@@ -51,9 +51,28 @@
     "files": [
         "dist/**",
         "builtResources/**",
-        "media/**"
+        "media/**",
+        "resources/**"
     ],
     "contributes": {
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "suggestio",
+                    "title": "Suggestio",
+                    "icon": "resources/logo.svg"
+                }
+            ]
+        },
+        "views": {
+            "suggestio": [
+                {
+                    "id": "suggestio.chat.view",
+                    "name": "Chat",
+                    "type": "webview"
+                }
+            ]
+        },
         "inlineCompletions": [
             {
                 "language": "javascript"
@@ -125,7 +144,7 @@
             },
             {
                 "command": "suggestio.openChat",
-                "title": "Suggestio: Open Chat"
+                "title": "Suggestio: Focus on Chat View"
             }
         ]
     },
