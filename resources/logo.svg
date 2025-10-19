@@ -1,3 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <text x="50" y="50" font-size="50" text-anchor="middle" dy=".3em">S</text>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="92px" height="96px" viewBox="0 0 92 96" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>Suggestio Icon - Final Balloon Adjusted</title>
+    <g fill="none" stroke="#24292F" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+        <!-- Nuvoletta rettangolare arrotondata abbassata -->
+        <path d="M4 12 C4 6 12 4 20 4 L72 4 C80 4 88 6 88 12 L88 70 C88 78 80 80 72 80 L50 80 L32 94 L36 80 L20 80 C12 80 4 78 4 70 Z"/>
+
+        <!-- Lampadina -->
+        <path d="M46 34 C52 34 57 39 57 46 C57 51 54 55 51 57 C51 59 51 61 51 63 L41 63 C41 61 41 59 41 57 C38 55 35 51 35 46 C35 39 40 34 46 34 Z" />
+
+        <!-- Base lampadina -->
+        <rect x="41" y="63" width="10" height="8" rx="2" />
+
+        <!-- Trattini luce -->
+        <line x1="46" y1="22" x2="46" y2="14" />
+        <line x1="34" y1="26" x2="27" y2="16" />
+        <line x1="58" y1="26" x2="65" y2="16" />
+    </g>
 </svg>
