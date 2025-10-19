@@ -52,61 +52,80 @@
             }
 
             .chat-input {
-                display: flex;
                 border-top: 1px solid var(--vscode-editorWidget-border);
                 padding: 8px;
                 background: var(--vscode-editorWidget-background);
             }
 
-            .chat-input input {
+            .input-wrapper {
+                position: relative;
+                display: flex;
+                align-items: flex-end;
                 flex: 1;
-                padding: 6px 10px;
                 border: 1px solid var(--vscode-input-border);
                 background: var(--vscode-input-background);
-                color: var(--vscode-input-foreground);
                 border-radius: 4px;
-                outline: none;
+                padding: 6px 10px;
             }
 
-            .chat-input input:focus {
+            .chat-input textarea {
+                flex: 1;
+                padding: 0;
+                border: none;
+                background: transparent;
+                color: var(--vscode-input-foreground);
+                outline: none;
+                resize: none;
+                min-height: calc(3 * 1.4em); /* Start with 3 lines */
+                max-height: 100px;
+                overflow-y: hidden; /* Disable scrollbar */
+                padding-right: 20px; /* Make space for the icon */
+                line-height: 1.4;
+            }
+
+            .chat-input textarea:focus {
+                border-color: transparent;
+                box-shadow: none;
+            }
+
+            .input-wrapper:focus-within {
                 border-color: var(--vscode-focusBorder);
                 box-shadow: 0 0 0 1px var(--vscode-focusBorder);
             }
 
-            .chat-input button {
-                margin-left: 8px;
-                padding: 6px 12px;
-                border: 1px solid var(--vscode-button-border, transparent);
-                border-radius: 4px;
-                background: var(--vscode-button-background);
-                color: var(--vscode-button-foreground);
-                cursor: pointer;
-            }
-
-            .chat-input button:hover {
-                background: var(--vscode-button-hoverBackground);
-            }
-
-            .message-container {
+            .send-icon {
+                position: absolute;
+                right: 8px;
+                bottom: 6px;
                 display: flex;
-                flex-direction: column;
-                gap: 4px;
-                margin: 12px 0;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                color: var(--vscode-input-placeholderForeground); /* Color for the icon, matching placeholder */
+                padding: 0;
+                background: transparent;
+                transform: rotate(45deg); /* Rotate the icon horizontally */
             }
 
-            .message-label {
-                font-size: 11px;
-                color: var(--vscode-descriptionForeground);
-                margin-left: 14px;
+            .send-icon:hover {
+                color: var(--vscode-button-hoverBackground);
             }
+
         </style>
     </head>
     <body>
         <div class="chat-container">
             <div class="chat-messages" id="chat"></div>
             <div class="chat-input">
-                <input type="text" id="messageInput" placeholder="Type a message..." />
-                <button onclick="sendMessage()">Send</button>
+                <div class="input-wrapper">
+                    <textarea id="messageInput" placeholder="Type a request..."></textarea>
+                    <div class="send-icon" onclick="sendMessage()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -134,13 +153,6 @@
 
             function appendMessage(sender, text) {
                 const chat = document.getElementById('chat');
-                const container = document.createElement('div');
-                container.className = 'message-container';
-                
-                const label = document.createElement('div');
-                label.className = 'message-label';
-                label.textContent = sender === 'user' ? 'You' : 'Assistant';
-                
                 const msg = document.createElement('div');
                 msg.className = 'message ' + sender;
 
@@ -151,13 +163,12 @@
                     msg.innerText = text;
                 }
                 
-                container.appendChild(label);
-                container.appendChild(msg);
-                chat.appendChild(container);
+                chat.appendChild(msg);
             }
 
-            document.getElementById('messageInput').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
+            document.getElementById('messageInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault(); // Prevent new line
                     sendMessage();
                 }
             });
@@ -208,6 +219,18 @@
 
             // Auto-focus the chat input field when the webview loads
             messageInput.focus();
+
+            // Function to adjust textarea height
+            function adjustTextareaHeight() {
+                messageInput.style.height = 'auto'; // Reset height to recalculate
+                messageInput.style.height = messageInput.scrollHeight + 'px';
+            }
+
+            // Adjust height on input
+            messageInput.addEventListener('input', adjustTextareaHeight);
+
+            // Initial adjustment on load
+            adjustTextareaHeight();
 
             // Refocus the chat input field when the window regains focus
             window.addEventListener('focus', () => {
