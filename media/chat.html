@@ -79,7 +79,7 @@
                 min-height: calc(3 * 1.4em); /* Start with 3 lines */
                 max-height: 100px;
                 overflow-y: hidden; /* Disable scrollbar */
-                padding-right: 20px; /* Make space for the icon */
+                padding-right: 12px; /* Make space for the icon */
                 line-height: 1.4;
             }
 
@@ -195,7 +195,7 @@
 
                             if (userMessageElement) {
                                 const userMessageRect = userMessageElement.getBoundingClientRect();
-                                if (userMessageRect.top > 0) {
+                                if (userMessageRect.top > 25) {
                                     chat.scrollTop += 20; // Adjust scroll speed as needed
                                 }
                             }
