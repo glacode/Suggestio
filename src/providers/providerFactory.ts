@@ -35,6 +35,8 @@ export function getActiveProvider(config: Config): llmProvider | null {
 
   // Otherwise switch on type
   switch (providerConfig.type) {
+    //TODO remove this case after confirming Gemini usage via OpenAI compatible API works fine
+    /** This case should be deprecated, because now even Gemini supports an OpenAi compatible API */
     case "gemini":
       return new GeminiProvider(apiKey, providerConfig.model);
 

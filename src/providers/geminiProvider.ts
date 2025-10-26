@@ -1,6 +1,8 @@
 import fetch from "node-fetch";
 import { llmProvider } from "./llmProvider.js";
 import { log } from "../logger.js";
+import { Prompt } from "../promptBuilder/prompt.js";
+import { ChatMessage } from "../chat/conversation.js";
 
 type GeminiResponse = {
   candidates?: {
@@ -8,6 +10,8 @@ type GeminiResponse = {
   }[];
 };
 
+//TODO remove this class after confirming Gemini usage via OpenAI compatible API works fine
+/** This provider should be deprecated, because now even Gemini supports an OpenAi compatible API */
 export class GeminiProvider implements llmProvider {
   private apiKey: string;
   private model: string;
@@ -17,15 +21,11 @@ export class GeminiProvider implements llmProvider {
     this.model = model;
   }
 
-  async query(prompt: string): Promise<string | null> {
+  async query(prompt: Prompt): Promise<string | null> {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
 
     const body = {
-      contents: [
-        {
-          parts: [{ text: prompt }],
-        },
-      ],
+      contents: this.formatConversation(prompt.generate()),
     };
 
     const res = await fetch(url, {
@@ -48,15 +48,11 @@ export class GeminiProvider implements llmProvider {
     );
   }
 
-  async queryStream(prompt: string, onToken: (token: string) => void): Promise<void> {
+  async queryStream(prompt: Prompt, onToken: (token: string) => void): Promise<void> {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:streamGenerateContent?key=${this.apiKey}&alt=sse`;
 
     const body = {
-      contents: [
-        {
-          parts: [{ text: prompt }],
-        },
-      ],
+      contents: this.formatConversation(prompt.generate()),
     };
 
     const res = await fetch(url, {
@@ -125,5 +121,12 @@ export class GeminiProvider implements llmProvider {
         }
       }
     }
+  }
+
+  private formatConversation(conversation: ChatMessage[]): { role: string; parts: { text: string }[] }[] {
+    return conversation.map(message => ({
+      role: message.role,
+      parts: [{ text: message.content }],
+    }));
   }
 }

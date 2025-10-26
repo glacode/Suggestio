@@ -1,15 +1,17 @@
 import { describe, it, beforeEach, expect } from "@jest/globals";
 import { ChatLogicHandler } from "../../../src/chat/chatLogicHandler.js";
+import { llmProvider } from "../../../src/providers/llmProvider.js";
+import { Prompt } from "../../../src/promptBuilder/prompt.js";
 
-class FakeProvider {
+class FakeProvider implements llmProvider {
     constructor(private reply: string | null, private shouldThrow = false) { }
 
-    async query(_prompt: string): Promise<string | null> {
+    async query(_prompt: Prompt): Promise<string | null> {
         if (this.shouldThrow) { throw new Error("Simulated failure"); }
         return this.reply;
     }
 
-    async queryStream(_prompt: string, _onToken: (token: string) => void): Promise<void> {
+    async queryStream(_prompt: Prompt, _onToken: (token: string) => void): Promise<void> {
         return Promise.resolve();
     }
 }

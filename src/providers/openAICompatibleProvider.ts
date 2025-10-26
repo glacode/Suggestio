@@ -2,6 +2,8 @@ import fetch from "node-fetch";
 import { llmProvider } from "./llmProvider.js";
 import { Anonymizer } from "../anonymizer/anonymizer.js";
 import { log } from "../logger.js";
+import { Prompt } from "../promptBuilder/prompt.js";
+import { ChatMessage } from "../chat/conversation.js";
 
 type OpenAIResponse = {
   choices?: { message?: { content?: string } }[];
@@ -25,10 +27,24 @@ export class OpenAICompatibleProvider implements llmProvider {
     this.anonymizer = anonymizer;
   }
 
-  async query(prompt: string): Promise<string | null> {
-    const processedPrompt = this.anonymizer
-      ? this.anonymizer.anonymize(prompt)
-      : prompt;
+  private prepareMessages(
+    conversation: ChatMessage[]
+  ): { role: string; content: string }[] {
+    return conversation.map((message) => {
+      const role = message.role === "model" ? "assistant" : message.role;
+
+      const content =
+        this.anonymizer && message.role === "user"
+          ? this.anonymizer.anonymize(message.content)
+          : message.content;
+
+      return { role, content };
+    });
+  }
+
+  async query(prompt: Prompt): Promise<string | null> {
+    const conversation = prompt.generate();
+    const messages = this.prepareMessages(conversation);
 
     const response = await fetch(this.endpoint, {
       method: "POST",
@@ -40,7 +56,7 @@ export class OpenAICompatibleProvider implements llmProvider {
         model: this.model,
         messages: [
           { role: "system", content: "You are a helpful coding assistant." },
-          { role: "user", content: processedPrompt },
+          ...messages,
         ],
         max_tokens: 10000,
       }),
@@ -57,16 +73,18 @@ export class OpenAICompatibleProvider implements llmProvider {
     return content;
   }
 
-  async queryStream(prompt: string, onToken: (token: string) => void): Promise<void> {
-    const processedPrompt = this.anonymizer
-      ? this.anonymizer.anonymize(prompt)
-      : prompt;
+  async queryStream(
+    prompt: Prompt,
+    onToken: (token: string) => void
+  ): Promise<void> {
+    const conversation = prompt.generate();
+    const messages = this.prepareMessages(conversation);
 
     const requestBody = {
       model: this.model,
       messages: [
         { role: "system", content: "You are a helpful coding assistant." },
-        { role: "user", content: processedPrompt },
+        ...messages,
       ],
       max_tokens: 10000,
       stream: true,
@@ -121,5 +139,4 @@ export class OpenAICompatibleProvider implements llmProvider {
       }
     }
   }
-
 }

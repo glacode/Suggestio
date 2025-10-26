@@ -1,16 +1,16 @@
-
 import * as vscode from 'vscode';
 import { getChatWebviewContent } from './chatWebview.js';
 import { ChatLogicHandler } from './chatLogicHandler.js';
 import { Config } from '../config/types.js';
-import { buildContext } from './context.js';
 import { getActiveProvider } from '../providers/providerFactory.js';
 import { log } from '../logger.js';
+
+import { buildContext } from './context.js';
 
 export class ChatViewProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = 'suggestio.chat.view';
 
-    public _view?: vscode.WebviewView; // This is made public to avoid the 'unused variable' error. It will be used to interact with the webview, for example, to send messages to it.
+    public _view?: vscode.WebviewView;
     private readonly _logicHandler: ChatLogicHandler;
     private readonly _buildContext: () => string;
 
@@ -52,7 +52,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             if (message.command === 'sendMessage') {
                 try {
                     const promptWithContext = `${message.text}\n\n${this._buildContext()}`;
-                    await this._logicHandler.fetchStreamCompletion(promptWithContext, (token) => {
+                    await this._logicHandler.fetchStreamChatResponse(promptWithContext, (token) => {
                         webviewView.webview.postMessage({
                             sender: 'assistant',
                             type: 'token',
@@ -70,6 +70,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                         text: 'Sorry, there was an error processing your request: ' + error
                     });
                 }
+            } else if (message.command === 'clearHistory') {
+                //TODO add a clear history icon/button in the webview UI
+                this._logicHandler.clearHistory();
             }
         });
     }

@@ -1,3 +1,4 @@
+import { UserPrompt } from "../promptBuilder/userPrompt.js";
 // completion/completionProvider.ts
 import * as vscode from "vscode";
 import { buildPrompt } from "../promptBuilder/promptBuilder.js";
@@ -23,15 +24,16 @@ function createDebounceCallback(
       return;
     }
 
-    const prompt = buildPrompt(document, position);
+    const promptText = buildPrompt(document, position);
     log(`Using provider: ${config.activeProvider}`);
-    log("Prompt: " + prompt);
+    log("Prompt: " + promptText);
 
     const anonymizer = getAnonymizer(config);
+    const prompt = new UserPrompt(anonymizer ? anonymizer.anonymize(promptText) : promptText);
 
     // Call the provider's query method
     provider
-      .query(anonymizer ? anonymizer.anonymize(prompt) : prompt)
+      .query(prompt)
       .then(async (completionText) => {
         if (handleCancellation(token, resolve, "after")) {
           return;
