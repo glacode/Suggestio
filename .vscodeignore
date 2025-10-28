@@ -14,4 +14,3 @@ vsc-extension-quickstart.md
 **/.vscode-test.*
 .env
 resources/demo.gif
-resources/logo.png
