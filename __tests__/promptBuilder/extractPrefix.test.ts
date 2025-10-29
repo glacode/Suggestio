@@ -1,5 +1,5 @@
 
-import { extractPrefix } from '../../../src/promptBuilder/extractPrefix.js';
+import { extractPrefix } from '../../src/promptBuilder/extractPrefix.js';
 
 // Helper to create a mock TextDocument
 const createMockDocument = (lines: string[]) => ({

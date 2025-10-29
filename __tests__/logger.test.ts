@@ -1,7 +1,7 @@
 // __tests__/logger.test.ts
 import { jest } from '@jest/globals';
 import { window } from 'vscode';
-import { initLogger, log, __resetLogger } from '../../src/logger.js';
+import { initLogger, log, __resetLogger } from '../src/logger.js';
 
 describe('logger', () => {
   let mockOutputChannel: { appendLine: jest.Mock };

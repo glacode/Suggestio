@@ -69,7 +69,8 @@
                 {
                     "id": "suggestio.chat.view",
                     "name": "Chat",
-                    "type": "webview"
+                    "type": "webview",
+                    "icon": "resources/logo.svg"
                 }
             ]
         },
