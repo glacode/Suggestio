@@ -29,9 +29,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     ) {
         this._view = webviewView;
 
+        // instead of “SUGGESTIO: CHAT” , the sidebar title becomes "SUGGESTIO"
+        webviewView.title = "";
+
         this._view.webview.options = {
             enableScripts: true,
-            localResourceRoots: [ this._context.extensionUri ]
+            localResourceRoots: [this._context.extensionUri]
         };
 
         const scriptUri = this._view.webview.asWebviewUri(
