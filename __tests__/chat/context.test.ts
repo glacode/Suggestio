@@ -1,6 +1,6 @@
 // __tests__/src/chat/context.test.ts
-import { buildContext } from '../../../src/chat/context.js'; // adjust relative path
-import { activeEditorTracker } from '../../../src/chat/activeEditorTracker.js';
+import { buildContext } from '../../src/chat/context.js'; // adjust relative path
+import { activeEditorTracker } from '../../src/chat/activeEditorTracker.js';
 import { jest } from '@jest/globals';
 
 describe('buildContext', () => {

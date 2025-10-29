@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, expect } from "@jest/globals";
-import { ChatLogicHandler } from "../../../src/chat/chatLogicHandler.js";
-import { llmProvider } from "../../../src/providers/llmProvider.js";
-import { Prompt } from "../../../src/promptBuilder/prompt.js";
+import { ChatLogicHandler } from "../../src/chat/chatLogicHandler.js";
+import { llmProvider } from "../../src/providers/llmProvider.js";
+import { Prompt } from "../../src/promptBuilder/prompt.js";
 
 class FakeProvider implements llmProvider {
     constructor(private reply: string | null, private shouldThrow = false) { }
