@@ -60,7 +60,7 @@
             .input-wrapper {
                 position: relative;
                 display: flex;
-                align-items: flex-end;
+                flex-direction: column;
                 flex: 1;
                 border: 1px solid var(--vscode-input-border);
                 background: var(--vscode-input-background);
@@ -69,17 +69,16 @@
             }
 
             .chat-input textarea {
-                flex: 1;
+                width: 100%;
                 padding: 0;
                 border: none;
                 background: transparent;
                 color: var(--vscode-input-foreground);
                 outline: none;
                 resize: none;
-                min-height: calc(3 * 1.4em); /* Start with 3 lines */
+                min-height: calc(2 * 1.4em);
                 max-height: 100px;
-                overflow-y: hidden; /* Disable scrollbar */
-                padding-right: 12px; /* Make space for the icon */
+                overflow-y: auto;
                 line-height: 1.4;
             }
 
@@ -93,10 +92,24 @@
                 box-shadow: 0 0 0 1px var(--vscode-focusBorder);
             }
 
+            .chat-controls {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding-top: 8px;
+            }
+
+            #modelSelector {
+                flex: 1;
+                margin-right: 8px;
+                background-color: var(--vscode-input-background);
+                color: var(--vscode-input-foreground);
+                border: 1px solid var(--vscode-input-border);
+                border-radius: 4px;
+                padding: 4px;
+            }
+
             .send-icon {
-                position: absolute;
-                right: 8px;
-                bottom: 6px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -119,16 +132,23 @@
             <div class="chat-input">
                 <div class="input-wrapper">
                     <textarea id="messageInput" placeholder="Type a request..."></textarea>
-                    <div class="send-icon" onclick="sendMessage()">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="22" y1="2" x2="11" y2="13"></line>
-                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                        </svg>
+                    <div class="chat-controls">
+                        <select id="modelSelector"></select>
+                        <div class="send-icon" onclick="sendMessage()">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            </svg>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
         
+        <script>
+            const models = {{models}};
+            const activeModel = '{{activeModel}}';
+        </script>
         <script src="{{scriptUri}}"></script>
         <script>
             const vscode = acquireVsCodeApi();
@@ -235,6 +255,19 @@
             // Refocus the chat input field when the window regains focus
             window.addEventListener('focus', () => {
                 setTimeout(() => messageInput.focus(), 50);
+            });
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const modelSelector = document.getElementById('modelSelector');
+                models.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model;
+                    option.textContent = model;
+                    if (model === activeModel) {
+                        option.selected = true;
+                    }
+                    modelSelector.appendChild(option);
+                });
             });
         </script>
     </body>

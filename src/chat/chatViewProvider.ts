@@ -45,7 +45,16 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             vscode.Uri.joinPath(this._context.extensionUri, 'media', 'highlight.css')
         );
 
-        this._view.webview.html = getChatWebviewContent(this._context.extensionUri, scriptUri, highlightCssUri);
+        const models = Object.values(this._config.providers).map(p => p.model);
+        const activeModel = this._config.providers[this._config.activeProvider].model;
+
+        this._view.webview.html = getChatWebviewContent({
+            extensionUri: this._context.extensionUri,
+            scriptUri,
+            highlightCssUri,
+            models,
+            activeModel
+        });
 
         this.setupMessageHandler(this._view);
     }
