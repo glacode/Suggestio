@@ -4,6 +4,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="{{highlightCssUri}}">
+        <link rel="stylesheet" href="{{codiconCssUri}}">
         <style>
             html, body {
                 height: 100%;
@@ -105,9 +106,47 @@
                 background-color: var(--vscode-input-background);
                 color: var(--vscode-input-foreground);
                 border: none;
-                /* border: 1px solid var(--vscode-input-border); */
                 border-radius: 4px;
                 padding: 4px;
+                position: relative;
+            }
+
+            .dropdown-label {
+                display: flex;
+                align-items: center;
+                cursor: pointer;
+            }
+
+            .chat-model-label {
+                margin-right: 4px;
+                white-space: nowrap;
+            }
+
+            .codicon-chevron-down {
+                font-family: 'codicon';
+            }
+
+            .dropdown-content {
+                display: none;
+                position: absolute;
+                bottom: 100%;
+                left: 0;
+                background-color: var(--vscode-editorWidget-background);
+                border: 1px solid var(--vscode-editorWidget-border);
+                border-radius: 4px;
+                padding: 4px;
+                min-width: 200px;
+            }
+
+            .dropdown-content a {
+                color: var(--vscode-editor-foreground);
+                padding: 4px 8px;
+                text-decoration: none;
+                display: block;
+            }
+
+            .dropdown-content a:hover {
+                background-color: var(--vscode-list-hoverBackground);
             }
 
             .send-icon {
@@ -134,7 +173,15 @@
                 <div class="input-wrapper">
                     <textarea id="messageInput" placeholder="Type a request..."></textarea>
                     <div class="chat-controls">
-                        <select id="modelSelector"></select>
+                        <div id="modelSelector">
+                            <div class="dropdown-label">
+                                <a class="action-label" role="button" aria-haspopup="true" aria-expanded="false">
+                                    <span class="chat-model-label"></span>
+                                    <span class="codicon codicon-chevron-down"></span>
+                                </a>
+                            </div>
+                            <div class="dropdown-content"></div>
+                        </div>
                         <div class="send-icon" onclick="sendMessage()">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -260,14 +307,32 @@
 
             document.addEventListener('DOMContentLoaded', function() {
                 const modelSelector = document.getElementById('modelSelector');
+                const dropdownLabel = modelSelector.querySelector('.dropdown-label');
+                const dropdownContent = modelSelector.querySelector('.dropdown-content');
+                const chatModelLabel = modelSelector.querySelector('.chat-model-label');
+
+                chatModelLabel.textContent = activeModel;
+
                 models.forEach(model => {
-                    const option = document.createElement('option');
-                    option.value = model;
+                    const option = document.createElement('a');
+                    option.href = '#';
                     option.textContent = model;
-                    if (model === activeModel) {
-                        option.selected = true;
+                    option.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        chatModelLabel.textContent = model;
+                        dropdownContent.style.display = 'none';
+                    });
+                    dropdownContent.appendChild(option);
+                });
+
+                dropdownLabel.addEventListener('click', () => {
+                    dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
+                });
+
+                document.addEventListener('click', (e) => {
+                    if (!modelSelector.contains(e.target)) {
+                        dropdownContent.style.display = 'none';
                     }
-                    modelSelector.appendChild(option);
                 });
             });
         </script>
