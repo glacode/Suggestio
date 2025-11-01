@@ -5,7 +5,6 @@ export interface IChatWebviewContentArgs {
     extensionUri: vscode.Uri;
     scriptUri: vscode.Uri;
     highlightCssUri: vscode.Uri;
-    codiconCssUri: vscode.Uri;
     models: string[];
     activeModel: string;
 }
@@ -21,7 +20,6 @@ export function getChatWebviewContent(args: IChatWebviewContentArgs): string {
     htmlContent = htmlContent
         .replace('{{scriptUri}}', args.scriptUri.toString())
         .replace('{{highlightCssUri}}', args.highlightCssUri.toString())
-        .replace('{{codiconCssUri}}', args.codiconCssUri.toString())
         .replace('{{models}}', JSON.stringify(args.models))
         .replace('{{activeModel}}', args.activeModel);
 

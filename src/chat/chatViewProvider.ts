@@ -45,10 +45,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             vscode.Uri.joinPath(this._context.extensionUri, 'media', 'highlight.css')
         );
 
-        const codiconCssUri = this._view.webview.asWebviewUri(
-            vscode.Uri.joinPath(this._context.extensionUri, 'node_modules', '@vscode/codicons', 'dist', 'codicon.css')
-        );
-
         const models = Object.values(this._config.providers).map(p => p.model);
         const activeModel = this._config.providers[this._config.activeProvider].model;
 
@@ -56,7 +52,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             extensionUri: this._context.extensionUri,
             scriptUri,
             highlightCssUri,
-            codiconCssUri,
             models,
             activeModel
         });

@@ -4,7 +4,6 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="{{highlightCssUri}}">
-        <link rel="stylesheet" href="{{codiconCssUri}}">
         <style>
             html, body {
                 height: 100%;
@@ -117,13 +116,19 @@
                 cursor: pointer;
             }
 
-            .chat-model-label {
-                margin-right: 4px;
-                white-space: nowrap;
+            .action-label {
+                display: flex;
+                align-items: center;
+                color: var(--vscode-input-placeholderForeground);
             }
 
-            .codicon-chevron-down {
-                font-family: 'codicon';
+            .action-label:hover {
+                color: var(--vscode-list-hoverForeground);
+            }
+
+            .chat-model-label {
+                margin-right: 2px;
+                white-space: nowrap;
             }
 
             .dropdown-content {
@@ -164,6 +169,20 @@
                 color: var(--vscode-button-hoverBackground);
             }
 
+            .chevron-down {
+                vertical-align: middle;
+                margin-left: 2px;
+            }
+
+            /* Optional: Add transition for interactive feedback */
+            .action-label[aria-expanded="true"] .chevron-down {
+                transform: rotate(180deg);
+            }
+
+            .action-label .chevron-down {
+                transition: transform 0.2s ease;
+            }
+
         </style>
     </head>
     <body>
@@ -177,7 +196,9 @@
                             <div class="dropdown-label">
                                 <a class="action-label" role="button" aria-haspopup="true" aria-expanded="false">
                                     <span class="chat-model-label"></span>
-                                    <span class="codicon codicon-chevron-down"></span>
+                                    <svg class="chevron-down" width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+                                        <path fill="currentColor" d="M7.976 10.072l4.357-4.357.62.618L8.284 11h-.618L3 6.333l.619-.618 4.357 4.357z"/>
+                                    </svg>
                                 </a>
                             </div>
                             <div class="dropdown-content"></div>
