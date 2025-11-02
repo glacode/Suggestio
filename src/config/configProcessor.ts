@@ -9,7 +9,6 @@ export interface SecretManager {
  * Populates `apiKeyPlaceholder` and `resolvedApiKey`.
  */
 export async function resolveAPIKeyInMemory(
-    providerKey: string,
     providerConfig: ProviderConfig,
     secretManager: SecretManager
 ) {
@@ -24,8 +23,6 @@ export async function resolveAPIKeyInMemory(
     if (placeholder) {
         const envValue = process.env[placeholder];
         providerConfig.resolvedApiKey = envValue?.trim() || await secretManager.getOrRequestAPIKey(placeholder);
-    } else if (apiKeyValue.trim() === '') {
-        providerConfig.resolvedApiKey = await secretManager.getOrRequestAPIKey(providerKey);
     } else {
         providerConfig.resolvedApiKey = apiKeyValue;
     }
@@ -40,7 +37,7 @@ export async function processConfig(rawJson: string, secretManager: SecretManage
     const { activeProvider, providers } = config;
 
     if (activeProvider && providers?.[activeProvider]) {
-        await resolveAPIKeyInMemory(activeProvider, providers[activeProvider], secretManager);
+        await resolveAPIKeyInMemory( providers[activeProvider], secretManager);
     }
 
     return config;

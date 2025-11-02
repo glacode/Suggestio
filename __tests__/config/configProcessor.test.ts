@@ -76,8 +76,8 @@ describe('processConfig', () => {
     const config: Config = await processConfig(rawJson, mockSecretManager);
 
     const provider = config.providers.provider1;
-    expect(provider.resolvedApiKey).toBe('secret-for-provider1');
+    expect(provider.resolvedApiKey).toBe('');
     expect(provider.apiKeyPlaceholder).toBeUndefined();
-    expect(mockSecretManager.getOrRequestAPIKey).toHaveBeenCalledWith('provider1');
+    expect(mockSecretManager.getOrRequestAPIKey).not.toHaveBeenCalled();
   });
 });
