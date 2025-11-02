@@ -342,6 +342,11 @@
                         e.preventDefault();
                         chatModelLabel.textContent = model;
                         dropdownContent.style.display = 'none';
+                        // Send model selection event to extension
+                        vscode.postMessage({ 
+                            command: 'modelChanged',
+                            model: model
+                        });
                     });
                     dropdownContent.appendChild(option);
                 });

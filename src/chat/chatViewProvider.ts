@@ -82,6 +82,24 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                         text: 'Sorry, there was an error processing your request: ' + error
                     });
                 }
+            } else if (message.command === 'modelChanged') {
+                // Find provider for the selected model
+                const selectedModel = message.model;
+                const providerEntry = Object.entries(this._config.providers)
+                    .find(([_, config]) => config.model === selectedModel);
+                
+                if (providerEntry) {
+                    const [providerId] = providerEntry;
+                    // Update the active provider in memory
+                    const provider = getActiveProvider({
+                        ...this._config,
+                        activeProvider: providerId
+                    });
+                    
+                    if (provider) {
+                        this._logicHandler.setLlmProvider(provider);
+                    }
+                }
             } else if (message.command === 'clearHistory') {
                 //TODO add a clear history icon/button in the webview UI
                 this._logicHandler.clearHistory();

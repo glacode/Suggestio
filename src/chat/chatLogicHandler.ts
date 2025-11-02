@@ -55,4 +55,8 @@ export class ChatLogicHandler {
   clearHistory() {
     this.conversationHistory.clearHistory();
   }
+
+  setLlmProvider(provider: llmProvider) {
+    this.provider = provider;
+  }
 }
