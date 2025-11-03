@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { Config } from './types.js';
+import { ConfigContainer } from './types.js';
 import { getOrRequestAPIKey } from './secretManager.js';
 import { processConfig, SecretManager } from './configProcessor.js';
 
-let cachedConfig: Config | null = null;
+let configContainer: ConfigContainer | null = null;
 
 function getConfigPath(context: vscode.ExtensionContext): string {
   const workspaceConfig = vscode.workspace.workspaceFolders?.[0]
@@ -24,9 +24,9 @@ function getConfigPath(context: vscode.ExtensionContext): string {
  * Returns the singleton config. Loads it if not already loaded.
  * The context is only used on the first call.
  */
-export async function getConfig(context?: vscode.ExtensionContext): Promise<Config> {
-  if (cachedConfig) {
-    return cachedConfig;
+export async function getConfigContainer(context?: vscode.ExtensionContext): Promise<ConfigContainer> {
+  if (configContainer) {
+    return configContainer;
   }
 
   if (!context) {
@@ -42,23 +42,25 @@ export async function getConfig(context?: vscode.ExtensionContext): Promise<Conf
       getOrRequestAPIKey: (key: string) => getOrRequestAPIKey(context, key)
     };
 
-    cachedConfig = await processConfig(raw, secretManager);
-    return cachedConfig;
+    configContainer = await processConfig(raw, secretManager);
+    return configContainer;
   } catch (err) {
     vscode.window.showErrorMessage(`Failed to load config.json: ${err}`);
-    cachedConfig = {
-      activeProvider: '',
-      providers: {},
-      anonymizer: { enabled: false, words: [] }
+    configContainer = {
+      config: {
+        activeProvider: '',
+        providers: {},
+        anonymizer: { enabled: false, words: [] }
+      }
     };
-    return cachedConfig;
+    return configContainer;
   }
 }
 
 /**
  * Forces reload of the config (optional). Requires context.
  */
-export async function reloadConfig(context: vscode.ExtensionContext): Promise<Config> {
-  cachedConfig = null;
-  return getConfig(context);
+export async function reloadConfig(context: vscode.ExtensionContext): Promise<ConfigContainer> {
+  configContainer = null;
+  return await getConfigContainer(context);
 }

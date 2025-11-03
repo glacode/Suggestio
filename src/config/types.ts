@@ -1,3 +1,5 @@
+import { llmProvider } from "../providers/llmProvider.js";
+
 export interface ProviderConfig {
   endpoint?: string; // optional because Gemini doesn’t use it
   model: string;
@@ -16,6 +18,12 @@ export interface Config {
     enabled: boolean;
     words: string[];
   };
+  inlineCompletionProvider?: llmProvider;
+  chatProvider?: llmProvider;
+}
+
+export interface ConfigContainer {
+  config: Config;
 }
 
 interface SecretStorage {

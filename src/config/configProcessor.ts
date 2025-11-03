@@ -1,4 +1,4 @@
-import { Config, ProviderConfig } from './types.js';
+import { ConfigContainer , Config, ProviderConfig } from './types.js';
 
 export interface SecretManager {
     getOrRequestAPIKey(providerKey: string): Promise<string>;
@@ -31,14 +31,14 @@ export async function resolveAPIKeyInMemory(
 /**
  * Process raw config JSON and resolves API keys using a secret manager.
  */
-export async function processConfig(rawJson: string, secretManager: SecretManager): Promise<Config> {
+export async function processConfig(rawJson: string, secretManager: SecretManager): Promise<ConfigContainer> {
     const config: Config = JSON.parse(rawJson);
 
     const { activeProvider, providers } = config;
 
     if (activeProvider && providers?.[activeProvider]) {
-        await resolveAPIKeyInMemory( providers[activeProvider], secretManager);
+        await resolveAPIKeyInMemory(providers[activeProvider], secretManager);
     }
 
-    return config;
+    return { config };
 }

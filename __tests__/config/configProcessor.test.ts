@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { processConfig, SecretManager } from '../../src/config/configProcessor.js';
-import { Config } from '../../src/config/types.js';
+import { ConfigContainer } from '../../src/config/types.js';
 
 describe('processConfig', () => {
   let mockSecretManager: SecretManager;
@@ -23,9 +23,9 @@ describe('processConfig', () => {
       anonymizer: { enabled: false, words: [] }
     });
 
-    const config: Config = await processConfig(rawJson, mockSecretManager);
+    const configContainer: ConfigContainer = await processConfig(rawJson, mockSecretManager);
 
-    const provider = config.providers.provider1;
+    const provider = configContainer.config.providers.provider1;
     expect(provider.resolvedApiKey).toBe('my-key');
     expect(provider.apiKeyPlaceholder).toBeUndefined();
   });
@@ -40,9 +40,9 @@ describe('processConfig', () => {
       anonymizer: { enabled: false, words: [] }
     });
 
-    const config: Config = await processConfig(rawJson, mockSecretManager);
+    const configContainer: ConfigContainer = await processConfig(rawJson, mockSecretManager);
 
-    const provider = config.providers.provider1;
+    const provider = configContainer.config.providers.provider1;
     expect(provider.resolvedApiKey).toBe('env-secret');
     expect(provider.apiKeyPlaceholder).toBe('TEST_KEY');
   });
@@ -56,9 +56,9 @@ describe('processConfig', () => {
       anonymizer: { enabled: false, words: [] }
     });
 
-    const config: Config = await processConfig(rawJson, mockSecretManager);
+    const configContainer: ConfigContainer = await processConfig(rawJson, mockSecretManager);
 
-    const provider = config.providers.provider1;
+    const provider = configContainer.config.providers.provider1;
     expect(provider.resolvedApiKey).toBe('secret-for-TEST_KEY');
     expect(provider.apiKeyPlaceholder).toBe('TEST_KEY');
     expect(mockSecretManager.getOrRequestAPIKey).toHaveBeenCalledWith('TEST_KEY');
@@ -73,9 +73,9 @@ describe('processConfig', () => {
       anonymizer: { enabled: false, words: [] }
     });
 
-    const config: Config = await processConfig(rawJson, mockSecretManager);
+    const configContainer: ConfigContainer = await processConfig(rawJson, mockSecretManager);
 
-    const provider = config.providers.provider1;
+    const provider = configContainer.config.providers.provider1;
     expect(provider.resolvedApiKey).toBe('');
     expect(provider.apiKeyPlaceholder).toBeUndefined();
     expect(mockSecretManager.getOrRequestAPIKey).not.toHaveBeenCalled();
