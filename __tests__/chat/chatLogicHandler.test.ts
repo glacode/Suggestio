@@ -26,8 +26,10 @@ describe("ChatLogicHandler (DI) simple tests", () => {
 
     it("returns completion on success", async () => {
         const handler = new ChatLogicHandler(
-            { activeProvider: "FAKE" } as any,
-            new FakeProvider("Hello world"),
+            { 
+                activeProvider: "FAKE",
+                chatProvider: new FakeProvider("Hello world")
+            } as any,
             logger
         );
 
@@ -41,8 +43,10 @@ describe("ChatLogicHandler (DI) simple tests", () => {
 
     it("returns null when provider returns nothing", async () => {
         const handler = new ChatLogicHandler(
-            { activeProvider: "FAKE" } as any,
-            new FakeProvider(null),
+            { 
+                activeProvider: "FAKE",
+                chatProvider: new FakeProvider(null)
+            } as any,
             logger
         );
 
@@ -56,8 +60,10 @@ describe("ChatLogicHandler (DI) simple tests", () => {
 
     it("throws when provider.query throws", async () => {
         const handler = new ChatLogicHandler(
-            { activeProvider: "FAKE" } as any,
-            new FakeProvider(null, true),
+            { 
+                activeProvider: "FAKE",
+                chatProvider: new FakeProvider(null, true)
+            } as any,
             logger
         );
 

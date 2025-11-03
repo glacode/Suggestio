@@ -1,4 +1,3 @@
-import { llmProvider } from "../providers/llmProvider.js";
 import { Config } from "../config/types.js";
 import { ConversationHistory } from "./conversationHistory.js";
 import { ChatPrompt } from "./chatPrompt.js";
@@ -8,7 +7,6 @@ export class ChatLogicHandler {
 
   constructor(
     private config: Config,
-    private provider: llmProvider,
     private log: (message: string) => void
   ) { }
 
@@ -17,7 +15,7 @@ export class ChatLogicHandler {
       this.log(`Fetching completion from ${this.config.activeProvider}...`);
       this.conversationHistory.addMessage({ role: "user", content: userPrompt });
       const prompt = new ChatPrompt(this.conversationHistory.getHistory());
-      const result = await this.provider.query(prompt);
+      const result = await this.config.chatProvider!.query(prompt);
 
       if (!result) {
         this.log("No completion returned.");
@@ -43,7 +41,7 @@ export class ChatLogicHandler {
         fullResponse += token;
         onToken(token);
       };
-      await this.provider.queryStream(prompt, recordingOnToken);
+      await this.config.chatProvider!.queryStream(prompt, recordingOnToken);
       this.conversationHistory.addMessage({ role: "model", content: fullResponse });
       this.log("Stream completion finished.");
     } catch (err: any) {
@@ -54,9 +52,5 @@ export class ChatLogicHandler {
 
   clearHistory() {
     this.conversationHistory.clearHistory();
-  }
-
-  setLlmProvider(provider: llmProvider) {
-    this.provider = provider;
   }
 }
