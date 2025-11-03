@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import { initLogger, log } from './logger.js';
 import { getConfigContainer } from './config/config.js';
-import { getActiveProvider } from './providers/providerFactory.js';
 import { registerCompletionProvider } from './registrations/completionRegistration.js';
 import { registerCommands } from './registrations/commandRegistration.js';
 import './chat/activeEditorTracker.js';
@@ -14,8 +13,7 @@ export async function activate(context: vscode.ExtensionContext) {
   vscode.window.showInformationMessage("Suggestio Activated!");
 
   const configContainer: ConfigContainer = await getConfigContainer(context);
-  const activeProvider = getActiveProvider(configContainer.config);
-  if (!activeProvider) { return; }
+  if (!configContainer.config.chatProvider || !configContainer.config.inlineCompletionProvider) { return; }
 
   const chatProvider = new ChatViewProvider(context, configContainer.config);
   context.subscriptions.push(
@@ -24,7 +22,7 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  registerCompletionProvider(context, activeProvider);
+  registerCompletionProvider(context, configContainer.config.inlineCompletionProvider);
   registerCommands(context, configContainer.config);
 }
 

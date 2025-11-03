@@ -1,3 +1,4 @@
+import { getActiveProvider } from '../providers/providerFactory.js';
 import { ConfigContainer , Config, ProviderConfig } from './types.js';
 
 export interface SecretManager {
@@ -39,6 +40,12 @@ export async function processConfig(rawJson: string, secretManager: SecretManage
     if (activeProvider && providers?.[activeProvider]) {
         await resolveAPIKeyInMemory(providers[activeProvider], secretManager);
     }
+
+    // `getActiveProvider` can return null; `inlineCompletionProvider` expects
+    // `llmProvider | undefined`, so normalize null -> undefined to satisfy
+    // the TypeScript type.
+    config.inlineCompletionProvider = getActiveProvider(config) ?? undefined;
+    config.chatProvider = getActiveProvider(config) ?? undefined;
 
     return { config };
 }
