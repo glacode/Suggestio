@@ -56,11 +56,3 @@ export async function getConfigContainer(context?: vscode.ExtensionContext): Pro
     return configContainer;
   }
 }
-
-/**
- * Forces reload of the config (optional). Requires context.
- */
-export async function reloadConfig(context: vscode.ExtensionContext): Promise<ConfigContainer> {
-  configContainer = null;
-  return await getConfigContainer(context);
-}
