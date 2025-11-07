@@ -1,15 +1,24 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { ConfigContainer } from './types.js';
-import { getOrRequestAPIKey } from './secretManager.js';
-import { processConfig, SecretManager } from './configProcessor.js';
 
-let configContainer: ConfigContainer | null = null;
+type FsModule = {
+    existsSync: (path: fs.PathLike) => boolean;
+    readFileSync: (path: fs.PathOrFileDescriptor, options: BufferEncoding) => string;
+};
 
-function getConfigPath(context: vscode.ExtensionContext): string {
-  const workspaceConfig = vscode.workspace.workspaceFolders?.[0]
-    ? path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, 'suggestio.config.json')
+type VscodeModule = {
+    workspace: {
+        workspaceFolders?: readonly vscode.WorkspaceFolder[];
+    };
+    window: {
+        showErrorMessage: (message: string) => void;
+    };
+};
+
+function getConfigPath(context: vscode.ExtensionContext, fs: FsModule, vscodeModule: VscodeModule): string {
+  const workspaceConfig = vscodeModule.workspace.workspaceFolders?.[0]
+    ? path.join(vscodeModule.workspace.workspaceFolders[0].uri.fsPath, 'suggestio.config.json')
     : null;
 
   if (workspaceConfig && fs.existsSync(workspaceConfig)) { return workspaceConfig; }
@@ -20,39 +29,20 @@ function getConfigPath(context: vscode.ExtensionContext): string {
   return path.join(context.extensionPath, 'config.json');
 }
 
-/**
- * Returns the singleton config. Loads it if not already loaded.
- * The context is only used on the first call.
- */
-export async function getConfigContainer(context?: vscode.ExtensionContext): Promise<ConfigContainer> {
-  if (configContainer) {
-    return configContainer;
-  }
-
-  if (!context) {
-    throw new Error('Context must be provided on first call to getConfig');
-  }
-
-  const configPath = getConfigPath(context);
-
-  try {
-    const raw = fs.readFileSync(configPath, 'utf8');
-
-    const secretManager: SecretManager = {
-      getOrRequestAPIKey: (key: string) => getOrRequestAPIKey(context, key)
-    };
-
-    configContainer = await processConfig(raw, secretManager);
-    return configContainer;
-  } catch (err) {
-    vscode.window.showErrorMessage(`Failed to load config.json: ${err}`);
-    configContainer = {
-      config: {
-        activeProvider: '',
-        providers: {},
-        anonymizer: { enabled: false, words: [] }
-      }
-    };
-    return configContainer;
-  }
+export async function readConfig(
+    context: vscode.ExtensionContext,
+    fsModule: FsModule = fs,
+    vscodeModule: VscodeModule = vscode
+): Promise<string> {
+    const configPath = getConfigPath(context, fsModule, vscodeModule);
+    try {
+        return fsModule.readFileSync(configPath, 'utf8');
+    } catch (err) {
+        vscodeModule.window.showErrorMessage(`Failed to load config.json: ${err}`);
+        return JSON.stringify({
+            activeProvider: '',
+            providers: {},
+            anonymizer: { enabled: false, words: [] }
+        });
+    }
 }

@@ -1,78 +1,85 @@
+
 import * as vscode from 'vscode';
 
-export async function getSecret(context: vscode.ExtensionContext, apiKeyPlaceholder: string): Promise<string | undefined> {
-  return await context.secrets.get(apiKeyPlaceholder);
-}
+export class SecretManager {
+    constructor(private readonly context: vscode.ExtensionContext) { }
 
-export async function storeSecret(context: vscode.ExtensionContext, apiKeyPlaceholder: string, apiKeyValue: string): Promise<void> {
-  await context.secrets.store(apiKeyPlaceholder, apiKeyValue);
-}
+    public async getSecret(apiKeyPlaceholder: string): Promise<string | undefined> {
+        return await this.context.secrets.get(apiKeyPlaceholder);
+    }
 
-export async function deleteSecret(context: vscode.ExtensionContext, apiKeyPlaceholder: string): Promise<void> {
-  await context.secrets.delete(apiKeyPlaceholder);
-}
+    public async storeSecret(apiKeyPlaceholder: string, apiKeyValue: string): Promise<void> {
+        await this.context.secrets.store(apiKeyPlaceholder, apiKeyValue);
+    }
 
-export async function updateAPIKey(context: vscode.ExtensionContext, apiKeyPlaceholder: string): Promise<void> {
-  const newApiKey = await vscode.window.showInputBox({
-    prompt: `Enter new API key for ${apiKeyPlaceholder}`,
-    placeHolder: `Your ${apiKeyPlaceholder} API key here...`,
-    password: true,
-    ignoreFocusOut: true
-  });
+    public async deleteSecret(apiKeyPlaceholder: string): Promise<void> {
+        await this.context.secrets.delete(apiKeyPlaceholder);
+    }
 
-  if (newApiKey && newApiKey.trim() !== '') {
-    await storeSecret(context, apiKeyPlaceholder, newApiKey.trim());
-    vscode.window.showInformationMessage(`API key for ${apiKeyPlaceholder} updated.`);
-  }
-}
+    public async updateAPIKey(apiKeyPlaceholder: string): Promise<void> {
+        const newApiKey = await vscode.window.showInputBox({
+            prompt: `Enter new API key for ${apiKeyPlaceholder}`,
+            placeHolder: `Your ${apiKeyPlaceholder} API key here...`,
+            password: true,
+            ignoreFocusOut: true
+        });
 
-export async function getOrRequestAPIKey(context: vscode.ExtensionContext, apiKeyPlaceholder: string): Promise<string> {
-  // Try to retrieve from secrets first
-  const storedApiKey = await getSecret(context, apiKeyPlaceholder);
-  if (storedApiKey) {
-    return storedApiKey;
-  }
+        if (newApiKey && newApiKey.trim() !== '') {
+            await this.storeSecret(apiKeyPlaceholder, newApiKey.trim());
+            vscode.window.showInformationMessage(`API key for ${apiKeyPlaceholder} updated.`);
+        }
+    }
 
-  // If not found, prompt user
-  const userApiKey = await promptForAPIKey(apiKeyPlaceholder);
-  if (userApiKey) {
-    await storeSecret(context, apiKeyPlaceholder, userApiKey);
-    return userApiKey;
-  }
+    public async getOrRequestAPIKey(apiKeyPlaceholder: string): Promise<string> {
+        // Try to retrieve from secrets first
+        const storedApiKey = await this.getSecret(apiKeyPlaceholder);
+        if (storedApiKey) {
+            return storedApiKey;
+        }
 
-  throw new Error(`API key for ${apiKeyPlaceholder} is required for this feature to work.`);
-}
+        // If not found, prompt user
+        const userApiKey = await this.promptForAPIKey(apiKeyPlaceholder);
+        if (userApiKey) {
+            await this.storeSecret(apiKeyPlaceholder, userApiKey);
+            return userApiKey;
+        }
 
-async function promptForAPIKey(providerKey: string): Promise<string | undefined> {
-  return await vscode.window.showInputBox({
-    prompt: `Enter your ${providerKey} API Key`,
-    placeHolder: `Your ${providerKey} API key here...`,
-    password: true,
-    ignoreFocusOut: true
-  });
-}
+        throw new Error(`API key for ${apiKeyPlaceholder} is required for this feature to work.`);
+    }
 
- /**
- * Command handler: update API key after selecting provider
- */
-export async function handleUpdateApiKeyCommand(context: vscode.ExtensionContext, providerApiKeys: string[]): Promise<void> {
-  const apiKeyPlaceholder = await vscode.window.showQuickPick(providerApiKeys, {
-    placeHolder: 'Select an API key to update'
-  });
-  if (apiKeyPlaceholder) {
-    await updateAPIKey(context, apiKeyPlaceholder);
-  }
+    private async promptForAPIKey(providerKey: string): Promise<string | undefined> {
+        return await vscode.window.showInputBox({
+            prompt: `Enter your ${providerKey} API Key`,
+            placeHolder: `Your ${providerKey} API key here...`,
+            password: true,
+            ignoreFocusOut: true
+        });
+    }
 }
 
 /**
- * Command handler: delete API key after selecting provider
- */
+* Command handler: update API key after selecting provider
+*/
+export async function handleUpdateApiKeyCommand(context: vscode.ExtensionContext, providerApiKeys: string[]): Promise<void> {
+    const apiKeyPlaceholder = await vscode.window.showQuickPick(providerApiKeys, {
+        placeHolder: 'Select an API key to update'
+    });
+    if (apiKeyPlaceholder) {
+        const secretManager = new SecretManager(context);
+        await secretManager.updateAPIKey(apiKeyPlaceholder);
+    }
+}
+
+/**
+* Command handler: delete API key after selecting provider
+*/
 export async function handleDeleteApiKeyCommand(context: vscode.ExtensionContext, providerApiKeys: string[]): Promise<void> {
-  const apiKeyPlaceholder = await vscode.window.showQuickPick(providerApiKeys, {
-    placeHolder: 'Select an API key to delete'
-  });
-  if (apiKeyPlaceholder) {
-    await deleteSecret(context, apiKeyPlaceholder);
-    vscode.window.showInformationMessage(`API key value for ${apiKeyPlaceholder} deleted.`);
-  }
+    const apiKeyPlaceholder = await vscode.window.showQuickPick(providerApiKeys, {
+        placeHolder: 'Select an API key to delete'
+    });
+    if (apiKeyPlaceholder) {
+        const secretManager = new SecretManager(context);
+        await secretManager.deleteSecret(apiKeyPlaceholder);
+        vscode.window.showInformationMessage(`API key value for ${apiKeyPlaceholder} deleted.`);
+    }
 }

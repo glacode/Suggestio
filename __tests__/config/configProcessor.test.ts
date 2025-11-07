@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import { processConfig, SecretManager } from '../../src/config/configProcessor.js';
+import { configProcessor, SecretManager } from '../../src/config/configProcessor.js';
 import { ConfigContainer } from '../../src/config/types.js';
 
 describe('processConfig', () => {
@@ -23,7 +23,7 @@ describe('processConfig', () => {
       anonymizer: { enabled: false, words: [] }
     });
 
-    const configContainer: ConfigContainer = await processConfig(rawJson, mockSecretManager);
+    const configContainer: ConfigContainer = await configProcessor.processConfig(rawJson, mockSecretManager);
 
     const provider = configContainer.config.providers.provider1;
     expect(provider.resolvedApiKey).toBe('my-key');
@@ -40,7 +40,7 @@ describe('processConfig', () => {
       anonymizer: { enabled: false, words: [] }
     });
 
-    const configContainer: ConfigContainer = await processConfig(rawJson, mockSecretManager);
+    const configContainer: ConfigContainer = await configProcessor.processConfig(rawJson, mockSecretManager);
 
     const provider = configContainer.config.providers.provider1;
     expect(provider.resolvedApiKey).toBe('env-secret');
@@ -56,7 +56,7 @@ describe('processConfig', () => {
       anonymizer: { enabled: false, words: [] }
     });
 
-    const configContainer: ConfigContainer = await processConfig(rawJson, mockSecretManager);
+    const configContainer: ConfigContainer = await configProcessor.processConfig(rawJson, mockSecretManager);
 
     const provider = configContainer.config.providers.provider1;
     expect(provider.resolvedApiKey).toBe('secret-for-TEST_KEY');
@@ -73,7 +73,7 @@ describe('processConfig', () => {
       anonymizer: { enabled: false, words: [] }
     });
 
-    const configContainer: ConfigContainer = await processConfig(rawJson, mockSecretManager);
+    const configContainer: ConfigContainer = await configProcessor.processConfig(rawJson, mockSecretManager);
 
     const provider = configContainer.config.providers.provider1;
     expect(provider.resolvedApiKey).toBe('');

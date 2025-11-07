@@ -12,7 +12,7 @@ import { llmProvider } from "../providers/llmProvider.js";
 const DEBOUNCE_DELAY_MS = 1000;
 
 function createDebounceCallback(
-  provider: llmProvider,
+  provider: llmProvider | undefined,
   config: Config,
   document: vscode.TextDocument,
   position: vscode.Position,
@@ -20,6 +20,10 @@ function createDebounceCallback(
   resolve: (items: vscode.InlineCompletionItem[]) => void
 ): () => void {
   return function performCompletion() {
+    if (!provider) {
+      resolve([]);
+      return;
+    }
     if (handleCancellation(token, resolve, "before")) {
       return;
     }
@@ -57,7 +61,7 @@ function createDebounceCallback(
 }
 
 export function provideInlineCompletionItems(
-  provider: llmProvider,
+  provider: llmProvider | undefined,
   config: Config,
   document: vscode.TextDocument,
   position: vscode.Position,
@@ -65,6 +69,10 @@ export function provideInlineCompletionItems(
   token?: vscode.CancellationToken
 ): Promise<vscode.InlineCompletionItem[]> {
   return new Promise((resolve) => {
+    if (!provider) {
+      resolve([]);
+      return;
+    }
     debounce(
       createDebounceCallback(provider, config, document, position, token, resolve),
       DEBOUNCE_DELAY_MS
