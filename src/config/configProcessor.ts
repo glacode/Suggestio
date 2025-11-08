@@ -1,6 +1,5 @@
-
 import { getActiveProvider } from '../providers/providerFactory.js';
-import { ConfigContainer , Config, ProviderConfig } from './types.js';
+import { ConfigContainer, Config, ProviderConfig } from './types.js';
 import { eventBus } from '../events/eventBus.js';
 import { log } from '../logger.js';
 
@@ -28,7 +27,7 @@ class ConfigProcessor {
      * Resolve the API key for a single provider in memory.
      * Populates `apiKeyPlaceholder` and `resolvedApiKey`.
      */
-    public async resolveAPIKeyInMemory(
+    private async resolveAPIKeyInMemory(
         providerConfig: ProviderConfig,
     ) {
         if (!this._secretManager) {
@@ -57,6 +56,12 @@ class ConfigProcessor {
         const config: Config = JSON.parse(rawJson);
         this.init(config, secretManager);
 
+        await this.updateProviders(config);
+
+        return { config };
+    }
+
+    private async updateProviders(config: Config) {
         const { activeProvider, providers } = config;
 
         if (activeProvider && providers?.[activeProvider]) {
@@ -68,8 +73,6 @@ class ConfigProcessor {
         // the TypeScript type.
         config.inlineCompletionProvider = getActiveProvider(config) ?? undefined;
         config.chatProvider = getActiveProvider(config) ?? undefined;
-
-        return { config };
     }
 
     private async updateActiveProvider(modelName: string) {
@@ -81,14 +84,11 @@ class ConfigProcessor {
             .find(([_, config]) => config.model === modelName);
 
         if (providerEntry) {
-            const [providerId, providerConfig] = providerEntry;
+            const [providerId] = providerEntry;
             this._config.activeProvider = providerId;
-            await this.resolveAPIKeyInMemory(providerConfig);
-            this._config.inlineCompletionProvider = getActiveProvider(this._config) ?? undefined;
-            this._config.chatProvider = getActiveProvider(this._config) ?? undefined;
+            await this.updateProviders(this._config);
             log('config updated. activeProvider: ' + this._config.activeProvider);
         }
     }
 }
-
 export const configProcessor = new ConfigProcessor();
