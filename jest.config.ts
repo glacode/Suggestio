@@ -17,7 +17,8 @@ const jestConfig: JestConfigWithTsJest = {
   testPathIgnorePatterns: [
     '/out/',
     '/dist/',
-    '/node_modules/'
+    '/node_modules/',
+    '/e2e-tests/'
   ],
 
   modulePathIgnorePatterns: ["<rootDir>/dist/"],
@@ -38,8 +39,7 @@ const jestConfig: JestConfigWithTsJest = {
   
   // Test match patterns
   testMatch: [
-    '**/__tests__/**/*.test.[jt]s?(x)',
-    '**/?(*.)+(spec|test).[jt]s?(x)',
+    '<rootDir>/__tests__/**/*.test.[jt]s?(x)',
   ],
   
   // Coverage configuration

@@ -162,6 +162,7 @@
         "check-types": "tsc --noEmit",
         "lint": "eslint src",
         "test": "node --experimental-vm-modules node_modules/.bin/jest --detectOpenHandles",
+        "test:e2e": "tsc -p tsconfig.e2e.json && node ./dist-e2e/runTest.js",
         "test:debug": "node --inspect --experimental-vm-modules node_modules/.bin/jest --runInBand --debug",
         "build:webview": "esbuild src/webView/renderMarkDown.ts --bundle --outfile=builtResources/renderMarkDown.js --format=iife",
         "watch:webview": "esbuild src/webView/renderMarkDown.ts --bundle --outfile=builtResources/renderMarkDown.js --format=iife --watch",
@@ -174,6 +175,7 @@
         "node-fetch": "^3.3.2"
     },
     "devDependencies": {
+        "@types/glob": "^8.1.0",
         "@types/jest": "^30.0.0",
         "@types/mocha": "^10.0.10",
         "@types/node": "22.x",
@@ -186,11 +188,13 @@
         "esbuild": "^0.25.10",
         "eslint": "^9.32.0",
         "express": "^5.1.0",
+        "glob": "^11.0.3",
         "jest": "^30.0.5",
+        "mocha": "^11.7.5",
         "npm-run-all": "^4.1.5",
         "ts-jest": "^29.4.1",
+        "ts-node": "^10.9.1",
         "typescript": "^5.9.2",
-        "ws": "^8.18.3",
-        "ts-node": "^10.9.1"
+        "ws": "^8.18.3"
     }
 }

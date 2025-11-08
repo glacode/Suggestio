@@ -1,0 +1,21 @@
+{
+    "compilerOptions": {
+        "module": "NodeNext",
+        "target": "es2020",
+        "lib": ["es2020"],
+        "outDir": "dist-e2e",
+        "sourceMap": true,
+        "rootDir": "e2e-tests",
+        "strict": true,
+        "esModuleInterop": true,
+        "types": ["mocha", "node"],
+        "moduleResolution": "NodeNext"
+    },
+    "include": [
+        "e2e-tests"
+    ],
+    "exclude": [
+        "node_modules",
+        ".vscode-test"
+    ]
+}
