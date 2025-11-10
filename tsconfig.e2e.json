@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "module": "NodeNext",
+        "module": "commonjs",
         "target": "es2020",
         "lib": ["es2020"],
         "outDir": "dist-e2e",
@@ -9,7 +9,7 @@
         "strict": true,
         "esModuleInterop": true,
         "types": ["mocha", "node"],
-        "moduleResolution": "NodeNext"
+        "moduleResolution": "node"
     },
     "include": [
         "e2e-tests"
