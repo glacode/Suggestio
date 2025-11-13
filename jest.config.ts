@@ -18,10 +18,11 @@ const jestConfig: JestConfigWithTsJest = {
     '/out/',
     '/dist/',
     '/node_modules/',
-    '/e2e-tests/'
+    '/e2e-tests/',
+    '/.vscode-test/'
   ],
 
-  modulePathIgnorePatterns: ["<rootDir>/dist/"],
+  modulePathIgnorePatterns: ["<rootDir>/dist/", "/.vscode-test/"],
   
   // Transform configuration
   transform: {

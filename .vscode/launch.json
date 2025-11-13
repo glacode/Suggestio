@@ -11,23 +11,32 @@
       "request": "launch",
       "args": [
         "--extensionDevelopmentPath=${workspaceFolder}",
-        "--enable-proposed-api=suggestio"  // For inline completions API
+        "--enable-proposed-api=suggestio" // For inline completions API
       ],
-      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+      "outFiles": [
+        "${workspaceFolder}/dist/**/*.js"
+      ],
       "preLaunchTask": "build",
       "internalConsoleOptions": "openOnSessionStart"
     },
     {
-      "name": "Run Tests",
+      "name": "Debug E2E Test (Extension Host)",
       "type": "extensionHost",
       "request": "launch",
-      "runtimeExecutable": "${execPath}",
       "args": [
+        "${workspaceFolder}/test-fixtures/workspace", // 👈 opens a folder
         "--extensionDevelopmentPath=${workspaceFolder}",
-        "--extensionTestsPath=${workspaceFolder}/out/test"
+        "--extensionTestsPath=${workspaceFolder}/dist-e2e/suite/index.cjs",
+        "--enable-proposed-api=suggestio",
+        "--disable-extensions"
       ],
-      "outFiles": ["${workspaceFolder}/out/**/*.js"],
-      "preLaunchTask": "pretest"
+      "outFiles": [
+        "${workspaceFolder}/dist/**/*.js",
+        "${workspaceFolder}/dist-e2e/**/*.js"
+      ],
+      "preLaunchTask": "build:e2e",
+      "internalConsoleOptions": "openOnSessionStart",
+      "timeout": 30000
     }
   ]
 }

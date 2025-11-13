@@ -176,6 +176,7 @@
         "node-fetch": "^3.3.2"
     },
     "devDependencies": {
+        "@types/express": "^5.0.5",
         "@types/glob": "^8.1.0",
         "@types/jest": "^30.0.0",
         "@types/mocha": "^10.0.10",
