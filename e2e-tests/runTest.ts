@@ -26,7 +26,9 @@ async function main() {
             launchArgs: [
                 testWorkspace, // Open the temporary workspace
                 '--enable-proposed-api=suggestio',
-                '--disable-extensions' // Disable all other extensions for a clean test environment
+                '--disable-extensions', // Disable all other extensions for a clean test environment
+                '--force-user-env',
+                '--settings', '{"editor.inlineSuggest.enabled": true}'
             ],
         });
     } catch (err) {

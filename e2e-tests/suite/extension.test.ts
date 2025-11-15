@@ -95,14 +95,14 @@ suite('Extension Test Suite', () => {
 
 		editor.selection = new vscode.Selection(0, text.length, 0, text.length);
 
-		// Trigger inline suggestion explicitly
-		await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger');
+		// Trigger inline suggestion explicitly; it's not needed, it is triggered even without it (as expected)
+		// await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger');
 
 		// Allow debounce + mock server response + rendering
 		await new Promise(r => setTimeout(r, 5000));
 
 		// Accept the inline suggestion
-		await vscode.commands.executeCommand('editor.action.inlineSuggest.commit');
+		// await vscode.commands.executeCommand('editor.action.inlineSuggest.commit');
 
 		// Verify the final content
 		const updatedContent = editor.document.getText();

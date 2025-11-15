@@ -60,7 +60,7 @@ function createDebounceCallback(
   };
 }
 
-export function provideInlineCompletionItems(
+export async function provideInlineCompletionItems(
   provider: llmProvider | undefined,
   config: Config,
   document: vscode.TextDocument,
@@ -68,7 +68,8 @@ export function provideInlineCompletionItems(
   _context: vscode.InlineCompletionContext,
   token?: vscode.CancellationToken
 ): Promise<vscode.InlineCompletionItem[]> {
-  return new Promise((resolve) => {
+
+  const result = await new Promise<vscode.InlineCompletionItem[]>((resolve) => {
     if (!provider) {
       resolve([]);
       return;
@@ -78,4 +79,5 @@ export function provideInlineCompletionItems(
       DEBOUNCE_DELAY_MS
     );
   });
+  return result;
 }
