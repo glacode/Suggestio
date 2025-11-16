@@ -31,7 +31,6 @@
         "--disable-extensions"
       ],
       "outFiles": [
-        "${workspaceFolder}/dist/**/*.js",
         "${workspaceFolder}/dist-e2e/**/*.js"
       ],
       "preLaunchTask": "build:e2e",

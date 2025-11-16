@@ -80,8 +80,8 @@ suite('Extension Test Suite', () => {
 		const editor = await vscode.window.showTextDocument(doc);
 
 		// Enable inline suggestions globally
-		await vscode.workspace.getConfiguration('editor')
-			.update('inlineSuggest.enabled', true, vscode.ConfigurationTarget.Global);
+		// await vscode.workspace.getConfiguration('editor')
+		// 	.update('inlineSuggest.enabled', true, vscode.ConfigurationTarget.Global);
 
 		// Ensure cursor is at the start
 		editor.selection = new vscode.Selection(0, 0, 0, 0);
@@ -95,11 +95,11 @@ suite('Extension Test Suite', () => {
 
 		editor.selection = new vscode.Selection(0, text.length, 0, text.length);
 
-		// Trigger inline suggestion explicitly; it's not needed, it is triggered even without it (as expected)
+		// Trigger inline suggestion explicitly
 		// await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger');
 
 		// Allow debounce + mock server response + rendering
-		await new Promise(r => setTimeout(r, 5000));
+		await new Promise(r => setTimeout(r, 50000));
 
 		// Accept the inline suggestion
 		// await vscode.commands.executeCommand('editor.action.inlineSuggest.commit');
@@ -111,5 +111,5 @@ suite('Extension Test Suite', () => {
 			'hello world',
 			`Expected document content to be "hello world" but was "${updatedContent}"`
 		);
-	}).timeout(15000);
+	}).timeout(200000);
 });

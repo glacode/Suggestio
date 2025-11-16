@@ -4,12 +4,12 @@ import { log } from '../logger.js';
 
 export function handleCancellation(
   token: vscode.CancellationToken | undefined,
-  resolve: (items: vscode.InlineCompletionItem[]) => void,
+  resolve: (items: vscode.InlineCompletionList) => void,
   stage: 'before' | 'after'
 ): boolean {
   if (token?.isCancellationRequested) {
     log(`❌ Suggestio: Request cancelled ${stage} LLM call`);
-    resolve([]);
+    resolve(new vscode.InlineCompletionList([]));
     return true;
   }
   return false;

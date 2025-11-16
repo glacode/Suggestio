@@ -17,11 +17,11 @@ function createDebounceCallback(
   document: vscode.TextDocument,
   position: vscode.Position,
   token: vscode.CancellationToken | undefined,
-  resolve: (items: vscode.InlineCompletionItem[]) => void
+  resolve: (items: vscode.InlineCompletionList) => void
 ): () => void {
-  return function performCompletion() {
+  return async function performCompletion() {
     if (!provider) {
-      resolve([]);
+      resolve(new vscode.InlineCompletionList([]));
       return;
     }
     if (handleCancellation(token, resolve, "before")) {
@@ -44,18 +44,18 @@ function createDebounceCallback(
         }
 
         if (!completionText) {
-          resolve([]);
+          resolve(new vscode.InlineCompletionList([]));
           return;
         }
 
         // Wrap completionText into InlineCompletionItems
-        const item = new vscode.InlineCompletionItem(completionText);
+        const item = new vscode.InlineCompletionItem(completionText, new vscode.Range(position, position));
         log("✅ Suggestio: Returning completion to VS Code");
-        resolve([item]);
+        resolve(new vscode.InlineCompletionList([item]));
       })
       .catch((err) => {
         log("Error fetching completion: " + err);
-        resolve([]);
+        resolve(new vscode.InlineCompletionList([]));
       });
   };
 }
@@ -67,11 +67,11 @@ export async function provideInlineCompletionItems(
   position: vscode.Position,
   _context: vscode.InlineCompletionContext,
   token?: vscode.CancellationToken
-): Promise<vscode.InlineCompletionItem[]> {
+): Promise<vscode.InlineCompletionList> {
 
-  const result = await new Promise<vscode.InlineCompletionItem[]>((resolve) => {
+  const result = await new Promise<vscode.InlineCompletionList>((resolve) => {
     if (!provider) {
-      resolve([]);
+      resolve(new vscode.InlineCompletionList([]));
       return;
     }
     debounce(
