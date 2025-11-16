@@ -7,7 +7,7 @@ import express, { Request, Response } from 'express';
 import { Server } from 'http';
 
 suite('Extension Test Suite', () => {
-	vscode.window.showInformationMessage('Start all tests.');
+	// vscode.window.showInformationMessage('Start all tests.');
 
 	let server: Server | null = null;
 	const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
@@ -93,16 +93,20 @@ suite('Extension Test Suite', () => {
 			await new Promise(r => setTimeout(r, 150));
 		}
 
-		editor.selection = new vscode.Selection(0, text.length, 0, text.length);
+		// editor.selection = new vscode.Selection(0, text.length, 0, text.length);
 
 		// Trigger inline suggestion explicitly
 		// await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger');
 
 		// Allow debounce + mock server response + rendering
-		await new Promise(r => setTimeout(r, 50000));
+		await new Promise(r => setTimeout(r, 1000));
+		
+		// Trigger inline suggestion explicitly to ensure it's visible before committing
+		await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger');
+		await new Promise(r => setTimeout(r, 2000)); // Give it a moment to render
 
 		// Accept the inline suggestion
-		// await vscode.commands.executeCommand('editor.action.inlineSuggest.commit');
+		await vscode.commands.executeCommand('editor.action.inlineSuggest.commit');
 
 		// Verify the final content
 		const updatedContent = editor.document.getText();

@@ -65,7 +65,7 @@ export class OpenAICompatibleProvider implements llmProvider {
     const json = (await response.json()) as OpenAIResponse;
     log("Response:" + JSON.stringify(json, null, 2));
 
-    let content = json.choices?.[0]?.message?.content?.trim() || null;
+    let content = json.choices?.[0]?.message?.content || null;
     if (content && this.anonymizer) {
       content = this.anonymizer.deanonymize(content);
     }

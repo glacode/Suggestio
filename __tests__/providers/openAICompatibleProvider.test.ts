@@ -73,7 +73,7 @@ describe("OpenAICompatibleProvider", () => {
     };
   });
 
-  it("should get a trimmed response from the query method", async () => {
+  it("should not get a trimmed response from the query method", async () => {
     const provider = new OpenAICompatibleProvider(
       endpoint,
       "test-key",
@@ -81,7 +81,7 @@ describe("OpenAICompatibleProvider", () => {
     );
     const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
     const response = await provider.query(prompt);
-    expect(response).toBe("Hello World");
+    expect(response).toBe("  Hello World  ");
   });
 
   it("should get a streamed response from the queryStream method", async () => {
