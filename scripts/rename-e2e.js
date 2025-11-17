@@ -12,6 +12,12 @@ function renameDir(dir) {
         } else if (file.endsWith('.js')) {
             const newPath = path.join(dir, file.replace(/\.js$/, '.cjs'));
             fs.renameSync(fullPath, newPath);
+
+            // Read the content of the renamed file and replace .js imports with .cjs
+            let content = fs.readFileSync(newPath, 'utf8');
+            content = content.replace(/(from\s+['"])(.*?)(\.js)(['"])/g, '$1$2.cjs$4');
+            content = content.replace(/(require\(['"])(.*?)(\.js)(['"]\))/g, '$1$2.cjs$4');
+            fs.writeFileSync(newPath, content, 'utf8');
         }
     }
 }

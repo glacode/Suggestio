@@ -5,8 +5,9 @@ import * as path from 'path';
 import os from 'os';
 import express, { Request, Response } from 'express';
 import { Server } from 'http';
+import { simulateTyping } from './testUtils.js';
 
-suite('Extension Test Suite', () => {
+suite('Inline Completion Test Suite', () => {
 	// vscode.window.showInformationMessage('Start all tests.');
 
 	let server: Server | null = null;
@@ -87,11 +88,7 @@ suite('Extension Test Suite', () => {
 		editor.selection = new vscode.Selection(0, 0, 0, 0);
 
 		// Simulate typing
-		const text = 'hello';
-		for (const ch of text) {
-			await vscode.commands.executeCommand('type', { text: ch });
-			await new Promise(r => setTimeout(r, 150));
-		}
+		simulateTyping('hello', 150);
 
 		// editor.selection = new vscode.Selection(0, text.length, 0, text.length);
 
