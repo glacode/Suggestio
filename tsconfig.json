@@ -16,5 +16,5 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "exclude": ["node_modules","jest.config.ts"]
+  "exclude": ["node_modules","jest.config.ts","e2e-tests-playwright"]
 }

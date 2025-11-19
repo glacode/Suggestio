@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
-import { runTests } from '@vscode/test-electron';
+import { downloadAndUnzipVSCode, runTests } from '@vscode/test-electron';
 
 // TypeScript may complain that __dirname/__filename don't exist in ESM context
 declare const __dirname: string;
@@ -10,17 +10,20 @@ declare const __filename: string;
 async function main() {
     let testWorkspace: string | undefined;
     try {
+        const vscodeExecutablePath = await downloadAndUnzipVSCode('1.106.2');
+        
+        // Folder containing the Extension Manifest package.json
+        const extensionDevelopmentPath = process.cwd();
+        
+        // Path to the compiled test file
+        const extensionTestsPath = path.resolve(__dirname, './suite/index.cjs');
+        
         // Create a temporary directory for the test workspace
         testWorkspace = fs.mkdtempSync(path.join(os.tmpdir(), 'suggestio-test-workspace-'));
 
-        // Folder containing the Extension Manifest package.json
-        const extensionDevelopmentPath = process.cwd();
-
-        // Path to the compiled test file
-        const extensionTestsPath = path.resolve(__dirname, './suite/index.cjs');
-
         // Run the integration test
         await runTests({
+            vscodeExecutablePath,
             extensionDevelopmentPath,
             extensionTestsPath,
             launchArgs: [

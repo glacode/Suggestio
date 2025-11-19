@@ -1,0 +1,24 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    // "bundler" allows imports without extensions
+    // while keeping the modern ESM features.
+    "moduleResolution": "bundler",
+    
+    // Tells TypeScript: "Don't worry about compiling this, 
+    // Playwright will handle it."
+    "noEmit": true, 
+
+    // Ensures you have access to browser types (like 'window' or 'document')
+    // which are helpful when writing assertions inside page.evaluate().
+    "lib": ["esnext", "dom"],
+
+    // Recommended for Playwright to allow top-level await
+    "module": "esnext",
+    "target": "esnext"
+  },
+  "include": [
+    "**/*.ts"
+  ],
+  "exclude": []
+}

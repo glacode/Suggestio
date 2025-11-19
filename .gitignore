@@ -149,3 +149,5 @@ media/highlight.css
 
 # Compiled output for e2e tests
 dist-e2e/
+
+test-results/
