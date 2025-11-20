@@ -57,7 +57,7 @@ test.describe('Chat E2E', () => {
 
         // await chatInput.fill('Hello');  // it works, but page.keyboard.type is closer to real user interaction
         await page.keyboard.type('Hello', { delay: 50 });
-        await expect(chatInput).toHaveValue('Hello');
+        await expect(chatInput).toHaveValue('Hallo');
 
         await page.waitForTimeout(2000); // wait for 2 seconds to see the input
     });
