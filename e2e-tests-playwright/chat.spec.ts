@@ -34,7 +34,9 @@ test.describe('Chat E2E', () => {
     });
 
     test.afterAll(async () => {
-        await electronApp.close();
+        if (electronApp) {
+            await electronApp.close();
+        }
     });
 
     test('should display user input in chat history', async () => {

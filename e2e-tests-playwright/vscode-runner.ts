@@ -13,6 +13,8 @@ export async function launchVscode() {
     const electronApp = await electron.launch({
         executablePath: vscodeExecutablePath,
         args: [
+            '--no-sandbox',
+            '--disable-gpu',
             `--extensionDevelopmentPath=${process.cwd()}`,
             `--user-data-dir=${userDataDir}`,
             `--extensions-dir=${extensionsDir}`,
