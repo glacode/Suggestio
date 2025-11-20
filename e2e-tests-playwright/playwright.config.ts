@@ -5,7 +5,7 @@ export default defineConfig({
   testDir: '.',
   timeout: 60000, // 60 seconds
   use: {
-    headless: process.env.CI ? true : false, // Run headless in CI, non-headless locally
+    headless: false, // Show the browser window
     trace: 'on-first-retry',
   },
 });
