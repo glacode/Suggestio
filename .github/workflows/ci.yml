@@ -28,4 +28,4 @@ jobs:
     - name: Install Playwright browsers
       run: npx playwright install --with-deps
     - name: Run Playwright tests
-      run: xvfb-run -a npx playwright test --config=e2e-tests-playwright/playwright.config.ts
+      run: DEBUG='pw:api' xvfb-run -a npx playwright test --config=e2e-tests-playwright/playwright.config.ts
