@@ -143,7 +143,7 @@ test.describe('Chat E2E', () => {
     test('should display user input and mocked response in chat history', async () => {
         // 👇 ADD THIS. This pauses Playwright indefinitely.
         // It keeps the Electron window open so we can check the connection.
-        await page.pause();
+        // await page.pause();
 
         await openChatView(page);
         const inner = await getChatFrames(page);
