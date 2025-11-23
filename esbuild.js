@@ -33,7 +33,7 @@ async function main() {
 		packages: 'bundle',
 		minify: production,
 		sourcemap: !production,
-		sourcesContent: false,
+		sourcesContent: true,
 		platform: 'node',
 		outfile: 'dist/extension.js',
 		external: ['vscode'],

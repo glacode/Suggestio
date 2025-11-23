@@ -64,7 +64,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         webviewView.webview.onDidReceiveMessage(async message => {
             if (message.command === 'sendMessage') {
                 try {
-                    const promptWithContext = `${message.text}\n\n${this._buildContext()}`;
+                    const promptWithContext = `${this._buildContext()}\n\n${message.text}`;
                     await this._logicHandler.fetchStreamChatResponse(promptWithContext, (token) => {
                         webviewView.webview.postMessage({
                             sender: 'assistant',

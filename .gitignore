@@ -151,3 +151,4 @@ media/highlight.css
 dist-e2e/
 
 test-results/
+test-fixtures/

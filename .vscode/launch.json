@@ -30,12 +30,68 @@
         "--enable-proposed-api=suggestio",
         "--disable-extensions"
       ],
-      "outFiles": [
-        "${workspaceFolder}/dist-e2e/**/*.js"
-      ],
+      // "outFiles": [
+      //   "${workspaceFolder}/dist-e2e/**/*.js"
+      // ],
       "preLaunchTask": "build:e2e",
       "internalConsoleOptions": "openOnSessionStart",
       "timeout": 30000
+    },
+    {
+      // CONFIG 1: Runs the Playwright Test Runner
+      // This allows you to hit breakpoints in 'test.ts'
+      "name": "Debug Playwright Test",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/@playwright/test/cli.js",
+      "args": [
+        "test",
+        "--config=e2e-tests-playwright/playwright.config.ts",
+        "--headed",
+        "--timeout=0" // Disable timeout so test doesn't fail while you step through code
+      ],
+      "console": "integratedTerminal",
+      "autoAttachChildProcesses": true
+    },
+    {
+      // CONFIG 2: Attaches to the Electron Window spawned by Playwright
+      // This allows you to hit breakpoints in 'extension.ts'
+      "name": "Attach to Extension Host",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      // "address": "127.0.0.1",
+      // CRITICAL: This tells VS Code to keep trying to connect 
+      // until Playwright actually launches the window.
+      "restart": true,
+      "timeout": 30000,
+      // "autoAttachChildProcesses": true,
+      // "sourceMaps": true,
+      // "sourceMapPathOverrides": {
+      //   // 👇 This rule translates the map's path to your workspace path
+      //   "../src/*": "${workspaceFolder}/src/*"
+      // },
+      // Map local workspace to the runtime location so source maps map back to TS sources.
+      // "localRoot": "${workspaceFolder}",
+      // "remoteRoot": "${workspaceFolder}",
+      // Skip Node internals to keep stack frames focused on your code
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      // "resolveSourceMapLocations": [
+      //   "${workspaceFolder}/dist/**/*.js.map",
+      //   "!**/node_modules/**"
+      // ]
+    }
+  ],
+  "compounds": [
+    {
+      // Runs both of the above simultaneously and allows for breakpoints in both the tests and extension code.
+      "name": "Debug E2E Playwright (Test + Extension)",
+      "configurations": [
+        "Debug Playwright Test",
+        "Attach to Extension Host"
+      ]
     }
   ]
 }

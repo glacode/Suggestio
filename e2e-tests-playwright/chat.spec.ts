@@ -1,64 +1,154 @@
-
 import { test, expect, Page } from '@playwright/test';
 import { launchVscode } from './vscode-runner';
 import { ElectronApplication } from 'playwright';
+import express from 'express';
+import { Server } from 'http';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
+
+// -----------------------------------------------------------------------------
+// Helpers (Single-Responsibility)
+// -----------------------------------------------------------------------------
+
+function createTempWorkspace(): string {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'suggestio-playwright-workspace-'));
+    return tempDir;
+}
+
+function writeMockConfig(workspace: string) {
+    const mockConfig = {
+        activeProvider: "testProvider",
+        providers: {
+            testProvider: {
+                endpoint: "http://localhost:3001/v1/chat/completions",
+                model: "test-model",
+                apiKey: "unused"
+            }
+        }
+    };
+    fs.writeFileSync(
+        path.join(workspace, 'suggestio.config.json'),
+        JSON.stringify(mockConfig, null, 2)
+    );
+}
+
+function createMockServer(): Promise<Server> {
+    return new Promise(resolve => {
+        const app = express();
+        app.use(express.json());
+
+        app.post('/v1/chat/completions', (req, res) => {
+            const userMessages = req.body.messages.filter((m: any) => m.role === 'user');
+            const concatenated = userMessages.map((m: any) => m.content).join(' ');
+
+            res.setHeader('Content-Type', 'text/event-stream');
+            res.setHeader('Cache-Control', 'no-cache');
+            res.setHeader('Connection', 'keep-alive');
+
+            const chars = concatenated.split('');
+            let i = 0;
+
+            const interval = setInterval(() => {
+                if (i < chars.length) {
+                    res.write(`data: ${JSON.stringify({
+                        choices: [{ delta: { content: chars[i] } }]
+                    })}\n\n`);
+                    i++;
+                } else {
+                    clearInterval(interval);
+                    res.write('data: [DONE]\n\n');
+                    res.end();
+                }
+            }, 50);
+        });
+
+        const server = app.listen(3001, () => resolve(server));
+    });
+}
+
+async function openChatView(page: Page) {
+    await page.keyboard.press('Control+Shift+P');
+    await page.waitForTimeout(500);
+    await page.keyboard.type('Suggestio: Focus on Chat View', { delay: 50 });
+    await page.waitForTimeout(500);
+    await page.keyboard.press('Enter');
+
+    await page.waitForTimeout(2000);
+}
+
+async function getChatFrames(page: Page) {
+    const outerSelector = 'iframe.webview[src*="glacode.suggestio"]';
+    await page.waitForSelector(outerSelector);
+
+    const outer = page.frameLocator(outerSelector);
+    await outer.locator('iframe').waitFor({ state: 'visible' });
+
+    const inner = outer.frameLocator('iframe');
+    return inner;
+}
+
+async function sendChatMessage(innerFrame: ReturnType<Page["frameLocator"]>, message: string) {
+    const input = innerFrame.locator('#messageInput');
+    await input.waitFor({ state: 'visible' });
+
+    await input.page().keyboard.type(message, { delay: 50 });
+    const sendBtn = innerFrame.locator('.send-icon');
+    await sendBtn.click();
+
+    return input;
+}
+
+async function expectChatMessages(inner: ReturnType<Page["frameLocator"]>, expected: string) {
+    const userMessage = inner.locator('.message.user');
+    const assistantMessage = inner.locator('.message.assistant');
+
+    await expect(userMessage).toBeVisible();
+    await expect(userMessage).toHaveText(expected);
+    await expect(assistantMessage).toBeVisible();
+    await expect(assistantMessage).toHaveText(expected, { timeout: 5000 });
+}
+
+// -----------------------------------------------------------------------------
+// Main Test
+// -----------------------------------------------------------------------------
 
 test.describe('Chat E2E', () => {
     let electronApp: ElectronApplication;
     let page: Page;
+    let server: Server | null = null;
+    let tempWorkspacePath: string;
 
     test.beforeAll(async () => {
-        const { electronApp: app } = await launchVscode();
-        electronApp = app;
+        tempWorkspacePath = createTempWorkspace();
+        writeMockConfig(tempWorkspacePath);
+        server = await createMockServer();
 
-        // Wait for the main window to open
+        const result = await launchVscode(tempWorkspacePath);
+        electronApp = result.electronApp;
+
         page = await electronApp.firstWindow();
-
-        // It might take a while for the extension to load
-        await page.waitForTimeout(5000);
-
-        // Open the chat view
-        await page.keyboard.press('Control+Shift+P');
-        await page.waitForTimeout(500); // small delay to ensure the command palette is open
-        await page.keyboard.type('Suggestio: Focus on Chat View', { delay: 50 });
-        await page.waitForTimeout(500);
-        await page.keyboard.press('Enter');
-
-        // const cmdInput = page.locator('.quick-input-widget .quick-input-input');
-        // // await cmdInput.waitFor();       // must wait for UI
-        // await cmdInput.fill('>Suggestio: Focus on Chat View');
-        // await page.keyboard.press('Enter');
-
-        // It might take a while for the webview to load
-        await page.waitForTimeout(2000);
+        await page.waitForTimeout(10000);
     });
 
     test.afterAll(async () => {
-        if (electronApp) {
-            await electronApp.close();
+        await electronApp?.close();
+        await server?.close();
+
+        if (fs.existsSync(tempWorkspacePath)) {
+            fs.rmSync(tempWorkspacePath, { recursive: true, force: true });
         }
     });
 
-    test('should display user input in chat history', async () => {
+    test('should display user input and mocked response in chat history', async () => {
+        // 👇 ADD THIS. This pauses Playwright indefinitely.
+        // It keeps the Electron window open so we can check the connection.
+        await page.pause();
 
-        // Wait for the correct webview iframe
-        const outerFrameSelector = 'iframe.webview[src*="glacode.suggestio"]';
-        await page.waitForSelector(outerFrameSelector);
+        await openChatView(page);
+        const inner = await getChatFrames(page);
 
-        const outer = page.frameLocator(outerFrameSelector);
-
-        // VSCode webviews contain an inner iframe – wait for it
-        await outer.locator('iframe').waitFor({ state: 'visible' });
-        const inner = outer.frameLocator('iframe');
-
-        // Now wait for your textarea inside the inner iframe
-        const chatInput = inner.locator('#messageInput');
-        await chatInput.waitFor({ state: 'visible' });
-
-        // await chatInput.fill('Hello');  // it works, but page.keyboard.type is closer to real user interaction
-        await page.keyboard.type('Hello', { delay: 50 });
-        await expect(chatInput).toHaveValue('Hello');
-
-        await page.waitForTimeout(2000); // wait for 2 seconds to see the input
+        await sendChatMessage(inner, 'Hello');
+        await expectChatMessages(inner, 'Hello');
     });
 });
