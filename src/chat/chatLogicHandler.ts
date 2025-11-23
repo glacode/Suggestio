@@ -10,27 +10,6 @@ export class ChatLogicHandler {
     private log: (message: string) => void
   ) { }
 
-  async fetchCompletion(userPrompt: string): Promise<string | null> {
-    try {
-      this.log(`Fetching completion from ${this.config.activeProvider}...`);
-      this.conversationHistory.addMessage({ role: "user", content: userPrompt });
-      const prompt = new ChatPrompt(this.conversationHistory.getHistory());
-      const result = await this.config.chatProvider!.query(prompt);
-
-      if (!result) {
-        this.log("No completion returned.");
-        return null;
-      }
-
-      this.conversationHistory.addMessage({ role: "model", content: result });
-      this.log("Completion received.");
-      return result;
-    } catch (err: any) {
-      this.log(`Error fetching completion: ${err.message}`);
-      throw err;
-    }
-  }
-
   async fetchStreamChatResponse(userPrompt: string, onToken: (token: string) => void): Promise<void> {
     try {
       this.log(`Fetching stream completion from ${this.config.activeProvider}...`);

@@ -11,7 +11,8 @@
       "request": "launch",
       "args": [
         "--extensionDevelopmentPath=${workspaceFolder}",
-        "--enable-proposed-api=suggestio" // For inline completions API
+        "--enable-proposed-api=suggestio", // For inline completions API
+        "--disable-extensions"
       ],
       "outFiles": [
         "${workspaceFolder}/dist/**/*.js"

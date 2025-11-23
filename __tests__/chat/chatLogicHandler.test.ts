@@ -11,7 +11,11 @@ class FakeProvider implements llmProvider {
         return this.reply;
     }
 
-    async queryStream(_prompt: Prompt, _onToken: (token: string) => void): Promise<void> {
+    async queryStream(_prompt: Prompt, onToken: (token: string) => void): Promise<void> {
+        if (this.shouldThrow) { throw new Error("Simulated failure"); }
+        if (this.reply) {
+            onToken(this.reply);
+        }
         return Promise.resolve();
     }
 }
@@ -24,53 +28,63 @@ describe("ChatLogicHandler (DI) simple tests", () => {
         logger = (msg: string) => logs.push(msg);
     });
 
-    it("returns completion on success", async () => {
+    it("fetches stream chat response on success", async () => {
         const handler = new ChatLogicHandler(
-            { 
+            {
                 activeProvider: "FAKE",
                 chatProvider: new FakeProvider("Hello world")
             } as any,
             logger
         );
 
-        const result = await handler.fetchCompletion("Hi");
-        expect(result).toBe("Hello world");
+        let streamedContent = "";
+        const onToken = (token: string) => {
+            streamedContent += token;
+        };
+
+        await handler.fetchStreamChatResponse("Hi", onToken);
+        expect(streamedContent).toBe("Hello world");
         expect(logs).toEqual(expect.arrayContaining([
-            expect.stringContaining("Fetching completion"),
-            expect.stringContaining("Completion received")
+            expect.stringContaining("Fetching stream completion"),
+            expect.stringContaining("Stream completion finished")
         ]));
     });
 
-    it("returns null when provider returns nothing", async () => {
+    it("handles error when fetching stream chat response", async () => {
         const handler = new ChatLogicHandler(
-            { 
-                activeProvider: "FAKE",
-                chatProvider: new FakeProvider(null)
-            } as any,
-            logger
-        );
-
-        const result = await handler.fetchCompletion("Hi");
-        expect(result).toBeNull();
-        expect(logs).toEqual(expect.arrayContaining([
-            expect.stringContaining("Fetching completion"),
-            expect.stringContaining("No completion returned")
-        ]));
-    });
-
-    it("throws when provider.query throws", async () => {
-        const handler = new ChatLogicHandler(
-            { 
+            {
                 activeProvider: "FAKE",
                 chatProvider: new FakeProvider(null, true)
             } as any,
             logger
         );
 
-        await expect(handler.fetchCompletion("Hi")).rejects.toThrow("Simulated failure");
+        let streamedContent = "";
+        const onToken = (token: string) => {
+            streamedContent += token;
+        };
+
+        await expect(handler.fetchStreamChatResponse("Hi", onToken)).rejects.toThrow("Simulated failure");
+        expect(streamedContent).toBe("");
         expect(logs).toEqual(expect.arrayContaining([
-            expect.stringContaining("Fetching completion"),
-            expect.stringContaining("Error fetching completion")
+            expect.stringContaining("Fetching stream completion"),
+            expect.stringContaining("Error fetching stream completion")
         ]));
+    });
+
+    it("clears conversation history", () => {
+        const handler = new ChatLogicHandler(
+            { activeProvider: "FAKE", chatProvider: new FakeProvider("Hello world") } as any,
+            logger
+        );
+
+        // Add some messages to history (implicitly tested by fetchStreamChatResponse adding messages)
+        // For a more robust test, we would mock ConversationHistory explicitly.
+        // For now, we'll rely on the internal state for simplicity.
+        handler["conversationHistory"].addMessage({ role: "user", content: "Test message" });
+        expect(handler["conversationHistory"].getHistory().length).toBe(1);
+
+        handler.clearHistory();
+        expect(handler["conversationHistory"].getHistory().length).toBe(0);
     });
 });
