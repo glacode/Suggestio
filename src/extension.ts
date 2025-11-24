@@ -32,7 +32,8 @@ export async function activate(context: vscode.ExtensionContext) {
     providerAccessor,
     logicHandler,
     buildContext,
-    getChatWebviewContent
+    getChatWebviewContent,
+    vscodeApi: vscode
   });
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(ChatViewProvider.viewType, chatProvider, {

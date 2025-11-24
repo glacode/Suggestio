@@ -1,39 +1,45 @@
-import * as vscode from 'vscode';
-import type { IChatResponder, BuildContext, GetChatWebviewContent, IProviderAccessor } from './types.js';
-
+import type {
+    IChatResponder,
+    BuildContext,
+    GetChatWebviewContent,
+    IProviderAccessor,
+    IExtensionContextMinimal,
+    IVscodeApiLocal,
+    IWebviewView,
+    WebviewMessage
+} from './types.js';
 import { eventBus } from '../events/eventBus.js';
 
 interface IChatViewProviderArgs {
-    extensionContext: vscode.ExtensionContext;
+    extensionContext: IExtensionContextMinimal;
     providerAccessor: IProviderAccessor;
     logicHandler: IChatResponder;
     buildContext: BuildContext;
     getChatWebviewContent: GetChatWebviewContent;
+    vscodeApi: IVscodeApiLocal;
 }
 
-export class ChatViewProvider implements vscode.WebviewViewProvider {
+export class ChatViewProvider {
     public static readonly viewType = 'suggestio.chat.view';
 
-    public _view?: vscode.WebviewView;
+    public _view?: IWebviewView;
     private readonly _logicHandler: IChatResponder;
     private readonly _buildContext: BuildContext;
-    private readonly _context: vscode.ExtensionContext;
+    private readonly _context: IExtensionContextMinimal;
     private readonly _providerAccessor: IProviderAccessor;
     private readonly _getChatWebviewContent: GetChatWebviewContent;
+    private readonly _vscodeApi: IVscodeApiLocal;
 
-    constructor({ extensionContext, providerAccessor, logicHandler, buildContext, getChatWebviewContent }: IChatViewProviderArgs) {
+    constructor({ extensionContext, providerAccessor, logicHandler, buildContext, getChatWebviewContent, vscodeApi }: IChatViewProviderArgs) {
         this._context = extensionContext;
         this._providerAccessor = providerAccessor;
         this._logicHandler = logicHandler;
         this._buildContext = buildContext;
         this._getChatWebviewContent = getChatWebviewContent;
+        this._vscodeApi = vscodeApi;
     }
 
-    public resolveWebviewView(
-        webviewView: vscode.WebviewView,
-        _context: vscode.WebviewViewResolveContext,
-        _token: vscode.CancellationToken,
-    ) {
+    public resolveWebviewView(webviewView: IWebviewView) {
         this._view = webviewView;
 
         // instead of “SUGGESTIO: CHAT” , the sidebar title becomes "SUGGESTIO"
@@ -45,11 +51,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         };
 
         const scriptUri = this._view.webview.asWebviewUri(
-            vscode.Uri.joinPath(this._context.extensionUri, 'builtResources', 'renderMarkDown.js')
+            this._vscodeApi.Uri.joinPath(this._context.extensionUri, 'builtResources', 'renderMarkDown.js')
         );
 
         const highlightCssUri = this._view.webview.asWebviewUri(
-            vscode.Uri.joinPath(this._context.extensionUri, 'media', 'highlight.css')
+            this._vscodeApi.Uri.joinPath(this._context.extensionUri, 'media', 'highlight.css')
         );
 
         const models = this._providerAccessor.getModels();
@@ -66,12 +72,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         this.setupMessageHandler(this._view);
     }
 
-    private setupMessageHandler(webviewView: vscode.WebviewView) {
-        webviewView.webview.onDidReceiveMessage(async message => {
+    private setupMessageHandler(webviewView: IWebviewView) {
+        webviewView.webview.onDidReceiveMessage(async (message: WebviewMessage) => {
             if (message.command === 'sendMessage') {
                 try {
                     const promptWithContext = `${this._buildContext()}\n\n${message.text}`;
-                    await this._logicHandler.fetchStreamChatResponse(promptWithContext, (token) => {
+                    await this._logicHandler.fetchStreamChatResponse(promptWithContext, (token: string) => {
                         webviewView.webview.postMessage({
                             sender: 'assistant',
                             type: 'token',
