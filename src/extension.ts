@@ -22,9 +22,14 @@ export async function activate(context: vscode.ExtensionContext) {
   const configContainer: ConfigContainer = await configProcessor.processConfig(rawConfig, secretManager);
 
   const logicHandler = new ChatLogicHandler(configContainer.config, log);
+  const providerAccessor = {
+    getModels: () => Object.values(configContainer.config.providers).map(p => p.model),
+    getActiveModel: () => configContainer.config.providers[configContainer.config.activeProvider].model,
+  };
+
   const chatProvider = new ChatViewProvider({
     extensionContext: context,
-    config: configContainer.config,
+    providerAccessor,
     logicHandler,
     buildContext,
     getChatWebviewContent

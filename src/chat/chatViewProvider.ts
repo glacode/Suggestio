@@ -1,31 +1,29 @@
 import * as vscode from 'vscode';
-import { getChatWebviewContent } from './chatWebview.js';
-import { ChatLogicHandler } from './chatLogicHandler.js';
-import { Config } from '../config/types.js';
+import type { IChatResponder, BuildContext, GetChatWebviewContent, IProviderAccessor } from './types.js';
 
 import { eventBus } from '../events/eventBus.js';
 
 interface IChatViewProviderArgs {
     extensionContext: vscode.ExtensionContext;
-    config: Config;
-    logicHandler: ChatLogicHandler;
-    buildContext: () => string;
-    getChatWebviewContent: typeof getChatWebviewContent;
+    providerAccessor: IProviderAccessor;
+    logicHandler: IChatResponder;
+    buildContext: BuildContext;
+    getChatWebviewContent: GetChatWebviewContent;
 }
 
 export class ChatViewProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = 'suggestio.chat.view';
 
     public _view?: vscode.WebviewView;
-    private readonly _logicHandler: ChatLogicHandler;
-    private readonly _buildContext: () => string;
+    private readonly _logicHandler: IChatResponder;
+    private readonly _buildContext: BuildContext;
     private readonly _context: vscode.ExtensionContext;
-    private readonly _config: Config;
-    private readonly _getChatWebviewContent: typeof getChatWebviewContent;
+    private readonly _providerAccessor: IProviderAccessor;
+    private readonly _getChatWebviewContent: GetChatWebviewContent;
 
-    constructor({ extensionContext, config, logicHandler, buildContext, getChatWebviewContent }: IChatViewProviderArgs) {
+    constructor({ extensionContext, providerAccessor, logicHandler, buildContext, getChatWebviewContent }: IChatViewProviderArgs) {
         this._context = extensionContext;
-        this._config = config;
+        this._providerAccessor = providerAccessor;
         this._logicHandler = logicHandler;
         this._buildContext = buildContext;
         this._getChatWebviewContent = getChatWebviewContent;
@@ -54,8 +52,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             vscode.Uri.joinPath(this._context.extensionUri, 'media', 'highlight.css')
         );
 
-        const models = Object.values(this._config.providers).map(p => p.model);
-        const activeModel = this._config.providers[this._config.activeProvider].model;
+        const models = this._providerAccessor.getModels();
+        const activeModel = this._providerAccessor.getActiveModel();
 
         this._view.webview.html = this._getChatWebviewContent({
             extensionUri: this._context.extensionUri,

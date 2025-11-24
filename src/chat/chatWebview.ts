@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
+import type { GetChatWebviewContent } from './types.js';
 
 export interface IChatWebviewContentArgs {
     extensionUri: vscode.Uri;
@@ -9,7 +10,7 @@ export interface IChatWebviewContentArgs {
     activeModel: string;
 }
 
-export function getChatWebviewContent(args: IChatWebviewContentArgs): string {
+export const getChatWebviewContent: GetChatWebviewContent = (args) => {
     // 1. Get the path to the chat.html file on disk
     const htmlPath = vscode.Uri.joinPath(args.extensionUri, 'media', 'chat.html');
     
