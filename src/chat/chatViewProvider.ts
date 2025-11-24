@@ -2,11 +2,16 @@ import * as vscode from 'vscode';
 import { getChatWebviewContent } from './chatWebview.js';
 import { ChatLogicHandler } from './chatLogicHandler.js';
 import { Config } from '../config/types.js';
-import { log } from '../logger.js';
-
-import { buildContext } from './context.js';
 
 import { eventBus } from '../events/eventBus.js';
+
+interface IChatViewProviderArgs {
+    extensionContext: vscode.ExtensionContext;
+    config: Config;
+    logicHandler: ChatLogicHandler;
+    buildContext: () => string;
+    getChatWebviewContent: typeof getChatWebviewContent;
+}
 
 export class ChatViewProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = 'suggestio.chat.view';
@@ -14,13 +19,16 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     public _view?: vscode.WebviewView;
     private readonly _logicHandler: ChatLogicHandler;
     private readonly _buildContext: () => string;
+    private readonly _context: vscode.ExtensionContext;
+    private readonly _config: Config;
+    private readonly _getChatWebviewContent: typeof getChatWebviewContent;
 
-    constructor(
-        private readonly _context: vscode.ExtensionContext,
-        private readonly _config: Config
-    ) {
-        this._logicHandler = new ChatLogicHandler(this._config, log);
+    constructor({ extensionContext, config, logicHandler, buildContext, getChatWebviewContent }: IChatViewProviderArgs) {
+        this._context = extensionContext;
+        this._config = config;
+        this._logicHandler = logicHandler;
         this._buildContext = buildContext;
+        this._getChatWebviewContent = getChatWebviewContent;
     }
 
     public resolveWebviewView(
@@ -49,7 +57,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         const models = Object.values(this._config.providers).map(p => p.model);
         const activeModel = this._config.providers[this._config.activeProvider].model;
 
-        this._view.webview.html = getChatWebviewContent({
+        this._view.webview.html = this._getChatWebviewContent({
             extensionUri: this._context.extensionUri,
             scriptUri,
             highlightCssUri,
