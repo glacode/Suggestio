@@ -71,7 +71,7 @@ describe('ChatViewProvider (integration, no vscode mocks)', () => {
       return `HTML for ${args.models.join(',')}`;
     };
 
-    const provider = new ChatViewProvider({
+    const webViewViewProvider = new ChatViewProvider({
       extensionContext: { extensionUri },
       providerAccessor,
       logicHandler,
@@ -81,7 +81,7 @@ describe('ChatViewProvider (integration, no vscode mocks)', () => {
     });
 
     // Resolve the view
-    provider.resolveWebviewView(webviewView);
+    webViewViewProvider.resolveWebviewView(webviewView);
 
     // webview title cleared
     expect(webviewView.title).toBe('');
