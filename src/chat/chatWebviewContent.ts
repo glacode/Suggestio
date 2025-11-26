@@ -10,7 +10,7 @@ export interface IChatWebviewContentArgs {
     activeModel: string;
 }
 
-export const getChatWebviewContent: GetChatWebviewContent = (args) => {
+export const getChatWebviewContent: GetChatWebviewContent = (args: IChatWebviewContentArgs) => {
     // 1. Get the path to the chat.html file on disk
     // Cast to vscode.Uri for compatibility with vscode.Uri.joinPath
     const htmlPath = vscode.Uri.joinPath(args.extensionUri as vscode.Uri, 'media', 'chat.html');
