@@ -4,7 +4,7 @@ import { readConfig } from './config/config.js';
 import { registerCompletionProvider } from './registrations/completionRegistration.js';
 import { registerCommands } from './registrations/commandRegistration.js';
 import './chat/activeEditorTracker.js';
-import { ChatViewProvider } from './chat/chatViewProvider.js';
+import { ChatWebviewViewProvider } from './chat/chatWebviewViewProvider.js';
 import { ChatLogicHandler } from './chat/chatLogicHandler.js';
 import { buildContext } from './chat/context.js';
 import { getChatWebviewContent } from './chat/chatWebviewContent.js';
@@ -27,7 +27,7 @@ export async function activate(context: vscode.ExtensionContext) {
     getActiveModel: () => configContainer.config.providers[configContainer.config.activeProvider].model,
   };
 
-  const chatProvider = new ChatViewProvider({
+  const chatProvider = new ChatWebviewViewProvider({
     extensionContext: context,
     providerAccessor,
     logicHandler,
@@ -36,7 +36,7 @@ export async function activate(context: vscode.ExtensionContext) {
     vscodeApi: vscode
   });
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider(ChatViewProvider.viewType, chatProvider, {
+    vscode.window.registerWebviewViewProvider(ChatWebviewViewProvider.viewType, chatProvider, {
       webviewOptions: { retainContextWhenHidden: true },
     })
   );

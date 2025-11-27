@@ -10,7 +10,7 @@ import type {
 } from './types.js';
 import { eventBus } from '../events/eventBus.js';
 
-interface IChatViewProviderArgs {
+interface IChatWebviewViewProviderArgs {
     extensionContext: IExtensionContextMinimal;
     providerAccessor: IProviderAccessor;
     logicHandler: IChatResponder;
@@ -19,7 +19,7 @@ interface IChatViewProviderArgs {
     vscodeApi: IVscodeApiLocal;
 }
 
-export class ChatViewProvider {
+export class ChatWebviewViewProvider {
     public static readonly viewType = 'suggestio.chat.view';
 
     public _view?: IWebviewView;
@@ -30,7 +30,7 @@ export class ChatViewProvider {
     private readonly _getChatWebviewContent: GetChatWebviewContent;
     private readonly _vscodeApi: IVscodeApiLocal;
 
-    constructor({ extensionContext, providerAccessor, logicHandler, buildContext, getChatWebviewContent, vscodeApi }: IChatViewProviderArgs) {
+    constructor({ extensionContext, providerAccessor, logicHandler, buildContext, getChatWebviewContent, vscodeApi }: IChatWebviewViewProviderArgs) {
         this._context = extensionContext;
         this._providerAccessor = providerAccessor;
         this._logicHandler = logicHandler;
