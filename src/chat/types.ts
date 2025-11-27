@@ -156,7 +156,7 @@ export interface IChatResponder {
  * `getModels()`: Returns a list of available model identifiers (strings).
  * `getActiveModel()`: Returns the identifier of the currently active/selected model.
  */
-export interface IProviderAccessor {
+export interface ILlmProviderAccessor {
   getModels(): string[];
   getActiveModel(): string;
 }

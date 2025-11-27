@@ -7,7 +7,7 @@
 import type {
   UriLike, // A type representing a URI (Uniform Resource Identifier), similar to a file path.
   IVscodeApiLocal, // A type for a local, faked VS Code API.
-  IProviderAccessor, // A type for accessing language model (LLM) providers.
+  ILlmProviderAccessor, // A type for accessing language model (LLM) providers.
   IChatResponder, // A type for handling chat logic (sending/receiving messages).
   IWebview, // A type representing the webview itself, which displays HTML content.
   IWebviewView, // A type representing the VS Code WebviewView, a container for the webview.
@@ -46,7 +46,7 @@ describe('ChatViewProvider (integration, no vscode mocks)', () => {
 
     // `providerAccessor` is a fake that provides information about available
     // and active language models (LLMs).
-    const providerAccessor: IProviderAccessor = {
+    const providerAccessor: ILlmProviderAccessor = {
       // `getModels` returns a list of fake model names.
       getModels: () => ['m1', 'm2'],
       // `getActiveModel` returns the currently selected fake model.
@@ -210,7 +210,7 @@ describe('ChatViewProvider (integration, no vscode mocks)', () => {
     };
 
     // Define a fake `providerAccessor` that returns empty lists for models.
-    const providerAccessor: IProviderAccessor = {
+    const providerAccessor: ILlmProviderAccessor = {
       getModels: () => [],
       getActiveModel: () => ''
     };
@@ -311,7 +311,7 @@ describe('ChatViewProvider (integration, no vscode mocks)', () => {
     };
 
     // Define a fake `providerAccessor` that returns empty lists for models.
-    const providerAccessor: IProviderAccessor = {
+    const providerAccessor: ILlmProviderAccessor = {
       getModels: () => [],
       getActiveModel: () => ''
     };
