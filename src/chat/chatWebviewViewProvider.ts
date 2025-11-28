@@ -10,7 +10,7 @@ import type {
     GetChatWebviewContent, // A function type for generating the HTML content for the webview.
     ILlmProviderAccessor, // Defines the interface for accessing information about LLM providers (models).
     IExtensionContextMinimal, // A minimal representation of VS Code's `ExtensionContext`,
-                               // providing access to essential extension resources like `extensionUri`.
+    // providing access to essential extension resources like `extensionUri`.
     IVscodeApiLocal, // A minimal, faked representation of the VS Code API, used primarily for URI handling.
     IWebviewView, // Defines the interface for a VS Code `WebviewView`, which is a container for the webview.
     WebviewMessage // Defines the structure of messages sent from the webview to the extension.
@@ -86,11 +86,11 @@ export class ChatWebviewViewProvider {
         this._view.webview.options = {
             enableScripts: true, // Allows JavaScript to run inside the webview, enabling interactivity.
             localResourceRoots: [this._context.extensionUri] // Specifies URIs from which the webview can load local resources
-                                                            // (like scripts, stylesheets). Here, it's restricted to the
-                                                            // extension's own directory for security.
+            // (like scripts, stylesheets). Here, it's restricted to the
+            // extension's own directory for security.
         };
 
-        // Construct a URI for the `renderMarkDown.js` script.
+        // Construct a URI for the `renderMarkDown.js` script, which is compiled from `renderMarkDown.ts`.
         // `asWebviewUri` is crucial: it converts a local file URI into a special URI
         // that the webview can safely load, adhering to VS Code's security policies.
         // `vscodeApi.Uri.joinPath` constructs a new URI by joining path segments.
@@ -128,13 +128,14 @@ export class ChatWebviewViewProvider {
      * This is the primary way the webview (e.g., user input, model selection) communicates
      * back to the VS Code extension.
      *
-     * @param webviewView The `IWebviewView` whose webview will be listening for messages.
+     * @param webviewView The `IWebviewView` containing the webview to set up listeners for.
      */
     private setupMessageHandler(webviewView: IWebviewView) {
-        // `onDidReceiveMessage` (from `vscode.Webview.onDidReceiveMessage`) registers an event handler
-        // that is called whenever the webview sends a message to the extension.
+        // Registers an event listener on the extension side that fires when the webview sends a message.
+        // `vscode.Webview.onDidReceiveMessage` is the core mechanism for the webview UI to communicate
+        // back to the extension's backend logic.
         webviewView.webview.onDidReceiveMessage(async (message: WebviewMessage) => {
-            // Check the `command` property of the message to determine the action to take.
+            // The `command` property of the message determines the action to take.
             if (message.command === 'sendMessage') {
                 // Handle a message sent by the user from the webview to initiate a chat response.
                 try {
@@ -143,9 +144,9 @@ export class ChatWebviewViewProvider {
                     // Call the `logicHandler` to fetch a streaming chat response.
                     // The `onToken` callback is invoked for each partial token received from the LLM.
                     await this._logicHandler.fetchStreamChatResponse(promptWithContext, (token: string) => {
-                        // For each token, post a 'token' type message back to the webview.
-                        // `webview.postMessage` (from `vscode.Webview.postMessage`) sends data
-                        // from the extension to the webview.
+                        // Send a 'token' type message from the extension back to the webview's frontend.
+                        // The `webview.postMessage` method is part of the VS Code Webview API (`vscode.Webview.postMessage`)
+                        // and is the primary way for the extension backend to communicate with the webview UI.
                         webviewView.webview.postMessage({
                             sender: 'assistant',
                             type: 'token',
