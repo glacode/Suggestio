@@ -49,7 +49,7 @@ export class ChatWebviewViewProvider {
     public _view?: IWebviewView;
     private readonly _logicHandler: IChatResponder; // Stores the handler for chat backend logic.
     private readonly _buildContext: BuildContext; // Stores the context builder function.
-    private readonly _context: IExtensionContextMinimal; // Stores the extension context.
+    private readonly _extensionContext: IExtensionContextMinimal; // Stores the extension context.
     private readonly _providerAccessor: ILlmProviderAccessor; // Stores the model provider accessor.
     private readonly _getChatWebviewContent: GetChatWebviewContent; // Stores the webview content generator.
     private readonly _vscodeApi: IVscodeApiLocal; // Stores the VS Code API for internal use.
@@ -59,7 +59,7 @@ export class ChatWebviewViewProvider {
      * These dependencies are typically passed from `extension.ts` during activation.
      */
     constructor({ extensionContext, providerAccessor, logicHandler, buildContext, getChatWebviewContent, vscodeApi }: IChatWebviewViewProviderArgs) {
-        this._context = extensionContext;
+        this._extensionContext = extensionContext;
         this._providerAccessor = providerAccessor;
         this._logicHandler = logicHandler;
         this._buildContext = buildContext;
@@ -85,7 +85,7 @@ export class ChatWebviewViewProvider {
         // This corresponds to `vscode.WebviewOptions`.
         this._view.webview.options = {
             enableScripts: true, // Allows JavaScript to run inside the webview, enabling interactivity.
-            localResourceRoots: [this._context.extensionUri] // Specifies URIs from which the webview can load local resources
+            localResourceRoots: [this._extensionContext.extensionUri] // Specifies URIs from which the webview can load local resources
             // (like scripts, stylesheets). Here, it's restricted to the
             // extension's own directory for security.
         };
@@ -95,12 +95,12 @@ export class ChatWebviewViewProvider {
         // that the webview can safely load, adhering to VS Code's security policies.
         // `vscodeApi.Uri.joinPath` constructs a new URI by joining path segments.
         const scriptUri = this._view.webview.asWebviewUri(
-            this._vscodeApi.Uri.joinPath(this._context.extensionUri, 'builtResources', 'renderMarkDown.js')
+            this._vscodeApi.Uri.joinPath(this._extensionContext.extensionUri, 'builtResources', 'renderMarkDown.js')
         );
 
         // Construct a URI for the `highlight.css` stylesheet, similarly converted for webview use.
         const highlightCssUri = this._view.webview.asWebviewUri(
-            this._vscodeApi.Uri.joinPath(this._context.extensionUri, 'media', 'highlight.css')
+            this._vscodeApi.Uri.joinPath(this._extensionContext.extensionUri, 'media', 'highlight.css')
         );
 
         // Retrieve the list of available models and the currently active model from the provider accessor.
@@ -112,7 +112,7 @@ export class ChatWebviewViewProvider {
         // The `webview.html` property (corresponding to `vscode.Webview.html`) sets the content
         // displayed inside the webview panel.
         this._view.webview.html = this._getChatWebviewContent({
-            extensionUri: this._context.extensionUri,
+            extensionUri: this._extensionContext.extensionUri,
             scriptUri,
             highlightCssUri,
             models,

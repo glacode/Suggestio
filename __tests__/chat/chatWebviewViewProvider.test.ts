@@ -1,5 +1,5 @@
 // This test file uses `describe` to group related tests and `it` for individual test cases.
-// It's designed to test the `ChatViewProvider` without actually using a full VS Code environment.
+// It's designed to test the `ChatWebviewViewProvider` without actually using a full VS Code environment.
 // Instead, it uses "mocks" (fake versions) of VS Code API parts and other dependencies.
 
 // Import necessary types from the chat module. These define the shapes of objects
@@ -15,16 +15,16 @@ import type {
   WebviewResponseMessage, // A type for messages sent *to* the webview (e.g., AI responses).
   IDisposable // A type for objects that can be disposed (cleaned up).
 } from '../../src/chat/types.js';
-// Import the actual ChatViewProvider class that we are testing.
+// Import the actual ChatWebviewViewProvider class that we are testing.
 import { ChatWebviewViewProvider } from '../../src/chat/chatWebviewViewProvider.js';
 // Import the event bus, a system for sending and receiving events across different parts of the application.
 import { eventBus } from '../../src/events/eventBus.js';
 
-// `describe` is used to group tests. Here, we're testing the `ChatViewProvider`.
+// `describe` is used to group tests. Here, we're testing the `ChatWebviewViewProvider`.
 // The description "integration, no vscode mocks" indicates that while we're using
 // fakes for dependencies, we're testing how components integrate, and we're *not*
 // using a full-blown VS Code mock framework, but rather simple hand-rolled fakes.
-describe('ChatViewProvider (integration, no vscode mocks)', () => {
+describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
   // `it` defines a single test case. This one checks if the webview is set up correctly,
   // receives its HTML content, and can handle messages to get AI responses (tokens and completion).
@@ -34,7 +34,7 @@ describe('ChatViewProvider (integration, no vscode mocks)', () => {
     const extensionUri: UriLike = { fsPath: '/ext' };
 
     // `vscodeApi` is a fake (mock) version of the VS Code API.
-    // We only implement the parts that `ChatViewProvider` needs,
+    // We only implement the parts that `ChatWebviewViewProvider` needs,
     // specifically `Uri.joinPath` which is used to construct paths for webview resources.
     const vscodeApi: IVscodeApiLocal = {
       Uri: {
@@ -54,7 +54,7 @@ describe('ChatViewProvider (integration, no vscode mocks)', () => {
     };
 
     // `posted` is an array that will capture any messages sent *to* the webview
-    // by the `ChatViewProvider`. This helps us check if the provider sends the
+    // by the `ChatWebviewViewProvider`. This helps us check if the provider sends the
     // correct responses.
     const posted: WebviewResponseMessage[] = [];
 
@@ -81,7 +81,7 @@ describe('ChatViewProvider (integration, no vscode mocks)', () => {
     };
 
     // `webviewView` is a fake `IWebviewView` which acts as a container for our `webview`.
-    // It initially has a title, which we expect the `ChatViewProvider` to clear.
+    // It initially has a title, which we expect the `ChatWebviewViewProvider` to clear.
     const webviewView: IWebviewView = { title: 'SUGGESTIO: CHAT', webview };
 
     // `tokensEmitted` will store the full prompts sent to the `logicHandler`.
@@ -118,7 +118,7 @@ describe('ChatViewProvider (integration, no vscode mocks)', () => {
     };
 
     // ********************************************************************************
-    //  Instantiate the ChatViewProvider with all our fake dependencies.
+    //  Instantiate the ChatWebviewViewProvider with all our fake dependencies.
     // ********************************************************************************
     const webViewViewProvider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri }, // Provides the extension's URI.
@@ -194,7 +194,7 @@ describe('ChatViewProvider (integration, no vscode mocks)', () => {
     expect(tokensEmitted[0]).toContain('hello');
   });
 
-  // This test case verifies that the `ChatViewProvider` correctly handles:
+  // This test case verifies that the `ChatWebviewViewProvider` correctly handles:
   // 1. The 'modelChanged' command, emitting an event.
   // 2. The 'clearHistory' command, calling the logic handler's `clearHistory`.
   // 3. Error reporting when `fetchStreamChatResponse` fails.
@@ -249,7 +249,7 @@ describe('ChatViewProvider (integration, no vscode mocks)', () => {
     };
 
     // ********************************************************************************
-    //  Instantiate and resolve the `ChatViewProvider`.
+    //  Instantiate and resolve the `ChatWebviewViewProvider`.
     // ********************************************************************************
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri },
@@ -298,7 +298,7 @@ describe('ChatViewProvider (integration, no vscode mocks)', () => {
     expect(last.text).toContain('Sorry, there was an error processing your request');
   });
 
-  // This test case verifies that the `ChatViewProvider` gracefully ignores
+  // This test case verifies that the `ChatWebviewViewProvider` gracefully ignores
   // commands sent from the webview that it doesn't recognize.
   it('ignores unknown commands (no-op branch)', async () => {
     // Define a fake extension URI.
@@ -348,7 +348,7 @@ describe('ChatViewProvider (integration, no vscode mocks)', () => {
     };
 
     // ********************************************************************************
-    //  Instantiate and resolve the `ChatViewProvider`.
+    //  Instantiate and resolve the `ChatWebviewViewProvider`.
     // ********************************************************************************
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri },
@@ -366,7 +366,7 @@ describe('ChatViewProvider (integration, no vscode mocks)', () => {
     // ********************************************************************************
     // Cast the stored handler to a more generic type as we're sending an "unknown" message structure.
     const handler = webview.__handler as (msg: unknown) => Promise<void>;
-    // Send a message with a 'command' that the `ChatViewProvider` does not handle.
+    // Send a message with a 'command' that the `ChatWebviewViewProvider` does not handle.
     await handler({ command: 'unknown' });
 
     // ********************************************************************************
