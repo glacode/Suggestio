@@ -9,7 +9,7 @@ export function registerCompletionProvider(
 ) {
   const provider: vscode.InlineCompletionItemProvider = {
     provideInlineCompletionItems: (doc, pos, ctx, token) =>
-      provideInlineCompletionItems(config.inlineCompletionProvider, config, doc, pos, ctx, token)
+      provideInlineCompletionItems(config.llmProviderForInlineCompletion, config, doc, pos, ctx, token)
   };
 
   context.subscriptions.push(

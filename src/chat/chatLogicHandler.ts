@@ -21,7 +21,7 @@ export class ChatLogicHandler implements IChatResponder, IChatHistoryManager {
         fullResponse += token;
         onToken(token);
       };
-      await this.config.chatProvider!.queryStream(prompt, recordingOnToken);
+      await this.config.llmProviderForChat!.queryStream(prompt, recordingOnToken);
       this.conversationHistory.addMessage({ role: "model", content: fullResponse });
       this.log("Stream completion finished.");
     } catch (err: any) {

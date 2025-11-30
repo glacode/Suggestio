@@ -18,8 +18,8 @@ export interface Config {
     enabled: boolean;
     words: string[];
   };
-  inlineCompletionProvider?: llmProvider;
-  chatProvider?: llmProvider;
+  llmProviderForInlineCompletion?: llmProvider;
+  llmProviderForChat?: llmProvider;
 }
 
 export interface ConfigContainer {
