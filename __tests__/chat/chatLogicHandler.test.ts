@@ -2,6 +2,10 @@ import { describe, it, beforeEach, expect } from "@jest/globals";
 import { ChatLogicHandler } from "../../src/chat/chatLogicHandler.js";
 import { llmProvider } from "../../src/providers/llmProvider.js";
 import { Prompt } from "../../src/promptBuilder/prompt.js";
+import { Config, ProviderConfig } from "../../src/config/types.js"; // Import Config and ProviderConfig types
+
+// Define a minimal mock config interface for testing purposes
+interface MockChatLogicHandlerConfig extends Pick<Config, 'activeProvider' | 'llmProviderForChat' | 'providers' | 'anonymizer'> { }
 
 class FakeProvider implements llmProvider {
     constructor(private reply: string | null, private shouldThrow = false) { }
@@ -32,8 +36,10 @@ describe("ChatLogicHandler (DI) simple tests", () => {
         const handler = new ChatLogicHandler(
             {
                 activeProvider: "FAKE",
-                chatProvider: new FakeProvider("Hello world")
-            } as any,
+                llmProviderForChat: new FakeProvider("Hello world"),
+                providers: { FAKE: { model: "fake-model", apiKey: "fake-key" } as ProviderConfig }, // Add mock for providers
+                anonymizer: { enabled: false, words: [] } // Add mock for anonymizer
+            } as MockChatLogicHandlerConfig, // Use the new mock interface
             logger
         );
 
@@ -54,8 +60,10 @@ describe("ChatLogicHandler (DI) simple tests", () => {
         const handler = new ChatLogicHandler(
             {
                 activeProvider: "FAKE",
-                chatProvider: new FakeProvider(null, true)
-            } as any,
+                llmProviderForChat: new FakeProvider(null, true),
+                providers: { FAKE: { model: "fake-model", apiKey: "fake-key" } as ProviderConfig }, // Add mock for providers
+                anonymizer: { enabled: false, words: [] } // Add mock for anonymizer
+            } as MockChatLogicHandlerConfig, // Use the new mock interface
             logger
         );
 
@@ -74,7 +82,12 @@ describe("ChatLogicHandler (DI) simple tests", () => {
 
     it("clears conversation history", () => {
         const handler = new ChatLogicHandler(
-            { activeProvider: "FAKE", chatProvider: new FakeProvider("Hello world") } as any,
+            {
+                activeProvider: "FAKE",
+                llmProviderForChat: new FakeProvider("Hello world"),
+                providers: { FAKE: { model: "fake-model", apiKey: "fake-key" } as ProviderConfig }, // Add mock for providers
+                anonymizer: { enabled: false, words: [] } // Add mock for anonymizer
+            } as MockChatLogicHandlerConfig, // Use the new mock interface
             logger
         );
 
