@@ -1,6 +1,3 @@
-export interface ChatMessage {
-  role: "user" | "model";
-  content: string;
-}
+import { ChatMessage } from "./types.js"; // Import from types.ts
 
 export type Conversation = ChatMessage[];

@@ -120,7 +120,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       extensionContext: { extensionUri }, // Provides the extension's URI.
       providerAccessor, // Provides access to LLM models.
       logicHandler, // Handles the actual chat response logic.
-      chatHistoryManager: { clearHistory: () => { /* not called */ } }, // No-op for this test
+      chatHistoryManager: { clearHistory: () => { /* not called */ }, addMessage: () => {}, getChatHistory: () => [] }, // No-op for this test
       buildContext, // Provides additional context for prompts.
       getChatWebviewContent, // Function to generate webview HTML.
       vscodeApi // Faked VS Code API.
@@ -243,7 +243,9 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const chatHistoryManager: IChatHistoryManager = {
       clearHistory: () => {
         chatHistoryCleared = true;
-      }
+      },
+      addMessage: () => {},
+      getChatHistory: () => [],
     };
 
     // ********************************************************************************
@@ -346,7 +348,9 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const chatHistoryManager: IChatHistoryManager = {
       clearHistory: () => {
         /* not called */ // This should not be called.
-      }
+      },
+      addMessage: () => {},
+      getChatHistory: () => [],
     };
 
     // ********************************************************************************

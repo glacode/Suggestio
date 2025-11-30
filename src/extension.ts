@@ -11,6 +11,8 @@ import { getChatWebviewContent } from './chat/chatWebviewContent.js';
 import { ConfigContainer } from './config/types.js';
 import { SecretManager } from './config/secretManager.js';
 import { configProcessor } from './config/configProcessor.js';
+import { ConversationHistory } from './chat/conversationHistory.js'; // New import
+import { ChatHistoryManager } from './chat/chatHistoryManager.js'; // New import
 
 export async function activate(context: vscode.ExtensionContext) {
   initLogger();
@@ -21,7 +23,14 @@ export async function activate(context: vscode.ExtensionContext) {
   const rawConfig = await readConfig(context);
   const configContainer: ConfigContainer = await configProcessor.processConfig(rawConfig, secretManager);
 
-  const logicHandler = new ChatLogicHandler(configContainer.config, log);
+  const conversationHistory = new ConversationHistory(); // Owned by extension.ts
+  const chatHistoryManager = new ChatHistoryManager(conversationHistory); // Created here
+
+  const logicHandler = new ChatLogicHandler(
+    configContainer.config,
+    log,
+    chatHistoryManager // Injected fully capable history manager
+  );
   const providerAccessor = {
     getModels: () => Object.values(configContainer.config.providers).map(p => p.model),
     getActiveModel: () => configContainer.config.providers[configContainer.config.activeProvider].model,
@@ -31,7 +40,7 @@ export async function activate(context: vscode.ExtensionContext) {
     extensionContext: context,
     providerAccessor,
     logicHandler,
-    chatHistoryManager: logicHandler, // Pass the same instance as it implements IChatHistoryManager
+    chatHistoryManager: chatHistoryManager, // Use the shared instance
     buildContext,
     getChatWebviewContent,
     vscodeApi: vscode

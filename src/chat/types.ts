@@ -120,6 +120,18 @@ export type WebviewMessage =
   | { command: 'clearHistory' };
 
 /**
+ * `ChatMessage` defines the structure of a single message in the chat conversation.
+ * It's used for both user input and AI responses.
+ *
+ * `role`: Indicates who sent the message ('user' or 'model').
+ * `content`: The actual text content of the message.
+ */
+export interface ChatMessage {
+  role: "user" | "model";
+  content: string;
+}
+
+/**
  * `ResponseMessageFromTheExtensionToTheWebview` defines the types of messages that can be sent *from* the extension
  * (backend) to the webview (frontend). This is used for AI responses and status updates.
  *
@@ -152,9 +164,13 @@ export interface IChatResponder {
  * `IChatHistoryManager` defines the interface for managing chat history.
  *
  * `clearHistory()`: Clears the chat history.
+ * `addMessage(message: ChatMessage): void;`
+ * `getChatHistory(): ChatMessage[];`
  */
 export interface IChatHistoryManager {
   clearHistory(): void;
+  addMessage(message: ChatMessage): void;
+  getChatHistory(): ChatMessage[];
 }
 
 /**

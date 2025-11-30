@@ -1,4 +1,5 @@
-import { Conversation, ChatMessage } from "./conversation.js";
+import { Conversation } from "./conversation.js";
+import { ChatMessage } from "./types.js";
 
 export class ConversationHistory {
   private history: Conversation = [];
