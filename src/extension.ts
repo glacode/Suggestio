@@ -5,7 +5,7 @@ import { registerCompletionProvider } from './registrations/completionRegistrati
 import { registerCommands } from './registrations/commandRegistration.js';
 import './chat/activeEditorTracker.js';
 import { ChatWebviewViewProvider } from './chat/chatWebviewViewProvider.js';
-import { ChatLogicHandler } from './chat/chatLogicHandler.js';
+import { ChatResponder } from './chat/chatResponder.js';
 import { buildContext } from './chat/context.js';
 import { getChatWebviewContent } from './chat/chatWebviewContent.js';
 import { ConfigContainer } from './config/types.js';
@@ -26,7 +26,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const conversationHistory = new ConversationHistory(); // Owned by extension.ts
   const chatHistoryManager = new ChatHistoryManager(conversationHistory); // Created here
 
-  const logicHandler = new ChatLogicHandler(
+  const logicHandler = new ChatResponder(
     configContainer.config,
     log,
     chatHistoryManager // Injected fully capable history manager

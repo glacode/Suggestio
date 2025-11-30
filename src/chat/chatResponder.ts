@@ -2,7 +2,7 @@ import { Config } from "../config/types.js";
 import type { IChatResponder, IChatHistoryManager } from "./types.js";
 import { ChatPrompt } from "./chatPrompt.js";
 
-export class ChatLogicHandler implements IChatResponder {
+export class ChatResponder implements IChatResponder {
   constructor(
     private config: Config,
     private log: (message: string) => void,

@@ -1,5 +1,5 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
-import { ChatLogicHandler } from "../../src/chat/chatLogicHandler.js";
+import { ChatResponder } from "../../src/chat/chatResponder.js";
 import { llmProvider } from "../../src/providers/llmProvider.js";
 import { Prompt } from "../../src/promptBuilder/prompt.js";
 import { Config, ProviderConfig } from "../../src/config/types.js";
@@ -47,7 +47,7 @@ describe("ChatLogicHandler (DI) simple tests", () => {
     });
 
     it("fetches stream chat response on success", async () => {
-        const handler = new ChatLogicHandler(
+        const handler = new ChatResponder(
             {
                 activeProvider: "FAKE",
                 llmProviderForChat: new FakeProvider("Hello world"),
@@ -77,7 +77,7 @@ describe("ChatLogicHandler (DI) simple tests", () => {
     });
 
     it("handles error when fetching stream chat response", async () => {
-        const handler = new ChatLogicHandler(
+        const handler = new ChatResponder(
             {
                 activeProvider: "FAKE",
                 llmProviderForChat: new FakeProvider(null, true),
