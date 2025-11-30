@@ -6,6 +6,7 @@
 // and define the expected structure for various objects and functions used in the chat feature.
 import type {
     IChatResponder, // Defines the interface for handling chat logic (e.g., sending prompts to an LLM).
+    IChatHistoryManager, // Defines the interface for managing chat history (e.g., clearing it).
     BuildContext, // A function type for generating additional context for prompts.
     GetChatWebviewContent, // A function type for generating the HTML content for the webview.
     ILlmProviderAccessor, // Defines the interface for accessing information about LLM providers (models).
@@ -25,6 +26,7 @@ interface IChatWebviewViewProviderArgs {
     extensionContext: IExtensionContextMinimal; // The VS Code extension context, vital for managing extension resources.
     providerAccessor: ILlmProviderAccessor; // An accessor to retrieve available and active LLM models.
     logicHandler: IChatResponder; // The core logic handler responsible for interacting with the LLM.
+    chatHistoryManager: IChatHistoryManager; // The manager responsible for chat history operations.
     buildContext: BuildContext; // A function to create contextual information for the AI prompt.
     getChatWebviewContent: GetChatWebviewContent; // A function that provides the HTML content for the webview.
     vscodeApi: IVscodeApiLocal; // The VS Code API instance, used here for `Uri` operations.
@@ -48,6 +50,7 @@ export class ChatWebviewViewProvider {
     // when the view is resolved. This allows the provider to interact with the webview.
     public _view?: IWebviewView;
     private readonly _logicHandler: IChatResponder; // Stores the handler for chat backend logic.
+    private readonly _chatHistoryManager: IChatHistoryManager; // Stores the chat history manager.
     private readonly _buildContext: BuildContext; // Stores the context builder function.
     private readonly _extensionContext: IExtensionContextMinimal; // Stores the extension context.
     private readonly _providerAccessor: ILlmProviderAccessor; // Stores the model provider accessor.
@@ -58,10 +61,11 @@ export class ChatWebviewViewProvider {
      * The constructor initializes the `ChatWebviewViewProvider` with its dependencies.
      * These dependencies are typically passed from `extension.ts` during activation.
      */
-    constructor({ extensionContext, providerAccessor, logicHandler, buildContext, getChatWebviewContent, vscodeApi }: IChatWebviewViewProviderArgs) {
+    constructor({ extensionContext, providerAccessor, logicHandler, chatHistoryManager, buildContext, getChatWebviewContent, vscodeApi }: IChatWebviewViewProviderArgs) {
         this._extensionContext = extensionContext;
         this._providerAccessor = providerAccessor;
         this._logicHandler = logicHandler;
+        this._chatHistoryManager = chatHistoryManager;
         this._buildContext = buildContext;
         this._getChatWebviewContent = getChatWebviewContent;
         this._vscodeApi = vscodeApi;
@@ -173,9 +177,9 @@ export class ChatWebviewViewProvider {
                 eventBus.emit('modelChanged', message.model);
             } else if (message.command === 'clearHistory') {
                 // Handle a message requesting to clear the chat history.
-                // Call the `clearHistory` method on the `logicHandler`.
+                // Call the `clearHistory` method on the `chatHistoryManager`.
                 // TODO: Add a UI element (icon/button) in the webview to trigger this command.
-                this._logicHandler.clearHistory();
+                this._chatHistoryManager.clearHistory();
             }
         });
     }

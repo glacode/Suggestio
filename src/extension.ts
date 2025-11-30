@@ -31,6 +31,7 @@ export async function activate(context: vscode.ExtensionContext) {
     extensionContext: context,
     providerAccessor,
     logicHandler,
+    chatHistoryManager: logicHandler, // Pass the same instance as it implements IChatHistoryManager
     buildContext,
     getChatWebviewContent,
     vscodeApi: vscode

@@ -146,6 +146,14 @@ export type ResponseMessageFromTheExtensionToTheWebview =
  */
 export interface IChatResponder {
   fetchStreamChatResponse(userPrompt: string, onToken: (token: string) => void): Promise<void>;
+}
+
+/**
+ * `IChatHistoryManager` defines the interface for managing chat history.
+ *
+ * `clearHistory()`: Clears the chat history.
+ */
+export interface IChatHistoryManager {
   clearHistory(): void;
 }
 

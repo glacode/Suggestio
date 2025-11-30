@@ -9,6 +9,7 @@ import type {
   IVscodeApiLocal, // A type for a local, faked VS Code API.
   ILlmProviderAccessor, // A type for accessing language model (LLM) providers.
   IChatResponder, // A type for handling chat logic (sending/receiving messages).
+  IChatHistoryManager, // A type for managing chat history (e.g., clearing it).
   IWebview, // A type representing the webview itself, which displays HTML content.
   IWebviewView, // A type representing the VS Code WebviewView, a container for the webview.
   WebviewMessage, // A type for messages sent *from* the webview (e.g., user input).
@@ -95,11 +96,6 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
         onToken('tok2'); // Second fake token.
         tokensEmitted.push(prompt); // Record the prompt that was processed.
         return Promise.resolve(); // Simulate successful completion.
-      },
-      // `clearHistory` is a fake method to simulate clearing chat history.
-      // It sets a property `_cleared` to true for verification.
-      clearHistory: () => {
-        (logicHandler as unknown as { _cleared?: boolean })._cleared = true;
       }
     };
 
@@ -124,6 +120,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       extensionContext: { extensionUri }, // Provides the extension's URI.
       providerAccessor, // Provides access to LLM models.
       logicHandler, // Handles the actual chat response logic.
+      chatHistoryManager: { clearHistory: () => { /* not called */ } }, // No-op for this test
       buildContext, // Provides additional context for prompts.
       getChatWebviewContent, // Function to generate webview HTML.
       vscodeApi // Faked VS Code API.
@@ -234,17 +231,18 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // Fake `webviewView` container.
     const webviewView: IWebviewView = { title: 'X', webview };
 
-    // `cleared` flag to check if `clearHistory` was called on the `logicHandler`.
-    let cleared = false;
     // Fake `logicHandler` for this test.
     const logicHandler: IChatResponder = {
       // For this test, `fetchStreamChatResponse` is made to throw an error immediately.
       fetchStreamChatResponse: async () => {
         throw new Error('boom'); // Simulate an error during AI response.
-      },
-      // `clearHistory` sets the `cleared` flag to true.
+      }
+    };
+
+    let chatHistoryCleared = false;
+    const chatHistoryManager: IChatHistoryManager = {
       clearHistory: () => {
-        cleared = true;
+        chatHistoryCleared = true;
       }
     };
 
@@ -255,6 +253,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       extensionContext: { extensionUri },
       providerAccessor,
       logicHandler,
+      chatHistoryManager,
       buildContext: () => '', // Empty context for this test.
       getChatWebviewContent: () => '', // Empty HTML content for this test.
       vscodeApi
@@ -282,8 +281,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     //  Simulate a 'clearHistory' command from the webview.
     // ********************************************************************************
     await handler({ command: 'clearHistory' });
-    // Expect that the `clearHistory` method on our fake `logicHandler` was called.
-    expect(cleared).toBe(true);
+    // Expect that the `clearHistory` method on our fake `chatHistoryManager` was called.
+    expect(chatHistoryCleared).toBe(true);
 
     // ********************************************************************************
     //  Simulate a 'sendMessage' command which is expected to trigger an error.
@@ -341,7 +340,10 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const logicHandler: IChatResponder = {
       fetchStreamChatResponse: async () => {
         /* not called */ // This should not be called.
-      },
+      }
+    };
+
+    const chatHistoryManager: IChatHistoryManager = {
       clearHistory: () => {
         /* not called */ // This should not be called.
       }
@@ -354,6 +356,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       extensionContext: { extensionUri },
       providerAccessor,
       logicHandler,
+      chatHistoryManager,
       buildContext: () => '',
       getChatWebviewContent: () => '',
       vscodeApi

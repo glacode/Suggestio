@@ -1,9 +1,9 @@
 import { Config } from "../config/types.js";
-import type { IChatResponder } from "./types.js";
+import type { IChatResponder, IChatHistoryManager } from "./types.js";
 import { ConversationHistory } from "./conversationHistory.js";
 import { ChatPrompt } from "./chatPrompt.js";
 
-export class ChatLogicHandler implements IChatResponder {
+export class ChatLogicHandler implements IChatResponder, IChatHistoryManager {
   private conversationHistory = new ConversationHistory();
 
   constructor(
