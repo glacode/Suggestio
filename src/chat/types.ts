@@ -86,7 +86,7 @@ export interface IWebview {
   options?: IWebviewOptions;
   asWebviewUri(uri: UriLike): UriLike;
   onDidReceiveMessage<T = WebviewMessage>(listener: (message: T) => void): IDisposable;
-  postMessage(message: WebviewResponseMessage): Promise<boolean> | Thenable<boolean>;
+  postMessage(message: ResponseMessageFromTheExtensionToTheWebview): Promise<boolean> | Thenable<boolean>;
   html?: string;
 }
 
@@ -120,7 +120,7 @@ export type WebviewMessage =
   | { command: 'clearHistory' };
 
 /**
- * `WebviewResponseMessage` defines the types of messages that can be sent *from* the extension
+ * `ResponseMessageFromTheExtensionToTheWebview` defines the types of messages that can be sent *from* the extension
  * (backend) to the webview (frontend). This is used for AI responses and status updates.
  *
  * `sender`: Always 'assistant' for these messages.
@@ -130,7 +130,7 @@ export type WebviewMessage =
  *   Contains the final (or empty if tokens were sent) `text` of the completion.
  * (No `type`): A generic message, often used for error reporting. Contains the `text` of the message.
  */
-export type WebviewResponseMessage =
+export type ResponseMessageFromTheExtensionToTheWebview =
   | { sender: 'assistant'; type: 'token'; text: string }
   | { sender: 'assistant'; type: 'completion'; text: string }
   | { sender: 'assistant'; text: string }; // For general messages, e.g. errors

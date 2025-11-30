@@ -27,7 +27,7 @@ export async function activate(context: vscode.ExtensionContext) {
     getActiveModel: () => configContainer.config.providers[configContainer.config.activeProvider].model,
   };
 
-  const chatProvider = new ChatWebviewViewProvider({
+  const chatWebviewViewProvider : vscode.WebviewViewProvider = new ChatWebviewViewProvider({
     extensionContext: context,
     providerAccessor,
     logicHandler,
@@ -36,7 +36,7 @@ export async function activate(context: vscode.ExtensionContext) {
     vscodeApi: vscode
   });
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider(ChatWebviewViewProvider.viewType, chatProvider, {
+    vscode.window.registerWebviewViewProvider(ChatWebviewViewProvider.viewType, chatWebviewViewProvider, {
       webviewOptions: { retainContextWhenHidden: true },
     })
   );
