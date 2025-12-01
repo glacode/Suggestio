@@ -11,7 +11,7 @@ import { getChatWebviewContent } from './chat/chatWebviewContent.js';
 import { ConfigContainer } from './config/types.js';
 import { SecretManager } from './config/secretManager.js';
 import { configProcessor } from './config/configProcessor.js';
-import { ChatHistoryManager } from './chat/conversationHistory.js'; // New import
+import { ChatHistoryManager } from './chat/chatHistoryManager.js'; // New import
 
 
 export async function activate(context: vscode.ExtensionContext) {
