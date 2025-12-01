@@ -31,7 +31,7 @@ export class OpenAICompatibleProvider implements llmProvider {
     conversation: ChatMessage[]
   ): { role: string; content: string }[] {
     return conversation.map((message) => {
-      const role = message.role === "model" ? "assistant" : message.role;
+      const role = message.role;
 
       const content =
         this.anonymizer && message.role === "user"

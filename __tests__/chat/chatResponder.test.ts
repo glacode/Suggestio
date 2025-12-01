@@ -71,7 +71,7 @@ describe("ChatLogicHandler (DI) simple tests", () => {
         ]));
         expect(mockChatHistoryManager.addMessage).toHaveBeenCalledTimes(2);
         expect(mockChatHistoryManager.addMessage).toHaveBeenCalledWith({ role: "user", content: "Hi" });
-        expect(mockChatHistoryManager.addMessage).toHaveBeenCalledWith({ role: "model", content: "Hello world" });
+        expect(mockChatHistoryManager.addMessage).toHaveBeenCalledWith({ role: "assistant", content: "Hello world" });
         expect(mockChatHistoryManager.getChatHistory).toHaveBeenCalledTimes(1);
         expect(mockConversationHistory.length).toBe(2);
     });

@@ -119,15 +119,11 @@ export type WebviewMessage =
   | { command: 'modelChanged'; model: string }
   | { command: 'clearHistory' };
 
-/**
- * `ChatMessage` defines the structure of a single message in the chat conversation.
- * It's used for both user input and AI responses.
- *
- * `role`: Indicates who sent the message ('user' or 'model').
- * `content`: The actual text content of the message.
- */
+
+export type ChatRole = "system" | "user" | "assistant";
+
 export interface ChatMessage {
-  role: "user" | "model";
+  role: ChatRole;
   content: string;
 }
 

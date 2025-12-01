@@ -14,7 +14,8 @@ import type {
   IWebviewView, // A type representing the VS Code WebviewView, a container for the webview.
   WebviewMessage, // A type for messages sent *from* the webview (e.g., user input).
   ResponseMessageFromTheExtensionToTheWebview, // A type for messages sent *to* the webview (e.g., AI responses).
-  IDisposable // A type for objects that can be disposed (cleaned up).
+  IDisposable, // A type for objects that can be disposed (cleaned up).
+  ChatRole
 } from '../../src/chat/types.js';
 // Import the actual ChatWebviewViewProvider class that we are testing.
 import { ChatWebviewViewProvider } from '../../src/chat/chatWebviewViewProvider.js';
@@ -217,7 +218,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const webviewView: IWebviewView = { title: 'X', webview };
 
     // Spyable chat history manager to capture added messages.
-    const recorded: { role: 'user' | 'model'; content: string }[] = [];
+    const recorded: { role: ChatRole; content: string }[] = [];
     const chatHistoryManager: IChatHistoryManager = {
       clearHistory: () => {},
       addMessage: (m) => recorded.push(m),

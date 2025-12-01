@@ -115,7 +115,7 @@ describe("OpenAICompatibleProvider", () => {
       );
       const prompt = new TestPrompt([
         { role: "user", content: "this is a secret" },
-        { role: "model", content: "I will not tell the secret" },
+        { role: "assistant", content: "I will not tell the secret" },
       ]);
       await provider.query(prompt);
 
