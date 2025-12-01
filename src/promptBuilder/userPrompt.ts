@@ -1,7 +1,7 @@
 import { ChatHistory } from "../chat/types.js";
-import { Prompt } from "./prompt.js";
+import { IPrompt } from "./prompt.js";
 
-export class UserPrompt implements Prompt {
+export class UserPrompt implements IPrompt {
   constructor(private prompt: string) {}
 
   generate(): ChatHistory {

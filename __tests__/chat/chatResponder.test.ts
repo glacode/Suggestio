@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { ChatResponder } from "../../src/chat/chatResponder.js";
 import { llmProvider } from "../../src/providers/llmProvider.js";
-import { Prompt } from "../../src/promptBuilder/prompt.js";
+import { IPrompt } from "../../src/promptBuilder/prompt.js";
 import { Config, ProviderConfig } from "../../src/config/types.js";
 import { IChatHistoryManager, ChatMessage } from "../../src/chat/types.js"; // Import ChatMessage from types.js
 
@@ -11,12 +11,12 @@ interface MockChatLogicHandlerConfig extends Pick<Config, 'activeProvider' | 'll
 class FakeProvider implements llmProvider {
     constructor(private reply: string | null, private shouldThrow = false) { }
 
-    async query(_prompt: Prompt): Promise<string | null> {
+    async query(_prompt: IPrompt): Promise<string | null> {
         if (this.shouldThrow) { throw new Error("Simulated failure"); }
         return this.reply;
     }
 
-    async queryStream(_prompt: Prompt, onToken: (token: string) => void): Promise<void> {
+    async queryStream(_prompt: IPrompt, onToken: (token: string) => void): Promise<void> {
         if (this.shouldThrow) { throw new Error("Simulated failure"); }
         if (this.reply) {
             onToken(this.reply);

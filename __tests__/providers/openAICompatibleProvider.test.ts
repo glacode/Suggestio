@@ -1,5 +1,5 @@
 import { OpenAICompatibleProvider } from "../../src/providers/openAICompatibleProvider.js";
-import { Prompt } from "../../src/promptBuilder/prompt.js";
+import { IPrompt } from "../../src/promptBuilder/prompt.js";
 import { ChatHistory } from "../../src/chat/types.js";
 import * as http from "http";
 import { AddressInfo } from "net";
@@ -7,7 +7,7 @@ import { Anonymizer } from "../../src/anonymizer/anonymizer.js";
 import { SimpleWordAnonymizer } from "../../src/anonymizer/simpleWordAnonymizer.js";
 import { ChatMessage } from "../../src/chat/types.js";
 
-class TestPrompt implements Prompt {
+class TestPrompt implements IPrompt {
   constructor(private messages: ChatMessage[]) {
   }
   generate(): ChatHistory {

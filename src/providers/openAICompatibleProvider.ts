@@ -2,7 +2,7 @@ import fetch from "node-fetch";
 import { llmProvider } from "./llmProvider.js";
 import { Anonymizer } from "../anonymizer/anonymizer.js";
 import { log } from "../logger.js";
-import { Prompt } from "../promptBuilder/prompt.js";
+import { IPrompt } from "../promptBuilder/prompt.js";
 import { ChatMessage } from "../chat/types.js";
 
 type OpenAIResponse = {
@@ -42,7 +42,7 @@ export class OpenAICompatibleProvider implements llmProvider {
     });
   }
 
-  async query(prompt: Prompt): Promise<string | null> {
+  async query(prompt: IPrompt): Promise<string | null> {
     const conversation = prompt.generate();
     const messages = this.prepareMessages(conversation);
 
@@ -74,7 +74,7 @@ export class OpenAICompatibleProvider implements llmProvider {
   }
 
   async queryStream(
-    prompt: Prompt,
+    prompt: IPrompt,
     onToken: (token: string) => void
   ): Promise<void> {
     const conversation = prompt.generate();

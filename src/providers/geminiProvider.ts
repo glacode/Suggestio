@@ -1,7 +1,7 @@
 import fetch from "node-fetch";
 import { llmProvider } from "./llmProvider.js";
 import { log } from "../logger.js";
-import { Prompt } from "../promptBuilder/prompt.js";
+import { IPrompt } from "../promptBuilder/prompt.js";
 import { ChatMessage } from "../chat/types.js";
 
 type GeminiResponse = {
@@ -21,7 +21,7 @@ export class GeminiProvider implements llmProvider {
     this.model = model;
   }
 
-  async query(prompt: Prompt): Promise<string | null> {
+  async query(prompt: IPrompt): Promise<string | null> {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
 
     const body = {
@@ -48,7 +48,7 @@ export class GeminiProvider implements llmProvider {
     );
   }
 
-  async queryStream(prompt: Prompt, onToken: (token: string) => void): Promise<void> {
+  async queryStream(prompt: IPrompt, onToken: (token: string) => void): Promise<void> {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:streamGenerateContent?key=${this.apiKey}&alt=sse`;
 
     const body = {
