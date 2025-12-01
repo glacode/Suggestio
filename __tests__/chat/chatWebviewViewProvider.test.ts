@@ -191,6 +191,76 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     expect(tokensEmitted[0]).toContain('hello');
   });
 
+  // Failing test: the current implementation prepends the build context to the
+  // user's message and then stores that combined string in chat history. The
+  // desired behavior is that chat history stores only the raw user message.
+  // This test asserts the desired behavior and will fail until the code is fixed.
+  it('does not add buildContext to chat history user messages', async () => {
+    const extensionUri: UriLike = { fsPath: '/ext' };
+    const vscodeApi: IVscodeApiLocal = {
+      Uri: { joinPath: (b: UriLike, ...p: string[]) => ({ b, p } as UriLike) }
+    };
+
+    const providerAccessor: ILlmProviderAccessor = { getModels: () => [], getActiveModel: () => '' };
+
+    const webview: IWebview & { __handler?: (msg: WebviewMessage) => void } = {
+      options: undefined,
+      asWebviewUri: (uri: UriLike) => `webview:${JSON.stringify(uri)}` as unknown as UriLike,
+      html: '',
+      onDidReceiveMessage: ((handler: (msg: WebviewMessage) => void): IDisposable => {
+        webview.__handler = handler;
+        return { dispose: () => {} };
+      }) as IWebview['onDidReceiveMessage'],
+      postMessage: (_msg: ResponseMessageFromTheExtensionToTheWebview) => Promise.resolve(true)
+    };
+
+    const webviewView: IWebviewView = { title: 'X', webview };
+
+    // Spyable chat history manager to capture added messages.
+    const recorded: { role: 'user' | 'model'; content: string }[] = [];
+    const chatHistoryManager: IChatHistoryManager = {
+      clearHistory: () => {},
+      addMessage: (m) => recorded.push(m),
+      getChatHistory: () => recorded.slice()
+    };
+
+    // Minimal config with a fake llm provider that immediately completes.
+    const config = {
+      activeProvider: 'p',
+      providers: {},
+      anonymizer: { enabled: false, words: [] },
+      llmProviderForChat: {
+        queryStream: async (_prompt: string, onToken: (t: string) => void) => {
+          onToken('x');
+          return Promise.resolve();
+        }
+      }
+    } as unknown as import('../../src/config/types.js').Config;
+
+    // Use the real ChatResponder which currently adds the (context+message) to history.
+    const { ChatResponder } = await import('../../src/chat/chatResponder.js');
+    const responder = new ChatResponder(config, () => {}, chatHistoryManager);
+
+    const provider = new ChatWebviewViewProvider({
+      extensionContext: { extensionUri },
+      providerAccessor,
+      logicHandler: responder,
+      chatHistoryManager,
+      buildContext: () => 'CONTEXT',
+      getChatWebviewContent: () => '',
+      vscodeApi
+    });
+
+    provider.resolveWebviewView(webviewView);
+
+    const handler = webview.__handler as (msg: WebviewMessage) => Promise<void>;
+    await handler({ command: 'sendMessage', text: 'hello' });
+
+    // Expect the first added message to be exactly the user's text without the build context.
+    expect(recorded.length).toBeGreaterThan(0);
+    expect(recorded[0]).toEqual({ role: 'user', content: 'hello' });
+  });
+
   // This test case verifies that the `ChatWebviewViewProvider` correctly handles:
   // 1. The 'modelChanged' command, emitting an event.
   // 2. The 'clearHistory' command, calling the logic handler's `clearHistory`.
