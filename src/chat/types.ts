@@ -160,7 +160,7 @@ export interface IChatResponder {
   fetchStreamChatResponse(userPrompt: string, onToken: (token: string) => void): Promise<void>;
 }
 
-export type Conversation = ChatMessage[];
+export type ChatHistory = ChatMessage[];
 
 /**
  * `IChatHistoryManager` defines the interface for managing chat history.

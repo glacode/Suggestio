@@ -1,6 +1,6 @@
 import { OpenAICompatibleProvider } from "../../src/providers/openAICompatibleProvider.js";
 import { Prompt } from "../../src/promptBuilder/prompt.js";
-import { Conversation } from "../../src/chat/types.js";
+import { ChatHistory } from "../../src/chat/types.js";
 import * as http from "http";
 import { AddressInfo } from "net";
 import { Anonymizer } from "../../src/anonymizer/anonymizer.js";
@@ -10,7 +10,7 @@ import { ChatMessage } from "../../src/chat/types.js";
 class TestPrompt implements Prompt {
   constructor(private messages: ChatMessage[]) {
   }
-  generate(): Conversation {
+  generate(): ChatHistory {
     return this.messages;
   }
 }

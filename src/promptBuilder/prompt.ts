@@ -1,5 +1,5 @@
-import { Conversation } from "../chat/types.js";
+import { ChatHistory } from "../chat/types.js";
 
 export interface Prompt {
-  generate(): Conversation;
+  generate(): ChatHistory;
 }
