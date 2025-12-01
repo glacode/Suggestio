@@ -12,7 +12,7 @@ import { ConfigContainer } from './config/types.js';
 import { SecretManager } from './config/secretManager.js';
 import { configProcessor } from './config/configProcessor.js';
 import { ConversationHistory } from './chat/conversationHistory.js'; // New import
-import { ChatHistoryManager } from './chat/chatHistoryManager.js'; // New import
+
 
 export async function activate(context: vscode.ExtensionContext) {
   initLogger();
@@ -24,7 +24,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const configContainer: ConfigContainer = await configProcessor.processConfig(rawConfig, secretManager);
 
   const conversationHistory = new ConversationHistory(); // Owned by extension.ts
-  const chatHistoryManager = new ChatHistoryManager(conversationHistory); // Created here
+  const chatHistoryManager = conversationHistory; // Now directly use conversationHistory as it implements IChatHistoryManager
 
   const logicHandler = new ChatResponder(
     configContainer.config,
