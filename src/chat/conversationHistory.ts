@@ -1,7 +1,6 @@
-import { Conversation } from "./conversation.js";
-import { ChatMessage, IChatHistoryManager } from "./types.js";
+import { ChatMessage, Conversation, IChatHistoryManager } from "./types.js";
 
-export class ConversationHistory implements IChatHistoryManager {
+export class ChatHistoryManager implements IChatHistoryManager {
   private history: Conversation = [];
 
   addMessage(message: ChatMessage) {
@@ -9,7 +8,7 @@ export class ConversationHistory implements IChatHistoryManager {
   }
 
   // Renamed from getHistory to getChatHistory to match IChatHistoryManager
-  getChatHistory(): ChatMessage[] {
+  getChatHistory(): Conversation {
     return this.history;
   }
 

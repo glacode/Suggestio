@@ -11,7 +11,7 @@ import { getChatWebviewContent } from './chat/chatWebviewContent.js';
 import { ConfigContainer } from './config/types.js';
 import { SecretManager } from './config/secretManager.js';
 import { configProcessor } from './config/configProcessor.js';
-import { ConversationHistory } from './chat/conversationHistory.js'; // New import
+import { ChatHistoryManager } from './chat/conversationHistory.js'; // New import
 
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -23,7 +23,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const rawConfig = await readConfig(context);
   const configContainer: ConfigContainer = await configProcessor.processConfig(rawConfig, secretManager);
 
-  const conversationHistory = new ConversationHistory(); // Owned by extension.ts
+  const conversationHistory = new ChatHistoryManager(); // Owned by extension.ts
   const chatHistoryManager = conversationHistory; // Now directly use conversationHistory as it implements IChatHistoryManager
 
   const logicHandler = new ChatResponder(

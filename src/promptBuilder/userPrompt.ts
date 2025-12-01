@@ -1,4 +1,4 @@
-import { Conversation } from "../chat/conversation.js";
+import { Conversation } from "../chat/types.js";
 import { Prompt } from "./prompt.js";
 
 export class UserPrompt implements Prompt {
