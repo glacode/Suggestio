@@ -172,7 +172,7 @@ export type ChatHistory = ChatMessage[];
 export interface IChatHistoryManager {
   clearHistory(): void;
   addMessage(message: ChatMessage): void;
-  getChatHistory(): ChatMessage[];
+  getChatHistory(): ChatHistory;
 }
 
 /**
