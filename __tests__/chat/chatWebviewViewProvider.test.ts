@@ -15,7 +15,9 @@ import type {
   WebviewMessage, // A type for messages sent *from* the webview (e.g., user input).
   ResponseMessageFromTheExtensionToTheWebview, // A type for messages sent *to* the webview (e.g., AI responses).
   IDisposable, // A type for objects that can be disposed (cleaned up).
-  ChatRole
+  ChatRole,
+  ChatHistory,
+  IPrompt
 } from '../../src/chat/types.js';
 // Import the actual ChatWebviewViewProvider class that we are testing.
 import { ChatWebviewViewProvider } from '../../src/chat/chatWebviewViewProvider.js';
@@ -72,7 +74,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       // Here, we expose the `handler` function so our test can directly call it to simulate messages.
       onDidReceiveMessage: ((handler: (msg: WebviewMessage) => void): IDisposable => {
         webview.__handler = handler; // Store the handler for later use in the test.
-        return { dispose: () => {} }; // Return a dummy disposable object.
+        return { dispose: () => { } }; // Return a dummy disposable object.
       }) as IWebview['onDidReceiveMessage'],
       // `postMessage` is how the webview sends messages *to* the webview (e.g., AI responses).
       // Our fake implementation adds the message to the `posted` array for verification.
@@ -87,15 +89,15 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const webviewView: IWebviewView = { title: 'SUGGESTIO: CHAT', webview };
 
     // `tokensEmitted` will store the full prompts sent to the `logicHandler`.
-    const tokensEmitted: string[] = [];
+    const promptsSent: IPrompt[] = [];
     // `logicHandler` is a fake `IChatResponder` that simulates the AI's response logic.
     const logicHandler: IChatResponder = {
       // `fetchStreamChatResponse` simulates getting a chat response in parts (tokens).
       // It immediately calls `onToken` twice with fake tokens and records the prompt.
-      fetchStreamChatResponse: async (prompt: string, onToken: (t: string) => void) => {
+      fetchStreamChatResponse: async (prompt: IPrompt, onToken: (t: string) => void) => {
         onToken('tok1'); // First fake token.
         onToken('tok2'); // Second fake token.
-        tokensEmitted.push(prompt); // Record the prompt that was processed.
+        promptsSent.push(prompt); // Record the prompt that was processed.
         return Promise.resolve(); // Simulate successful completion.
       }
     };
@@ -114,6 +116,13 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       return `HTML for ${args.models.join(',')}`; // Return a custom HTML string based on models.
     };
 
+    const recorded: ChatHistory = [];
+    const chatHistoryManager: IChatHistoryManager = {
+      clearHistory: () => { recorded.length = 0; },
+      addMessage: (m) => { recorded.push(m); },
+      getChatHistory: () => recorded.slice()
+    };
+
     // ********************************************************************************
     //  Instantiate the ChatWebviewViewProvider with all our fake dependencies.
     // ********************************************************************************
@@ -121,7 +130,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       extensionContext: { extensionUri }, // Provides the extension's URI.
       providerAccessor, // Provides access to LLM models.
       logicHandler, // Handles the actual chat response logic.
-      chatHistoryManager: { clearHistory: () => { /* not called */ }, addMessage: () => {}, getChatHistory: () => [] }, // No-op for this test
+      chatHistoryManager, // No-op for this test
       buildContext, // Provides additional context for prompts.
       getChatWebviewContent, // Function to generate webview HTML.
       vscodeApi // Faked VS Code API.
@@ -185,11 +194,14 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // ********************************************************************************
 
     // Expect only one prompt to have been processed.
-    expect(tokensEmitted.length).toBe(1);
-    // Expect the prompt to include the `buildContext` content ("CONTEXT").
-    expect(tokensEmitted[0]).toContain('CONTEXT');
-    // Expect the prompt to include the user's message ("hello").
-    expect(tokensEmitted[0]).toContain('hello');
+    expect(promptsSent.length).toBe(1);
+    const chatHistory: ChatHistory = promptsSent[0].generate();
+    expect(chatHistory.length).toBe(3);
+
+    expect(chatHistory[0]).toEqual({ role: 'system', content: 'You are a code assistant' });
+    expect(chatHistory[1]).toEqual({ role: 'system', content: 'CONTEXT' });
+    expect(chatHistory[2]).toEqual({ role: 'user', content: 'hello' });
+
   });
 
   // Failing test: the current implementation prepends the build context to the
@@ -210,7 +222,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       html: '',
       onDidReceiveMessage: ((handler: (msg: WebviewMessage) => void): IDisposable => {
         webview.__handler = handler;
-        return { dispose: () => {} };
+        return { dispose: () => { } };
       }) as IWebview['onDidReceiveMessage'],
       postMessage: (_msg: ResponseMessageFromTheExtensionToTheWebview) => Promise.resolve(true)
     };
@@ -220,7 +232,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // Spyable chat history manager to capture added messages.
     const recorded: { role: ChatRole; content: string }[] = [];
     const chatHistoryManager: IChatHistoryManager = {
-      clearHistory: () => {},
+      clearHistory: () => { },
       addMessage: (m) => recorded.push(m),
       getChatHistory: () => recorded.slice()
     };
@@ -231,7 +243,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       providers: {},
       anonymizer: { enabled: false, words: [] },
       llmProviderForChat: {
-        queryStream: async (_prompt: string, onToken: (t: string) => void) => {
+        queryStream: async (_prompt: IPrompt, onToken: (t: string) => void) => {
           onToken('x');
           return Promise.resolve();
         }
@@ -240,7 +252,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     // Use the real ChatResponder which currently adds the (context+message) to history.
     const { ChatResponder } = await import('../../src/chat/chatResponder.js');
-    const responder = new ChatResponder(config, () => {}, chatHistoryManager);
+    const responder = new ChatResponder(config, () => { }, chatHistoryManager);
 
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri },
@@ -292,7 +304,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       html: '',
       onDidReceiveMessage: ((handler: (msg: WebviewMessage) => void): IDisposable => {
         webview.__handler = handler;
-        return { dispose: () => {} };
+        return { dispose: () => { } };
       }) as IWebview['onDidReceiveMessage'],
       postMessage: (msg: ResponseMessageFromTheExtensionToTheWebview) => {
         responseMessagesFromTheExtensionToTheWebview.push(msg);
@@ -315,7 +327,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       clearHistory: () => {
         chatHistoryCleared = true;
       },
-      addMessage: () => {},
+      addMessage: () => { },
       getChatHistory: () => [],
     };
 
@@ -397,7 +409,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       html: '',
       onDidReceiveMessage: ((handler: (msg: WebviewMessage) => void): IDisposable => {
         webview.__handler = handler;
-        return { dispose: () => {} };
+        return { dispose: () => { } };
       }) as IWebview['onDidReceiveMessage'],
       postMessage: (msg: ResponseMessageFromTheExtensionToTheWebview) => {
         responseMessagesFromTheExtensionToTheWebview.push(msg);
@@ -420,7 +432,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       clearHistory: () => {
         /* not called */ // This should not be called.
       },
-      addMessage: () => {},
+      addMessage: () => { },
       getChatHistory: () => [],
     };
 

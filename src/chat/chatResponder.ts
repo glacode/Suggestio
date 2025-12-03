@@ -1,6 +1,5 @@
 import { Config } from "../config/types.js";
-import type { IChatResponder, IChatHistoryManager } from "./types.js";
-import { ChatPrompt } from "./chatPrompt.js";
+import type { IChatResponder, IChatHistoryManager, IPrompt } from "./types.js";
 
 export class ChatResponder implements IChatResponder {
   constructor(
@@ -9,11 +8,9 @@ export class ChatResponder implements IChatResponder {
     private chatHistoryManager: IChatHistoryManager // Injected fully capable history manager
   ) { }
 
-  async fetchStreamChatResponse(userPrompt: string, onToken: (token: string) => void): Promise<void> {
+  async fetchStreamChatResponse(prompt: IPrompt, onToken: (token: string) => void): Promise<void> {
     try {
       this.log(`Fetching stream completion from ${this.config.activeProvider}...`);
-      this.chatHistoryManager.addMessage({ role: 'user', content: userPrompt }); // Use injected manager
-      const prompt = new ChatPrompt(this.chatHistoryManager.getChatHistory()); // Use injected manager
       let fullResponse = "";
       const recordingOnToken = (token: string) => {
         fullResponse += token;

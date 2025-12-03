@@ -1,11 +1,10 @@
 import { OpenAICompatibleProvider } from "../../src/providers/openAICompatibleProvider.js";
-import { IPrompt } from "../../src/promptBuilder/prompt.js";
 import { ChatHistory } from "../../src/chat/types.js";
 import * as http from "http";
 import { AddressInfo } from "net";
 import { Anonymizer } from "../../src/anonymizer/anonymizer.js";
 import { SimpleWordAnonymizer } from "../../src/anonymizer/simpleWordAnonymizer.js";
-import { ChatMessage } from "../../src/chat/types.js";
+import { ChatMessage, IPrompt } from "../../src/chat/types.js";
 
 class TestPrompt implements IPrompt {
   constructor(private messages: ChatMessage[]) {
@@ -206,7 +205,7 @@ describe("OpenAICompatibleProvider", () => {
       "test-model"
     );
     const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
-    await expect(provider.queryStream(prompt, (token: string) => {token;})).rejects.toThrow(
+    await expect(provider.queryStream(prompt, (token: string) => { token; })).rejects.toThrow(
       "OpenAI API error: 500 - Internal Server Error"
     );
   });

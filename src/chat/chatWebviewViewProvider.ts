@@ -19,6 +19,7 @@ import type {
 // Importing the `eventBus`, a custom mechanism for different parts of the extension
 // to communicate by emitting and listening for events.
 import { eventBus } from '../events/eventBus.js';
+import { ChatPrompt } from './chatPrompt.js';
 
 // This interface defines the arguments required to construct a `ChatWebviewViewProvider`.
 // It uses dependency injection to provide all necessary components.
@@ -143,11 +144,11 @@ export class ChatWebviewViewProvider {
             if (message.command === 'sendMessage') {
                 // Handle a message sent by the user from the webview to initiate a chat response.
                 try {
-                    // Combine the dynamically built context with the user's message text.
-                    const promptWithContext = `${this._buildContext()}\n\n${message.text}`;
+                    this._chatHistoryManager.addMessage({ role: 'user', content: message.text });
+                    const prompt = new ChatPrompt(this._chatHistoryManager.getChatHistory(), this._buildContext());
                     // Call the `logicHandler` to fetch a streaming chat response.
                     // The `onToken` callback is invoked for each partial token received from the LLM.
-                    await this._logicHandler.fetchStreamChatResponse(promptWithContext, (token: string) => {
+                    await this._logicHandler.fetchStreamChatResponse(prompt, (token: string) => {
                         // Send a 'token' type message from the extension back to the webview's frontend.
                         // The `webview.postMessage` method is part of the VS Code Webview API (`vscode.Webview.postMessage`)
                         // and is the primary way for the extension backend to communicate with the webview UI.

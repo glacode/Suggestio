@@ -1,9 +1,8 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { ChatResponder } from "../../src/chat/chatResponder.js";
 import { llmProvider } from "../../src/providers/llmProvider.js";
-import { IPrompt } from "../../src/promptBuilder/prompt.js";
 import { Config, ProviderConfig } from "../../src/config/types.js";
-import { IChatHistoryManager, ChatMessage } from "../../src/chat/types.js"; // Import ChatMessage from types.js
+import { IChatHistoryManager, ChatMessage , IPrompt } from "../../src/chat/types.js"; // Import ChatMessage from types.js
 
 // Define a minimal mock config interface for testing purposes
 interface MockChatLogicHandlerConfig extends Pick<Config, 'activeProvider' | 'llmProviderForChat' | 'providers' | 'anonymizer'> { }
@@ -30,6 +29,7 @@ describe("ChatLogicHandler (DI) simple tests", () => {
     let logger: (msg: string) => void;
     let mockChatHistoryManager: IChatHistoryManager;
     let mockConversationHistory: ChatMessage[];
+    let mockPrompt: IPrompt;
 
     beforeEach(() => {
         logs = [];
@@ -43,6 +43,9 @@ describe("ChatLogicHandler (DI) simple tests", () => {
                 mockConversationHistory.push(message);
             }),
             getChatHistory: jest.fn(() => mockConversationHistory),
+        };
+        mockPrompt = {
+            generate: () => [{ role: 'user', content: 'Hi' }],
         };
     });
 
@@ -63,17 +66,15 @@ describe("ChatLogicHandler (DI) simple tests", () => {
             streamedContent += token;
         };
 
-        await handler.fetchStreamChatResponse("Hi", onToken);
+        await handler.fetchStreamChatResponse(mockPrompt, onToken);
         expect(streamedContent).toBe("Hello world");
         expect(logs).toEqual(expect.arrayContaining([
             expect.stringContaining("Fetching stream completion"),
             expect.stringContaining("Stream completion finished")
         ]));
-        expect(mockChatHistoryManager.addMessage).toHaveBeenCalledTimes(2);
-        expect(mockChatHistoryManager.addMessage).toHaveBeenCalledWith({ role: "user", content: "Hi" });
+        expect(mockChatHistoryManager.addMessage).toHaveBeenCalledTimes(1);
         expect(mockChatHistoryManager.addMessage).toHaveBeenCalledWith({ role: "assistant", content: "Hello world" });
-        expect(mockChatHistoryManager.getChatHistory).toHaveBeenCalledTimes(1);
-        expect(mockConversationHistory.length).toBe(2);
+        expect(mockConversationHistory.length).toBe(1);
     });
 
     it("handles error when fetching stream chat response", async () => {
@@ -93,16 +94,14 @@ describe("ChatLogicHandler (DI) simple tests", () => {
             streamedContent += token;
         };
 
-        await expect(handler.fetchStreamChatResponse("Hi", onToken)).rejects.toThrow("Simulated failure");
+        await expect(handler.fetchStreamChatResponse(mockPrompt, onToken)).rejects.toThrow("Simulated failure");
         expect(streamedContent).toBe("");
         expect(logs).toEqual(expect.arrayContaining([
             expect.stringContaining("Fetching stream completion"),
             expect.stringContaining("Error fetching stream completion")
         ]));
-        expect(mockChatHistoryManager.addMessage).toHaveBeenCalledTimes(1); // Only user message added before error
-        expect(mockChatHistoryManager.addMessage).toHaveBeenCalledWith({ role: "user", content: "Hi" });
-        expect(mockChatHistoryManager.getChatHistory).toHaveBeenCalledTimes(1);
-        expect(mockConversationHistory.length).toBe(1);
+        expect(mockChatHistoryManager.addMessage).toHaveBeenCalledTimes(0);
+        expect(mockConversationHistory.length).toBe(0);
     });
 
     it("clears conversation history via ChatHistoryManager", () => {
