@@ -76,4 +76,10 @@ describe("Chat History Management (Unit Test)", () => {
         expect(finalHistory[2]).toEqual({ role: "user", content: userMessage2 });
         expect(finalHistory[3]).toEqual({ role: "assistant", content: "Assistant Reply 2" });
     });
+
+    it("should clear the history", () => {
+        chatHistoryManager.addMessage({ role: "user", content: "some message" });
+        chatHistoryManager.clearHistory();
+        expect(chatHistoryManager.getChatHistory()).toHaveLength(0);
+    });
 });
