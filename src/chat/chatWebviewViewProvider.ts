@@ -7,14 +7,14 @@
 import type {
     IChatResponder, // Defines the interface for handling chat logic (e.g., sending prompts to an LLM).
     IChatHistoryManager, // Defines the interface for managing chat history (e.g., clearing it).
-    BuildContext, // A function type for generating additional context for prompts.
     GetChatWebviewContent, // A function type for generating the HTML content for the webview.
     ILlmProviderAccessor, // Defines the interface for accessing information about LLM providers (models).
     IExtensionContextMinimal, // A minimal representation of VS Code's `ExtensionContext`,
     // providing access to essential extension resources like `extensionUri`.
     IVscodeApiLocal, // A minimal, faked representation of the VS Code API, used primarily for URI handling.
     IWebviewView, // Defines the interface for a VS Code `WebviewView`, which is a container for the webview.
-    WebviewMessage // Defines the structure of messages sent from the webview to the extension.
+    WebviewMessage, // Defines the structure of messages sent from the webview to the extension.
+    IContextBuilder // Defines the interface for building context strings to be used as additional information in prompts.
 } from './types.js';
 // Importing the `eventBus`, a custom mechanism for different parts of the extension
 // to communicate by emitting and listening for events.
@@ -28,7 +28,7 @@ interface IChatWebviewViewProviderArgs {
     providerAccessor: ILlmProviderAccessor; // An accessor to retrieve available and active LLM models.
     logicHandler: IChatResponder; // The core logic handler responsible for interacting with the LLM.
     chatHistoryManager: IChatHistoryManager; // The manager responsible for chat history operations.
-    buildContext: BuildContext; // A function to create contextual information for the AI prompt.
+    buildContext: IContextBuilder; // A builder to create contextual information for the AI prompt.
     getChatWebviewContent: GetChatWebviewContent; // A function that provides the HTML content for the webview.
     vscodeApi: IVscodeApiLocal; // The VS Code API instance, used here for `Uri` operations.
 }
@@ -52,7 +52,7 @@ export class ChatWebviewViewProvider {
     public _view?: IWebviewView;
     private readonly _logicHandler: IChatResponder; // Stores the handler for chat backend logic.
     private readonly _chatHistoryManager: IChatHistoryManager; // Stores the chat history manager.
-    private readonly _buildContext: BuildContext; // Stores the context builder function.
+    private readonly _buildContext: IContextBuilder; // Stores the context builder instance.
     private readonly _extensionContext: IExtensionContextMinimal; // Stores the extension context.
     private readonly _providerAccessor: ILlmProviderAccessor; // Stores the model provider accessor.
     private readonly _getChatWebviewContent: GetChatWebviewContent; // Stores the webview content generator.
@@ -145,7 +145,7 @@ export class ChatWebviewViewProvider {
                 // Handle a message sent by the user from the webview to initiate a chat response.
                 try {
                     this._chatHistoryManager.addMessage({ role: 'user', content: message.text });
-                    const prompt = new ChatPrompt(this._chatHistoryManager.getChatHistory(), this._buildContext());
+                    const prompt = new ChatPrompt(this._chatHistoryManager.getChatHistory(), this._buildContext.buildContext());
                     // Call the `logicHandler` to fetch a streaming chat response.
                     // The `onToken` callback is invoked for each partial token received from the LLM.
                     await this._logicHandler.fetchStreamChatResponse(prompt, (token: string) => {

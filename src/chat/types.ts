@@ -209,13 +209,6 @@ export interface ILlmProviderAccessor {
 }
 
 /**
- * `BuildContext` is a function type that, when called, generates additional
- * contextual information (as a string) to be included in an AI prompt.
- * This context might be derived from the active editor, workspace, etc.
- */
-export type BuildContext = () => string;
-
-/**
  * `GetChatWebviewContent` is a function type responsible for generating the
  * complete HTML string that will be loaded into the webview.
  * It takes various URIs and model information as arguments to dynamically
@@ -228,3 +221,11 @@ export type GetChatWebviewContent = (args: {
   models: string[]; // List of available models.
   activeModel: string; // The currently active model.
 }) => string;
+
+/**
+ * Contract for building a context string to be used as additional information in a system prompt.
+ * This context might be derived from the active editor, workspace, etc.
+ */
+export interface IContextBuilder {
+    buildContext(): string;
+}

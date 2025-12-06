@@ -6,7 +6,7 @@ import { registerCommands } from './registrations/commandRegistration.js';
 import './chat/activeEditorTracker.js';
 import { ChatWebviewViewProvider } from './chat/chatWebviewViewProvider.js';
 import { ChatResponder } from './chat/chatResponder.js';
-import { buildContext } from './chat/context.js';
+import { ContextBuilder } from './chat/context.js';
 import { getChatWebviewContent } from './chat/chatWebviewContent.js';
 import { ConfigContainer } from './config/types.js';
 import { SecretManager } from './config/secretManager.js';
@@ -41,7 +41,7 @@ export async function activate(context: vscode.ExtensionContext) {
     providerAccessor,
     logicHandler,
     chatHistoryManager: chatHistoryManager, // Use the shared instance
-    buildContext,
+    buildContext: new ContextBuilder(),
     getChatWebviewContent,
     vscodeApi: vscode
   });

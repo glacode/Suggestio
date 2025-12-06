@@ -102,9 +102,9 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       }
     };
 
-    // `buildContext` is a simple fake function that returns a static "CONTEXT" string.
+    // `buildContext` is a simple fake builder object that returns a static "CONTEXT" string.
     // This context is typically added to the user's prompt before sending it to the AI.
-    const buildContext = () => 'CONTEXT';
+    const buildContext = { buildContext: () => 'CONTEXT' };
 
     // `receivedArgs` will capture the arguments passed to `getChatWebviewContent`.
     // We initialize it to `null` and expect it to be populated.
@@ -259,7 +259,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       providerAccessor,
       logicHandler: responder,
       chatHistoryManager,
-      buildContext: () => 'CONTEXT',
+      buildContext: { buildContext: () => 'CONTEXT' },
       getChatWebviewContent: () => '',
       vscodeApi
     });
@@ -339,7 +339,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       providerAccessor,
       logicHandler,
       chatHistoryManager,
-      buildContext: () => '', // Empty context for this test.
+      buildContext: { buildContext: () => '' }, // Empty context for this test.
       getChatWebviewContent: () => '', // Empty HTML content for this test.
       vscodeApi
     });
@@ -444,7 +444,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       providerAccessor,
       logicHandler,
       chatHistoryManager,
-      buildContext: () => '',
+      buildContext: { buildContext: () => '' },
       getChatWebviewContent: () => '',
       vscodeApi
     });
