@@ -120,7 +120,7 @@ describe("OpenAICompatibleProvider", () => {
 
       // This is a bit brittle as it depends on the placeholder format.
       // A better test might involve checking if deanonymization of the sent content works.
-      const anonymizedContent = lastRequestBody.messages[1].content;
+      const anonymizedContent = lastRequestBody.messages[0].content;
       expect(anonymizedContent).not.toContain("secret");
       expect(anonymizedContent).toContain("ANON_");
     });

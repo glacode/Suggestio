@@ -53,10 +53,7 @@ export class OpenAICompatibleProvider implements llmProvider {
       },
       body: JSON.stringify({
         model: this.model,
-        messages: [
-          { role: "system", content: "You are a helpful coding assistant." },
-          ...messages,
-        ],
+        messages: messages,
         max_tokens: 10000,
       }),
     });
@@ -81,10 +78,7 @@ export class OpenAICompatibleProvider implements llmProvider {
 
     const requestBody = {
       model: this.model,
-      messages: [
-        { role: "system", content: "You are a helpful coding assistant." },
-        ...messages,
-      ],
+      messages: messages,
       max_tokens: 10000,
       stream: true,
     };
