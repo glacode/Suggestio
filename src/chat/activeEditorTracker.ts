@@ -1,6 +1,12 @@
 
 import * as vscode from 'vscode';
 
+//TODO this class is not used anymore, if the new context builder works well, we can delete it
+/**
+ * `ActiveEditorTracker` tracks the last active text editor in VSCode.
+ * It listens to changes in the active editor and updates its state accordingly.
+ */
+export
 class ActiveEditorTracker {
     private _lastActiveEditor: vscode.TextEditor | undefined;
 

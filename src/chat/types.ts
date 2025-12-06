@@ -223,6 +223,20 @@ export type GetChatWebviewContent = (args: {
 }) => string;
 
 /**
+ * `IActiveTextEditorProvider` provides access to the currently active editor.
+ * This is a minimal abstraction over `vscode.window.activeTextEditor`
+ * to enable dependency injection and testability.
+ */
+export interface IActiveTextEditorProvider {
+  activeTextEditor: {
+    document: {
+      uri: UriLike;
+      getText(): string;
+    };
+  } | undefined;
+}
+
+/**
  * Contract for building a context string to be used as additional information in a system prompt.
  * This context might be derived from the active editor, workspace, etc.
  */

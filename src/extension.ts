@@ -36,12 +36,12 @@ export async function activate(context: vscode.ExtensionContext) {
     getActiveModel: () => configContainer.config.providers[configContainer.config.activeProvider].model,
   };
 
-  const chatWebviewViewProvider : vscode.WebviewViewProvider = new ChatWebviewViewProvider({
+  const chatWebviewViewProvider: vscode.WebviewViewProvider = new ChatWebviewViewProvider({
     extensionContext: context,
     providerAccessor,
     logicHandler,
     chatHistoryManager: chatHistoryManager, // Use the shared instance
-    buildContext: new ContextBuilder(),
+    buildContext: new ContextBuilder(vscode.window),
     getChatWebviewContent,
     vscodeApi: vscode
   });

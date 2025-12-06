@@ -1,16 +1,13 @@
 // __tests__/src/chat/context.test.ts
-import { ContextBuilder } from '../../src/chat/context.js'; // adjust relative path
-import { activeEditorTracker } from '../../src/chat/activeEditorTracker.js';
-import { jest } from '@jest/globals';
+import { ContextBuilder } from '../../src/chat/context.js';
+import { IActiveTextEditorProvider } from '../../src/chat/types.js';
 
 describe('buildContext', () => {
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
-
   it('returns placeholder if no editor or document is available', () => {
-    jest.spyOn(activeEditorTracker, 'lastActiveEditor', 'get').mockReturnValue(undefined);
-    const result = new ContextBuilder().buildContext();
+    const mockProvider: IActiveTextEditorProvider = {
+      activeTextEditor: undefined,
+    };
+    const result = new ContextBuilder(mockProvider).buildContext();
     expect(result).toBe('[No active editor found. Please open a file to provide context.]');
   });
 
@@ -24,11 +21,13 @@ describe('buildContext', () => {
 
     const mockEditor = {
       document: mockDocument,
-    } as any;
+    };
 
-    jest.spyOn(activeEditorTracker, 'lastActiveEditor', 'get').mockReturnValue(mockEditor);
+    const mockProvider: IActiveTextEditorProvider = {
+      activeTextEditor: mockEditor,
+    };
 
-    const result = new ContextBuilder().buildContext();
+    const result = new ContextBuilder(mockProvider).buildContext();
     const expectedContext = `Context from file:
 [Path: /path/to/mock/file.ts]
 This is the content of the mock file.`;
