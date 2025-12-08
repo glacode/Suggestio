@@ -42,7 +42,7 @@ export class OpenAICompatibleProvider implements llmProvider {
   }
 
   async query(prompt: IPrompt): Promise<string | null> {
-    const conversation = prompt.generate();
+    const conversation = prompt.generateChatHistory();
     const messages = this.prepareMessages(conversation);
 
     const response = await fetch(this.endpoint, {
@@ -73,7 +73,7 @@ export class OpenAICompatibleProvider implements llmProvider {
     prompt: IPrompt,
     onToken: (token: string) => void
   ): Promise<void> {
-    const conversation = prompt.generate();
+    const conversation = prompt.generateChatHistory();
     const messages = this.prepareMessages(conversation);
 
     const requestBody = {

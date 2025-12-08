@@ -24,7 +24,7 @@ export class GeminiProvider implements llmProvider {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
 
     const body = {
-      contents: this.formatConversation(prompt.generate()),
+      contents: this.formatConversation(prompt.generateChatHistory()),
     };
 
     const res = await fetch(url, {
@@ -51,7 +51,7 @@ export class GeminiProvider implements llmProvider {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:streamGenerateContent?key=${this.apiKey}&alt=sse`;
 
     const body = {
-      contents: this.formatConversation(prompt.generate()),
+      contents: this.formatConversation(prompt.generateChatHistory()),
     };
 
     const res = await fetch(url, {

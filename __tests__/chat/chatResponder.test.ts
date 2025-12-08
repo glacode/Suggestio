@@ -45,7 +45,7 @@ describe("ChatResponder (DI) simple tests", () => {
             getChatHistory: jest.fn(() => mockChatHistory),
         };
         mockPrompt = {
-            generate: () => [{ role: 'user', content: 'Hi' }],
+            generateChatHistory: () => [{ role: 'user', content: 'Hi' }],
         };
     });
 

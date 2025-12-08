@@ -44,7 +44,7 @@ export class ChatPrompt implements IPrompt {
    * ready to be sent to the Language Model.
    * @returns The prepared chat history.
    */
-  generate(): ChatHistory {
+  generateChatHistory(): ChatHistory {
     return this.conversation;
   }
 }

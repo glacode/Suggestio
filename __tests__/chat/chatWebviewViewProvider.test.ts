@@ -195,7 +195,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     // Expect only one prompt to have been processed.
     expect(promptsSent.length).toBe(1);
-    const chatHistory: ChatHistory = promptsSent[0].generate();
+    const chatHistory: ChatHistory = promptsSent[0].generateChatHistory();
     expect(chatHistory.length).toBe(3);
 
     expect(chatHistory[0]).toEqual({ role: 'system', content: 'You are a code assistant' });

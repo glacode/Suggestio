@@ -9,7 +9,7 @@ import { ChatMessage, IPrompt } from "../../src/chat/types.js";
 class TestPrompt implements IPrompt {
   constructor(private messages: ChatMessage[]) {
   }
-  generate(): ChatHistory {
+  generateChatHistory(): ChatHistory {
     return this.messages;
   }
 }
