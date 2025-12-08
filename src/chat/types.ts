@@ -167,7 +167,7 @@ export type ChatHistory = ChatMessage[];
  * prompt creation to specific LLM providers or chat contexts.
  */
 export interface IPrompt {
-  generate(): ChatHistory;
+  generateChatHistory(): ChatHistory;
 }
 
 /**
