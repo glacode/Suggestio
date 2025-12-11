@@ -6,6 +6,11 @@
       "model": "qwen2.5-coder-32b-instruct",
       "apiKey": "unused"
     },
+    "publicai-apertus-70b": {
+      "endpoint": "https://api.publicai.co/v1/chat/completions",
+      "model": "swiss-ai/apertus-70b-instruct",
+      "apiKey": "${PUBLICAI_API_KEY}"
+    },
     "publicai-olmo3-7b": {
       "endpoint": "https://api.publicai.co/v1/chat/completions",
       "model": "allenai/Olmo-3-7B-Instruct",
