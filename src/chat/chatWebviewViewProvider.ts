@@ -128,6 +128,13 @@ export class ChatWebviewViewProvider {
         this.setupMessageHandler(this._view);
     }
 
+    public newChat() {
+        this._chatHistoryManager.clearHistory();
+        if (this._view) {
+            this._view.webview.postMessage({ command: 'newChat' });
+        }
+    }
+
     /**
      * `setupMessageHandler` configures the listener for messages sent *from* the webview.
      * This is the primary way the webview (e.g., user input, model selection) communicates

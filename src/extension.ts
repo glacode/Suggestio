@@ -53,6 +53,12 @@ export async function activate(context: vscode.ExtensionContext) {
 
   registerCompletionProvider(context, configContainer.config);
   registerCommands(context, configContainer.config);
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('suggestio.newChat', () => {
+      (chatWebviewViewProvider as ChatWebviewViewProvider).newChat();
+    })
+  );
 }
 
 export function deactivate() { }

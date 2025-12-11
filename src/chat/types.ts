@@ -141,7 +141,8 @@ export interface ChatMessage {
 export type ResponseMessageFromTheExtensionToTheWebview =
   | { sender: 'assistant'; type: 'token'; text: string }
   | { sender: 'assistant'; type: 'completion'; text: string }
-  | { sender: 'assistant'; text: string }; // For general messages, e.g. errors
+  | { sender: 'assistant'; text: string } // For general messages, e.g. errors
+  | { command: 'newChat' };
 
 
 export type ChatHistory = ChatMessage[];

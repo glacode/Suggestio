@@ -374,7 +374,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // ********************************************************************************
     await handler({ command: 'sendMessage', text: 'x' });
     // Get the last message that was posted to the webview.
-    const last = responseMessagesFromTheExtensionToTheWebview[responseMessagesFromTheExtensionToTheWebview.length - 1];
+    const last = responseMessagesFromTheExtensionToTheWebview[responseMessagesFromTheExtensionToTheWebview.length - 1] as { text: string };
     // Expect an error message to have been posted.
     expect(last).toBeDefined();
     expect(typeof last.text).toBe('string');

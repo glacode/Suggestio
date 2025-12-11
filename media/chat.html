@@ -309,8 +309,23 @@
                 }
             });
 
+            function newChat() {
+                const chat = document.getElementById('chat');
+                const messages = chat.querySelectorAll('.message');
+                messages.forEach(m => m.remove());
+                const emptyChatContent = document.getElementById('emptyChatContent');
+                if(emptyChatContent) {
+                    emptyChatContent.style.display = 'flex';
+                }
+            }
+
             window.addEventListener('message', event => {
                 const { sender, type, text } = event.data;
+
+                if (event.data.command === 'newChat') {
+                    newChat();
+                    return;
+                }
 
                 if (sender === 'assistant') {
                     if (type === 'token') {
