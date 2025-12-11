@@ -147,8 +147,22 @@
             {
                 "command": "suggestio.openChat",
                 "title": "Suggestio: Focus on Chat View"
+            },
+            {
+                "command": "suggestio.newChat",
+                "title": "Suggestio: New Chat",
+                "icon": "$(add)"
             }
-        ]
+        ],
+        "menus": {
+            "view/title": [
+                {
+                    "command": "suggestio.newChat",
+                    "when": "view == suggestio.chat.view",
+                    "group": "navigation"
+                }
+            ]
+        }
     },
     "scripts": {
         "vscode:prepublish": "npm run package",

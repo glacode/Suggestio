@@ -6,9 +6,19 @@
       "model": "qwen2.5-coder-32b-instruct",
       "apiKey": "unused"
     },
+    "publicai-olmo3-7b": {
+      "endpoint": "https://api.publicai.co/v1/chat/completions",
+      "model": "allenai/Olmo-3-7B-Instruct",
+      "apiKey": "${PUBLICAI_API_KEY}"
+    },
     "groq-llama370": {
       "endpoint": "https://api.groq.com/openai/v1/chat/completions",
       "model": "llama-3.3-70b-versatile",
+      "apiKey": "${GROQ_API_KEY}"
+    },
+    "groq-compound": {
+      "endpoint": "https://api.groq.com/openai/v1/chat/completions",
+      "model": "groq/compound",
       "apiKey": "${GROQ_API_KEY}"
     },
     "openrouter-deepseekv3": {
