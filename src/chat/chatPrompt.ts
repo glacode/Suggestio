@@ -5,6 +5,15 @@ const SYSTEM_PROMPT: ChatMessage = {
   content: "You are a code assistant",
 };
 
+/**
+ * Represents a chat prompt builder responsible for constructing a well-formatted conversation history
+ * for the Language Model. It ensures that the conversation always starts with a system prompt,
+ * optionally augmented with additional context, and properly integrates user and assistant messages.
+ *
+ * The class adheres to the LLM spec that typically requires a conversation to begin with a system message,
+ * followed by alternating user and assistant messages. It prevents duplicate system prompts by filtering
+ * them out before prepending its own constructed system message.
+ */
 export class ChatPrompt implements IPrompt {
   constructor(private conversation: ChatHistory, context?: string) {
     // The spec says 'Typically, a conversation is formatted with a system message first,
