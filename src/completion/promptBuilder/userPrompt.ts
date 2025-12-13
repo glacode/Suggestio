@@ -1,4 +1,4 @@
-import { ChatHistory, IPrompt } from "../chat/types.js";
+import { ChatHistory, IPrompt } from "../../chat/types.js";
 
 export class UserPrompt implements IPrompt {
   constructor(private prompt: string) { }

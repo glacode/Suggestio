@@ -1,7 +1,7 @@
-import { UserPrompt } from "../promptBuilder/userPrompt.js";
+import { UserPrompt } from "./promptBuilder/userPrompt.js";
 // completion/completionProvider.ts
 import * as vscode from "vscode";
-import { buildPrompt } from "../promptBuilder/promptBuilder.js";
+import { buildPrompt } from "./promptBuilder/promptBuilder.js";
 import { getAnonymizer } from "../anonymizer/anonymizer.js";
 import { debounce } from "./debounceManager.js";
 import { handleCancellation } from "./cancellation.js";
