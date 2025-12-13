@@ -86,7 +86,7 @@ export interface IWebview {
   options?: IWebviewOptions;
   asWebviewUri(uri: UriLike): UriLike;
   onDidReceiveMessage<T = WebviewMessage>(listener: (message: T) => void): IDisposable;
-  postMessage(message: ResponseMessageFromTheExtensionToTheWebview): Promise<boolean> | Thenable<boolean>;
+  postMessage(message: MessageFromTheExtensionToTheWebview): Promise<boolean> | Thenable<boolean>;
   html?: string;
 }
 
@@ -128,17 +128,26 @@ export interface ChatMessage {
 }
 
 /**
- * `ResponseMessageFromTheExtensionToTheWebview` defines the types of messages that can be sent *from* the extension
- * (backend) to the webview (frontend). This is used for AI responses and status updates.
+ * `MessageFromTheExtensionToTheWebview` defines the types of messages that can be sent *from* the extension
+ * (backend) to the webview (frontend). This type was previously named `ResponseMessageFromTheExtensionToTheWebview`
+ * but was renamed to accommodate commands that are not direct responses, such as initiating a new chat.
  *
- * `sender`: Always 'assistant' for these messages.
- * `type: 'token'`: Represents a partial piece of the AI's response (for streaming).
- *   Contains the `text` of the token.
- * `type: 'completion'`: Signals that the AI's response stream has finished.
- *   Contains the final (or empty if tokens were sent) `text` of the completion.
- * (No `type`): A generic message, often used for error reporting. Contains the `text` of the message.
+ * Messages generally fall into two categories:
+ *
+ * 1. **AI Responses and Status Updates (from 'assistant'):**
+ *    These messages carry AI-generated content or status information related to the AI's processing.
+ *    - `{ sender: 'assistant'; type: 'token'; text: string }`: Represents a partial piece of the AI's response (for streaming).
+ *      Contains the `text` of the token.
+ *    - `{ sender: 'assistant'; type: 'completion'; text: string }`: Signals that the AI's response stream has finished.
+ *      Contains the final (or empty if tokens were sent) `text` of the completion.
+ *    - `{ sender: 'assistant'; text: string }`: A generic message from the assistant, often used for error reporting
+ *      or other non-streaming information.
+ *
+ * 2. **Extension Commands:**
+ *    These messages instruct the webview to perform a specific action, independent of AI responses.
+ *    - `{ command: 'newChat' }`: Instructs the webview to initiate and display a new chat session.
  */
-export type ResponseMessageFromTheExtensionToTheWebview =
+export type MessageFromTheExtensionToTheWebview =
   | { sender: 'assistant'; type: 'token'; text: string }
   | { sender: 'assistant'; type: 'completion'; text: string }
   | { sender: 'assistant'; text: string } // For general messages, e.g. errors

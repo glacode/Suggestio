@@ -13,7 +13,7 @@ import type {
   IWebview, // A type representing the webview itself, which displays HTML content.
   IWebviewView, // A type representing the VS Code WebviewView, a container for the webview.
   WebviewMessage, // A type for messages sent *from* the webview (e.g., user input).
-  ResponseMessageFromTheExtensionToTheWebview, // A type for messages sent *to* the webview (e.g., AI responses).
+  MessageFromTheExtensionToTheWebview, // A type for messages sent *to* the webview (e.g., AI responses).
   IDisposable, // A type for objects that can be disposed (cleaned up).
   ChatRole,
   ChatHistory,
@@ -60,7 +60,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // `posted` is an array that will capture any messages sent *to* the webview
     // by the `ChatWebviewViewProvider`. This helps us check if the provider sends the
     // correct responses.
-    const posted: ResponseMessageFromTheExtensionToTheWebview[] = [];
+    const posted: MessageFromTheExtensionToTheWebview[] = [];
 
     // `webview` is a comprehensive fake implementation of the `IWebview` interface.
     // It simulates the behavior of a VS Code webview panel.
@@ -78,7 +78,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       }) as IWebview['onDidReceiveMessage'],
       // `postMessage` is how the webview sends messages *to* the webview (e.g., AI responses).
       // Our fake implementation adds the message to the `posted` array for verification.
-      postMessage: (msg: ResponseMessageFromTheExtensionToTheWebview) => {
+      postMessage: (msg: MessageFromTheExtensionToTheWebview) => {
         posted.push(msg);
         return Promise.resolve(true); // Simulate successful posting.
       }
@@ -223,7 +223,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
         webview.__handler = handler;
         return { dispose: () => { } };
       }) as IWebview['onDidReceiveMessage'],
-      postMessage: (_msg: ResponseMessageFromTheExtensionToTheWebview) => Promise.resolve(true)
+      postMessage: (_msg: MessageFromTheExtensionToTheWebview) => Promise.resolve(true)
     };
 
     const webviewView: IWebviewView = { title: 'X', webview };
@@ -295,7 +295,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     };
 
     // `posted` array to capture messages sent to the webview.
-    const responseMessagesFromTheExtensionToTheWebview: ResponseMessageFromTheExtensionToTheWebview[] = [];
+    const responseMessagesFromTheExtensionToTheWebview: MessageFromTheExtensionToTheWebview[] = [];
     // Fake `webview` implementation, similar to the previous test.
     const webview: IWebview & { __handler?: (msg: WebviewMessage) => void } = {
       options: undefined,
@@ -305,7 +305,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
         webview.__handler = handler;
         return { dispose: () => { } };
       }) as IWebview['onDidReceiveMessage'],
-      postMessage: (msg: ResponseMessageFromTheExtensionToTheWebview) => {
+      postMessage: (msg: MessageFromTheExtensionToTheWebview) => {
         responseMessagesFromTheExtensionToTheWebview.push(msg);
         return Promise.resolve(true);
       }
@@ -400,7 +400,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     };
 
     // `posted` array to capture messages sent to the webview.
-    const responseMessagesFromTheExtensionToTheWebview: ResponseMessageFromTheExtensionToTheWebview[] = [];
+    const responseMessagesFromTheExtensionToTheWebview: MessageFromTheExtensionToTheWebview[] = [];
     // Fake `webview` implementation, similar to previous tests.
     const webview: IWebview & { __handler?: (msg: WebviewMessage) => void } = {
       options: undefined,
@@ -410,7 +410,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
         webview.__handler = handler;
         return { dispose: () => { } };
       }) as IWebview['onDidReceiveMessage'],
-      postMessage: (msg: ResponseMessageFromTheExtensionToTheWebview) => {
+      postMessage: (msg: MessageFromTheExtensionToTheWebview) => {
         responseMessagesFromTheExtensionToTheWebview.push(msg);
         return Promise.resolve(true);
       }
