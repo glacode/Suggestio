@@ -1,7 +1,7 @@
 import { UserPrompt } from "./promptBuilder/userPrompt.js";
 // completion/completionProvider.ts
 import * as vscode from "vscode";
-import { buildPrompt } from "./promptBuilder/promptBuilder.js";
+import { buildPromptForInlineCompletion } from "./promptBuilder/promptBuilder.js";
 import { getAnonymizer } from "../anonymizer/anonymizer.js";
 import { debounce } from "./debounceManager.js";
 import { handleCancellation } from "./cancellation.js";
@@ -28,7 +28,7 @@ function createDebounceCallback(
       return;
     }
 
-    const promptText = buildPrompt(document, position);
+    const promptText = buildPromptForInlineCompletion(document, position);
     log(`Using provider: ${config.activeProvider}`);
     log("Prompt: " + promptText);
 

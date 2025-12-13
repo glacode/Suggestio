@@ -6,7 +6,7 @@ import { extractPrefix } from './extractPrefix.js';
  * @param document The active text document.
  * @param position The position of the cursor.
  */
-export function buildPrompt(document: vscode.TextDocument, position: vscode.Position): string {
+export function buildPromptForInlineCompletion(document: vscode.TextDocument, position: vscode.Position): string {
   const prefix = extractPrefix(document, position);
   const languageId = document.languageId;
 
