@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { extractPrefix, extractSuffix } from './extractPrefix.js';
+import { extractPrefix, extractSuffix } from './extractPrefixAndSuffix.js';
 
 /**
  * Builds the prompt for the AI completion request.
