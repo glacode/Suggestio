@@ -5,7 +5,7 @@ import { registerCompletionProvider } from './registrations/completionRegistrati
 import { registerCommands } from './registrations/commandRegistration.js';
 import * as fs from 'fs';
 import * as path from 'path';
-import { IWorkspaceProvider, IFileContentProvider, IPathResolver } from './chat/types.js';
+import { IWorkspaceProvider, IFileContentProvider } from './chat/types.js';
 import { ChatHistoryManager } from './chat/chatHistoryManager.js';
 import { SecretManager } from './config/secretManager.js';
 import { configProcessor } from './config/configProcessor.js';
@@ -57,13 +57,7 @@ export async function activate(context: vscode.ExtensionContext) {
     }
   };
 
-  const pathResolver: IPathResolver = {
-    join: (...paths: string[]) => path.join(...paths),
-    relative: (from: string, to: string) => path.relative(from, to),
-    basename: (filePath: string) => path.basename(filePath)
-  };
-
-  const ignoreManager = new IgnoreManager(workspaceProvider, fileContentProvider, pathResolver);
+  const ignoreManager = new IgnoreManager(workspaceProvider, fileContentProvider, path);
 
   const chatWebviewViewProvider: vscode.WebviewViewProvider = new ChatWebviewViewProvider({
     extensionContext: context,
