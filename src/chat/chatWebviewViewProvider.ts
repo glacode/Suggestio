@@ -152,7 +152,8 @@ export class ChatWebviewViewProvider {
                 // Handle a message sent by the user from the webview to initiate a chat response.
                 try {
                     this._chatHistoryManager.addMessage({ role: 'user', content: message.text });
-                    const prompt = new ChatPrompt(this._chatHistoryManager.getChatHistory(), this._buildContext.buildContext());
+                    const context = await this._buildContext.buildContext();
+                    const prompt = new ChatPrompt(this._chatHistoryManager.getChatHistory(), context);
                     // Call the `logicHandler` to fetch a streaming chat response.
                     // The `onToken` callback is invoked for each partial token received from the LLM.
                     await this._logicHandler.fetchStreamChatResponse(prompt, (token: string) => {

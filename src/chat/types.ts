@@ -251,5 +251,35 @@ export interface IActiveTextEditorProvider {
  * This context might be derived from the active editor, workspace, etc.
  */
 export interface IContextBuilder {
-    buildContext(): string;
+    buildContext(): Promise<string>;
+}
+
+/**
+ * Manages ignore patterns from sources like .gitignore and .vscodeignore.
+ */
+export interface IIgnoreManager {
+  shouldIgnore(filePath: string): Promise<boolean>;
+}
+
+/**
+ * Provides access to the workspace root path.
+ */
+export interface IWorkspaceProvider {
+  rootPath(): string | undefined;
+}
+
+/**
+ * Provides a way to read file contents.
+ */
+export interface IFileContentProvider {
+  read(path: string): string | undefined;
+}
+
+/**
+ * Provides path manipulation utilities.
+ */
+export interface IPathResolver {
+  join(...paths: string[]): string;
+  relative(from: string, to: string): string;
+  basename(path: string): string;
 }
