@@ -283,3 +283,8 @@ export interface IPathResolver {
   relative(from: string, to: string): string;
   basename(path: string): string;
 }
+
+export interface IAnonymizer {
+    anonymize(text: string): string;
+    deanonymize(text: string): string;
+}

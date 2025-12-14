@@ -1,6 +1,6 @@
-import { Anonymizer } from "./anonymizer.js";
+import { IAnonymizer } from "../chat/types.js";
 
-export class SimpleWordAnonymizer implements Anonymizer {
+export class SimpleWordAnonymizer implements IAnonymizer {
     private mapping: Map<string, string> = new Map();
     private placeholderPrefix = 'ANON_';
     private counter = -1;

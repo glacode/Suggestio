@@ -1,8 +1,7 @@
 import fetch from "node-fetch";
 import { llmProvider } from "./llmProvider.js";
-import { Anonymizer } from "../anonymizer/anonymizer.js";
 import { log } from "../logger.js";
-import { ChatMessage, IPrompt } from "../chat/types.js";
+import { ChatMessage, IAnonymizer, IPrompt } from "../chat/types.js";
 
 type OpenAIResponse = {
   choices?: { message?: { content?: string } }[];
@@ -12,13 +11,13 @@ export class OpenAICompatibleProvider implements llmProvider {
   private endpoint: string;
   private apiKey: string;
   private model: string;
-  private anonymizer?: Anonymizer;
+  private anonymizer?: IAnonymizer;
 
   constructor(
     endpoint: string,
     apiKey: string,
     model: string,
-    anonymizer?: Anonymizer
+    anonymizer?: IAnonymizer
   ) {
     this.endpoint = endpoint;
     this.apiKey = apiKey;

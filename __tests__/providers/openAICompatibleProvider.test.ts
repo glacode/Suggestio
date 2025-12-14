@@ -1,8 +1,7 @@
 import { OpenAICompatibleProvider } from "../../src/providers/openAICompatibleProvider.js";
-import { ChatHistory } from "../../src/chat/types.js";
+import { ChatHistory, IAnonymizer } from "../../src/chat/types.js";
 import * as http from "http";
 import { AddressInfo } from "net";
-import { Anonymizer } from "../../src/anonymizer/anonymizer.js";
 import { SimpleWordAnonymizer } from "../../src/anonymizer/simpleWordAnonymizer.js";
 import { ChatMessage, IPrompt } from "../../src/chat/types.js";
 
@@ -99,7 +98,7 @@ describe("OpenAICompatibleProvider", () => {
   });
 
   describe("with anonymizer", () => {
-    let anonymizer: Anonymizer;
+    let anonymizer: IAnonymizer;
 
     beforeEach(() => {
       anonymizer = new SimpleWordAnonymizer(["secret"]);
