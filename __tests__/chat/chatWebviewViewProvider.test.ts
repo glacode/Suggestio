@@ -18,7 +18,7 @@ import type {
   ChatRole,
   ChatHistory,
   IPrompt
-} from '../../src/chat/types.js';
+} from '../../src/types.js';
 // Import the actual ChatWebviewViewProvider class that we are testing.
 import { ChatWebviewViewProvider } from '../../src/chat/chatWebviewViewProvider.js';
 // Import the event bus, a system for sending and receiving events across different parts of the application.

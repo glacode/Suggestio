@@ -1,7 +1,7 @@
 import fetch from "node-fetch";
 import { llmProvider } from "./llmProvider.js";
 import { log } from "../logger.js";
-import { ChatMessage, IAnonymizer, IPrompt } from "../chat/types.js";
+import { ChatMessage, IAnonymizer, IPrompt } from "../types.js";
 
 type OpenAIResponse = {
   choices?: { message?: { content?: string } }[];

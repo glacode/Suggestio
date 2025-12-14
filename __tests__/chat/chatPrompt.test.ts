@@ -1,5 +1,5 @@
 import { ChatPrompt } from '../../src/chat/chatPrompt.js';
-import { ChatHistory, ChatMessage } from '../../src/chat/types.js';
+import { ChatHistory, ChatMessage } from '../../src/types.js';
 
 describe('ChatPrompt', () => {
   const SYSTEM_PROMPT_CONTENT = "You are a code assistant";

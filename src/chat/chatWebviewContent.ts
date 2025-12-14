@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import type { GetChatWebviewContent, UriLike } from './types.js';
+import type { GetChatWebviewContent, UriLike } from '../types.js';
 
 export interface IChatWebviewContentArgs {
     extensionUri: UriLike;

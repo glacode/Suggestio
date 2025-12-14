@@ -1,4 +1,4 @@
-import { ChatMessage, ChatHistory, IChatHistoryManager } from "./types.js";
+import { ChatMessage, ChatHistory, IChatHistoryManager } from "../types.js";
 
 export class ChatHistoryManager implements IChatHistoryManager {
   private history: ChatHistory = [];

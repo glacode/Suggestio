@@ -2,7 +2,7 @@ import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { ChatResponder } from "../../src/chat/chatResponder.js";
 import { llmProvider } from "../../src/providers/llmProvider.js";
 import { Config, ProviderConfig } from "../../src/config/types.js";
-import { IChatHistoryManager, ChatMessage , IPrompt, ChatHistory } from "../../src/chat/types.js"; // Import ChatMessage from types.js
+import { IChatHistoryManager, ChatMessage , IPrompt, ChatHistory } from "../../src/types.js"; // Import ChatMessage from types.js
 
 // Define a minimal mock config interface for testing purposes
 interface MockConfig extends Pick<Config, 'activeProvider' | 'llmProviderForChat' | 'providers' | 'anonymizer'> { }

@@ -1,4 +1,4 @@
-import { IIgnoreManager, IWorkspaceProvider, IFileContentProvider, IPathResolver } from './types.js';
+import { IIgnoreManager, IWorkspaceProvider, IFileContentProvider, IPathResolver } from '../types.js';
 
 // A very simple glob-to-regex converter
 function globToRegex(pattern: string): RegExp {

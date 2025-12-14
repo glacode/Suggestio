@@ -15,7 +15,7 @@ import type {
     IWebviewView, // Defines the interface for a VS Code `WebviewView`, which is a container for the webview.
     WebviewMessage, // Defines the structure of messages sent from the webview to the extension.
     IContextBuilder // Defines the interface for building context strings to be used as additional information in prompts.
-} from './types.js';
+} from '../types.js';
 // Importing the `eventBus`, a custom mechanism for different parts of the extension
 // to communicate by emitting and listening for events.
 import { eventBus } from '../events/eventBus.js';

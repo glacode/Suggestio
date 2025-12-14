@@ -2,7 +2,7 @@
  * Build context string from the active VSCode editor.
  * Includes file path and full content if available.
  */
-import { IContextBuilder, IActiveTextEditorProvider, IIgnoreManager } from './types.js';
+import { IContextBuilder, IActiveTextEditorProvider, IIgnoreManager } from '../types.js';
 
 /**
  * Default implementation of `IContextBuilder` that reads from the

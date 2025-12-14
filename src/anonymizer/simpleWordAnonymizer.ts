@@ -1,4 +1,4 @@
-import { IAnonymizer } from "../chat/types.js";
+import { IAnonymizer } from "../types.js";
 
 export class SimpleWordAnonymizer implements IAnonymizer {
     private mapping: Map<string, string> = new Map();

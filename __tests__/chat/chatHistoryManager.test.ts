@@ -2,7 +2,7 @@ import { describe, it, beforeEach, expect } from "@jest/globals";
 import { ChatResponder } from "../../src/chat/chatResponder.js";
 import { llmProvider } from "../../src/providers/llmProvider.js";
 import { Config, ProviderConfig } from "../../src/config/types.js";
-import { IChatHistoryManager, IPrompt } from "../../src/chat/types.js";
+import { IChatHistoryManager, IPrompt } from "../../src/types.js";
 import { ChatPrompt } from "../../src/chat/chatPrompt.js";
 import { ChatHistoryManager } from "../../src/chat/chatHistoryManager.js";
 

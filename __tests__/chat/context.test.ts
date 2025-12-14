@@ -1,6 +1,6 @@
 // __tests__/src/chat/context.test.ts
 import { ContextBuilder } from '../../src/chat/context.js';
-import { IActiveTextEditorProvider, IIgnoreManager } from '../../src/chat/types.js';
+import { IActiveTextEditorProvider, IIgnoreManager } from '../../src/types.js';
 
 describe('ContextBuilder', () => {
   let mockIgnoreManager: IIgnoreManager;

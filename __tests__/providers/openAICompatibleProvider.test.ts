@@ -1,9 +1,8 @@
 import { OpenAICompatibleProvider } from "../../src/providers/openAICompatibleProvider.js";
-import { ChatHistory, IAnonymizer } from "../../src/chat/types.js";
+import { ChatHistory, ChatMessage, IAnonymizer, IPrompt } from "../../src/types.js";
 import * as http from "http";
 import { AddressInfo } from "net";
 import { SimpleWordAnonymizer } from "../../src/anonymizer/simpleWordAnonymizer.js";
-import { ChatMessage, IPrompt } from "../../src/chat/types.js";
 
 class TestPrompt implements IPrompt {
   constructor(private messages: ChatMessage[]) {

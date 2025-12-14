@@ -1,4 +1,4 @@
-import { IPrompt } from "../chat/types.js";
+import { IPrompt } from "../types.js";
 
 export interface llmProvider {
   query(prompt: IPrompt): Promise<string | null>;

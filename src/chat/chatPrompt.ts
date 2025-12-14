@@ -1,4 +1,4 @@
-import { ChatHistory, ChatMessage, IPrompt } from "./types.js";
+import { ChatHistory, ChatMessage, IPrompt } from "../types.js";
 
 const SYSTEM_PROMPT: ChatMessage = {
   role: "system",

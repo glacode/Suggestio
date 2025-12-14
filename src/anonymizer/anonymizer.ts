@@ -1,4 +1,4 @@
-import { IAnonymizer } from "../chat/types.js";
+import { IAnonymizer } from "../types.js";
 import { Config } from "../config/types.js";
 import { SimpleWordAnonymizer } from "./simpleWordAnonymizer.js";
 

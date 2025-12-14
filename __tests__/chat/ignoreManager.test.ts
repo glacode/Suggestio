@@ -1,6 +1,6 @@
 import { describe, beforeEach, test, expect } from '@jest/globals';
 import { IgnoreManager } from '../../src/chat/ignoreManager.js';
-import { IWorkspaceProvider, IFileContentProvider, IPathResolver } from '../../src/chat/types.js';
+import { IWorkspaceProvider, IFileContentProvider, IPathResolver } from '../../src/types.js';
 import * as path from 'path';
 
 describe('IgnoreManager', () => {
