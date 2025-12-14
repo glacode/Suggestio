@@ -8,6 +8,7 @@ import { handleCancellation } from "./cancellation.js";
 import { log } from "../logger.js";
 import { Config } from "../config/types.js";
 import { llmProvider } from "../providers/llmProvider.js";
+import { IgnoreManager } from "../chat/ignoreManager.js"; // Import IgnoreManager
 
 const DEBOUNCE_DELAY_MS = 1000;
 
@@ -63,11 +64,17 @@ function createDebounceCallback(
 export async function provideInlineCompletionItems(
   provider: llmProvider | undefined,
   config: Config,
+  ignoreManager: IgnoreManager, // Added IgnoreManager
   document: vscode.TextDocument,
   position: vscode.Position,
   _context: vscode.InlineCompletionContext,
   token?: vscode.CancellationToken
 ): Promise<vscode.InlineCompletionList> {
+  // Check if the document should be ignored
+  if (await ignoreManager.shouldIgnore(document.uri.fsPath)) {
+    log(`Document ${document.uri.fsPath} is ignored. Skipping inline completion.`);
+    return new vscode.InlineCompletionList([]);
+  }
 
   const result = await new Promise<vscode.InlineCompletionList>((resolve) => {
     if (!provider) {
