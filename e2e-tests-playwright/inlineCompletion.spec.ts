@@ -1,0 +1,122 @@
+import { test, expect, Page } from '@playwright/test';
+import { launchVscode } from './vscode-runner';
+import { ElectronApplication } from 'playwright';
+import express from 'express';
+import { Server } from 'http';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
+
+// -----------------------------------------------------------------------------
+// Helpers (Single-Responsibility)
+// -----------------------------------------------------------------------------
+
+function createTempWorkspace(): string {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'suggestio-playwright-workspace-'));
+    return tempDir;
+}
+
+function writeMockConfig(workspace: string) {
+    const mockConfig = {
+        activeProvider: "testProvider",
+        providers: {
+            testProvider: {
+                endpoint: "http://localhost:3000/v1/completions",
+                model: "test-model",
+            }
+        }
+    };
+    fs.writeFileSync(
+        path.join(workspace, 'suggestio.config.json'),
+        JSON.stringify(mockConfig, null, 2)
+    );
+}
+
+function createMockServer(): Promise<Server> {
+    return new Promise(resolve => {
+        const app = express();
+        app.use(express.json());
+
+        app.post('/v1/completions', (_req, res) => {
+            res.json({
+                choices: [
+                    {
+                        message: {
+                            content: ' world',
+                        },
+                    },
+                ],
+            });
+        });
+
+        const server = app.listen(3000, () => resolve(server));
+    });
+}
+
+async function createNewFile(page: Page) {
+	await page.keyboard.press('Control+N');
+	await page.waitForTimeout(500);
+}
+
+async function openChatView(page: Page) {
+    await page.keyboard.press('Control+Shift+P');
+    await page.waitForTimeout(500);
+    await page.keyboard.type('Suggestio: Focus on Chat View', { delay: 10 });
+    await page.waitForTimeout(500);
+    await page.keyboard.press('Enter');
+
+    await page.waitForTimeout(1000);
+}
+
+// -----------------------------------------------------------------------------
+// Main Test
+// -----------------------------------------------------------------------------
+
+test.describe('Inline Completion E2E', () => {
+    let electronApp: ElectronApplication;
+    let page: Page;
+    let server: Server | null = null;
+    let tempWorkspacePath: string;
+
+    test.beforeAll(async () => {
+        tempWorkspacePath = createTempWorkspace();
+        writeMockConfig(tempWorkspacePath);
+        server = await createMockServer();
+
+        const result = await launchVscode(tempWorkspacePath);
+        electronApp = result.electronApp;
+
+        page = await electronApp.firstWindow();
+        await page.waitForTimeout(10000);
+    });
+
+    test.afterAll(async () => {
+        await electronApp?.close();
+        server?.close();
+
+        if (fs.existsSync(tempWorkspacePath)) {
+            fs.rmSync(tempWorkspacePath, { recursive: true, force: true });
+        }
+    });
+
+    test('should provide inline completion from a custom provider', async () => {
+        await openChatView(page);
+		await createNewFile(page);
+
+		// await page.pause();
+
+        // Simulate typing
+        await page.keyboard.type('hello', { delay: 150 });
+
+        // Allow debounce + mock server response + rendering
+        await page.waitForTimeout(1000);
+
+        // Accept the inline suggestion
+        await page.keyboard.press('Tab');
+		await page.waitForTimeout(500);
+
+        // Verify the final content
+        const editor = page.locator('.view-line').first();
+        await expect(editor).toHaveText('hello world');
+    });
+});
