@@ -132,6 +132,9 @@ test.describe('Inline Completion E2E', () => {
 
     test('should anonymize user data before sending to the provider', async () => {
         await createNewFile(page);
+        // uncomment the next two lines if you want to test this independently
+        // await openChatView(page);  // activates the extension if you launch this test alone
+        // await createNewFile(page); // used to focus to the editor
 
         // Simulate typing
         await page.keyboard.type('hello john', { delay: 150 });
@@ -144,5 +147,13 @@ test.describe('Inline Completion E2E', () => {
         const content = lastRequestBody.messages[0].content;
         expect(content).toContain('hello ANON_0');
         expect(content).not.toContain('john');
+
+        // Accept the inline suggestion
+        await page.keyboard.press('Tab');
+        await page.waitForTimeout(500);
+
+        // Verify the final content
+        const editor = page.locator('.view-line').first();
+        await expect(editor).toHaveText('hello john world');
     });
 });
