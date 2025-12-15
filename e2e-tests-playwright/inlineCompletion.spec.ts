@@ -8,6 +8,13 @@ import * as path from 'path';
 import * as os from 'os';
 
 // -----------------------------------------------------------------------------
+// Test State
+// -----------------------------------------------------------------------------
+
+let lastRequestBody: any = null;
+
+
+// -----------------------------------------------------------------------------
 // Helpers (Single-Responsibility)
 // -----------------------------------------------------------------------------
 
@@ -24,6 +31,10 @@ function writeMockConfig(workspace: string) {
                 endpoint: "http://localhost:3000/v1/completions",
                 model: "test-model",
             }
+        },
+        anonymizer: {
+            enabled: true,
+            words: ["john", "doe"]
         }
     };
     fs.writeFileSync(
@@ -37,7 +48,8 @@ function createMockServer(): Promise<Server> {
         const app = express();
         app.use(express.json());
 
-        app.post('/v1/completions', (_req, res) => {
+        app.post('/v1/completions', (req, res) => {
+            lastRequestBody = req.body;
             res.json({
                 choices: [
                     {
@@ -54,8 +66,8 @@ function createMockServer(): Promise<Server> {
 }
 
 async function createNewFile(page: Page) {
-	await page.keyboard.press('Control+N');
-	await page.waitForTimeout(500);
+    await page.keyboard.press('Control+N');
+    await page.waitForTimeout(500);
 }
 
 async function openChatView(page: Page) {
@@ -100,10 +112,8 @@ test.describe('Inline Completion E2E', () => {
     });
 
     test('should provide inline completion from a custom provider', async () => {
-        await openChatView(page);
-		await createNewFile(page);
-
-		// await page.pause();
+        await openChatView(page);  // activates the extension
+        await createNewFile(page);
 
         // Simulate typing
         await page.keyboard.type('hello', { delay: 150 });
@@ -113,10 +123,26 @@ test.describe('Inline Completion E2E', () => {
 
         // Accept the inline suggestion
         await page.keyboard.press('Tab');
-		await page.waitForTimeout(500);
+        await page.waitForTimeout(500);
 
         // Verify the final content
         const editor = page.locator('.view-line').first();
         await expect(editor).toHaveText('hello world');
+    });
+
+    test('should anonymize user data before sending to the provider', async () => {
+        await createNewFile(page);
+
+        // Simulate typing
+        await page.keyboard.type('hello john', { delay: 150 });
+
+        // Allow debounce + mock server response + rendering
+        await page.waitForTimeout(1000);
+
+        // Verify the final content
+        expect(lastRequestBody).not.toBeNull();
+        const content = lastRequestBody.messages[0].content;
+        expect(content).toContain('hello ANON_0');
+        expect(content).not.toContain('john');
     });
 });
