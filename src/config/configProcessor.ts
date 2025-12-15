@@ -1,3 +1,4 @@
+import { getAnonymizer } from '../anonymizer/anonymizer.js';
 import { getActiveProvider } from '../providers/providerFactory.js';
 import { ConfigContainer, Config, ProviderConfig } from './types.js';
 import { eventBus } from '../events/eventBus.js';
@@ -68,11 +69,13 @@ class ConfigProcessor {
             await this.resolveAPIKeyInMemory(providers[activeProvider]);
         }
 
+        const anonymizer = getAnonymizer(config);
+
         // `getActiveProvider` can return null; `inlineCompletionProvider` expects
         // `llmProvider | undefined`, so normalize null -> undefined to satisfy
         // the TypeScript type.
-        config.llmProviderForInlineCompletion = getActiveProvider(config) ?? undefined;
-        config.llmProviderForChat = getActiveProvider(config) ?? undefined;
+        config.llmProviderForInlineCompletion = getActiveProvider(config, anonymizer) ?? undefined;
+        config.llmProviderForChat = getActiveProvider(config, anonymizer) ?? undefined;
     }
 
     private async updateActiveProvider(modelName: string) {

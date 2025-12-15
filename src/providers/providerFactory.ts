@@ -1,10 +1,14 @@
 import { Config, ProviderConfig } from "../config/types.js";
 import { llmProvider } from "./llmProvider.js";
+import { IAnonymizer } from "../types.js";
 import { OpenAICompatibleProvider } from "./openAICompatibleProvider.js";
 import { GeminiProvider } from "./geminiProvider.js";
 import * as vscode from "vscode";
 
-export function getActiveProvider(config: Config): llmProvider | null {
+export function getActiveProvider(
+  config: Config,
+  anonymizer?: IAnonymizer
+): llmProvider | null {
   const activeProviderName = config.activeProvider;
   const providerConfig: ProviderConfig | undefined =
     config.providers?.[activeProviderName];
@@ -29,7 +33,8 @@ export function getActiveProvider(config: Config): llmProvider | null {
     return new OpenAICompatibleProvider(
       providerConfig.endpoint,
       apiKey,
-      providerConfig.model
+      providerConfig.model,
+      anonymizer
     );
   }
 
