@@ -33,6 +33,15 @@ function writeMockConfig(workspace: string) {
     );
 }
 
+/**
+ * Creates and starts an Express server to mock a streaming Large Language Model (LLM) API endpoint.
+ * This server is used for E2E tests to simulate real-time, character-by-character responses,
+ * which is crucial for testing the frontend's ability to handle streamed content.
+ * It listens for POST requests on '/v1/chat/completions' and streams back the user's input.
+ * The mock server's response content is the concatenation of all content fields from the userMessages in the request body,
+ * joined by a space. For example, it there are two user messages with contents "Hello" and "How are you", the response will be "Hello How are you".
+ * @returns {Promise<Server>} A promise that resolves with the HTTP server instance once it's listening.
+ */
 function createMockServer(): Promise<Server> {
     return new Promise(resolve => {
         const app = express();
