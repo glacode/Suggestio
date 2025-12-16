@@ -99,6 +99,7 @@ async function getChatFrames(page: Page) {
 
 async function sendChatMessage(innerFrame: ReturnType<Page["frameLocator"]>, message: string) {
     const input = innerFrame.locator('#messageInput');
+    await input.click();  // this is needed only the secont turn onwards
     await input.waitFor({ state: 'visible' });
 
     await input.page().keyboard.type(message, { delay: 50 });
@@ -116,6 +117,28 @@ async function expectChatMessages(inner: ReturnType<Page["frameLocator"]>, expec
     await expect(userMessage).toHaveText(expected);
     await expect(assistantMessage).toBeVisible();
     await expect(assistantMessage).toHaveText(expected, { timeout: 5000 });
+}
+
+async function expectChatHistory(
+    inner: ReturnType<Page["frameLocator"]>,
+    expectedUserMessages: string[],
+    expectedAssistantMessages: string[]
+) {
+    const userMessages = inner.locator('.message.user');
+    const assistantMessages = inner.locator('.message.assistant');
+
+    await expect(userMessages).toHaveCount(expectedUserMessages.length);
+    await expect(assistantMessages).toHaveCount(expectedAssistantMessages.length);
+
+    for (let i = 0; i < expectedUserMessages.length; i++) {
+        await expect(userMessages.nth(i)).toBeVisible();
+        await expect(userMessages.nth(i)).toHaveText(expectedUserMessages[i]);
+    }
+
+    for (let i = 0; i < expectedAssistantMessages.length; i++) {
+        await expect(assistantMessages.nth(i))
+            .toHaveText(expectedAssistantMessages[i], { timeout: 5000 });
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -159,5 +182,21 @@ test.describe('Chat E2E', () => {
 
         await sendChatMessage(inner, 'Hello');
         await expectChatMessages(inner, 'Hello');
+
+        // Second turn
+        await sendChatMessage(inner, 'How are you');
+
+        /**
+         * Mock server behavior:
+         * assistant response = concatenation of ALL user messages
+         *
+         * Turn 1 assistant: "Hello"
+         * Turn 2 assistant: "Hello How are you"  (this proves that the full history is sent!!)
+         */
+        await expectChatHistory(
+            inner,
+            ['Hello', 'How are you'],
+            ['Hello', 'Hello How are you']
+        );
     });
 });
