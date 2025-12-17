@@ -19,6 +19,10 @@ function createTempWorkspace(): string {
 function writeMockConfig(workspace: string) {
     const mockConfig = {
         activeProvider: "testProvider",
+        anonymizer: {
+            enabled: true,
+            words: ["secret"]
+        },
         providers: {
             testProvider: {
                 endpoint: "http://localhost:3001/v1/chat/completions",
@@ -42,12 +46,13 @@ function writeMockConfig(workspace: string) {
  * joined by a space. For example, it there are two user messages with contents "Hello" and "How are you", the response will be "Hello How are you".
  * @returns {Promise<Server>} A promise that resolves with the HTTP server instance once it's listening.
  */
-function createMockServer(): Promise<Server> {
+function createMockServer(capturedRequests: any[]): Promise<Server> {
     return new Promise(resolve => {
         const app = express();
         app.use(express.json());
 
         app.post('/v1/chat/completions', (req, res) => {
+            capturedRequests.push(req.body);
             const userMessages = req.body.messages.filter((m: any) => m.role === 'user');
             const concatenated = userMessages.map((m: any) => m.content).join(' ');
 
@@ -150,11 +155,13 @@ test.describe('Chat E2E', () => {
     let page: Page;
     let server: Server | null = null;
     let tempWorkspacePath: string;
+    let capturedRequests: any[] = [];
 
     test.beforeAll(async () => {
         tempWorkspacePath = createTempWorkspace();
         writeMockConfig(tempWorkspacePath);
-        server = await createMockServer();
+        capturedRequests = [];
+        server = await createMockServer(capturedRequests);
 
         const result = await launchVscode(tempWorkspacePath);
         electronApp = result.electronApp;
@@ -198,5 +205,26 @@ test.describe('Chat E2E', () => {
             ['Hello', 'How are you'],
             ['Hello', 'Hello How are you']
         );
+
+        // Third turn: Anonymization
+        await sendChatMessage(inner, 'My secret is simple');
+
+        // Verify Chat UI (Deanonymization)
+        // The mock server will echo "Hello How are you My ANON_X is simple"
+        // The frontend should deanonymize ANON_X back to "secret"
+        await expectChatHistory(
+            inner,
+            ['Hello', 'How are you', 'My secret is simple'],
+            ['Hello', 'Hello How are you', 'Hello How are you My secret is simple']
+        );
+
+        // Verify Backend (Anonymization)
+        // We expect the last request to contain the anonymized text
+        expect(capturedRequests.length).toBeGreaterThanOrEqual(3);
+        const lastRequest = capturedRequests[capturedRequests.length - 1];
+        const lastUserMessage = lastRequest.messages.findLast((m: any) => m.role === 'user');
+        
+        // The word "secret" should be replaced by "ANON_" followed by a number
+        expect(lastUserMessage.content).toMatch(/My ANON_\d+ is simple/);
     });
 });

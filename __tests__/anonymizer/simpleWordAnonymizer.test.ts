@@ -73,4 +73,46 @@ describe('SimpleWordAnonymizer', () => {
     const deanonymized = anonymizer.deanonymize(anonymized);
     expect(deanonymized).toBe(input);
   });
+
+  describe('Streaming Deanonymization', () => {
+    let anonymizer: SimpleWordAnonymizer;
+
+    beforeEach(() => {
+        anonymizer = new SimpleWordAnonymizer(['secret']);
+    });
+
+    test('handles a single chunk containing a full placeholder surrounded by text', () => {
+        // 1. Establish mapping: "secret" -> "ANON_0"
+        anonymizer.anonymize('secret');
+        
+        const streamer = anonymizer.createStreamingDeanonymizer();
+        
+        // 2. Process chunk "previous ANON_0 next"
+        const chunk = 'previous ANON_0 next';
+        const { processed, buffer } = streamer.process(chunk);
+        
+        expect(processed).toBe('previous secret next');
+        expect(buffer).toBe('');
+    });
+
+    test('handles split tokens across chunks', () => {
+        anonymizer.anonymize('secret'); // ANON_0
+        const streamer = anonymizer.createStreamingDeanonymizer();
+
+        // Chunk 1: "This is A" (Start of prefix)
+        let result = streamer.process('This is A');
+        expect(result.processed).toBe('This is ');
+        expect(result.buffer).toBe('A');
+
+        // Chunk 2: "NON_" (Rest of prefix)
+        result = streamer.process('NON_');
+        expect(result.processed).toBe('');
+        expect(result.buffer).toBe('ANON_');
+
+        // Chunk 3: "0." (Number and trailing char)
+        result = streamer.process('0.');
+        expect(result.processed).toBe('secret.');
+        expect(result.buffer).toBe('');
+    });
+  });
 });

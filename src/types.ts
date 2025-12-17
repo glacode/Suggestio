@@ -284,7 +284,50 @@ export interface IPathResolver {
   basename(path: string): string;
 }
 
+/**
+ * Interface for a stateful, streaming deanonymizer.
+ * 
+ * When working with streaming LLM responses, tokens are received in chunks (e.g., characters or sub-words).
+ * A deanonymization placeholder (like "ANON_123") might be split across multiple chunks
+ * (e.g., Chunk 1: "AN", Chunk 2: "ON", Chunk 3: "_123").
+ * 
+ * A simple string replacement on each chunk individually would fail to identify and replace
+ * these split placeholders. This interface defines a stateful processor that maintains an
+ * internal buffer to correctly handle and reassemble such split tokens.
+ */
+export interface IStreamingDeanonymizer {
+    /**
+     * Processes a new text chunk from the stream.
+     * 
+     * The method buffers the input chunk and checks if the buffer contains any complete
+     * deanonymization placeholders (or safe text that can be released).
+     * 
+     * - If the buffer contains a verified placeholder (e.g., "ANON_1"), it replaces it with the original text.
+     * - If the buffer contains text that definitely CANNOT be the start of a placeholder, that text is released.
+     * - If the buffer ends with a partial match of a placeholder prefix (e.g., "AN"), it holds onto it
+     *   until more data arrives to confirm or deny the match.
+     * 
+     * @param chunk The new piece of text received from the stream.
+     * @returns An object containing:
+     *  - `processed`: The text that is safe to emit to the user (placeholders replaced, or non-sensitive text).
+     *  - `buffer`: The content currently remaining in the internal buffer (debug info).
+     */
+    process(chunk: string): { processed: string; buffer: string };
+
+    /**
+     * Flushes any remaining text from the internal buffer.
+     * 
+     * This should be called when the stream is complete (e.g., on "[DONE]").
+     * Any text remaining in the buffer (which was being held because it looked like
+     * it *might* be a placeholder) is returned as-is.
+     * 
+     * @returns The remaining text in the buffer.
+     */
+    flush(): string;
+}
+
 export interface IAnonymizer {
     anonymize(text: string): string;
     deanonymize(text: string): string;
+    createStreamingDeanonymizer(): IStreamingDeanonymizer;
 }

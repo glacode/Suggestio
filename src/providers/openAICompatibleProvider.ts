@@ -102,6 +102,11 @@ export class OpenAICompatibleProvider implements llmProvider {
       throw new Error("Response body is null");
     }
 
+    let streamingDeanonymizer;
+    if (this.anonymizer) {
+        streamingDeanonymizer = this.anonymizer.createStreamingDeanonymizer();
+    }
+
     let buffer = "";
     for await (const chunk of response.body) {
       buffer += chunk.toString();
@@ -112,17 +117,34 @@ export class OpenAICompatibleProvider implements llmProvider {
         if (line.startsWith("data: ")) {
           const data = line.substring(6).trim(); // Use trim() to be safe
           if (data === "[DONE]") {
+             if (streamingDeanonymizer) {
+                 const remaining = streamingDeanonymizer.flush();
+                 if (remaining) {
+                     onToken(remaining);
+                 }
+             }
             return;
           }
           try {
             const json = JSON.parse(data);
             const token = json.choices?.[0]?.delta?.content;
             if (token) {
-              let processedToken = token;
-              if (this.anonymizer) {
-                processedToken = this.anonymizer.deanonymize(token);
+              // If a streaming deanonymizer is active, use it to process the incoming token.
+              // This is crucial for handling cases where anonymized placeholders (e.g., "ANON_0")
+              // might be split across multiple incoming tokens from the LLM stream.
+              // The `process` method buffers tokens and releases deanonymized text
+              // only when a full placeholder is recognized or non-sensitive text is confirmed.
+              if (streamingDeanonymizer) {
+                const { processed } = streamingDeanonymizer.process(token);
+                // `processed` contains any deanonymized or confirmed text that is ready to be emitted.
+                // The `buffer` (not used here directly) holds partial placeholder matches.
+                if (processed) {
+                    onToken(processed);
+                }
+              } else {
+                // If no anonymizer is configured, pass the token directly to the consumer.
+                onToken(token);
               }
-              onToken(processedToken);
             }
           } catch (e) {
             log("Error parsing chunk: " + data);
