@@ -178,9 +178,33 @@ describe('SimpleWordAnonymizer', () => {
         expect(anonymized).toContain('ANON_0');
     });
 
+    test('anonymizes tokens with special characters like #, *, £, ?, ^', () => {
+        const anonymizer = new SimpleWordAnonymizer([], 3.0, 8);
+        const input = 'My secret is eT5*yu3^£uYv?BCh#126';
+        
+        const anonymized = anonymizer.anonymize(input);
+        expect(anonymized).not.toContain('eT5*yu3^£uYv?BCh#126');
+        expect(anonymized).toMatch(/My secret is ANON_\d+/);
+    });
+
     test('getEntropy returns expected values for various strings', () => {
         const anonymizer = new SimpleWordAnonymizer([]);
         const getEntropy = (str: string) => (anonymizer as any).getEntropy(str);
+
+        // Check code patterns
+        // "console.log" -> 11 chars. c,o,n,s,l,e,.,g. 
+        // o:3, l:2, n:1, s:1, c:1, e:1, .:1, g:1.
+        // p(o)=3/11. p(l)=2/11.
+        // 3/11*log(3/11) + 2/11*log(2/11) + 6 * 1/11*log(1/11).
+        // Entropy ≈ 2.8.
+        expect(getEntropy('console.log')).toBeCloseTo(2.8, 1);
+
+        // "myFunction(arg)" -> 15 chars.
+        // m,y,F,u,n,c,t,i,o,a,r,g,(,).
+        // n:2. others 1? y:1.
+        // Very high entropy because unique chars.
+        // Entropy > 3.5 likely.
+        expect(getEntropy('myFunction(arg)')).toBeGreaterThan(3.5);
 
         // Low entropy (repetitions)
         expect(getEntropy('aaaaa')).toBe(0);

@@ -44,7 +44,7 @@ export class SimpleWordAnonymizer implements IAnonymizer {
 
         let result = text;
         const minLen = this.minAnonymizationLength;
-        const regex = /[a-zA-Z0-9_\-\+/=]+/g;
+        const regex = /[a-zA-Z0-9_\-\+/=#@$\*£\?\^]+/g;
         let match;
         const candidates: { start: number; end: number; text: string }[] = [];
 
