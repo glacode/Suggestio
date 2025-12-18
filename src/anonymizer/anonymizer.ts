@@ -5,7 +5,11 @@ import { SimpleWordAnonymizer } from "./simpleWordAnonymizer.js";
 
 export function getAnonymizer(config: Config): IAnonymizer | undefined {
   if (config.anonymizer?.enabled) {
-    return new SimpleWordAnonymizer(config.anonymizer.words);
+    return new SimpleWordAnonymizer(
+      config.anonymizer.words,
+      config.anonymizer.allowedEntropy,
+      config.anonymizer.minAnonymizationLength
+    );
   }
   return undefined;
 }

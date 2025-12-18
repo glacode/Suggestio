@@ -2,15 +2,97 @@ import { IAnonymizer, IStreamingDeanonymizer } from "../types.js";
 
 export class SimpleWordAnonymizer implements IAnonymizer {
     private mapping: Map<string, string> = new Map();
+    private reverseMapping: Map<string, string> = new Map();
     private placeholderPrefix = 'ANON_';
     private counter = -1;
 
-    constructor(private wordsToAnonymize: string[]) {
+    constructor(
+        private wordsToAnonymize: string[],
+        private allowedEntropy?: number,
+        private minAnonymizationLength?: number
+    ) {
+    }
+
+    /**
+     * Calculates the Shannon entropy of a string.
+     * Entropy is a measure of randomness or unpredictability.
+     * Higher entropy values (typically > 3.0-4.0 for short strings) often indicate
+     * random keys, passwords, or encrypted data rather than natural language.
+     */
+    private getEntropy(str: string): number {
+        const len = str.length;
+        if (len === 0) {
+            return 0;
+        }
+        const frequencies = new Map<string, number>();
+        for (const char of str) {
+            frequencies.set(char, (frequencies.get(char) || 0) + 1);
+        }
+
+        let entropy = 0;
+        for (const count of frequencies.values()) {
+            const p = count / len;
+            entropy -= p * Math.log2(p);
+        }
+        return entropy;
+    }
+
+    private anonymizeEntropy(text: string): string {
+        if (this.allowedEntropy === undefined || this.minAnonymizationLength === undefined) {
+            return text;
+        }
+
+        let result = text;
+        const minLen = this.minAnonymizationLength;
+        const regex = /[a-zA-Z0-9_\-\+/=]+/g;
+        let match;
+        const candidates: { start: number; end: number; text: string }[] = [];
+
+        while ((match = regex.exec(result)) !== null) {
+            const token = match[0];
+            if (token.length >= minLen) {
+                // Skip existing placeholders
+                if (token.startsWith(this.placeholderPrefix) && /^\d+$/.test(token.slice(this.placeholderPrefix.length))) {
+                    continue;
+                }
+
+                // Rule: identifiers consisting only of letters and underscores are usually safe.
+                // We also allow a single digit at the end (e.g. "variable2").
+                // This prevents anonymizing long class names like "SimpleWordAnonymizer" or private variables like "_internalState".
+                if (/^[a-zA-Z_]+\d?$/.test(token)) {
+                    continue;
+                }
+
+                if (this.getEntropy(token) > this.allowedEntropy) {
+                    candidates.push({
+                        start: match.index,
+                        end: match.index + token.length,
+                        text: token
+                    });
+                }
+            }
+        }
+
+        // Replace from back to front to avoid index shifting issues
+        for (let i = candidates.length - 1; i >= 0; i--) {
+            const { start, end, text: token } = candidates[i];
+            
+            let placeholder = this.reverseMapping.get(token);
+            if (!placeholder) {
+                this.counter++;
+                placeholder = `${this.placeholderPrefix}${this.counter}`;
+                this.mapping.set(placeholder, token);
+                this.reverseMapping.set(token, placeholder);
+            }
+            
+            result = result.substring(0, start) + placeholder + result.substring(end);
+        }
+
+        return result;
     }
 
     anonymize(text: string): string {
         let result = text;
-        const alreadyMapped = new Set<string>();
 
         for (const word of this.wordsToAnonymize) {
             // Create case-insensitive regex with word boundaries
@@ -20,12 +102,14 @@ export class SimpleWordAnonymizer implements IAnonymizer {
             // Use a while loop to find all matches and replace them individually
             while ((match = regex.exec(result)) !== null) {
                 const matchedText = match[0]; // Get the actual matched text with original case
-                if (!alreadyMapped.has(matchedText)) {
-                    alreadyMapped.add(matchedText);
+                let placeholder = this.reverseMapping.get(matchedText);
+                
+                if (!placeholder) {
                     this.counter++;
+                    placeholder = `${this.placeholderPrefix}${this.counter}`;
+                    this.mapping.set(placeholder, matchedText); // Store the exact matched text
+                    this.reverseMapping.set(matchedText, placeholder);
                 }
-                const placeholder = `${this.placeholderPrefix}${this.counter}`;
-                this.mapping.set(placeholder, matchedText); // Store the exact matched text
 
                 // Replace only this specific occurrence
                 result = result.substring(0, match.index) +
@@ -37,7 +121,7 @@ export class SimpleWordAnonymizer implements IAnonymizer {
             }
         }
 
-        return result;
+        return this.anonymizeEntropy(result);
     }
 
     deanonymize(text: string): string {
