@@ -51,6 +51,10 @@
       "192.168.1.1",
       "<social_security_number>",
       "<street_address>"
-    ]
+    ],
+    "sensitiveData": {
+      "allowedEntropy": 3.5,
+      "minLength": 10
+    }
   }
 }

@@ -7,8 +7,8 @@ export function getAnonymizer(config: Config): IAnonymizer | undefined {
   if (config.anonymizer?.enabled) {
     return new SimpleWordAnonymizer(
       config.anonymizer.words,
-      config.anonymizer.allowedEntropy,
-      config.anonymizer.minAnonymizationLength
+      config.anonymizer.sensitiveData?.allowedEntropy,
+      config.anonymizer.sensitiveData?.minLength
     );
   }
   return undefined;

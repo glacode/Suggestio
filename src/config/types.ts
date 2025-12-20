@@ -17,8 +17,10 @@ export interface Config {
   anonymizer: {
     enabled: boolean;
     words: string[];
-    allowedEntropy?: number;
-    minAnonymizationLength?: number;
+    sensitiveData?: {
+      allowedEntropy: number;
+      minLength: number;
+    };
   };
   llmProviderForInlineCompletion?: llmProvider;
   llmProviderForChat?: llmProvider;

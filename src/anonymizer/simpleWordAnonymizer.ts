@@ -9,7 +9,7 @@ export class SimpleWordAnonymizer implements IAnonymizer {
     constructor(
         private wordsToAnonymize: string[],
         private allowedEntropy?: number,
-        private minAnonymizationLength?: number
+        private minLength?: number
     ) {
     }
 
@@ -38,12 +38,12 @@ export class SimpleWordAnonymizer implements IAnonymizer {
     }
 
     private anonymizeEntropy(text: string): string {
-        if (this.allowedEntropy === undefined || this.minAnonymizationLength === undefined) {
+        if (this.allowedEntropy === undefined || this.minLength === undefined) {
             return text;
         }
 
         let result = text;
-        const minLen = this.minAnonymizationLength;
+        const minLen = this.minLength;
         const regex = /[a-zA-Z0-9_\-\+/=#@$\*£\?\^]+/g;
         let match;
         const candidates: { start: number; end: number; text: string }[] = [];
