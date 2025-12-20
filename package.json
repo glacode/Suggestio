@@ -162,7 +162,17 @@
                     "group": "navigation"
                 }
             ]
-        }
+        },
+        "jsonValidation": [
+            {
+                "fileMatch": "config.json",
+                "url": "./resources/config.schema.json"
+            },
+            {
+                "fileMatch": "suggestio.config.json",
+                "url": "./resources/config.schema.json"
+            }
+        ]
     },
     "scripts": {
         "vscode:prepublish": "npm run package",
