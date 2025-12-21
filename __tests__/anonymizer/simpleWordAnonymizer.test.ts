@@ -1,4 +1,13 @@
 import { SimpleWordAnonymizer } from '../../src/anonymizer/simpleWordAnonymizer.js';
+import { IAnonymizationNotifier } from '../../src/types.js';
+
+class MockNotifier implements IAnonymizationNotifier {
+    public notifications: { original: string; placeholder: string; type: 'word' | 'entropy' }[] = [];
+
+    notifyAnonymization(original: string, placeholder: string, type: 'word' | 'entropy'): void {
+        this.notifications.push({ original, placeholder, type });
+    }
+}
 
 describe('SimpleWordAnonymizer', () => {
   test('anonymizes and deanonymizes single word', () => {
@@ -247,6 +256,37 @@ describe('SimpleWordAnonymizer', () => {
         // 12 unique chars. log2(12) ≈ 3.58
         const key = 'aB1+cD2/eF3g'; 
         expect(getEntropy(key)).toBeCloseTo(3.58, 2);
+    });
+  });
+
+  describe('Anonymization Notifications', () => {
+    test('notifies when anonymizing words', () => {
+        const notifier = new MockNotifier();
+        const anonymizer = new SimpleWordAnonymizer(['secret'], undefined, undefined, notifier);
+        
+        anonymizer.anonymize('This is a secret message');
+        
+        expect(notifier.notifications).toHaveLength(1);
+        expect(notifier.notifications[0]).toEqual({
+            original: 'secret',
+            placeholder: 'ANON_0',
+            type: 'word'
+        });
+    });
+
+    test('notifies when anonymizing by entropy', () => {
+        const notifier = new MockNotifier();
+        const anonymizer = new SimpleWordAnonymizer([], 3.0, 8, notifier);
+        const highEntropy = 'gH7p2K9wL4xN1';
+        
+        anonymizer.anonymize(`Key: ${highEntropy}`);
+        
+        expect(notifier.notifications).toHaveLength(1);
+        expect(notifier.notifications[0]).toEqual({
+            original: highEntropy,
+            placeholder: 'ANON_0',
+            type: 'entropy'
+        });
     });
   });
 });

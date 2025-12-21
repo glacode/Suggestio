@@ -21,8 +21,8 @@ import type {
 } from '../../src/types.js';
 // Import the actual ChatWebviewViewProvider class that we are testing.
 import { ChatWebviewViewProvider } from '../../src/chat/chatWebviewViewProvider.js';
-// Import the event bus, a system for sending and receiving events across different parts of the application.
-import { eventBus } from '../../src/events/eventBus.js';
+// Import EventEmitter for local event bus usage.
+import { EventEmitter } from 'events';
 
 // `describe` is used to group tests. Here, we're testing the `ChatWebviewViewProvider`.
 // The description "integration, no vscode mocks" indicates that while we're using
@@ -36,6 +36,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // `extensionUri` represents the base path of our extension.
     // We're faking it with a simple object that has a `fsPath` property.
     const extensionUri: UriLike = { fsPath: '/ext' };
+
+    const eventBus = new EventEmitter();
 
     // `vscodeApi` is a fake (mock) version of the VS Code API.
     // We only implement the parts that `ChatWebviewViewProvider` needs,
@@ -133,7 +135,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       chatHistoryManager, // No-op for this test
       buildContext, // Provides additional context for prompts.
       getChatWebviewContent, // Function to generate webview HTML.
-      vscodeApi // Faked VS Code API.
+      vscodeApi, // Faked VS Code API.
+      eventBus
     });
 
     // ********************************************************************************
@@ -252,6 +255,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // Use the real ChatResponder which currently adds the (context+message) to history.
     const { ChatResponder } = await import('../../src/chat/chatResponder.js');
     const responder = new ChatResponder(config, () => { }, chatHistoryManager);
+    const eventBus = new EventEmitter();
 
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri },
@@ -260,7 +264,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       chatHistoryManager,
       buildContext: { buildContext: async () => 'CONTEXT' },
       getChatWebviewContent: () => '',
-      vscodeApi
+      vscodeApi,
+      eventBus
     });
 
     provider.resolveWebviewView(webviewView);
@@ -330,6 +335,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       getChatHistory: () => [],
     };
 
+    const eventBus = new EventEmitter();
+
     // ********************************************************************************
     //  Instantiate and resolve the `ChatWebviewViewProvider`.
     // ********************************************************************************
@@ -340,7 +347,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       chatHistoryManager,
       buildContext: { buildContext: async () => '' }, // Empty context for this test.
       getChatWebviewContent: () => '', // Empty HTML content for this test.
-      vscodeApi
+      vscodeApi,
+      eventBus
     });
 
     provider.resolveWebviewView(webviewView);
@@ -435,6 +443,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       getChatHistory: () => [],
     };
 
+    const eventBus = new EventEmitter();
+
     // ********************************************************************************
     //  Instantiate and resolve the `ChatWebviewViewProvider`.
     // ********************************************************************************
@@ -445,7 +455,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       chatHistoryManager,
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
-      vscodeApi
+      vscodeApi,
+      eventBus
     });
 
     provider.resolveWebviewView(webviewView);

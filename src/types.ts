@@ -331,3 +331,11 @@ export interface IAnonymizer {
     deanonymize(text: string): string;
     createStreamingDeanonymizer(): IStreamingDeanonymizer;
 }
+
+/**
+ * Interface for notifying about anonymization events.
+ * This decouples the Anonymizer from the event bus or logging mechanism.
+ */
+export interface IAnonymizationNotifier {
+    notifyAnonymization(original: string, placeholder: string, type: 'word' | 'entropy'): void;
+}

@@ -1,7 +1,7 @@
 import { getAnonymizer } from '../anonymizer/anonymizer.js';
 import { getActiveProvider } from '../providers/providerFactory.js';
 import { ConfigContainer, Config, ProviderConfig } from './types.js';
-import { eventBus } from '../events/eventBus.js';
+import { EventEmitter } from 'events';
 import { log } from '../logger.js';
 
 export interface SecretManager {
@@ -11,17 +11,22 @@ export interface SecretManager {
 class ConfigProcessor {
     private _config: Config | undefined;
     private _secretManager: SecretManager | undefined;
+    private _eventBus: EventEmitter | undefined;
 
     constructor() {
-        eventBus.on('modelChanged', (modelName: string) => {
+    }
+
+    public init(config: Config, secretManager: SecretManager, eventBus: EventEmitter) {
+        this._config = config;
+        this._secretManager = secretManager;
+        this._eventBus = eventBus;
+        
+        // Remove existing listeners to avoid duplicates if init is called multiple times
+        this._eventBus.removeAllListeners('modelChanged');
+        this._eventBus.on('modelChanged', (modelName: string) => {
             log('modelChanged event received for model: ' + modelName);
             this.updateActiveProvider(modelName);
         });
-    }
-
-    public init(config: Config, secretManager: SecretManager) {
-        this._config = config;
-        this._secretManager = secretManager;
     }
 
     /**
@@ -53,9 +58,9 @@ class ConfigProcessor {
     /**
      * Process raw config JSON and resolves API keys using a secret manager.
      */
-    public async processConfig(rawJson: string, secretManager: SecretManager): Promise<ConfigContainer> {
+    public async processConfig(rawJson: string, secretManager: SecretManager, eventBus: EventEmitter): Promise<ConfigContainer> {
         const config: Config = JSON.parse(rawJson);
-        this.init(config, secretManager);
+        this.init(config, secretManager, eventBus);
 
         await this.updateProviders(config);
 
@@ -63,13 +68,17 @@ class ConfigProcessor {
     }
 
     private async updateProviders(config: Config) {
+        if (!this._eventBus) {
+             throw new Error('EventBus is not initialized');
+        }
+
         const { activeProvider, providers } = config;
 
         if (activeProvider && providers?.[activeProvider]) {
             await this.resolveAPIKeyInMemory(providers[activeProvider]);
         }
 
-        const anonymizer = getAnonymizer(config);
+        const anonymizer = getAnonymizer(config, this._eventBus);
 
         // `getActiveProvider` can return null; `inlineCompletionProvider` expects
         // `llmProvider | undefined`, so normalize null -> undefined to satisfy

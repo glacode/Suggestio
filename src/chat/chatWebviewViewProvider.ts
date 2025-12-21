@@ -18,7 +18,7 @@ import type {
 } from '../types.js';
 // Importing the `eventBus`, a custom mechanism for different parts of the extension
 // to communicate by emitting and listening for events.
-import { eventBus } from '../events/eventBus.js';
+import { EventEmitter } from 'events';
 import { ChatPrompt } from './chatPrompt.js';
 
 // This interface defines the arguments required to construct a `ChatWebviewViewProvider`.
@@ -31,6 +31,7 @@ interface IChatWebviewViewProviderArgs {
     buildContext: IContextBuilder; // A builder to create contextual information for the AI prompt.
     getChatWebviewContent: GetChatWebviewContent; // A function that provides the HTML content for the webview.
     vscodeApi: IVscodeApiLocal; // The VS Code API instance, used here for `Uri` operations.
+    eventBus: EventEmitter;
 }
 
 /**
@@ -57,12 +58,13 @@ export class ChatWebviewViewProvider {
     private readonly _providerAccessor: ILlmProviderAccessor; // Stores the model provider accessor.
     private readonly _getChatWebviewContent: GetChatWebviewContent; // Stores the webview content generator.
     private readonly _vscodeApi: IVscodeApiLocal; // Stores the VS Code API for internal use.
+    private readonly _eventBus: EventEmitter;
 
     /**
      * The constructor initializes the `ChatWebviewViewProvider` with its dependencies.
      * These dependencies are typically passed from `extension.ts` during activation.
      */
-    constructor({ extensionContext, providerAccessor, logicHandler, chatHistoryManager, buildContext, getChatWebviewContent, vscodeApi }: IChatWebviewViewProviderArgs) {
+    constructor({ extensionContext, providerAccessor, logicHandler, chatHistoryManager, buildContext, getChatWebviewContent, vscodeApi, eventBus }: IChatWebviewViewProviderArgs) {
         this._extensionContext = extensionContext;
         this._providerAccessor = providerAccessor;
         this._logicHandler = logicHandler;
@@ -70,6 +72,7 @@ export class ChatWebviewViewProvider {
         this._buildContext = buildContext;
         this._getChatWebviewContent = getChatWebviewContent;
         this._vscodeApi = vscodeApi;
+        this._eventBus = eventBus;
     }
 
     /**
@@ -183,7 +186,7 @@ export class ChatWebviewViewProvider {
                 // Handle a message indicating that the active model has changed in the webview.
                 // Emit a 'modelChanged' event on the global event bus, allowing other parts
                 // of the extension to react to this change.
-                eventBus.emit('modelChanged', message.model);
+                this._eventBus.emit('modelChanged', message.model);
             } else if (message.command === 'clearHistory') {
                 // Handle a message requesting to clear the chat history.
                 // Call the `clearHistory` method on the `chatHistoryManager`.

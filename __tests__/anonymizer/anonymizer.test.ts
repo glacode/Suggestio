@@ -2,6 +2,7 @@ import { describe, it, expect, jest } from '@jest/globals';
 import { Config } from '../../src/config/types.js';
 import { SimpleWordAnonymizer } from '../../src/anonymizer/simpleWordAnonymizer.js';
 import { getAnonymizer } from '../../src/anonymizer/anonymizer.js';
+import { EventEmitter } from 'events';
 
 // Mock SimpleWordAnonymizer
 jest.mock('../../src/anonymizer/simpleWordAnonymizer.js');
@@ -21,7 +22,8 @@ describe('getAnonymizer', () => {
   });
 
   it('returns undefined when anonymizer is disabled', () => {
-    const result = getAnonymizer(config);
+    const eventBus = new EventEmitter();
+    const result = getAnonymizer(config, eventBus);
     expect(result).toBeUndefined();
     // expect(SimpleWordAnonymizer).not.toHaveBeenCalled();
   });
@@ -36,8 +38,9 @@ describe('getAnonymizer', () => {
         words: testWords
       }
     };
+    const eventBus = new EventEmitter();
 
-    const result = getAnonymizer(config);
+    const result = getAnonymizer(config, eventBus);
 
     expect(result).toBeInstanceOf(SimpleWordAnonymizer);
     // expect(SimpleWordAnonymizer).toHaveBeenCalledWith(testWords);
@@ -45,8 +48,9 @@ describe('getAnonymizer', () => {
 
   it('returns undefined when anonymizer property is missing', () => {
     const config: Config = {} as Config;
+    const eventBus = new EventEmitter();
 
-    const result = getAnonymizer(config);
+    const result = getAnonymizer(config, eventBus);
     expect(result).toBeUndefined();
     // expect(SimpleWordAnonymizer).not.toHaveBeenCalled();
   });
@@ -61,8 +65,9 @@ describe('getAnonymizer', () => {
         words: []
       }
     };
+    const eventBus = new EventEmitter();
 
-    const result = getAnonymizer(config);
+    const result = getAnonymizer(config, eventBus);
 
     expect(result).toBeInstanceOf(SimpleWordAnonymizer);
     // expect(SimpleWordAnonymizer).toHaveBeenCalledWith([]);

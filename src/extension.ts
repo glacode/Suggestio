@@ -16,15 +16,23 @@ import { IgnoreManager } from './chat/ignoreManager.js';
 import { getChatWebviewContent } from './chat/chatWebviewContent.js';
 import { ConfigContainer } from './config/types.js';
 import './chat/activeEditorTracker.js';
+import { EventEmitter } from 'events';
+import { ANONYMIZATION_EVENT, AnonymizationEventPayload } from './anonymizer/anonymizationNotifier.js';
 
 export async function activate(context: vscode.ExtensionContext) {
   initLogger();
   log("Suggestio: Activate");
   vscode.window.showInformationMessage("Suggestio Activated!");
 
+  const eventBus = new EventEmitter();
+
+  eventBus.on(ANONYMIZATION_EVENT, (payload: AnonymizationEventPayload) => {
+    log(`[Anonymizer] Anonymized '${payload.original}' to '${payload.placeholder}' (Reason: ${payload.type})`);
+  });
+
   const secretManager = new SecretManager(context);
   const rawConfig = await readConfig(context);
-  const configContainer: ConfigContainer = await configProcessor.processConfig(rawConfig, secretManager);
+  const configContainer: ConfigContainer = await configProcessor.processConfig(rawConfig, secretManager, eventBus);
 
   const conversationHistory = new ChatHistoryManager();
   const chatHistoryManager = conversationHistory;
@@ -66,7 +74,8 @@ export async function activate(context: vscode.ExtensionContext) {
     chatHistoryManager: chatHistoryManager,
     buildContext: new ContextBuilder(vscode.window, ignoreManager),
     getChatWebviewContent,
-    vscodeApi: vscode
+    vscodeApi: vscode,
+    eventBus
   });
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(ChatWebviewViewProvider.viewType, chatWebviewViewProvider, {
