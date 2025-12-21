@@ -75,7 +75,8 @@ export async function activate(context: vscode.ExtensionContext) {
     buildContext: new ContextBuilder(vscode.window, ignoreManager),
     getChatWebviewContent,
     vscodeApi: vscode,
-    eventBus
+    eventBus,
+    anonymizer: configContainer.config.anonymizerInstance
   });
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(ChatWebviewViewProvider.viewType, chatWebviewViewProvider, {

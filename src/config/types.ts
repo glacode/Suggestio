@@ -1,4 +1,5 @@
 import { llmProvider } from "../providers/llmProvider.js";
+import { IAnonymizer } from "../types.js";
 
 export interface ProviderConfig {
   endpoint?: string; // optional because Gemini doesn’t use it
@@ -22,6 +23,7 @@ export interface Config {
       minLength: number;
     };
   };
+  anonymizerInstance?: IAnonymizer;
   llmProviderForInlineCompletion?: llmProvider;
   llmProviderForChat?: llmProvider;
 }

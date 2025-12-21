@@ -476,4 +476,70 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     expect(responseMessagesFromTheExtensionToTheWebview.length).toBe(0);
     // (Implicitly, the `logicHandler` methods were not called due to the `/* not called */` comments in the mock.)
   });
+
+  it('anonymizes context if anonymizer is provided', async () => {
+    const extensionUri: UriLike = { fsPath: '/ext' };
+    const vscodeApi: IVscodeApiLocal = {
+      Uri: { joinPath: (b: UriLike, ...p: string[]) => ({ b, p } as UriLike) }
+    };
+    const providerAccessor: ILlmProviderAccessor = { getModels: () => [], getActiveModel: () => '' };
+    const webview: IWebview & { __handler?: (msg: WebviewMessage) => void } = {
+      options: undefined,
+      asWebviewUri: (uri: UriLike) => `webview:${JSON.stringify(uri)}` as unknown as UriLike,
+      html: '',
+      onDidReceiveMessage: ((handler: (msg: WebviewMessage) => void): IDisposable => {
+        webview.__handler = handler;
+        return { dispose: () => { } };
+      }) as IWebview['onDidReceiveMessage'],
+      postMessage: (_msg: MessageFromTheExtensionToTheWebview) => Promise.resolve(true)
+    };
+    const webviewView: IWebviewView = { title: 'X', webview };
+
+    const promptsSent: IPrompt[] = [];
+    const logicHandler: IChatResponder = {
+      fetchStreamChatResponse: async (prompt: IPrompt, _onToken: (t: string) => void) => {
+        promptsSent.push(prompt);
+        return Promise.resolve();
+      }
+    };
+
+    const chatHistoryManager: IChatHistoryManager = {
+      clearHistory: () => { },
+      addMessage: () => { },
+      getChatHistory: () => []
+    };
+
+    const anonymizer = {
+      anonymize: (text: string) => text.replace('SECRET', 'ANONYMIZED'),
+      deanonymize: (text: string) => text,
+      createStreamingDeanonymizer: () => ({
+        process: (chunk: string) => ({ processed: chunk, buffer: '' }),
+        flush: () => ''
+      })
+    };
+
+    const eventBus = new EventEmitter();
+
+    const provider = new ChatWebviewViewProvider({
+      extensionContext: { extensionUri },
+      providerAccessor,
+      logicHandler,
+      chatHistoryManager,
+      buildContext: { buildContext: async () => 'This is a SECRET' },
+      getChatWebviewContent: () => '',
+      vscodeApi,
+      eventBus,
+      anonymizer
+    });
+
+    provider.resolveWebviewView(webviewView);
+
+    const handler = webview.__handler as (msg: WebviewMessage) => Promise<void>;
+    await handler({ command: 'sendMessage', text: 'hello' });
+
+    expect(promptsSent.length).toBe(1);
+    const chatHistory = promptsSent[0].generateChatHistory();
+    expect(chatHistory[0].content).toContain('This is a ANONYMIZED');
+    expect(chatHistory[0].content).not.toContain('SECRET');
+  });
 });

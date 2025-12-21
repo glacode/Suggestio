@@ -14,7 +14,8 @@ import type {
     IVscodeApiLocal, // A minimal, faked representation of the VS Code API, used primarily for URI handling.
     IWebviewView, // Defines the interface for a VS Code `WebviewView`, which is a container for the webview.
     WebviewMessage, // Defines the structure of messages sent from the webview to the extension.
-    IContextBuilder // Defines the interface for building context strings to be used as additional information in prompts.
+    IContextBuilder, // Defines the interface for building context strings to be used as additional information in prompts.
+    IAnonymizer
 } from '../types.js';
 // Importing the `eventBus`, a custom mechanism for different parts of the extension
 // to communicate by emitting and listening for events.
@@ -32,6 +33,7 @@ interface IChatWebviewViewProviderArgs {
     getChatWebviewContent: GetChatWebviewContent; // A function that provides the HTML content for the webview.
     vscodeApi: IVscodeApiLocal; // The VS Code API instance, used here for `Uri` operations.
     eventBus: EventEmitter;
+    anonymizer?: IAnonymizer;
 }
 
 /**
@@ -59,12 +61,13 @@ export class ChatWebviewViewProvider {
     private readonly _getChatWebviewContent: GetChatWebviewContent; // Stores the webview content generator.
     private readonly _vscodeApi: IVscodeApiLocal; // Stores the VS Code API for internal use.
     private readonly _eventBus: EventEmitter;
+    private readonly _anonymizer?: IAnonymizer;
 
     /**
      * The constructor initializes the `ChatWebviewViewProvider` with its dependencies.
      * These dependencies are typically passed from `extension.ts` during activation.
      */
-    constructor({ extensionContext, providerAccessor, logicHandler, chatHistoryManager, buildContext, getChatWebviewContent, vscodeApi, eventBus }: IChatWebviewViewProviderArgs) {
+    constructor({ extensionContext, providerAccessor, logicHandler, chatHistoryManager, buildContext, getChatWebviewContent, vscodeApi, eventBus, anonymizer }: IChatWebviewViewProviderArgs) {
         this._extensionContext = extensionContext;
         this._providerAccessor = providerAccessor;
         this._logicHandler = logicHandler;
@@ -73,6 +76,7 @@ export class ChatWebviewViewProvider {
         this._getChatWebviewContent = getChatWebviewContent;
         this._vscodeApi = vscodeApi;
         this._eventBus = eventBus;
+        this._anonymizer = anonymizer;
     }
 
     /**
@@ -155,7 +159,10 @@ export class ChatWebviewViewProvider {
                 // Handle a message sent by the user from the webview to initiate a chat response.
                 try {
                     this._chatHistoryManager.addMessage({ role: 'user', content: message.text });
-                    const context = await this._buildContext.buildContext();
+                    let context = await this._buildContext.buildContext();
+                    if (this._anonymizer) {
+                        context = this._anonymizer.anonymize(context);
+                    }
                     const prompt = new ChatPrompt(this._chatHistoryManager.getChatHistory(), context);
                     // Call the `logicHandler` to fetch a streaming chat response.
                     // The `onToken` callback is invoked for each partial token received from the LLM.
