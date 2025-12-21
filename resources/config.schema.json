@@ -57,7 +57,7 @@
           "properties": {
             "allowedEntropy": {
               "type": "number",
-              "description": "Entropy threshold. Tokens with Shannon entropy higher than this value will be anonymized. Higher values (e.g., > 3.5) indicate more randomness."
+              "description": "Entropy threshold. Tokens with normalized Shannon entropy (H / log2(length)) higher than this value will be anonymized. Values range from 0 to 1 (e.g., > 0.85 indicates high randomness)."
             },
             "minLength": {
               "type": "number",

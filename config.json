@@ -68,7 +68,7 @@
       "<street_address>"
     ],
     "sensitiveData": {
-      "allowedEntropy": 3.5,
+      "allowedEntropy": 0.85,
       "minLength": 10
     }
   }

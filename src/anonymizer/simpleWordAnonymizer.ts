@@ -15,14 +15,15 @@ export class SimpleWordAnonymizer implements IAnonymizer {
     }
 
     /**
-     * Calculates the Shannon entropy of a string.
+     * Calculates the normalized Shannon entropy of a string.
      * Entropy is a measure of randomness or unpredictability.
-     * Higher entropy values (typically > 3.0-4.0 for short strings) often indicate
+     * Normalized entropy (H / log2(length)) ranges from 0 to 1.
+     * Higher values (typically > 0.8-0.9) often indicate
      * random keys, passwords, or encrypted data rather than natural language.
      */
     private getEntropy(str: string): number {
         const len = str.length;
-        if (len === 0) {
+        if (len <= 1) {
             return 0;
         }
         const frequencies = new Map<string, number>();
@@ -35,7 +36,8 @@ export class SimpleWordAnonymizer implements IAnonymizer {
             const p = count / len;
             entropy -= p * Math.log2(p);
         }
-        return entropy;
+        // Normalize by log2(length) to get a value between 0 and 1
+        return entropy / Math.log2(len);
     }
 
     private anonymizeEntropy(text: string): string {

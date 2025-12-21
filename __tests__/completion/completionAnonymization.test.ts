@@ -44,11 +44,11 @@ describe("Inline Completion Anonymization", () => {
     });
 
     it("should anonymize high entropy tokens in inline completion prompt", async () => {
-        // Entropy anonymization: allowedEntropy=3.0, minLength=10
-        const anonymizer = new SimpleWordAnonymizer([], 3.0, 10);
+        // Entropy anonymization: allowedEntropy=0.8, minLength=10
+        const anonymizer = new SimpleWordAnonymizer([], 0.8, 10);
         const provider = new OpenAICompatibleProvider(endpoint, "key", "model", anonymizer);
         
-        const highEntropyString = "a1b2c3d4e5f6g7h8i9j0"; // Very high entropy
+        const highEntropyString = "a1b2c3d4e5f6g7h8i9j0"; // Very high entropy (Hn = 1.0)
         const promptText = `const token = "${highEntropyString}";\n// cursor here`;
         const prompt = new UserPrompt(promptText);
 

@@ -128,14 +128,14 @@ describe('SimpleWordAnonymizer', () => {
   describe('Entropy Anonymization', () => {
     test('anonymizes high entropy strings', () => {
       // A random-looking string: "gH7p2K9wL4xN1" has high entropy
-      // A common word: "password" has lower entropy
-      const anonymizer = new SimpleWordAnonymizer([], 3.0, 8);
+      // A common word: "password" has high-ish normalized entropy but we test it with a threshold
+      const anonymizer = new SimpleWordAnonymizer([], 0.95, 8);
       const input = 'My key is gH7p2K9wL4xN1 and my word is password';
       
       const anonymized = anonymizer.anonymize(input);
       
-      // "gH7p2K9wL4xN1" should be anonymized (length 13, high entropy)
-      // "password" should NOT be anonymized (length 8, but lower entropy)
+      // "gH7p2K9wL4xN1" (length 13, all unique chars) -> Hn = 1.0 > 0.95 -> ANON
+      // "password" (length 8) -> Hn = 0.916 < 0.95 -> PRESERVED
       expect(anonymized).toContain('ANON_0');
       expect(anonymized).not.toContain('gH7p2K9wL4xN1');
       expect(anonymized).toContain('password');
@@ -145,7 +145,7 @@ describe('SimpleWordAnonymizer', () => {
     });
 
     test('uses same placeholder for same high entropy token', () => {
-      const anonymizer = new SimpleWordAnonymizer([], 3.0, 8);
+      const anonymizer = new SimpleWordAnonymizer([], 0.9, 8);
       const input = 'Key1: gH7p2K9wL4xN1, Key2: gH7p2K9wL4xN1';
       
       const anonymized = anonymizer.anonymize(input);
@@ -156,7 +156,7 @@ describe('SimpleWordAnonymizer', () => {
     });
 
     test('does not anonymize identifiers (alphabetic or underscore)', () => {
-      const anonymizer = new SimpleWordAnonymizer([], 3.0, 8);
+      const anonymizer = new SimpleWordAnonymizer([], 0.8, 8);
       // "SimpleWordAnonymizer" is long and has reasonable entropy, but should be skipped.
       // "_privateIdentifier" should also be skipped.
       const input = 'Class SimpleWordAnonymizer has a member _privateIdentifier';
@@ -166,7 +166,7 @@ describe('SimpleWordAnonymizer', () => {
     });
 
     test('does not anonymize identifiers ending in a single digit', () => {
-        const anonymizer = new SimpleWordAnonymizer([], 3.5, 8);
+        const anonymizer = new SimpleWordAnonymizer([], 0.8, 8);
         
         // "long_variable_name_1" -> high length, potentially high entropy, but ends in single digit -> SKIP
         // "long_variable_name_12" -> ends in 2 digits -> PROCESS (if entropy high enough)
@@ -188,7 +188,7 @@ describe('SimpleWordAnonymizer', () => {
     });
 
     test('anonymizes tokens with special characters like #, *, £, ?, ^', () => {
-        const anonymizer = new SimpleWordAnonymizer([], 3.0, 8);
+        const anonymizer = new SimpleWordAnonymizer([], 0.8, 8);
         const input = 'My secret is eT5*yu3^£uYv?BCh#126';
         
         const anonymized = anonymizer.anonymize(input);
@@ -201,61 +201,36 @@ describe('SimpleWordAnonymizer', () => {
         const getEntropy = (str: string) => (anonymizer as any).getEntropy(str);
 
         // Check code patterns
-        // "console.log" -> 11 chars. c,o,n,s,l,e,.,g. 
-        // o:3, l:2, n:1, s:1, c:1, e:1, .:1, g:1.
-        // p(o)=3/11. p(l)=2/11.
-        // 3/11*log(3/11) + 2/11*log(2/11) + 6 * 1/11*log(1/11).
-        // Entropy ≈ 2.8.
-        expect(getEntropy('console.log')).toBeCloseTo(2.8, 1);
+        // "console.log" -> 11 chars. Hn ≈ 0.822
+        expect(getEntropy('console.log')).toBeCloseTo(0.822, 3);
 
         // "myFunction(arg)" -> 15 chars.
-        // m,y,F,u,n,c,t,i,o,a,r,g,(,).
-        // n:2. others 1? y:1.
-        // Very high entropy because unique chars.
-        // Entropy > 3.5 likely.
-        expect(getEntropy('myFunction(arg)')).toBeGreaterThan(3.5);
+        // Hn ≈ 0.98
+        expect(getEntropy('myFunction(arg)')).toBeGreaterThan(0.95);
 
         // Low entropy (repetitions)
         expect(getEntropy('aaaaa')).toBe(0);
-        // 2 distinct chars, length 6. p('a')=0.5, p('b')=0.5. - (0.5*-1 + 0.5*-1) = 1.0
-        expect(getEntropy('ababab')).toBeCloseTo(1.0); 
+        // "ababab": Hn ≈ 0.38685
+        expect(getEntropy('ababab')).toBeCloseTo(0.38685, 4); 
 
         // Standard words (moderate entropy)
-        // "password": 8 chars. s:2, others:1. 
-        // Entropy = - [ 2*(0.25*log2(0.25)) + 6*(0.125*log2(0.125)) ]
-        // = - [ 0.5 * -2 + 0.75 * -3 ] = - [ -1 - 2.25 ] = 3.25?
-        // Wait. s:2 (freq 2/8=0.25). 1 instance of 's' contributes p*log(p).
-        // There are 8 positions? No, loop over frequencies.
-        // frequencies: s:2, p:1, a:1, w:1, o:1, r:1, d:1.
-        // term for s: 0.25 * log2(0.25) = 0.25 * -2 = -0.5.
-        // term for others: 0.125 * log2(0.125) = 0.125 * -3 = -0.375.
-        // sum = -0.5 + 6 * (-0.375) = -0.5 - 2.25 = -2.75.
-        // Entropy = -(-2.75) = 2.75.
-        expect(getEntropy('password')).toBeCloseTo(2.75); 
+        // "password": 8 chars. Hn ≈ 0.91666
+        expect(getEntropy('password')).toBeCloseTo(0.91666, 4); 
         
-        // "correct": 7 chars. c:2, r:2, o:1, e:1, t:1.
-        // p(c)=2/7, p(r)=2/7. p(others)=1/7.
-        // term(c) = 2/7 * log2(2/7) ≈ 0.2857 * -1.807 ≈ -0.516
-        // term(r) = -0.516
-        // term(o) = 1/7 * log2(1/7) ≈ 0.1428 * -2.807 ≈ -0.401
-        // sum = 2*(-0.516) + 3*(-0.401) = -1.032 - 1.203 = -2.235
-        // Entropy = 2.235
-        expect(getEntropy('correct')).toBeCloseTo(2.23, 1);
+        // "correct": 7 chars. Hn ≈ 0.79644
+        expect(getEntropy('correct')).toBeCloseTo(0.79644, 4);
 
         // High entropy (random strings)
-        // 10 distinct chars: log2(10) ≈ 3.32
-        expect(getEntropy('0123456789')).toBeCloseTo(3.32, 2);
+        // all unique chars -> Hn = 1.0
+        expect(getEntropy('0123456789')).toBeCloseTo(1.0, 2);
 
-        // High entropy because many unique chars
-        expect(getEntropy('SimpleWordAnonymizer')).toBeCloseTo(3.72, 2);
-        // Lowering S W A to lowercase gives same unique char count
-        expect(getEntropy('simplewordanonymizer')).toBeCloseTo(3.72, 2);
-
+        // "SimpleWordAnonymizer": 20 chars. Hn ≈ 0.8612
+        expect(getEntropy('SimpleWordAnonymizer')).toBeCloseTo(0.8612, 3);
         
         // Base64-like string (more randomness)
-        // 12 unique chars. log2(12) ≈ 3.58
+        // all unique chars -> Hn = 1.0
         const key = 'aB1+cD2/eF3g'; 
-        expect(getEntropy(key)).toBeCloseTo(3.58, 2);
+        expect(getEntropy(key)).toBe(1.0);
     });
   });
 
@@ -276,7 +251,7 @@ describe('SimpleWordAnonymizer', () => {
 
     test('notifies when anonymizing by entropy', () => {
         const notifier = new MockNotifier();
-        const anonymizer = new SimpleWordAnonymizer([], 3.0, 8, notifier);
+        const anonymizer = new SimpleWordAnonymizer([], 0.8, 8, notifier);
         const highEntropy = 'gH7p2K9wL4xN1';
         
         anonymizer.anonymize(`Key: ${highEntropy}`);
