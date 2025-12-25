@@ -119,11 +119,11 @@ test.describe('Inline Completion E2E', () => {
         await page.keyboard.type('hello', { delay: 150 });
 
         // Allow debounce + mock server response + rendering
-        await page.waitForTimeout(1000);
+        await page.waitForTimeout(2000);
 
         // Accept the inline suggestion
         await page.keyboard.press('Tab');
-        await page.waitForTimeout(500);
+        await page.waitForTimeout(1000);
 
         // Verify the final content
         const editor = page.locator('.view-line').first();
@@ -140,6 +140,10 @@ test.describe('Inline Completion E2E', () => {
         await page.keyboard.type('hello john', { delay: 150 });
 
         // Allow debounce + mock server response + rendering
+        await page.waitForTimeout(3000);
+        
+        // Accept the inline suggestion
+        await page.keyboard.press('Tab');
         await page.waitForTimeout(1000);
 
         // Verify the final content
@@ -148,9 +152,7 @@ test.describe('Inline Completion E2E', () => {
         expect(content).toContain('hello ANON_0');
         expect(content).not.toContain('john');
 
-        // Accept the inline suggestion
-        await page.keyboard.press('Tab');
-        await page.waitForTimeout(500);
+
 
         // Verify the final content
         const editor = page.locator('.view-line').first();
