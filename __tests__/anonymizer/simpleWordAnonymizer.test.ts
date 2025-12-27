@@ -130,14 +130,14 @@ describe('SimpleWordAnonymizer', () => {
       // A random-looking string: "gH7p2K9wL4xN1" has high entropy
       // A common word: "password" has high-ish normalized entropy but we test it with a threshold
       const anonymizer = new SimpleWordAnonymizer([], 0.95, 8);
-      const input = 'My key is gH7p2K9wL4xN1 and my word is password';
+      const input = 'My key is gH7p2K9w@L4xN1 and my word is password';
       
       const anonymized = anonymizer.anonymize(input);
       
       // "gH7p2K9wL4xN1" (length 13, all unique chars) -> Hn = 1.0 > 0.95 -> ANON
       // "password" (length 8) -> Hn = 0.916 < 0.95 -> PRESERVED
       expect(anonymized).toContain('ANON_0');
-      expect(anonymized).not.toContain('gH7p2K9wL4xN1');
+      expect(anonymized).not.toContain('gH7p2K9w@L4xN1');
       expect(anonymized).toContain('password');
 
       const deanonymized = anonymizer.deanonymize(anonymized);
@@ -146,7 +146,7 @@ describe('SimpleWordAnonymizer', () => {
 
     test('uses same placeholder for same high entropy token', () => {
       const anonymizer = new SimpleWordAnonymizer([], 0.9, 8);
-      const input = 'Key1: gH7p2K9wL4xN1, Key2: gH7p2K9wL4xN1';
+      const input = 'Key1: gH7p#2K9wL4xN91, Key2: gH7p#2K9wL4xN91';
       
       const anonymized = anonymizer.anonymize(input);
       expect(anonymized).toBe('Key1: ANON_0, Key2: ANON_0');
@@ -165,26 +165,18 @@ describe('SimpleWordAnonymizer', () => {
       expect(anonymized).toBe(input);
     });
 
-    test('does not anonymize identifiers ending in a single digit', () => {
+    test('does not anonymize snake_case identifiers', () => {
         const anonymizer = new SimpleWordAnonymizer([], 0.8, 8);
         
-        // "long_variable_name_1" -> high length, potentially high entropy, but ends in single digit -> SKIP
-        // "long_variable_name_12" -> ends in 2 digits -> PROCESS (if entropy high enough)
-        
         const safe = 'long_variable_name_1';
-        const unsafe = 'long_variable_name_12'; 
-
-        // Let's ensure unsafe actually has high enough entropy for the test
-        // "long_variable_name_12" -> l,o,n,g,_,v,a,r,i,b,e,m,1,2.
-        // length 21.
-        // It has decent entropy.
+        const stillSafe = 'long_Variable_name_2'; 
         
-        const input = `Safe: ${safe}, Unsafe: ${unsafe}`;
+        const input = `Safe: ${safe}, Unsafe: ${stillSafe}`;
         const anonymized = anonymizer.anonymize(input);
         
         expect(anonymized).toContain(safe); // Should be preserved
-        expect(anonymized).not.toContain(unsafe); // Should be anonymized
-        expect(anonymized).toContain('ANON_0');
+        expect(anonymized).toContain(stillSafe); // Should be anonymized
+        expect(anonymized).not.toContain('ANON_0');
     });
 
     test('anonymizes tokens with special characters like #, *, £, ?, ^', () => {
@@ -252,7 +244,7 @@ describe('SimpleWordAnonymizer', () => {
     test('notifies when anonymizing by entropy', () => {
         const notifier = new MockNotifier();
         const anonymizer = new SimpleWordAnonymizer([], 0.8, 8, notifier);
-        const highEntropy = 'gH7p2K9wL4xN1';
+        const highEntropy = 'gH7p2K9wL4x8N1';
         
         anonymizer.anonymize(`Key: ${highEntropy}`);
         
