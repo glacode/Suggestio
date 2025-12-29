@@ -94,8 +94,8 @@ export class SimpleWordAnonymizer implements IAnonymizer {
                 placeholder = `${this.placeholderPrefix}${this.counter}`;
                 this.mapping.set(placeholder, token);
                 this.reverseMapping.set(token, placeholder);
-                this.notifier?.notifyAnonymization(token, placeholder, 'entropy');
             }
+            this.notifier?.notifyAnonymization(token, placeholder, 'entropy');
 
             result = result.substring(0, start) + placeholder + result.substring(end);
         }
@@ -121,8 +121,8 @@ export class SimpleWordAnonymizer implements IAnonymizer {
                     placeholder = `${this.placeholderPrefix}${this.counter}`;
                     this.mapping.set(placeholder, matchedText); // Store the exact matched text
                     this.reverseMapping.set(matchedText, placeholder);
-                    this.notifier?.notifyAnonymization(matchedText, placeholder, 'word');
                 }
+                this.notifier?.notifyAnonymization(matchedText, placeholder, 'word');
 
                 // Replace only this specific occurrence
                 result = result.substring(0, match.index) +
