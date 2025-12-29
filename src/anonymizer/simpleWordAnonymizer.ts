@@ -103,38 +103,59 @@ export class SimpleWordAnonymizer implements IAnonymizer {
         return result;
     }
 
-    anonymize(text: string): string {
+    private processWordAnonymization(text: string): string {
         let result = text;
-
         for (const word of this.wordsToAnonymize) {
-            // Create case-insensitive regex with word boundaries
-            const regex = new RegExp(`\\b${word}\\b`, 'gi');
-            let match;
-
-            // Use a while loop to find all matches and replace them individually
-            while ((match = regex.exec(result)) !== null) {
-                const matchedText = match[0]; // Get the actual matched text with original case
-                let placeholder = this.reverseMapping.get(matchedText);
-
-                if (!placeholder) {
-                    this.counter++;
-                    placeholder = `${this.placeholderPrefix}${this.counter}`;
-                    this.mapping.set(placeholder, matchedText); // Store the exact matched text
-                    this.reverseMapping.set(matchedText, placeholder);
-                }
-                this.notifier?.notifyAnonymization(matchedText, placeholder, 'word');
-
-                // Replace only this specific occurrence
-                result = result.substring(0, match.index) +
-                    placeholder +
-                    result.substring(match.index + matchedText.length);
-
-                // Reset regex lastIndex to continue searching from the right position
-                regex.lastIndex = match.index + placeholder.length;
-            }
+            result = this.anonymizeSingleWord(result, word);
         }
+        return result;
+    }
 
-        return this.anonymizeEntropy(result);
+    private anonymizeSingleWord(text: string, word: string): string {
+        const regex = new RegExp(`\\b${word}\\b`, 'gi');
+        let match;
+        while ((match = regex.exec(text)) !== null) {
+            text = this.applyAnonymizationToMatch(text, match, regex);
+        }
+        return text;
+    }
+
+    private applyAnonymizationToMatch(text: string, match: RegExpExecArray, regex: RegExp): string {
+        const original = match[0];
+        const placeholder = this.resolvePlaceholder(original);
+        this.notifyWordAnonymization(original, placeholder);
+        
+        const newText = this.replaceRange(text, match.index, original.length, placeholder);
+        regex.lastIndex = match.index + placeholder.length;
+        return newText;
+    }
+
+    private resolvePlaceholder(original: string): string {
+        if (this.reverseMapping.has(original)) {
+            return this.reverseMapping.get(original)!;
+        }
+        return this.generateNewPlaceholder(original);
+    }
+
+    private generateNewPlaceholder(original: string): string {
+        this.counter++;
+        const placeholder = `${this.placeholderPrefix}${this.counter}`;
+        this.mapping.set(placeholder, original);
+        this.reverseMapping.set(original, placeholder);
+        return placeholder;
+    }
+
+    private notifyWordAnonymization(original: string, placeholder: string): void {
+        this.notifier?.notifyAnonymization(original, placeholder, 'word');
+    }
+
+    private replaceRange(text: string, start: number, length: number, replacement: string): string {
+        return text.substring(0, start) + replacement + text.substring(start + length);
+    }
+
+    anonymize(text: string): string {
+        const textWithWords = this.processWordAnonymization(text);
+        return this.anonymizeEntropy(textWithWords);
     }
 
     deanonymize(text: string): string {
