@@ -9,6 +9,13 @@ export class SimpleWordAnonymizer implements IAnonymizer {
     private placeholderPrefix = 'ANON_';
     private counter = -1;
 
+    /**
+     * Creates an instance of SimpleWordAnonymizer.
+     * @param wordsToAnonymize List of words that should be explicitly anonymized.
+     * @param allowedEntropy Optional threshold for entropy-based anonymization. Strings with entropy higher than this will be anonymized.
+     * @param minLength Optional minimum length for entropy-based anonymization.
+     * @param notifier Optional notifier to receive events when anonymization occurs.
+     */
     constructor(
         private wordsToAnonymize: string[],
         private allowedEntropy?: number,
@@ -153,11 +160,21 @@ export class SimpleWordAnonymizer implements IAnonymizer {
         return text.substring(0, start) + replacement + text.substring(start + length);
     }
 
+    /**
+     * Anonymizes the given text by replacing sensitive words and high-entropy strings with placeholders.
+     * @param text The input text to anonymize.
+     * @returns The anonymized text with placeholders.
+     */
     anonymize(text: string): string {
         const textWithWords = this.processWordAnonymization(text);
         return this.anonymizeEntropy(textWithWords);
     }
 
+    /**
+     * Replaces placeholders in the given text with their original values.
+     * @param text The text containing placeholders.
+     * @returns The text with placeholders replaced by original values.
+     */
     deanonymize(text: string): string {
         let result = text;
 
@@ -168,6 +185,10 @@ export class SimpleWordAnonymizer implements IAnonymizer {
         return result;
     }
 
+    /**
+     * Creates a streaming deanonymizer instance.
+     * @returns An object capable of deanonymizing a stream of text chunks.
+     */
     createStreamingDeanonymizer(): IStreamingDeanonymizer {
         return new SimpleStreamingDeanonymizer(this.mapping, this.placeholderPrefix);
     }
