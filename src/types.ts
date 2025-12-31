@@ -9,13 +9,19 @@
 
 /**
  * `UriLike` is a minimal type representing a Uniform Resource Identifier (URI).
- * It abstracts `vscode.Uri`.
- *
- * `fsPath`: A file system path, like '/Users/name/project/file.txt'. (Optional because some URIs don't have one).
- * `toString()`: Returns the string representation of the URI.
+ * It abstracts `vscode.Uri` to avoid runtime dependencies on the `vscode` module.
  */
 export interface UriLike {
+  /**
+   * A file system path, like '/Users/name/project/file.txt'.
+   * Optional because some URIs (e.g., 'http://') don't have a file system path.
+   */
   fsPath?: string;
+
+  /**
+   * Returns the string representation of the URI.
+   * @returns The string form of the URI.
+   */
   toString(): string;
 }
 
@@ -25,19 +31,30 @@ export interface UriLike {
  * within the extension's installation directory.
  */
 export interface IExtensionContextMinimal {
-  extensionUri: UriLike; // The URI of the directory where the extension is installed.
+  /**
+   * The URI of the directory where the extension is installed.
+   * Used to resolve paths to resources like icons, templates, etc.
+   */
+  extensionUri: UriLike;
 }
 
 /**
  * `IVscodeApiLocal` is a local abstraction of parts of the `vscode` API.
  * This is used to avoid direct dependency on the `vscode` module in certain contexts (like tests).
- *
- * `Uri`: Contains utility methods for working with URIs.
- *   `joinPath(base, ...paths)`: Analogous to `vscode.Uri.joinPath`, it creates a new URI
- *     by joining path segments to a base URI.
  */
 export interface IVscodeApiLocal {
+  /**
+   * Contains utility methods for working with URIs.
+   */
   Uri: {
+    /**
+     * Analogous to `vscode.Uri.joinPath`, it creates a new URI
+     * by joining path segments to a base URI.
+     *
+     * @param base The base URI to join paths to.
+     * @param paths The path segments to join.
+     * @returns A new URI representing the combined path.
+     */
     joinPath(base: UriLike, ...paths: string[]): UriLike;
   };
 }
@@ -45,14 +62,19 @@ export interface IVscodeApiLocal {
 /**
  * `IWebviewOptions` reflects a subset of `vscode.WebviewOptions`.
  * These options configure the behavior and security of the webview panel.
- *
- * `enableScripts`: If `true`, scripts (JavaScript) are allowed to run in the webview.
- * `localResourceRoots`: An array of URIs that define which local directories
- *   the webview is allowed to load resources (like images, scripts, stylesheets) from.
- *   This is a crucial security feature.
  */
 export interface IWebviewOptions {
+  /**
+   * If `true`, scripts (JavaScript) are allowed to run in the webview.
+   * @default false
+   */
   enableScripts?: boolean;
+
+  /**
+   * An array of URIs that define which local directories the webview is allowed
+   * to load resources (like images, scripts, stylesheets) from.
+   * This is a crucial security feature to prevent unauthorized file access.
+   */
   localResourceRoots?: readonly UriLike[];
 }
 
@@ -60,45 +82,72 @@ export interface IWebviewOptions {
  * `IDisposable` is an interface used for objects that can be "cleaned up" or
  * have resources released when they are no longer needed. It's equivalent to
  * `vscode.Disposable`.
- *
- * `dispose()`: A method that performs the necessary cleanup.
  */
 export interface IDisposable {
+  /**
+   * Performs the necessary cleanup of resources.
+   */
   dispose(): void;
 }
 
 /**
  * `IWebview` is a minimal type representing the `vscode.Webview` object.
  * This is the actual HTML content surface within a `WebviewView`.
- *
- * `options`: The configuration options for the webview.
- * `asWebviewUri(uri)`: Analogous to `vscode.Webview.asWebviewUri`, this method converts
- *   a local `UriLike` into a special `https://webview.vscode-cdn.net/` URI that
- *   the webview can safely load. This is a security measure.
- * `onDidReceiveMessage(listener)`: Equivalent to `vscode.Webview.onDidReceiveMessage`,
- *   this event fires when the webview (frontend) sends a message to the extension (backend).
- *   The `listener` function will be called with the message.
- * `postMessage(message)`: Equivalent to `vscode.Webview.postMessage`, this method sends
- *   a message from the extension (backend) to the webview (frontend).
- * `html`: The HTML content displayed inside the webview. Equivalent to `vscode.Webview.html`.
  */
 export interface IWebview {
+  /**
+   * The configuration options for the webview.
+   */
   options?: IWebviewOptions;
+
+  /**
+   * Analogous to `vscode.Webview.asWebviewUri`.
+   * Converts a local `UriLike` into a special `https://webview.vscode-cdn.net/` URI
+   * that the webview can safely load. This is a security measure.
+   *
+   * @param uri The local URI to convert.
+   * @returns A URI that can be used within the webview.
+   */
   asWebviewUri(uri: UriLike): UriLike;
+
+  /**
+   * Analogous to `vscode.Webview.onDidReceiveMessage`.
+   * Fired when the webview (frontend) sends a message to the extension (backend).
+   *
+   * @param listener The function to call when a message is received.
+   * @returns A disposable to unsubscribe from the event.
+   */
   onDidReceiveMessage<T = WebviewMessage>(listener: (message: T) => void): IDisposable;
+
+  /**
+   * Analogous to `vscode.Webview.postMessage`.
+   * Sends a message from the extension (backend) to the webview (frontend).
+   *
+   * @param message The message data to send.
+   * @returns A promise that resolves when the message is posted.
+   */
   postMessage(message: MessageFromTheExtensionToTheWebview): Promise<boolean> | Thenable<boolean>;
+
+  /**
+   * The HTML content displayed inside the webview.
+   * Equivalent to `vscode.Webview.html`.
+   */
   html?: string;
 }
 
 /**
  * `IWebviewView` is a minimal type representing `vscode.WebviewView`.
  * This is the container for a webview within a VS Code sidebar panel.
- *
- * `title`: The title displayed in the header of the webview view panel.
- * `webview`: The actual `IWebview` object that holds the HTML content.
  */
 export interface IWebviewView {
+  /**
+   * The title displayed in the header of the webview view panel.
+   */
   title?: string;
+
+  /**
+   * The actual `IWebview` object that holds the HTML content.
+   */
   webview: IWebview;
 }
 
@@ -109,127 +158,178 @@ export interface IWebviewView {
 /**
  * `WebviewMessage` defines the types of messages that can be sent *from* the webview
  * (frontend) to the extension (backend). This is used for user interactions.
- *
- * `sendMessage`: User wants to send a chat message. Contains the `text` of the message.
- * `modelChanged`: User has selected a different language model. Contains the `model` ID.
- * `clearHistory`: User wants to clear the chat history.
  */
 export type WebviewMessage =
-  | { command: 'sendMessage'; text: string }
-  | { command: 'modelChanged'; model: string }
-  | { command: 'clearHistory' };
+  | {
+      /** User wants to send a chat message. */
+      command: 'sendMessage';
+      /** The text of the message to send. */
+      text: string;
+    }
+  | {
+      /** User has selected a different language model. */
+      command: 'modelChanged';
+      /** The ID of the selected model. */
+      model: string;
+    }
+  | {
+      /** User wants to clear the chat history. */
+      command: 'clearHistory';
+    };
 
-
+/**
+ * Defines the role of a participant in the chat.
+ * - `system`: Instructions for the AI behavior.
+ * - `user`: The human interacting with the AI.
+ * - `assistant`: The AI model itself.
+ */
 export type ChatRole = "system" | "user" | "assistant";
 
+/**
+ * Represents a single message in the chat history.
+ */
 export interface ChatMessage {
+  /**
+   * The role of the message sender.
+   */
   role: ChatRole;
+
+  /**
+   * The text content of the message.
+   */
   content: string;
 }
 
 /**
  * `MessageFromTheExtensionToTheWebview` defines the types of messages that can be sent *from* the extension
- * (backend) to the webview (frontend). This type was previously named `ResponseMessageFromTheExtensionToTheWebview`
- * but was renamed to accommodate commands that are not direct responses, such as initiating a new chat.
+ * (backend) to the webview (frontend).
  *
  * Messages generally fall into two categories:
- *
- * 1. **AI Responses and Status Updates (from 'assistant'):**
- *    These messages carry AI-generated content or status information related to the AI's processing.
- *    - `{ sender: 'assistant'; type: 'token'; text: string }`: Represents a partial piece of the AI's response (for streaming).
- *      Contains the `text` of the token.
- *    - `{ sender: 'assistant'; type: 'completion'; text: string }`: Signals that the AI's response stream has finished.
- *      Contains the final (or empty if tokens were sent) `text` of the completion.
- *    - `{ sender: 'assistant'; text: string }`: A generic message from the assistant, often used for error reporting
- *      or other non-streaming information.
- *
- * 2. **Extension Commands:**
- *    These messages instruct the webview to perform a specific action, independent of AI responses.
- *    - `{ command: 'newChat' }`: Instructs the webview to initiate and display a new chat session.
+ * 1. AI Responses and Status Updates (from 'assistant').
+ * 2. Extension Commands (e.g. 'newChat').
  */
 export type MessageFromTheExtensionToTheWebview =
-  | { sender: 'assistant'; type: 'token'; text: string }
-  | { sender: 'assistant'; type: 'completion'; text: string }
-  | { sender: 'assistant'; text: string } // For general messages, e.g. errors
-  | { command: 'newChat' };
+  | {
+      /** Indicates the message comes from the AI assistant. */
+      sender: 'assistant';
+      /** Represents a partial piece of the AI's response (for streaming). */
+      type: 'token';
+      /** The text content of the token. */
+      text: string;
+    }
+  | {
+      /** Indicates the message comes from the AI assistant. */
+      sender: 'assistant';
+      /** Signals that the AI's response stream has finished. */
+      type: 'completion';
+      /** The final text of the completion (or empty if tokens were fully streamed). */
+      text: string;
+    }
+  | {
+      /** Indicates the message comes from the AI assistant. */
+      sender: 'assistant';
+      /** A generic message, often used for error reporting or non-streaming info. */
+      text: string;
+    }
+  | {
+      /** Instructs the webview to initiate and display a new chat session. */
+      command: 'newChat';
+    };
 
-
+/**
+ * Represents the full history of a chat conversation.
+ */
 export type ChatHistory = ChatMessage[];
 
 /**
- * The `Prompt` interface defines a contract for objects responsible for generating
+ * The `IPrompt` interface defines a contract for objects responsible for generating
  * a `ChatHistory` (an array of `ChatMessage`s) that can be sent to an LLM.
  *
- * It serves a higher-level purpose than just storing messages (like `ChatHistoryManager`).
- * While `ChatHistoryManager` *stores* the complete ongoing conversation, `Prompt`
- * encapsulates the *logic* for constructing a specific, LLM-ready prompt
+ * It encapsulates the logic for constructing a specific, LLM-ready prompt
  * by potentially selecting, formatting, and augmenting messages from the history
- * or other sources (e.g., system instructions, current user input, code context).
- * 
- * For example when it's time to generate a *new* response from the LLM, the `Prompt`
- * implementation takes the current user input, possibly some selected *parts* of the
- * `ChatHistoryManager`'s stored history (e.g., the last N turns), and any
- * system-level instructions, then combines them into a single, cohesive `ChatHistory`
- * object that is *optimized* for the LLM.
- *
- * This abstraction allows for flexible and extensible strategies for building
- * different types of prompts without duplicating logic or tightly coupling
- * prompt creation to specific LLM providers or chat contexts.
+ * or other sources.
  */
 export interface IPrompt {
+  /**
+   * Generates the chat history array to be sent to the LLM.
+   * @returns The constructed chat history.
+   */
   generateChatHistory(): ChatHistory;
 }
 
 /**
  * `IChatResponder` defines the interface for the backend logic that handles
  * interacting with the Language Model (LLM).
- *
- * `fetchStreamChatResponse(userPrompt, onToken)`: Sends a `userPrompt` to the LLM
- *   and receives the response as a stream of `token`s, invoking the `onToken`
- *   callback for each received token.
- * `clearHistory()`: Clears the chat history maintained by the responder.
  */
 export interface IChatResponder {
+  /**
+   * Sends a `userPrompt` to the LLM and receives the response as a stream of tokens.
+   *
+   * @param prompt The prompt object containing context and history.
+   * @param onToken A callback invoked for each received token from the stream.
+   * @returns A promise that resolves when the stream is finished.
+   */
   fetchStreamChatResponse(prompt: IPrompt, onToken: (token: string) => void): Promise<void>;
 }
 
 /**
  * `IChatHistoryManager` defines the interface for managing chat history.
- *
- * `clearHistory()`: Clears the chat history.
- * `addMessage(message: ChatMessage): void;`
- * `getChatHistory(): ChatMessage[];`
  */
 export interface IChatHistoryManager {
+  /**
+   * Clears the stored chat history.
+   */
   clearHistory(): void;
+
+  /**
+   * Adds a new message to the chat history.
+   * @param message The message to add.
+   */
   addMessage(message: ChatMessage): void;
+
+  /**
+   * Retrieves the current chat history.
+   * @returns An array of chat messages.
+   */
   getChatHistory(): ChatHistory;
 }
 
 /**
  * `ILlmProviderAccessor` defines the interface for accessing information about
  * the configured Language Model (LLM) providers.
- *
- * `getModels()`: Returns a list of available model identifiers (strings).
- * `getActiveModel()`: Returns the identifier of the currently active/selected model.
  */
 export interface ILlmProviderAccessor {
+  /**
+   * Returns a list of available model identifiers.
+   * @returns Array of model ID strings.
+   */
   getModels(): string[];
+
+  /**
+   * Returns the identifier of the currently active/selected model.
+   * @returns The active model ID string.
+   */
   getActiveModel(): string;
 }
 
 /**
  * `GetChatWebviewContent` is a function type responsible for generating the
  * complete HTML string that will be loaded into the webview.
- * It takes various URIs and model information as arguments to dynamically
- * create the webview's frontend.
+ *
+ * @param args Configuration arguments for generating the webview content.
+ * @returns The complete HTML string.
  */
 export type GetChatWebviewContent = (args: {
-  extensionUri: UriLike; // The extension's base URI.
-  scriptUri: UriLike; // URI for the main JavaScript bundle of the webview.
-  highlightCssUri: UriLike; // URI for the syntax highlighting CSS.
-  models: string[]; // List of available models.
-  activeModel: string; // The currently active model.
+  /** The extension's base URI. */
+  extensionUri: UriLike;
+  /** URI for the main JavaScript bundle of the webview. */
+  scriptUri: UriLike;
+  /** URI for the syntax highlighting CSS. */
+  highlightCssUri: UriLike;
+  /** List of available models. */
+  models: string[];
+  /** The currently active model. */
+  activeModel: string;
 }) => string;
 
 /**
@@ -238,9 +338,18 @@ export type GetChatWebviewContent = (args: {
  * to enable dependency injection and testability.
  */
 export interface IActiveTextEditorProvider {
+  /**
+   * The currently active text editor, or undefined if none is active.
+   */
   activeTextEditor: {
+    /** The document associated with the active editor. */
     document: {
+      /** The URI of the document. */
       uri: UriLike;
+      /**
+       * Retrieves the full text of the document.
+       * @returns The document text.
+       */
       getText(): string;
     };
   } | undefined;
@@ -251,13 +360,22 @@ export interface IActiveTextEditorProvider {
  * This context might be derived from the active editor, workspace, etc.
  */
 export interface IContextBuilder {
-    buildContext(): Promise<string>;
+  /**
+   * Builds the context string.
+   * @returns A promise that resolves to the context string.
+   */
+  buildContext(): Promise<string>;
 }
 
 /**
  * Manages ignore patterns from sources like .gitignore and .vscodeignore.
  */
 export interface IIgnoreManager {
+  /**
+   * Checks if a file path should be ignored based on current patterns.
+   * @param filePath The path to check.
+   * @returns A promise that resolves to true if the file should be ignored, false otherwise.
+   */
   shouldIgnore(filePath: string): Promise<boolean>;
 }
 
@@ -265,70 +383,103 @@ export interface IIgnoreManager {
  * Provides access to the workspace root path.
  */
 export interface IWorkspaceProvider {
+  /**
+   * Returns the root path of the current workspace.
+   * @returns The root path string, or undefined if no workspace is open.
+   */
   rootPath(): string | undefined;
 }
 
 /**
- * Provides a way to read file contents.
+ * Provides a way to read file contents from the file system.
  */
 export interface IFileContentProvider {
+  /**
+   * Reads the content of a file at the given path.
+   * @param path The path of the file to read.
+   * @returns The file content as a string, or undefined if the read failed.
+   */
   read(path: string): string | undefined;
 }
 
 /**
- * Provides path manipulation utilities.
+ * Provides path manipulation utilities, abstracting `path` module functions.
  */
 export interface IPathResolver {
+  /**
+   * Joins path segments into a single path.
+   * @param paths The path segments to join.
+   * @returns The joined path.
+   */
   join(...paths: string[]): string;
+
+  /**
+   * Solves the relative path from `from` to `to`.
+   * @param from The start path.
+   * @param to The destination path.
+   * @returns The relative path string.
+   */
   relative(from: string, to: string): string;
+
+  /**
+   * Returns the last portion of a path.
+   * @param path The path to evaluate.
+   * @returns The basename of the path.
+   */
   basename(path: string): string;
 }
 
 /**
  * Interface for a stateful, streaming deanonymizer.
- * 
- * When working with streaming LLM responses, tokens are received in chunks (e.g., characters or sub-words).
- * A deanonymization placeholder (like "ANON_123") might be split across multiple chunks
- * (e.g., Chunk 1: "AN", Chunk 2: "ON", Chunk 3: "_123").
- * 
- * A simple string replacement on each chunk individually would fail to identify and replace
- * these split placeholders. This interface defines a stateful processor that maintains an
- * internal buffer to correctly handle and reassemble such split tokens.
+ *
+ * It maintains an internal buffer to correctly handle and reassemble
+ * deanonymization placeholders that might be split across multiple chunks.
  */
 export interface IStreamingDeanonymizer {
     /**
      * Processes a new text chunk from the stream.
-     * 
+     *
      * The method buffers the input chunk and checks if the buffer contains any complete
      * deanonymization placeholders (or safe text that can be released).
-     * 
-     * - If the buffer contains a verified placeholder (e.g., "ANON_1"), it replaces it with the original text.
-     * - If the buffer contains text that definitely CANNOT be the start of a placeholder, that text is released.
-     * - If the buffer ends with a partial match of a placeholder prefix (e.g., "AN"), it holds onto it
-     *   until more data arrives to confirm or deny the match.
-     * 
+     *
      * @param chunk The new piece of text received from the stream.
      * @returns An object containing:
-     *  - `processed`: The text that is safe to emit to the user (placeholders replaced, or non-sensitive text).
+     *  - `processed`: The text that is safe to emit to the user.
      *  - `buffer`: The content currently remaining in the internal buffer (debug info).
      */
     process(chunk: string): { processed: string; buffer: string };
 
     /**
      * Flushes any remaining text from the internal buffer.
-     * 
      * This should be called when the stream is complete (e.g., on "[DONE]").
-     * Any text remaining in the buffer (which was being held because it looked like
-     * it *might* be a placeholder) is returned as-is.
-     * 
+     *
      * @returns The remaining text in the buffer.
      */
     flush(): string;
 }
 
+/**
+ * Interface for anonymizing and deanonymizing sensitive information in text.
+ */
 export interface IAnonymizer {
+    /**
+     * Replaces sensitive information in the text with placeholders.
+     * @param text The input text containing sensitive info.
+     * @returns The anonymized text.
+     */
     anonymize(text: string): string;
+
+    /**
+     * Replaces placeholders in the text with the original sensitive information.
+     * @param text The anonymized text.
+     * @returns The original text (deanonymized).
+     */
     deanonymize(text: string): string;
+
+    /**
+     * Creates a stateful deanonymizer for processing streaming text.
+     * @returns An instance of `IStreamingDeanonymizer`.
+     */
     createStreamingDeanonymizer(): IStreamingDeanonymizer;
 }
 
@@ -337,5 +488,12 @@ export interface IAnonymizer {
  * This decouples the Anonymizer from the event bus or logging mechanism.
  */
 export interface IAnonymizationNotifier {
+    /**
+     * Notifies that a piece of information has been anonymized.
+     *
+     * @param original The original sensitive text.
+     * @param placeholder The placeholder used to replace it.
+     * @param type The type of anonymization performed (e.g., 'word' or 'entropy').
+     */
     notifyAnonymization(original: string, placeholder: string, type: 'word' | 'entropy'): void;
 }
