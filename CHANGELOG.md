@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.4] - 2026-01-03
+
+### Added
+-   **Interactive Chat Sidebar:** Introduced a dedicated "Suggestio" sidebar view (`SUGGESTIO`) for real-time AI assistance.
+    -   **Streaming Responses:** Chat responses now stream token-by-token for immediate feedback.
+    -   **Rich Text Support:** Full Markdown rendering with syntax highlighting for code blocks.
+    -   **Context Awareness:** The chat now tracks your active editor and respects `.gitignore` / `.vscodeignore` files when building context.
+    -   **History Management:** Added conversation history persistence and a "New Chat" command to clear context.
+-   **Advanced Anonymization Engine:**
+    -   **Entropy-Based Detection:** Implemented Shannon entropy analysis to automatically detect and mask high-randomness strings (like API keys and tokens).
+    -   **New Heuristics:** Added detection for file paths, identifiers, and a generic `sensitiveData` configuration object.
+    -   **Streaming Deanonymization:** Responses are now deanonymized on the fly as they stream in.
+-   **New LLM Providers:**
+    -   Added support for **Gemini Flash**.
+    -   Added **Ollama Cloud** model configurations.
+-   **Developer Experience:**
+    -   Added JSON schema validation for `config.json` to provide IntelliSense for configuration settings.
+    -   Added a new "Suggestio" logo and branding assets.
+
+### Changed
+-   **Testing Infrastructure Overhaul:** Migrated E2E tests from the standard VS Code test runner to **Playwright**, enabling more reliable, headless, and debuggable integration tests.
+-   **Architecture Refactor:**
+    -   Implemented Dependency Injection (DI) across `ChatResponder`, `ContextBuilder`, and `ChatViewProvider` for better modularity.
+    -   Centralized type definitions into `src/types.ts` and shared models.
+    -   Moved anonymization logic to the provider level (rather than prompt level) for consistent security across all features.
+-   **UI Improvements:**
+    -   Replaced native select elements with custom dropdowns for model selection.
+    -   Updated the status bar and sidebar titles to reflect the new brand ("SUGGESTIO").
+
+### Fixed
+-   **Security:** Prevented sensitive files (e.g., those in `.env` or ignored paths) from being inadvertently sent to LLMs during inline completions.
+-   **Chat Rendering:** Fixed issues where newlines and whitespace were not preserved in LLM responses.
+-   **Stability:** Fixed Electron app cleanup errors during E2E test runs.
+
 ## [0.0.3] - 2025-08-31
 
 ### Added
