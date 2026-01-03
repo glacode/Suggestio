@@ -14,3 +14,12 @@ vsc-extension-quickstart.md
 **/.vscode-test.*
 .env
 resources/demo.gif
+coverage/**
+test-fixtures/**
+test-results/**
+.github/**
+tsconfig.e2e.json
+dist-e2e/**
+dist/__mocks__/**
+dist/__tests__/**
+dist/e2e-tests/**

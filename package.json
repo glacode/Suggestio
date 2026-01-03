@@ -48,12 +48,13 @@
         "onLanguage:sql"
     ],
     "main": "./dist/extension.js",
-    "files": [
+    "files-unused-because-we-use-vscodeignore": [
         "dist/**",
         "!dist/**/*.map",
         "builtResources/**",
         "media/**",
-        "resources/**"
+        "resources/**",
+        "!resources/demo.gif"
     ],
     "contributes": {
         "viewsContainers": {
