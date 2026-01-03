@@ -1,10 +1,10 @@
 <div align="center">
   <img src="resources/logo.png" width="128" alt="Suggestio Logo">
   <h1>Suggestio</h1>
-  <p>AI-Powered inline suggestions</p>
+  <p>AI-Powered Inline Suggestions & Chat Assistant</p>
 </div>
 
-**Suggestio** is a VS Code extension that provides inline code completions using LLM (Large Language Model) APIs.  
+**Suggestio** is a VS Code extension that provides inline code completions and a context-aware chat assistant using LLM (Large Language Model) APIs.  
 It’s lightweight, open-source, and does not require login, cloud accounts, or API keys — it works out of the box.  
 (You can optionally configure your own providers and API keys if you want more control.)
 
@@ -14,12 +14,29 @@ It’s lightweight, open-source, and does not require login, cloud accounts, or 
 
 ## ✨ Features
 
-- Inline code suggestions as you type, powered by configurable LLM providers.  
-- **Works out of the box — no API key required.**  
+- **Inline code suggestions** as you type, powered by configurable LLM providers.  
+- **Interactive Chat Sidebar:** A dedicated AI assistant that answers questions, explains code, and writes snippets.
+- **Smart Context:** The chat assistant automatically tracks your **active editor** to give relevant answers.
+- **Works out of the box — no API key required.**
 - Automatic **secret management**: if an API key is missing, Suggestio securely prompts you once and stores it in VS Code’s secret storage.  
 - Built-in **anonymizer**: automatically masks sensitive data (emails, tokens, IDs, etc.) before sending prompts to providers.  
-- Supports multiple providers/models — add your own with simple JSON config.  
-- Three levels of configuration (project, user, built-in defaults).  
+- **Entropy-based Secret Detection:** Mathematically detects and hides high-entropy strings (potential API keys/secrets) even if they aren't explicitly listed.
+- Supports multiple providers/models (Ollama, Gemini, OpenAI, Groq, etc.) — add your own with simple JSON config.  
+- Three levels of configuration (project, user, built-in defaults).   
+
+---
+
+## 💬 Interactive Chat
+
+Suggestio now features a **"Suggestio" sidebar view** (click the lightbulb icon in your activity bar).
+
+- **Context Aware:** It knows which file you are currently looking at and uses it as context for your questions.
+- **Privacy First:** Just like inline completions, the chat uses the **Anonymizer** to mask sensitive data before it leaves your machine.
+- **Streaming:** Responses are streamed token-by-token for immediate feedback.
+- **History:** Keeps your conversation history (until you clear it with the "New Chat" command).
+
+
+![Chat Demo](resources/demoChat.gif)
 
 ---
 
@@ -27,21 +44,22 @@ It’s lightweight, open-source, and does not require login, cloud accounts, or 
 
 To protect your privacy, Suggestio includes a built-in **anonymizer**:  
 it automatically masks sensitive values such as emails, tokens, file paths, and IDs before sending text to external LLM providers.  
-The anonymizer only replaces words and patterns explicitly listed in your config file.  
 
-By default, it comes preloaded with common placeholders like names, emails, and IP addresses.  
-You can extend this list with any custom terms that should be anonymized before sending text to the model.  
+The anonymizer uses a multi-layered approach:
+1.  **Explicit List:** Replaces words and patterns explicitly listed in your config file.
+2.  **Entropy Analysis:** Uses Shannon entropy to detect random-looking strings (like API keys or passwords) that you might have forgotten to configure.
+3.  **Heuristics:** Automatically detects file paths and common identifiers, to avoid false positives.
 
-All terms that are anonymized in the outgoing prompt are **deanonymized when the response comes back**,  
-so the completion you see in your editor always contains your original values.
+All terms that are anonymized in the outgoing prompt are **deanonymized when the response comes back**, so the completion or chat response you see in your editor always contains your original values.
 
 ---
 
 ## 🚀 Installation
 
 1. Install **Suggestio** from the [VS Code Marketplace](https://marketplace.visualstudio.com/).  
-2. Start coding — completions will appear inline.  
-3. (Optional) Configure your own providers and models (see below).  
+2. Start coding — completions will appear inline.
+3. Click the **Suggestio icon** in the sidebar to start chatting.
+4. (Optional) Configure your own providers and models (see below).
 
 ---
 
@@ -92,20 +110,25 @@ Here’s a minimal example of a config file:
       "model": "qwen2.5-coder-32b-instruct",
       "apiKey": "unused"
     },
+    "publicai-apertus-70b": {
+      "endpoint": "https://api.publicai.co/v1/chat/completions",
+      "model": "swiss-ai/apertus-70b-instruct",
+      "apiKey": "${PUBLICAI_API_KEY}"
+    },
     "groq-llama370": {
       "endpoint": "https://api.groq.com/openai/v1/chat/completions",
-      "model": "llama3-70b-8192",
+      "model": "llama-3.3-70b-versatile",
       "apiKey": "${GROQ_API_KEY}"
     },
-    "openrouter-deepseekv3": {
-      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
-      "model": "deepseek/deepseek-chat-v3-0324:free",
-      "apiKey": "${OPENROUTER_API_KEY}"
+    "ollama-devstral": {
+      "endpoint": "https://ollama.com/v1/chat/completions",
+      "model": "devstral-2:123b-cloud",
+      "apiKey": "${OLLAMA_API_KEY}"
     },
-    "hf-lama38": {
-      "endpoint": "https://api-inference.huggingface.co/v1/chat/completions",
-      "model": "meta-llama/Llama-3-8B-Instruct",
-      "apiKey": "${HF_API_KEY}"
+    "ollama-gpt-oss-120b": {
+      "endpoint": "https://ollama.com/v1/chat/completions",
+      "model": "gpt-oss:120b-cloud",
+      "apiKey": "${OLLAMA_API_KEY}"
     }
   },
   "anonymizer": {
@@ -117,7 +140,11 @@ Here’s a minimal example of a config file:
       "192.168.1.1",
       "<social_security_number>",
       "<street_address>"
-    ]
+    ],
+    "sensitiveData": {
+      "allowedEntropy": 0.85,
+      "minLength": 10
+    }
   }
 }
 ```
