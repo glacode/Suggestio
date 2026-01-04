@@ -1,7 +1,7 @@
 <div align="center">
   <img src="resources/logo.png" width="128" alt="Suggestio Logo">
   <h1>Suggestio</h1>
-  <p>AI-Powered **Inline Suggestions** & **Chat Assistant** - no API Key</p>
+  <p>AI-Powered <strong>Inline Suggestions</strong> & <strong>Chat Assistant</strong> - no API Key</p>
 </div>
 
 **Suggestio** is a VS Code extension that provides inline code completions and a context-aware chat assistant using LLM (Large Language Model) APIs.  
