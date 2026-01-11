@@ -8,6 +8,11 @@
       "type": "string",
       "description": "The ID of the provider to use (must match a key in the 'providers' object)."
     },
+    "enableInlineCompletion": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to enable inline code completion. Defaults to true."
+    },
     "providers": {
       "type": "object",
       "description": "Configuration for different LLM providers.",

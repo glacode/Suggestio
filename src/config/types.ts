@@ -12,6 +12,7 @@ export interface ProviderConfig {
 
 export interface Config {
   activeProvider: string;
+  enableInlineCompletion?: boolean;
   providers: {
     [key: string]: ProviderConfig;
   };

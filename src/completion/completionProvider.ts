@@ -68,6 +68,10 @@ export async function provideInlineCompletionItems(
   _context: vscode.InlineCompletionContext,
   token?: vscode.CancellationToken
 ): Promise<vscode.InlineCompletionList> {
+  if (config.enableInlineCompletion === false) {
+    return new vscode.InlineCompletionList([]);
+  }
+
   // Check if the document should be ignored
   if (await ignoreManager.shouldIgnore(document.uri.fsPath)) {
     log(`Document ${document.uri.fsPath} is ignored. Skipping inline completion.`);

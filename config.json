@@ -71,5 +71,6 @@
       "allowedEntropy": 0.85,
       "minLength": 10
     }
-  }
+  },
+  "enableInlineCompletion": true
 }
