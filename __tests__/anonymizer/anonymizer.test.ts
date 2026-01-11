@@ -1,5 +1,5 @@
 import { describe, it, expect, jest } from '@jest/globals';
-import { Config } from '../../src/config/types.js';
+import { Config } from '../../src/types.js';
 import { SimpleWordAnonymizer } from '../../src/anonymizer/simpleWordAnonymizer.js';
 import { getAnonymizer } from '../../src/anonymizer/anonymizer.js';
 import { EventEmitter } from 'events';

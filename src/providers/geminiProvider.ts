@@ -1,7 +1,6 @@
 import fetch from "node-fetch";
-import { llmProvider } from "./llmProvider.js";
 import { log } from "../logger.js";
-import { ChatMessage , IPrompt } from "../types.js";
+import { ChatMessage , IPrompt, llmProvider } from "../types.js";
 
 type GeminiResponse = {
   candidates?: {

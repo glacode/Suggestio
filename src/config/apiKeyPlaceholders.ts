@@ -1,4 +1,4 @@
-import { Config } from "./types.js";
+import { Config } from "../types.js";
 
 /**
  * Scans all providers in the config and collects API key placeholders.

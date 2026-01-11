@@ -1,7 +1,7 @@
 // registrations/commandRegistration.ts
 import * as vscode from 'vscode';
 import { editGlobalConfig } from '../config/editGlobalConfig.js';
-import { Config } from '../config/types.js';
+import { Config } from '../types.js';
 import { handleUpdateApiKeyCommand, handleDeleteApiKeyCommand } from '../config/secretManager.js';
 import { extractApiKeyPlaceholders } from '../config/apiKeyPlaceholders.js';
 import { ChatWebviewViewProvider } from '../chat/chatWebviewViewProvider.js';

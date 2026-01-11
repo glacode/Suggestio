@@ -1,8 +1,6 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
 import { provideInlineCompletionItems } from '../../src/completion/completionProvider.js';
-import { IIgnoreManager, ITextDocument, IPosition } from '../../src/types.js';
-import { Config } from '../../src/config/types.js';
-import { llmProvider } from '../../src/providers/llmProvider.js';
+import { IIgnoreManager, ITextDocument, IPosition, Config, llmProvider } from '../../src/types.js';
 
 // Mock DebounceManager
 jest.mock('../../src/completion/debounceManager.js', () => ({

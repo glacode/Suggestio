@@ -1,5 +1,5 @@
 import { IAnonymizer } from "../types.js";
-import { Config } from "../config/types.js";
+import { Config } from "../types.js";
 import { SimpleWordAnonymizer } from "./simpleWordAnonymizer.js";
 import { EventBusAnonymizationNotifier } from "./anonymizationNotifier.js";
 import { EventEmitter } from "events";

@@ -5,7 +5,7 @@ import { registerCompletionProvider } from './registrations/completionRegistrati
 import { registerCommands } from './registrations/commandRegistration.js';
 import * as fs from 'fs';
 import * as path from 'path';
-import { IWorkspaceProvider, IFileContentProvider } from './types.js';
+import { IWorkspaceProvider, IFileContentProvider, ConfigContainer } from './types.js';
 import { ChatHistoryManager } from './chat/chatHistoryManager.js';
 import { SecretManager } from './config/secretManager.js';
 import { configProcessor } from './config/configProcessor.js';
@@ -14,7 +14,6 @@ import { ChatWebviewViewProvider } from './chat/chatWebviewViewProvider.js';
 import { ContextBuilder } from './chat/context.js';
 import { IgnoreManager } from './chat/ignoreManager.js';
 import { getChatWebviewContent } from './chat/chatWebviewContent.js';
-import { ConfigContainer } from './config/types.js';
 import './chat/activeEditorTracker.js';
 import { EventEmitter } from 'events';
 import { ANONYMIZATION_EVENT, AnonymizationEventPayload } from './anonymizer/anonymizationNotifier.js';

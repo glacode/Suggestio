@@ -5,14 +5,14 @@ import {
   IPosition, 
   ICancellationToken, 
   IInlineCompletionList, 
-  IIgnoreManager 
+  IIgnoreManager,
+  Config,
+  llmProvider
 } from "../types.js";
-import { Config } from "../config/types.js";
 import { buildPromptForInlineCompletion } from "./promptBuilder/promptBuilder.js";
 import { debounce } from "./debounceManager.js";
 import { handleCancellation } from "./cancellation.js";
 import { log } from "../logger.js";
-import { llmProvider } from "../providers/llmProvider.js";
 
 const DEBOUNCE_DELAY_MS = 1000;
 

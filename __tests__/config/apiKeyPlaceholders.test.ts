@@ -1,4 +1,4 @@
-import { Config } from "../../src/config/types.js";
+import { Config } from "../../src/types.js";
 import { extractApiKeyPlaceholders } from "../../src/config/apiKeyPlaceholders.js";
 
 describe("extractApiKeyPlaceholders", () => {

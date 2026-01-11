@@ -1,6 +1,4 @@
-import { Config, ProviderConfig } from "../config/types.js";
-import { llmProvider } from "./llmProvider.js";
-import { IAnonymizer } from "../types.js";
+import { Config, ProviderConfig, llmProvider, IAnonymizer } from "../types.js";
 import { OpenAICompatibleProvider } from "./openAICompatibleProvider.js";
 import { GeminiProvider } from "./geminiProvider.js";
 import * as vscode from "vscode";

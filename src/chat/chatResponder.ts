@@ -1,4 +1,4 @@
-import { Config } from "../config/types.js";
+import { Config } from "../types.js";
 import type { IChatResponder, IChatHistoryManager, IPrompt } from "../types.js";
 
 export class ChatResponder implements IChatResponder {

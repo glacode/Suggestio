@@ -250,7 +250,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
           return Promise.resolve();
         }
       }
-    } as unknown as import('../../src/config/types.js').Config;
+    } as unknown as import('../../src/types.js').Config;
 
     // Use the real ChatResponder which currently adds the (context+message) to history.
     const { ChatResponder } = await import('../../src/chat/chatResponder.js');

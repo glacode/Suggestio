@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { configProcessor, SecretManager } from '../../src/config/configProcessor.js';
-import { ConfigContainer } from '../../src/config/types.js';
+import { ConfigContainer } from '../../src/types.js';
 import { EventEmitter } from 'events';
 
 describe('processConfig', () => {
