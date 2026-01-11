@@ -1,4 +1,4 @@
-import * as vscode from 'vscode';
+import { ITextDocument, IPosition } from '../../types.js';
 import { extractPrefix, extractSuffix } from './extractPrefixAndSuffix.js';
 
 /**
@@ -6,7 +6,7 @@ import { extractPrefix, extractSuffix } from './extractPrefixAndSuffix.js';
  * @param document The active text document.
  * @param position The position of the cursor.
  */
-export function buildPromptForInlineCompletion(document: vscode.TextDocument, position: vscode.Position): string {
+export function buildPromptForInlineCompletion(document: ITextDocument, position: IPosition): string {
   const prefix = extractPrefix(document, position);
   const suffix = extractSuffix(document, position); // NEW: Get text after cursor
   const languageId = document.languageId;

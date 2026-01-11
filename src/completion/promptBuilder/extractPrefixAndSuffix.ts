@@ -13,11 +13,11 @@
  * // Returns text from up to 50 lines before cursor position
  * ```
  */
-import * as vscode from 'vscode';
+import { ITextDocument, IPosition } from '../../types.js';
 
 export function extractPrefix(
-  document: vscode.TextDocument,
-  position: vscode.Position,
+  document: ITextDocument,
+  position: IPosition,
   maxLines = 200
 ): string {
   const startLine = Math.max(0, position.line - maxLines + 1);
@@ -32,8 +32,8 @@ export function extractPrefix(
 }
 
 export function extractSuffix(
-  document: vscode.TextDocument,
-  position: vscode.Position,
+  document: ITextDocument,
+  position: IPosition,
   maxLines = 2
 ): string {
   // Start from the current line and go down

@@ -1,27 +1,32 @@
 import { UserPrompt } from "./promptBuilder/userPrompt.js";
 // completion/completionProvider.ts
-import * as vscode from "vscode";
+import { 
+  ITextDocument, 
+  IPosition, 
+  ICancellationToken, 
+  IInlineCompletionList, 
+  IIgnoreManager 
+} from "../types.js";
+import { Config } from "../config/types.js";
 import { buildPromptForInlineCompletion } from "./promptBuilder/promptBuilder.js";
 import { debounce } from "./debounceManager.js";
 import { handleCancellation } from "./cancellation.js";
 import { log } from "../logger.js";
-import { Config } from "../config/types.js";
 import { llmProvider } from "../providers/llmProvider.js";
-import { IgnoreManager } from "../chat/ignoreManager.js"; // Import IgnoreManager
 
 const DEBOUNCE_DELAY_MS = 1000;
 
 function createDebounceCallback(
   provider: llmProvider | undefined,
   config: Config,
-  document: vscode.TextDocument,
-  position: vscode.Position,
-  token: vscode.CancellationToken | undefined,
-  resolve: (items: vscode.InlineCompletionList) => void
+  document: ITextDocument,
+  position: IPosition,
+  token: ICancellationToken | undefined,
+  resolve: (items: IInlineCompletionList) => void
 ): () => void {
   return async function performCompletion() {
     if (!provider) {
-      resolve(new vscode.InlineCompletionList([]));
+      resolve({ items: [] });
       return;
     }
     if (handleCancellation(token, resolve, "before")) {
@@ -43,18 +48,21 @@ function createDebounceCallback(
         }
 
         if (!completionText) {
-          resolve(new vscode.InlineCompletionList([]));
+          resolve({ items: [] });
           return;
         }
 
         // Wrap completionText into InlineCompletionItems
-        const item = new vscode.InlineCompletionItem(completionText, new vscode.Range(position, position));
+        const item = { 
+          insertText: completionText, 
+          range: { start: position, end: position } 
+        };
         log("✅ Suggestio: Returning completion to VS Code");
-        resolve(new vscode.InlineCompletionList([item]));
+        resolve({ items: [item] });
       })
       .catch((err) => {
         log("Error fetching completion: " + err);
-        resolve(new vscode.InlineCompletionList([]));
+        resolve({ items: [] });
       });
   };
 }
@@ -62,25 +70,25 @@ function createDebounceCallback(
 export async function provideInlineCompletionItems(
   provider: llmProvider | undefined,
   config: Config,
-  ignoreManager: IgnoreManager, // Added IgnoreManager
-  document: vscode.TextDocument,
-  position: vscode.Position,
-  _context: vscode.InlineCompletionContext,
-  token?: vscode.CancellationToken
-): Promise<vscode.InlineCompletionList> {
+  ignoreManager: IIgnoreManager, // Changed to interface
+  document: ITextDocument,
+  position: IPosition,
+  _context: unknown, // Use unknown if we don't need it
+  token?: ICancellationToken
+): Promise<IInlineCompletionList> {
   if (config.enableInlineCompletion === false) {
-    return new vscode.InlineCompletionList([]);
+    return { items: [] };
   }
 
   // Check if the document should be ignored
-  if (await ignoreManager.shouldIgnore(document.uri.fsPath)) {
+  if (document.uri.fsPath && await ignoreManager.shouldIgnore(document.uri.fsPath)) {
     log(`Document ${document.uri.fsPath} is ignored. Skipping inline completion.`);
-    return new vscode.InlineCompletionList([]);
+    return { items: [] };
   }
 
-  const result = await new Promise<vscode.InlineCompletionList>((resolve) => {
+  const result = await new Promise<IInlineCompletionList>((resolve) => {
     if (!provider) {
-      resolve(new vscode.InlineCompletionList([]));
+      resolve({ items: [] });
       return;
     }
     debounce(

@@ -1,9 +1,8 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
 import { provideInlineCompletionItems } from '../../src/completion/completionProvider.js';
+import { IIgnoreManager, ITextDocument, IPosition } from '../../src/types.js';
 import { Config } from '../../src/config/types.js';
 import { llmProvider } from '../../src/providers/llmProvider.js';
-import { IgnoreManager } from '../../src/chat/ignoreManager.js';
-import * as vscode from 'vscode';
 
 // Mock DebounceManager
 jest.mock('../../src/completion/debounceManager.js', () => ({
@@ -15,8 +14,8 @@ jest.mock('../../src/completion/debounceManager.js', () => ({
 
 // Mock IgnoreManager
 const mockIgnoreManager = {
-    shouldIgnore: jest.fn<IgnoreManager['shouldIgnore']>().mockResolvedValue(false),
-} as unknown as IgnoreManager;
+    shouldIgnore: jest.fn<() => Promise<boolean>>().mockResolvedValue(false),
+} as unknown as IIgnoreManager;
 
 // Mock Provider
 const mockProvider = {
@@ -25,16 +24,14 @@ const mockProvider = {
 
 // Mock Document
 const mockDocument = {
-    uri: { fsPath: '/path/to/file.ts' },
-    getText: () => 'content',
+    uri: { fsPath: '/path/to/file.ts', toString: () => '/path/to/file.ts' },
+    languageId: 'typescript',
+    lineCount: 1,
     lineAt: () => ({ text: 'content' }),
-    offsetAt: () => 0,
-    positionAt: () => new vscode.Position(0, 0),
-    fileName: '/path/to/file.ts'
-} as unknown as vscode.TextDocument;
+} as unknown as ITextDocument;
 
 // Mock Position
-const mockPosition = new vscode.Position(0, 0);
+const mockPosition: IPosition = { line: 0, character: 0 };
 
 describe('provideInlineCompletionItems', () => {
     beforeEach(() => {
@@ -49,7 +46,7 @@ describe('provideInlineCompletionItems', () => {
             enableInlineCompletion: false,
             providers: {},
             anonymizer: { enabled: false, words: [] }
-        };
+        } as any;
 
         const result = await provideInlineCompletionItems(
             mockProvider,
@@ -71,7 +68,7 @@ describe('provideInlineCompletionItems', () => {
             enableInlineCompletion: true,
             providers: {},
             anonymizer: { enabled: false, words: [] }
-        };
+        } as any;
 
         const promise = provideInlineCompletionItems(
             mockProvider,
@@ -100,7 +97,7 @@ describe('provideInlineCompletionItems', () => {
             activeProvider: 'test',
             providers: {},
             anonymizer: { enabled: false, words: [] }
-        };
+        } as any;
 
         const promise = provideInlineCompletionItems(
             mockProvider,

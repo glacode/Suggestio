@@ -497,3 +497,107 @@ export interface IAnonymizationNotifier {
      */
     notifyAnonymization(original: string, placeholder: string, type: 'word' | 'entropy'): void;
 }
+
+// --------------------------------------------------------------------------------
+//  Editor / Completion Abstractions
+// --------------------------------------------------------------------------------
+
+/**
+ * Represents a line of text in a document.
+ */
+export interface ITextLine {
+  /**
+   * The text of this line without the terminating line break characters.
+   */
+  readonly text: string;
+}
+
+/**
+ * Represents a position in a text document.
+ */
+export interface IPosition {
+  /**
+   * The zero-based line value.
+   */
+  readonly line: number;
+  /**
+   * The zero-based character value.
+   */
+  readonly character: number;
+}
+
+/**
+ * A range represents the text between two positions.
+ */
+export interface IRange {
+  /**
+   * The start position. It is before or equal to [end](#IRange.end).
+   */
+  readonly start: IPosition;
+  /**
+   * The end position. It is after or equal to [start](#IRange.start).
+   */
+  readonly end: IPosition;
+}
+
+/**
+ * Represents a text document, such as a source file.
+ */
+export interface ITextDocument {
+  /**
+   * The associated uri for this document.
+   */
+  readonly uri: UriLike;
+
+  /**
+   * The identifier of the programming language associated with this document.
+   */
+  readonly languageId: string;
+
+  /**
+   * The number of lines in this document.
+   */
+  readonly lineCount: number;
+
+  /**
+   * Returns a text line denoted by the line number.
+   *
+   * @param line A line number in [0, lineCount).
+   * @return A line of text.
+   */
+  lineAt(line: number): ITextLine;
+}
+
+/**
+ * A cancellation token is passed to an asynchronous or long running operation to request cancellation.
+ */
+export interface ICancellationToken {
+  /**
+   * Is true when the token has been cancelled, false otherwise.
+   */
+  readonly isCancellationRequested: boolean;
+}
+
+/**
+ * An inline completion item represents a text snippet that is proposed inline to the user.
+ */
+export interface IInlineCompletionItem {
+  /**
+   * The text to insert.
+   */
+  readonly insertText: string;
+  /**
+   * The range this completion item applies to.
+   */
+  readonly range?: IRange;
+}
+
+/**
+ * Represents a list of inline completion items.
+ */
+export interface IInlineCompletionList {
+  /**
+   * The completion items.
+   */
+  readonly items: IInlineCompletionItem[];
+}
