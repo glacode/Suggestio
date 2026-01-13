@@ -32,6 +32,8 @@ export async function activate(context: vscode.ExtensionContext) {
   const secretManager = new SecretManager(context);
   const rawConfig = await readConfig(context);
   const configContainer: ConfigContainer = await configProcessor.processConfig(rawConfig, secretManager, eventBus);
+  // Initialize UI context for inline completion toggle (default true in config)
+  await vscode.commands.executeCommand('setContext', 'suggestio.inlineCompletionEnabled', configContainer.config.enableInlineCompletion !== false);
 
   const conversationHistory = new ChatHistoryManager();
   const chatHistoryManager = conversationHistory;

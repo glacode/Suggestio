@@ -42,4 +42,17 @@ export function registerCommands(context: vscode.ExtensionContext, config: Confi
       (newChatCapable as ChatWebviewViewProvider).newChat();
     })
   );
+
+  // Toggle inline completion UI context (minimal implementation)
+  context.subscriptions.push(
+    vscode.commands.registerCommand('suggestio.enableInlineCompletion', () => {
+      vscode.commands.executeCommand('setContext', 'suggestio.inlineCompletionEnabled', true);
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('suggestio.disableInlineCompletion', () => {
+      vscode.commands.executeCommand('setContext', 'suggestio.inlineCompletionEnabled', false);
+    })
+  );
 }

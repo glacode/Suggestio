@@ -153,6 +153,16 @@
                 "command": "suggestio.newChat",
                 "title": "Suggestio: New Chat",
                 "icon": "$(add)"
+            },
+            {
+                "command": "suggestio.enableInlineCompletion",
+                "title": "Suggestio: Enable Inline Completion",
+                "icon": "$(eye)"
+            },
+            {
+                "command": "suggestio.disableInlineCompletion",
+                "title": "Suggestio: Disable Inline Completion",
+                "icon": "$(eye-closed)"
             }
         ],
         "menus": {
@@ -160,7 +170,17 @@
                 {
                     "command": "suggestio.newChat",
                     "when": "view == suggestio.chat.view",
-                    "group": "navigation"
+                    "group": "navigation@1"
+                },
+                {
+                    "command": "suggestio.enableInlineCompletion",
+                    "when": "view == suggestio.chat.view && !suggestio.inlineCompletionEnabled",
+                    "group": "navigation@2"
+                },
+                {
+                    "command": "suggestio.disableInlineCompletion",
+                    "when": "view == suggestio.chat.view && suggestio.inlineCompletionEnabled",
+                    "group": "navigation@2"
                 }
             ]
         },
