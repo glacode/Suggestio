@@ -191,13 +191,9 @@ export class SimpleWordAnonymizer implements IAnonymizer {
      * @returns The text with placeholders replaced by original values.
      */
     deanonymize(text: string): string {
-        let result = text;
-
-        for (const [placeholder, original] of this.mapping) {
-            result = result.replace(new RegExp(placeholder, 'g'), original);
-        }
-
-        return result;
+        return text.replace(/ANON_\d+/g, (match) => {
+            return this.mapping.get(match) || match;
+        });
     }
 
     /**

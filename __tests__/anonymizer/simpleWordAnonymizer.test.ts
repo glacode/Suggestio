@@ -83,6 +83,23 @@ describe('SimpleWordAnonymizer', () => {
     expect(deanonymized).toBe(input);
   });
 
+  test('handles overlapping placeholders correctly during deanonymization', () => {
+    const anonymizer = new SimpleWordAnonymizer([]);
+    const mapping = (anonymizer as any).mapping;
+    
+    // We insert ANON_1 FIRST. Because JS Maps iterate in insertion order,
+    // the previous implementation tried to replace ANON_1 before ANON_10.
+    // The optimized regex implementation should handle this correctly regardless of order.
+    mapping.set('ANON_1', 'Apple');
+    mapping.set('ANON_10', 'Banana');
+
+    const input = 'I have ANON_1 and ANON_10';
+    const result = anonymizer.deanonymize(input);
+
+    // This checks that "ANON_10" is not partially replaced as "Apple" + "0"
+    expect(result).toBe('I have Apple and Banana');
+  });
+
   describe('Streaming Deanonymization', () => {
     let anonymizer: SimpleWordAnonymizer;
 
