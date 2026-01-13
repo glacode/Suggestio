@@ -55,13 +55,12 @@ export class SimpleWordAnonymizer implements IAnonymizer {
             return text;
         }
 
-        let result = text;
         const minLen = this.minLength;
         const regex = /[a-zA-Z0-9_\-\+/=#@$\*£\?\^]+/g;
         let match;
         const candidates: { start: number; end: number; text: string }[] = [];
 
-        while ((match = regex.exec(result)) !== null) {
+        while ((match = regex.exec(text)) !== null) {
             const token = match[0];
             if (token.length >= minLen) {
                 // 1.Skip existing placeholders
@@ -91,9 +90,15 @@ export class SimpleWordAnonymizer implements IAnonymizer {
             }
         }
 
-        // Replace from back to front to avoid index shifting issues
-        for (let i = candidates.length - 1; i >= 0; i--) {
-            const { start, end, text: token } = candidates[i];
+        if (candidates.length === 0) {
+            return text;
+        }
+
+        let result = '';
+        let lastIndex = 0;
+
+        for (const candidate of candidates) {
+            const { start, end, text: token } = candidate;
 
             let placeholder = this.reverseMapping.get(token);
             if (!placeholder) {
@@ -104,8 +109,11 @@ export class SimpleWordAnonymizer implements IAnonymizer {
             }
             this.notifier?.notifyAnonymization(token, placeholder, 'entropy');
 
-            result = result.substring(0, start) + placeholder + result.substring(end);
+            result += text.substring(lastIndex, start);
+            result += placeholder;
+            lastIndex = end;
         }
+        result += text.substring(lastIndex);
 
         return result;
     }
@@ -121,20 +129,31 @@ export class SimpleWordAnonymizer implements IAnonymizer {
     private anonymizeSingleWord(text: string, word: string): string {
         const regex = new RegExp(`\\b${word}\\b`, 'gi');
         let match;
-        while ((match = regex.exec(text)) !== null) {
-            text = this.applyAnonymizationToMatch(text, match, regex);
-        }
-        return text;
-    }
-
-    private applyAnonymizationToMatch(text: string, match: RegExpExecArray, regex: RegExp): string {
-        const original = match[0];
-        const placeholder = this.resolvePlaceholder(original);
-        this.notifyWordAnonymization(original, placeholder);
+        const matches: RegExpExecArray[] = [];
         
-        const newText = this.replaceRange(text, match.index, original.length, placeholder);
-        regex.lastIndex = match.index + placeholder.length;
-        return newText;
+        while ((match = regex.exec(text)) !== null) {
+            matches.push(match);
+        }
+
+        if (matches.length === 0) {
+            return text;
+        }
+
+        let result = '';
+        let lastIndex = 0;
+
+        for (const match of matches) {
+            const original = match[0];
+            const placeholder = this.resolvePlaceholder(original);
+            this.notifyWordAnonymization(original, placeholder);
+
+            result += text.substring(lastIndex, match.index);
+            result += placeholder;
+            lastIndex = match.index + original.length;
+        }
+        result += text.substring(lastIndex);
+
+        return result;
     }
 
     private resolvePlaceholder(original: string): string {
@@ -154,10 +173,6 @@ export class SimpleWordAnonymizer implements IAnonymizer {
 
     private notifyWordAnonymization(original: string, placeholder: string): void {
         this.notifier?.notifyAnonymization(original, placeholder, 'word');
-    }
-
-    private replaceRange(text: string, start: number, length: number, replacement: string): string {
-        return text.substring(0, start) + replacement + text.substring(start + length);
     }
 
     /**
