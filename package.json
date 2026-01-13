@@ -155,13 +155,13 @@
                 "icon": "$(add)"
             },
             {
-                "command": "suggestio.enableInlineCompletion",
-                "title": "Suggestio: Enable Inline Completion",
+                "command": "suggestio.disableInlineCompletion",
+                "title": "Suggestio: Disable Inline Completion",
                 "icon": "$(eye)"
             },
             {
-                "command": "suggestio.disableInlineCompletion",
-                "title": "Suggestio: Disable Inline Completion",
+                "command": "suggestio.enableInlineCompletion",
+                "title": "Suggestio: Enable Inline Completion",
                 "icon": "$(eye-closed)"
             }
         ],
@@ -173,13 +173,13 @@
                     "group": "navigation@1"
                 },
                 {
-                    "command": "suggestio.enableInlineCompletion",
-                    "when": "view == suggestio.chat.view && !suggestio.inlineCompletionEnabled",
+                    "command": "suggestio.disableInlineCompletion",
+                    "when": "view == suggestio.chat.view && suggestio.inlineCompletionEnabled",
                     "group": "navigation@2"
                 },
                 {
-                    "command": "suggestio.disableInlineCompletion",
-                    "when": "view == suggestio.chat.view && suggestio.inlineCompletionEnabled",
+                    "command": "suggestio.enableInlineCompletion",
+                    "when": "view == suggestio.chat.view && !suggestio.inlineCompletionEnabled",
                     "group": "navigation@2"
                 }
             ]
