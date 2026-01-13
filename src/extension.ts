@@ -86,7 +86,7 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   registerCompletionProvider(context, configContainer.config, ignoreManager);
-  registerCommands(context, configContainer.config, chatWebviewViewProvider as ChatWebviewViewProvider);
+  registerCommands(context, configContainer.config, chatWebviewViewProvider as ChatWebviewViewProvider, eventBus);
 
 
 }

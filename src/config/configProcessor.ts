@@ -27,6 +27,16 @@ class ConfigProcessor {
             log('modelChanged event received for model: ' + modelName);
             this.updateActiveProvider(modelName);
         });
+
+        // Listen for inline completion toggles and update the in-memory config accordingly
+        this._eventBus.removeAllListeners('inlineCompletionToggled');
+        this._eventBus.on('inlineCompletionToggled', (enabled: boolean) => {
+            log('inlineCompletionToggled event received: ' + enabled);
+            if (this._config) {
+                this._config.enableInlineCompletion = enabled;
+                log('config updated. enableInlineCompletion: ' + this._config.enableInlineCompletion);
+            }
+        });
     }
 
     /**
