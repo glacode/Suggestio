@@ -1,6 +1,6 @@
 import fetch from "node-fetch";
 import { log } from "../logger.js";
-import { ChatMessage , IPrompt, llmProvider } from "../types.js";
+import { ChatMessage , IPrompt, ILlmProvider } from "../types.js";
 
 type GeminiResponse = {
   candidates?: {
@@ -10,7 +10,7 @@ type GeminiResponse = {
 
 //TODO remove this class after confirming Gemini usage via OpenAI compatible API works fine
 /** This provider should be deprecated, because now even Gemini supports an OpenAi compatible API */
-export class GeminiProvider implements llmProvider {
+export class GeminiProvider implements ILlmProvider {
   private apiKey: string;
   private model: string;
 

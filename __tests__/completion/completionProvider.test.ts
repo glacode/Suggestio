@@ -1,6 +1,6 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
 import { provideInlineCompletionItems } from '../../src/completion/completionProvider.js';
-import { IIgnoreManager, ITextDocument, IPosition, Config, llmProvider } from '../../src/types.js';
+import { IIgnoreManager, ITextDocument, IPosition, Config, ILlmProvider } from '../../src/types.js';
 
 // Mock DebounceManager
 jest.mock('../../src/completion/debounceManager.js', () => ({
@@ -18,7 +18,7 @@ const mockIgnoreManager = {
 // Mock Provider
 const mockProvider = {
     query: jest.fn(),
-} as unknown as llmProvider;
+} as unknown as ILlmProvider;
 
 // Mock Document
 const mockDocument = {

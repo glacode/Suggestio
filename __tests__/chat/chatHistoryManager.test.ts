@@ -1,13 +1,13 @@
 import { describe, it, beforeEach, expect } from "@jest/globals";
 import { ChatResponder } from "../../src/chat/chatResponder.js";
-import { IChatHistoryManager, IPrompt, Config, ProviderConfig, llmProvider } from "../../src/types.js";
+import { IChatHistoryManager, IPrompt, Config, ProviderConfig, ILlmProvider } from "../../src/types.js";
 import { ChatPrompt } from "../../src/chat/chatPrompt.js";
 import { ChatHistoryManager } from "../../src/chat/chatHistoryManager.js";
 
 // Define a minimal mock config interface for testing purposes
 interface MockConfig extends Pick<Config, 'activeProvider' | 'llmProviderForChat' | 'providers' | 'anonymizer'> { }
 
-class FakeProvider implements llmProvider {
+class FakeProvider implements ILlmProvider {
     private responses: string[];
     private callCount: number = 0;
 

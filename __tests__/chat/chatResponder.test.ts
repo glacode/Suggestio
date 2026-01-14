@@ -1,11 +1,11 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { ChatResponder } from "../../src/chat/chatResponder.js";
-import { IChatHistoryManager, ChatMessage , IPrompt, ChatHistory, Config, ProviderConfig, llmProvider } from "../../src/types.js"; // Import ChatMessage from types.js
+import { IChatHistoryManager, ChatMessage , IPrompt, ChatHistory, Config, ProviderConfig, ILlmProvider } from "../../src/types.js"; // Import ChatMessage from types.js
 
 // Define a minimal mock config interface for testing purposes
 interface MockConfig extends Pick<Config, 'activeProvider' | 'llmProviderForChat' | 'providers' | 'anonymizer'> { }
 
-class FakeProvider implements llmProvider {
+class FakeProvider implements ILlmProvider {
     constructor(private reply: string | null, private shouldThrow = false) { }
 
     async query(_prompt: IPrompt): Promise<string | null> {

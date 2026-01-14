@@ -605,7 +605,7 @@ export interface IInlineCompletionList {
 // --------------------------------------------------------------------------------
 //  LLM Provider Types
 // --------------------------------------------------------------------------------
-export interface llmProvider {
+export interface ILlmProvider {
   query(prompt: IPrompt): Promise<string | null>;
   queryStream(prompt: IPrompt, onToken: (token: string) => void): Promise<void>;
 }
@@ -638,8 +638,8 @@ export interface Config {
     };
   };
   anonymizerInstance?: IAnonymizer;
-  llmProviderForInlineCompletion?: llmProvider;
-  llmProviderForChat?: llmProvider;
+  llmProviderForInlineCompletion?: ILlmProvider;
+  llmProviderForChat?: ILlmProvider;
 }
 
 export interface ConfigContainer {

@@ -1,4 +1,4 @@
-import { Config, ProviderConfig, llmProvider, IAnonymizer } from "../types.js";
+import { Config, ProviderConfig, ILlmProvider, IAnonymizer } from "../types.js";
 import { OpenAICompatibleProvider } from "./openAICompatibleProvider.js";
 import { GeminiProvider } from "./geminiProvider.js";
 import * as vscode from "vscode";
@@ -6,7 +6,7 @@ import * as vscode from "vscode";
 export function getActiveProvider(
   config: Config,
   anonymizer?: IAnonymizer
-): llmProvider | null {
+): ILlmProvider | null {
   const activeProviderName = config.activeProvider;
   const providerConfig: ProviderConfig | undefined =
     config.providers?.[activeProviderName];

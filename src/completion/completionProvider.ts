@@ -7,7 +7,7 @@ import {
   IInlineCompletionList, 
   IIgnoreManager,
   Config,
-  llmProvider
+  ILlmProvider
 } from "../types.js";
 import { buildPromptForInlineCompletion } from "./promptBuilder/promptBuilder.js";
 import { debounce } from "./debounceManager.js";
@@ -17,7 +17,7 @@ import { log } from "../logger.js";
 const DEBOUNCE_DELAY_MS = 1000;
 
 function createDebounceCallback(
-  provider: llmProvider | undefined,
+  provider: ILlmProvider | undefined,
   config: Config,
   document: ITextDocument,
   position: IPosition,
@@ -68,7 +68,7 @@ function createDebounceCallback(
 }
 
 export async function provideInlineCompletionItems(
-  provider: llmProvider | undefined,
+  provider: ILlmProvider | undefined,
   config: Config,
   ignoreManager: IIgnoreManager, // Changed to interface
   document: ITextDocument,
