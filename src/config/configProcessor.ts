@@ -1,6 +1,6 @@
 import { getAnonymizer } from '../anonymizer/anonymizer.js';
 import { getActiveProvider } from '../providers/providerFactory.js';
-import { ConfigContainer, Config, ProviderConfig } from '../types.js';
+import { ConfigContainer, Config, IProviderConfig } from '../types.js';
 import { EventEmitter } from 'events';
 import { log } from '../logger.js';
 
@@ -44,7 +44,7 @@ class ConfigProcessor {
      * Populates `apiKeyPlaceholder` and `resolvedApiKey`.
      */
     private async resolveAPIKeyInMemory(
-        providerConfig: ProviderConfig,
+        providerConfig: IProviderConfig,
     ) {
         if (!this._secretManager) {
             throw new Error('SecretManager is not initialized');

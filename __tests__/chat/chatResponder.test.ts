@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { ChatResponder } from "../../src/chat/chatResponder.js";
-import { IChatHistoryManager, ChatMessage , IPrompt, ChatHistory, Config, ProviderConfig, ILlmProvider } from "../../src/types.js"; // Import ChatMessage from types.js
+import { IChatHistoryManager, ChatMessage , IPrompt, ChatHistory, Config, IProviderConfig, ILlmProvider } from "../../src/types.js"; // Import ChatMessage from types.js
 
 // Define a minimal mock config interface for testing purposes
 interface MockConfig extends Pick<Config, 'activeProvider' | 'llmProviderForChat' | 'providers' | 'anonymizer'> { }
@@ -52,7 +52,7 @@ describe("ChatResponder (DI) simple tests", () => {
             {
                 activeProvider: "FAKE",
                 llmProviderForChat: new FakeProvider("Hello world"),
-                providers: { FAKE: { model: "fake-model", apiKey: "fake-key" } as ProviderConfig },
+                providers: { FAKE: { model: "fake-model", apiKey: "fake-key" } as IProviderConfig },
                 anonymizer: { enabled: false, words: [] }
             } as MockConfig,
             logger,
@@ -80,7 +80,7 @@ describe("ChatResponder (DI) simple tests", () => {
             {
                 activeProvider: "FAKE",
                 llmProviderForChat: new FakeProvider(null, true),
-                providers: { FAKE: { model: "fake-model", apiKey: "fake-key" } as ProviderConfig },
+                providers: { FAKE: { model: "fake-model", apiKey: "fake-key" } as IProviderConfig },
                 anonymizer: { enabled: false, words: [] }
             } as MockConfig,
             logger,

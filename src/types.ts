@@ -614,7 +614,7 @@ export interface ILlmProvider {
 //  Config Types
 // --------------------------------------------------------------------------------
 
-export interface ProviderConfig {
+export interface IProviderConfig {
   endpoint?: string; // optional because Gemini doesn’t use it
   model: string;
   apiKey: string;             // raw value from config.json
@@ -627,7 +627,7 @@ export interface Config {
   activeProvider: string;
   enableInlineCompletion?: boolean;
   providers: {
-    [key: string]: ProviderConfig;
+    [key: string]: IProviderConfig;
   };
   anonymizer: {
     enabled: boolean;

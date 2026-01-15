@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, expect } from "@jest/globals";
 import { ChatResponder } from "../../src/chat/chatResponder.js";
-import { IChatHistoryManager, IPrompt, Config, ProviderConfig, ILlmProvider } from "../../src/types.js";
+import { IChatHistoryManager, IPrompt, Config, IProviderConfig, ILlmProvider } from "../../src/types.js";
 import { ChatPrompt } from "../../src/chat/chatPrompt.js";
 import { ChatHistoryManager } from "../../src/chat/chatHistoryManager.js";
 
@@ -47,7 +47,7 @@ describe("Chat History Management (Unit Test)", () => {
             {
                 activeProvider: "FAKE",
                 llmProviderForChat: fakeProvider,
-                providers: { FAKE: { model: "fake-model", apiKey: "fake-key" } as ProviderConfig },
+                providers: { FAKE: { model: "fake-model", apiKey: "fake-key" } as IProviderConfig },
                 anonymizer: { enabled: false, words: [] }
             } as MockConfig,
             logger,
