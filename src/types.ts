@@ -182,8 +182,21 @@ export type WebviewMessage =
  * - `system`: Instructions for the AI behavior.
  * - `user`: The human interacting with the AI.
  * - `assistant`: The AI model itself.
+ * - `tool`: The result of a tool execution.
  */
-export type ChatRole = "system" | "user" | "assistant";
+export type ChatRole = "system" | "user" | "assistant" | "tool";
+
+/**
+ * Represents a tool call request from the AI.
+ */
+export interface ToolCall {
+  id: string;
+  type: "function";
+  function: {
+    name: string;
+    arguments: string;
+  };
+}
 
 /**
  * Represents a single message in the chat history.
@@ -198,6 +211,16 @@ export interface ChatMessage {
    * The text content of the message.
    */
   content: string;
+
+  /**
+   * Tool calls requested by the assistant.
+   */
+  tool_calls?: ToolCall[];
+
+  /**
+   * ID of the tool call this message is responding to (for role: 'tool').
+   */
+  tool_call_id?: string;
 }
 
 /**
@@ -427,6 +450,32 @@ export interface IPathResolver {
    * @returns The basename of the path.
    */
   basename(path: string): string;
+
+  /**
+   * Resolves a sequence of paths or path segments into an absolute path.
+   * @param paths A sequence of paths or path segments.
+   * @returns The absolute path.
+   */
+  resolve(...paths: string[]): string;
+}
+
+/**
+ * Provides access to directory contents and file existence.
+ */
+export interface IDirectoryProvider {
+  /**
+   * Reads the contents of a directory.
+   * @param path The path of the directory to read.
+   * @returns The list of file names in the directory, or undefined if the read failed.
+   */
+  readdir(path: string): string[] | undefined;
+
+  /**
+   * Checks if a path exists.
+   * @param path The path to check.
+   * @returns True if the path exists, false otherwise.
+   */
+  exists(path: string): boolean;
 }
 
 /**
@@ -602,12 +651,33 @@ export interface IInlineCompletionList {
   readonly items: IInlineCompletionItem[];
 }
 
+/**
+ * Defines a tool that can be called by the LLM.
+ */
+export interface ToolDefinition {
+  name: string;
+  description: string;
+  parameters: {
+    type: 'object';
+    properties: Record<string, any>;
+    required?: string[];
+  };
+}
+
+/**
+ * Interface for a tool implementation.
+ */
+export interface ToolImplementation {
+  definition: ToolDefinition;
+  execute(args: any): Promise<string>;
+}
+
 // --------------------------------------------------------------------------------
 //  LLM Provider Types
 // --------------------------------------------------------------------------------
 export interface ILlmProvider {
-  query(prompt: IPrompt): Promise<string | null>;
-  queryStream(prompt: IPrompt, onToken: (token: string) => void): Promise<void>;
+  query(prompt: IPrompt, tools?: ToolDefinition[]): Promise<ChatMessage | null>;
+  queryStream(prompt: IPrompt, onToken: (token: string) => void, tools?: ToolDefinition[]): Promise<ChatMessage | null>;
 }
 
 // --------------------------------------------------------------------------------

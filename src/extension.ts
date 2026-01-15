@@ -5,12 +5,13 @@ import { registerCompletionProvider } from './registrations/completionRegistrati
 import { registerCommands } from './registrations/commandRegistration.js';
 import * as fs from 'fs';
 import * as path from 'path';
-import { IWorkspaceProvider, IFileContentProvider, ConfigContainer } from './types.js';
+import { IWorkspaceProvider, IFileContentProvider, ConfigContainer, IDirectoryProvider } from './types.js';
 import { ChatHistoryManager } from './chat/chatHistoryManager.js';
 import { SecretManager } from './config/secretManager.js';
 import { configProcessor } from './config/configProcessor.js';
 import { ChatResponder } from './chat/chatResponder.js';
 import { ChatWebviewViewProvider } from './chat/chatWebviewViewProvider.js';
+import { getTools } from './agent/tools.js';
 import { ContextBuilder } from './chat/context.js';
 import { IgnoreManager } from './chat/ignoreManager.js';
 import { getChatWebviewContent } from './chat/chatWebviewContent.js';
@@ -38,16 +39,6 @@ export async function activate(context: vscode.ExtensionContext) {
   const conversationHistory = new ChatHistoryManager();
   const chatHistoryManager = conversationHistory;
 
-  const logicHandler = new ChatResponder(
-    configContainer.config,
-    log,
-    chatHistoryManager
-  );
-  const providerAccessor = {
-    getModels: () => Object.values(configContainer.config.providers).map(p => p.model),
-    getActiveModel: () => configContainer.config.providers[configContainer.config.activeProvider].model,
-  };
-
   const workspaceProvider: IWorkspaceProvider = {
     rootPath: () => {
       if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
@@ -55,6 +46,31 @@ export async function activate(context: vscode.ExtensionContext) {
       }
       return undefined;
     }
+  };
+
+  const directoryProvider: IDirectoryProvider = {
+    readdir: (path: string) => {
+      try {
+        if (fs.existsSync(path)) {
+            return fs.readdirSync(path);
+        }
+      } catch (e) {
+          log(`Error reading directory ${path}: ${e}`);
+      }
+      return undefined;
+    },
+    exists: (path: string) => fs.existsSync(path)
+  };
+
+  const logicHandler = new ChatResponder(
+    configContainer.config,
+    log,
+    chatHistoryManager,
+    getTools(workspaceProvider, directoryProvider, path)
+  );
+  const providerAccessor = {
+    getModels: () => Object.values(configContainer.config.providers).map(p => p.model),
+    getActiveModel: () => configContainer.config.providers[configContainer.config.activeProvider].model,
   };
 
   const fileContentProvider: IFileContentProvider = {

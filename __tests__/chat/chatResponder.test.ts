@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { ChatResponder } from "../../src/chat/chatResponder.js";
-import { IChatHistoryManager, ChatMessage , IPrompt, ChatHistory, Config, IProviderConfig, ILlmProvider } from "../../src/types.js"; // Import ChatMessage from types.js
+import { IChatHistoryManager, ChatMessage, IPrompt, ChatHistory, Config, IProviderConfig, ILlmProvider, ToolDefinition } from "../../src/types.js"; // Import ChatMessage from types.js
 
 // Define a minimal mock config interface for testing purposes
 interface MockConfig extends Pick<Config, 'activeProvider' | 'llmProviderForChat' | 'providers' | 'anonymizer'> { }
@@ -8,17 +8,19 @@ interface MockConfig extends Pick<Config, 'activeProvider' | 'llmProviderForChat
 class FakeProvider implements ILlmProvider {
     constructor(private reply: string | null, private shouldThrow = false) { }
 
-    async query(_prompt: IPrompt): Promise<string | null> {
+    async query(_prompt: IPrompt, _tools?: ToolDefinition[]): Promise<ChatMessage | null> {
         if (this.shouldThrow) { throw new Error("Simulated failure"); }
-        return this.reply;
+        if (this.reply === null) { return null; }
+        return { role: "assistant", content: this.reply };
     }
 
-    async queryStream(_prompt: IPrompt, onToken: (token: string) => void): Promise<void> {
+    async queryStream(_prompt: IPrompt, onToken: (token: string) => void, _tools?: ToolDefinition[]): Promise<ChatMessage | null> {
         if (this.shouldThrow) { throw new Error("Simulated failure"); }
         if (this.reply) {
             onToken(this.reply);
         }
-        return Promise.resolve();
+        if (this.reply === null) { return null; }
+        return { role: "assistant", content: this.reply };
     }
 }
 

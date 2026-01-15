@@ -1,0 +1,62 @@
+import { IWorkspaceProvider, ToolDefinition, IDirectoryProvider, IPathResolver, ToolImplementation } from '../types.js';
+
+export class ListFilesTool implements ToolImplementation {
+    definition: ToolDefinition = {
+        name: 'list_files',
+        description: 'List files in the workspace directory.',
+        parameters: {
+            type: 'object',
+            properties: {
+                directory: {
+                    type: 'string',
+                    description: 'The directory to list files from (relative to workspace root). Defaults to root if not provided.',
+                },
+            },
+        },
+    };
+
+    constructor(
+        private workspaceProvider: IWorkspaceProvider,
+        private directoryProvider: IDirectoryProvider,
+        private pathResolver: IPathResolver
+    ) {}
+
+    async execute(args: { directory?: string }): Promise<string> {
+        const rootPath = this.workspaceProvider.rootPath();
+        if (!rootPath) {
+            return 'Error: No workspace open.';
+        }
+
+        const dirPath = args.directory ? this.pathResolver.join(rootPath, args.directory) : rootPath;
+        const resolvedPath = this.pathResolver.resolve(dirPath);
+
+        // Security check: ensure resolved path is within workspace root
+        if (!resolvedPath.startsWith(rootPath)) {
+            return `Error: Access denied. Path must be within the workspace.`;
+        }
+
+        try {
+            if (!this.directoryProvider.exists(dirPath)) {
+                return `Error: Directory ${args.directory} does not exist.`;
+            }
+
+            const files = this.directoryProvider.readdir(dirPath);
+            if (!files) {
+                 return `Error: Failed to read directory ${args.directory}.`;
+            }
+            return JSON.stringify(files, null, 2);
+        } catch (error: any) {
+            return `Error listing files: ${error.message}`;
+        }
+    }
+}
+
+export function getTools(
+    workspaceProvider: IWorkspaceProvider,
+    directoryProvider: IDirectoryProvider,
+    pathResolver: IPathResolver
+): ToolImplementation[] {
+    return [
+        new ListFilesTool(workspaceProvider, directoryProvider, pathResolver)
+    ];
+}

@@ -19,7 +19,7 @@ export class GeminiProvider implements ILlmProvider {
     this.model = model;
   }
 
-  async query(prompt: IPrompt): Promise<string | null> {
+  async query(prompt: IPrompt): Promise<ChatMessage | null> {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
 
     const body = {
@@ -40,13 +40,14 @@ export class GeminiProvider implements ILlmProvider {
     const data = (await res.json()) as GeminiResponse;
     log("Response:" + JSON.stringify(data, null, 2));
 
-    return (
-      data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ??
-      null
-    );
+    const content = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    if (content === undefined) {
+        return null;
+    }
+    return { role: "assistant", content };
   }
 
-  async queryStream(prompt: IPrompt, onToken: (token: string) => void): Promise<void> {
+  async queryStream(prompt: IPrompt, onToken: (token: string) => void): Promise<ChatMessage | null> {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:streamGenerateContent?key=${this.apiKey}&alt=sse`;
 
     const body = {
@@ -68,6 +69,7 @@ export class GeminiProvider implements ILlmProvider {
       throw new Error("Response body is null");
     }
 
+    let fullContent = "";
     let buffer = "";
     for await (const chunk of res.body) {
       buffer += chunk.toString();
@@ -82,6 +84,7 @@ export class GeminiProvider implements ILlmProvider {
               const json = JSON.parse(jsonStr);
               const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
               if (text) {
+                fullContent += text;
                 const parts = text.split(/(\s+)/);
                 for (const part of parts) {
                   if (part) {
@@ -106,6 +109,7 @@ export class GeminiProvider implements ILlmProvider {
             const json = JSON.parse(jsonStr);
             const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
             if (text) {
+              fullContent += text;
               const parts = text.split(/(\s+)/);
               for (const part of parts) {
                 if (part) {
@@ -119,6 +123,8 @@ export class GeminiProvider implements ILlmProvider {
         }
       }
     }
+
+    return { role: "assistant", content: fullContent };
   }
 
   private formatConversation(conversation: ChatMessage[]): { role: string; parts: { text: string }[] }[] {

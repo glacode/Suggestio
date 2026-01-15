@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, expect } from "@jest/globals";
 import { ChatResponder } from "../../src/chat/chatResponder.js";
-import { IChatHistoryManager, IPrompt, Config, IProviderConfig, ILlmProvider } from "../../src/types.js";
+import { IChatHistoryManager, IPrompt, Config, IProviderConfig, ILlmProvider, ChatMessage, ToolDefinition } from "../../src/types.js";
 import { ChatPrompt } from "../../src/chat/chatPrompt.js";
 import { ChatHistoryManager } from "../../src/chat/chatHistoryManager.js";
 
@@ -15,16 +15,17 @@ class FakeProvider implements ILlmProvider {
         this.responses = responses;
     }
 
-    async query(_prompt: IPrompt): Promise<string | null> {
-        return this.responses[this.callCount++];
+    async query(_prompt: IPrompt, _tools?: ToolDefinition[]): Promise<ChatMessage | null> {
+        const content = this.responses[this.callCount++];
+        if (content === undefined) { return null; }
+        return { role: "assistant", content };
     }
 
-    async queryStream(_prompt: IPrompt, onToken: (token: string) => void): Promise<void> {
-        const response = this.responses[this.callCount++];
-        if (response) {
-            onToken(response);
-        }
-        return Promise.resolve();
+    async queryStream(_prompt: IPrompt, onToken: (token: string) => void, _tools?: ToolDefinition[]): Promise<ChatMessage | null> {
+        const content = this.responses[this.callCount++];
+        if (content === undefined) { return null; }
+        onToken(content);
+        return { role: "assistant", content };
     }
 }
 

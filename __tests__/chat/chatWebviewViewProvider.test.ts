@@ -201,7 +201,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const chatHistory: ChatHistory = promptsSent[0].generateChatHistory();
     expect(chatHistory.length).toBe(2);
 
-    expect(chatHistory[0]).toEqual({ role: 'system', content: 'You are a code assistant\nCONTEXT' });
+    expect(chatHistory[0]).toEqual({ role: 'system', content: 'You are a code assistant. You can use tools to interact with the workspace.\nCONTEXT' });
     expect(chatHistory[1]).toEqual({ role: 'user', content: 'hello' });
 
   });

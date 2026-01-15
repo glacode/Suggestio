@@ -1,9 +1,14 @@
 import fetch from "node-fetch";
 import { log } from "../logger.js";
-import { ChatMessage, IAnonymizer, IPrompt, ILlmProvider } from "../types.js";
+import { ChatMessage, IAnonymizer, IPrompt, ILlmProvider, ToolDefinition, ToolCall } from "../types.js";
 
 type OpenAIResponse = {
-  choices?: { message?: { content?: string } }[];
+  choices?: {
+    message?: {
+      content?: string;
+      tool_calls?: ToolCall[];
+    };
+  }[];
 };
 
 export class OpenAICompatibleProvider implements ILlmProvider {
@@ -26,22 +31,38 @@ export class OpenAICompatibleProvider implements ILlmProvider {
 
   private prepareMessages(
     conversation: ChatMessage[]
-  ): { role: string; content: string }[] {
+  ): any[] {
     return conversation.map((message) => {
       const role = message.role;
 
-      const content =
-        this.anonymizer && message.role === "user"
-          ? this.anonymizer.anonymize(message.content)
-          : message.content;
+      let content = message.content;
+      if (this.anonymizer && message.role === "user") {
+        content = this.anonymizer.anonymize(message.content);
+      }
 
-      return { role, content };
+      const msg: any = { role, content };
+      if (message.tool_calls) {
+        msg.tool_calls = message.tool_calls;
+      }
+      if (message.tool_call_id) {
+        msg.tool_call_id = message.tool_call_id;
+      }
+      return msg;
     });
   }
 
-  async query(prompt: IPrompt): Promise<string | null> {
+  async query(prompt: IPrompt, tools?: ToolDefinition[]): Promise<ChatMessage | null> {
     const conversation = prompt.generateChatHistory();
     const messages = this.prepareMessages(conversation);
+
+    const body: any = {
+      model: this.model,
+      messages: messages,
+      max_tokens: 10000,
+    };
+    if (tools && tools.length > 0) {
+      body.tools = tools.map(t => ({ type: 'function', function: t }));
+    }
 
     const response = await fetch(this.endpoint, {
       method: "POST",
@@ -49,37 +70,46 @@ export class OpenAICompatibleProvider implements ILlmProvider {
         Authorization: `Bearer ${this.apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        model: this.model,
-        messages: messages,
-        max_tokens: 10000,
-      }),
+      body: JSON.stringify(body),
     });
 
     const json = (await response.json()) as OpenAIResponse;
     log("Response:" + JSON.stringify(json, null, 2));
 
-    let content = json.choices?.[0]?.message?.content || null;
+    const choice = json.choices?.[0]?.message;
+    if (!choice) {
+      return null;
+    }
+
+    let content = choice.content || "";
     if (content && this.anonymizer) {
       content = this.anonymizer.deanonymize(content);
     }
 
-    return content;
+    return {
+      role: "assistant",
+      content,
+      tool_calls: choice.tool_calls
+    };
   }
 
   async queryStream(
     prompt: IPrompt,
-    onToken: (token: string) => void
-  ): Promise<void> {
+    onToken: (token: string) => void,
+    tools?: ToolDefinition[]
+  ): Promise<ChatMessage | null> {
     const conversation = prompt.generateChatHistory();
     const messages = this.prepareMessages(conversation);
 
-    const requestBody = {
+    const requestBody: any = {
       model: this.model,
       messages: messages,
       max_tokens: 10000,
       stream: true,
     };
+    if (tools && tools.length > 0) {
+      requestBody.tools = tools.map(t => ({ type: 'function', function: t }));
+    }
 
     log(`OpenAI Request Body: ${JSON.stringify(requestBody, null, 2)}`);
 
@@ -103,46 +133,63 @@ export class OpenAICompatibleProvider implements ILlmProvider {
 
     let streamingDeanonymizer;
     if (this.anonymizer) {
-        streamingDeanonymizer = this.anonymizer.createStreamingDeanonymizer();
+      streamingDeanonymizer = this.anonymizer.createStreamingDeanonymizer();
     }
+
+    let fullContent = "";
+    let toolCalls: ToolCall[] = [];
 
     let buffer = "";
     for await (const chunk of response.body) {
       buffer += chunk.toString();
       const lines = buffer.split("\n");
-      buffer = lines.pop() || ""; // Keep the last, possibly incomplete line in the buffer
+      buffer = lines.pop() || "";
 
       for (const line of lines) {
         if (line.startsWith("data: ")) {
-          const data = line.substring(6).trim(); // Use trim() to be safe
+          const data = line.substring(6).trim();
           if (data === "[DONE]") {
-             if (streamingDeanonymizer) {
-                 const remaining = streamingDeanonymizer.flush();
-                 if (remaining) {
-                     onToken(remaining);
-                 }
-             }
-            return;
+            if (streamingDeanonymizer) {
+              const remaining = streamingDeanonymizer.flush();
+              if (remaining) {
+                fullContent += remaining;
+                onToken(remaining);
+              }
+            }
+            return { role: "assistant", content: fullContent, tool_calls: toolCalls.length > 0 ? toolCalls : undefined };
           }
           try {
             const json = JSON.parse(data);
-            const token = json.choices?.[0]?.delta?.content;
-            if (token) {
-              // If a streaming deanonymizer is active, use it to process the incoming token.
-              // This is crucial for handling cases where anonymized placeholders (e.g., "ANON_0")
-              // might be split across multiple incoming tokens from the LLM stream.
-              // The `process` method buffers tokens and releases deanonymized text
-              // only when a full placeholder is recognized or non-sensitive text is confirmed.
+            const delta = json.choices?.[0]?.delta;
+            if (!delta) { continue; }
+
+            if (delta.content) {
+              const token = delta.content;
               if (streamingDeanonymizer) {
                 const { processed } = streamingDeanonymizer.process(token);
-                // `processed` contains any deanonymized or confirmed text that is ready to be emitted.
-                // The `buffer` (not used here directly) holds partial placeholder matches.
                 if (processed) {
-                    onToken(processed);
+                  fullContent += processed;
+                  onToken(processed);
                 }
               } else {
-                // If no anonymizer is configured, pass the token directly to the consumer.
+                fullContent += token;
                 onToken(token);
+              }
+            }
+
+            if (delta.tool_calls) {
+              for (const tc of delta.tool_calls) {
+                if (tc.index === undefined) { continue; }
+                if (!toolCalls[tc.index]) {
+                  toolCalls[tc.index] = {
+                    id: tc.id || "",
+                    type: "function",
+                    function: { name: "", arguments: "" }
+                  };
+                }
+                if (tc.id) { toolCalls[tc.index].id = tc.id; }
+                if (tc.function?.name) { toolCalls[tc.index].function.name += tc.function.name; }
+                if (tc.function?.arguments) { toolCalls[tc.index].function.arguments += tc.function.arguments; }
               }
             }
           } catch (e) {
@@ -151,5 +198,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
         }
       }
     }
+
+    return { role: "assistant", content: fullContent, tool_calls: toolCalls.length > 0 ? toolCalls : undefined };
   }
 }

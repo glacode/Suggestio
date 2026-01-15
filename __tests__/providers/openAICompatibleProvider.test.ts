@@ -79,7 +79,7 @@ describe("OpenAICompatibleProvider", () => {
     );
     const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
     const response = await provider.query(prompt);
-    expect(response).toBe("  Hello World  ");
+    expect(response).toEqual({ role: "assistant", content: "  Hello World  ", tool_calls: undefined });
   });
 
   it("should get a streamed response from the queryStream method", async () => {
@@ -90,10 +90,11 @@ describe("OpenAICompatibleProvider", () => {
     );
     const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
     const tokens: string[] = [];
-    await provider.queryStream(prompt, (token: string) => {
+    const response = await provider.queryStream(prompt, (token: string) => {
       tokens.push(token);
     });
     expect(tokens).toEqual(["Hello", " World"]);
+    expect(response).toEqual({ role: "assistant", content: "Hello World", tool_calls: undefined });
   });
 
   describe("with anonymizer", () => {
@@ -145,7 +146,7 @@ describe("OpenAICompatibleProvider", () => {
         { role: "user", content: "this is a secret" },
       ]);
       const response = await provider.query(prompt);
-      expect(response).toBe("ok, I will keep the secret safe");
+      expect(response).toEqual({ role: "assistant", content: "ok, I will keep the secret safe", tool_calls: undefined });
     });
 
     it("should deanonymize the streamed response from queryStream", async () => {

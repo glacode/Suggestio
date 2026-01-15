@@ -2,7 +2,7 @@ import { ChatPrompt } from '../../src/chat/chatPrompt.js';
 import { ChatHistory, ChatMessage } from '../../src/types.js';
 
 describe('ChatPrompt', () => {
-  const SYSTEM_PROMPT_CONTENT = "You are a code assistant";
+  const SYSTEM_PROMPT_CONTENT = "You are a code assistant. You can use tools to interact with the workspace.";
   const INITIAL_SYSTEM_MESSAGE: ChatMessage = { role: "system", content: SYSTEM_PROMPT_CONTENT };
 
   it('should create a system prompt if conversation is empty', () => {

@@ -2,7 +2,7 @@ import { ChatHistory, ChatMessage, IPrompt } from "../types.js";
 
 const SYSTEM_PROMPT: ChatMessage = {
   role: "system",
-  content: "You are a code assistant",
+  content: "You are a code assistant. You can use tools to interact with the workspace.",
 };
 
 /**

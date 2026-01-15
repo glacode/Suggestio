@@ -34,7 +34,7 @@ const mockPosition: IPosition = { line: 0, character: 0 };
 describe('provideInlineCompletionItems', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        (mockProvider as any).query.mockResolvedValue(' suggestion ');
+        (mockProvider as any).query.mockResolvedValue({ role: 'assistant', content: ' suggestion ' });
         (mockIgnoreManager as any).shouldIgnore.mockResolvedValue(false);
     });
 

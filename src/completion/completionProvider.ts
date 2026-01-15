@@ -42,19 +42,19 @@ function createDebounceCallback(
     // Call the provider's query method
     provider
       .query(prompt)
-      .then(async (completionText) => {
+      .then(async (response) => {
         if (handleCancellation(token, resolve, "after")) {
           return;
         }
 
-        if (!completionText) {
+        if (!response || !response.content) {
           resolve({ items: [] });
           return;
         }
 
         // Wrap completionText into InlineCompletionItems
         const item = { 
-          insertText: completionText, 
+          insertText: response.content, 
           range: { start: position, end: position } 
         };
         log("✅ Suggestio: Returning completion to VS Code");
