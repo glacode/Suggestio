@@ -222,4 +222,85 @@ describe("ChatResponder Tool Calling", () => {
             tool_call_id: "call_789"
         }));
     });
+
+    it("processes multiple tool calls in a single response", async () => {
+        const toolCall1: ToolCall = {
+            id: "call_A",
+            type: "function",
+            function: {
+                name: "toolA",
+                arguments: JSON.stringify({ arg: "valA" })
+            }
+        };
+
+        const toolCall2: ToolCall = {
+            id: "call_B",
+            type: "function",
+            function: {
+                name: "toolB",
+                arguments: JSON.stringify({ arg: "valB" })
+            }
+        };
+
+        const toolResponse: ChatMessage = {
+            role: "assistant",
+            content: "",
+            tool_calls: [toolCall1, toolCall2]
+        };
+
+        const finalResponse: ChatMessage = {
+            role: "assistant",
+            content: "Processed both."
+        };
+
+        const provider = new SequentialFakeProvider([toolResponse, finalResponse]);
+
+        const mockToolA: ToolImplementation = {
+            definition: { name: "toolA", description: "Tool A", parameters: { type: "object", properties: {} } },
+            execute: jest.fn(async () => "Result A")
+        };
+
+        const mockToolB: ToolImplementation = {
+            definition: { name: "toolB", description: "Tool B", parameters: { type: "object", properties: {} } },
+            execute: jest.fn(async () => "Result B")
+        };
+
+        const handler = new ChatResponder(
+            {
+                activeProvider: "FAKE",
+                llmProviderForChat: provider,
+                providers: { FAKE: { model: "fake-model", apiKey: "fake-key" } as IProviderConfig },
+                anonymizer: { enabled: false, words: [] }
+            } as MockConfig,
+            logger,
+            mockChatHistoryManager,
+            [mockToolA, mockToolB]
+        );
+
+        let streamedContent = "";
+        await handler.fetchStreamChatResponse(mockPrompt, (token) => { streamedContent += token; });
+
+        expect(streamedContent).toBe("Processed both.");
+        expect(mockToolA.execute).toHaveBeenCalledWith({ arg: "valA" });
+        expect(mockToolB.execute).toHaveBeenCalledWith({ arg: "valB" });
+
+        // Verify history: 
+        // 1. Assistant message with 2 tool calls
+        // 2. Tool result A
+        // 3. Tool result B
+        // 4. Final assistant response
+        expect(mockChatHistory.length).toBe(4);
+        expect(mockChatHistory[0]).toEqual(toolResponse);
+        expect(mockChatHistory[1]).toEqual({
+            role: "tool",
+            content: "Result A",
+            tool_call_id: "call_A"
+        });
+        expect(mockChatHistory[2]).toEqual({
+            role: "tool",
+            content: "Result B",
+            tool_call_id: "call_B"
+        });
+        expect(mockChatHistory[3]).toEqual(finalResponse);
+    });
 });
