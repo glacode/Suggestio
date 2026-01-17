@@ -1,7 +1,9 @@
 import { Config, ToolImplementation } from "../types.js";
-import type { IChatResponder, IChatHistoryManager, IPrompt, ChatMessage } from "../types.js";
+import type { IChatResponder, IChatHistoryManager, IPrompt, ChatMessage, ToolCall } from "../types.js";
 
 export class ChatResponder implements IChatResponder {
+  private readonly MAX_ITERATIONS = 5;
+
   constructor(
     private config: Config,
     private log: (message: string) => void,
@@ -9,24 +11,21 @@ export class ChatResponder implements IChatResponder {
     private tools: ToolImplementation[] = []
   ) { }
 
+  /**
+   * Fetches a streaming chat response, handling potential tool calls recursively.
+   */
   async fetchStreamChatResponse(prompt: IPrompt, onToken: (token: string) => void): Promise<void> {
     try {
       this.log(`Fetching stream completion from ${this.config.activeProvider}...`);
       
       const toolDefinitions = this.tools.map(t => t.definition);
-      
       let currentPrompt = prompt;
       let iterations = 0;
-      const MAX_ITERATIONS = 5;
 
-      while (iterations < MAX_ITERATIONS) {
+      while (iterations < this.MAX_ITERATIONS) {
         iterations++;
         
-        const response: ChatMessage | null = await this.config.llmProviderForChat!.queryStream(
-            currentPrompt, 
-            onToken, 
-            toolDefinitions.length > 0 ? toolDefinitions : undefined
-        );
+        const response: ChatMessage | null = await this.queryLLM(currentPrompt, onToken, toolDefinitions);
 
         if (!response) {
             break;
@@ -34,45 +33,13 @@ export class ChatResponder implements IChatResponder {
 
         this.chatHistoryManager.addMessage(response);
 
-        if (response.tool_calls && response.tool_calls.length > 0) {
-            this.log(`Assistant requested ${response.tool_calls.length} tool calls.`);
-            
-            for (const toolCall of response.tool_calls) {
-                const tool = this.tools.find(t => t.definition.name === toolCall.function.name);
-                if (tool) {
-                    this.log(`Executing tool: ${toolCall.function.name}`);
-                    try {
-                        const args = JSON.parse(toolCall.function.arguments);
-                        const result = await tool.execute(args);
-                        this.chatHistoryManager.addMessage({
-                            role: 'tool',
-                            content: result,
-                            tool_call_id: toolCall.id
-                        });
-                    } catch (e: any) {
-                        this.log(`Error executing tool: ${e.message}`);
-                        this.chatHistoryManager.addMessage({
-                            role: 'tool',
-                            content: `Error: ${e.message}`,
-                            tool_call_id: toolCall.id
-                        });
-                    }
-                } else {
-                    this.log(`Tool not found: ${toolCall.function.name}`);
-                    this.chatHistoryManager.addMessage({
-                        role: 'tool',
-                        content: `Error: Tool ${toolCall.function.name} not found.`,
-                        tool_call_id: toolCall.id
-                    });
-                }
-            }
+        if (this.shouldProcessToolCalls(response)) {
+            await this.processToolCalls(response.tool_calls!);
             
             // After tool results are added, we need to query the LLM again to get the final answer.
             // We create a new prompt with the updated history.
             // Note: ChatPrompt constructor handles system prompt and context, so we just pass the history.
-            currentPrompt = {
-                generateChatHistory: () => this.chatHistoryManager.getChatHistory()
-            };
+            currentPrompt = this.createFollowUpPrompt();
             this.log("Re-querying LLM with tool results...");
             continue;
         }
@@ -83,8 +50,106 @@ export class ChatResponder implements IChatResponder {
 
       this.log("Stream completion finished.");
     } catch (err: any) {
+      this.handleError(err);
+    }
+  }
+
+  /**
+   * Queries the LLM provider for a response.
+   */
+  private async queryLLM(prompt: IPrompt, onToken: (token: string) => void, toolDefinitions: any[]): Promise<ChatMessage | null> {
+      return await this.config.llmProviderForChat!.queryStream(
+          prompt, 
+          onToken, 
+          toolDefinitions.length > 0 ? toolDefinitions : undefined
+      );
+  }
+
+  /**
+   * Checks if the response contains tool calls that need processing.
+   */
+  private shouldProcessToolCalls(response: ChatMessage): boolean {
+      return !!(response.tool_calls && response.tool_calls.length > 0);
+  }
+
+  /**
+   * Iterates over tool calls and executes them.
+   */
+  private async processToolCalls(toolCalls: ToolCall[]): Promise<void> {
+      this.log(`Assistant requested ${toolCalls.length} tool calls.`);
+      
+      for (const toolCall of toolCalls) {
+          await this.executeTool(toolCall);
+      }
+  }
+
+  /**
+   * Executes a single tool and records the result.
+   */
+  private async executeTool(toolCall: ToolCall): Promise<void> {
+      const tool = this.tools.find(t => t.definition.name === toolCall.function.name);
+      if (tool) {
+          await this.runTool(tool, toolCall);
+      } else {
+          this.handleToolNotFound(toolCall);
+      }
+  }
+
+  /**
+   * Runs the tool logic and handles execution errors.
+   */
+  private async runTool(tool: ToolImplementation, toolCall: ToolCall): Promise<void> {
+      this.log(`Executing tool: ${toolCall.function.name}`);
+      try {
+          const args = JSON.parse(toolCall.function.arguments);
+          const result = await tool.execute(args);
+          this.recordToolResult(toolCall.id, result);
+      } catch (e: any) {
+          this.handleToolError(toolCall.id, e);
+      }
+  }
+
+  /**
+   * Handles the case where a requested tool is not found.
+   */
+  private handleToolNotFound(toolCall: ToolCall): void {
+      this.log(`Tool not found: ${toolCall.function.name}`);
+      this.recordToolResult(toolCall.id, `Error: Tool ${toolCall.function.name} not found.`);
+  }
+
+  /**
+   * Handles errors that occur during tool execution.
+   */
+  private handleToolError(toolCallId: string, error: any): void {
+      this.log(`Error executing tool: ${error.message}`);
+      this.recordToolResult(toolCallId, `Error: ${error.message}`);
+  }
+
+  /**
+   * Adds the tool execution result (or error) to the chat history.
+   */
+  private recordToolResult(toolCallId: string, content: string): void {
+      this.chatHistoryManager.addMessage({
+          role: 'tool',
+          content: content,
+          tool_call_id: toolCallId
+      });
+  }
+
+  /**
+   * Creates a prompt for the follow-up query after tool execution.
+   */
+  private createFollowUpPrompt(): IPrompt {
+      return {
+          generateChatHistory: () => this.chatHistoryManager.getChatHistory()
+      };
+  }
+
+  /**
+   * Logs and re-throws the error.
+   */
+  private handleError(err: any): void {
       this.log(`Error fetching stream completion: ${err.message}`);
       throw err;
-    }
   }
 }
