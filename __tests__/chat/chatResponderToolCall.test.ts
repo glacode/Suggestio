@@ -303,4 +303,91 @@ describe("ChatResponder Tool Calling", () => {
         });
         expect(mockChatHistory[3]).toEqual(finalResponse);
     });
+
+    it("handles multiple consecutive iterations of tool calls", async () => {
+        // Round 1: Assistant requests tool 1
+        const toolCall1: ToolCall = {
+            id: "call_1",
+            type: "function",
+            function: { name: "tool1", arguments: "{}" }
+        };
+        const response1: ChatMessage = {
+            role: "assistant",
+            content: "Step 1",
+            tool_calls: [toolCall1]
+        };
+
+        // Round 2: Assistant requests tool 2
+        const toolCall2: ToolCall = {
+            id: "call_2",
+            type: "function",
+            function: { name: "tool2", arguments: "{}" }
+        };
+        const response2: ChatMessage = {
+            role: "assistant",
+            content: "Step 2",
+            tool_calls: [toolCall2]
+        };
+
+        // Round 3: Final response
+        const finalResponse: ChatMessage = {
+            role: "assistant",
+            content: "Done."
+        };
+
+        const provider = new SequentialFakeProvider([response1, response2, finalResponse]);
+
+        const mockTool1: ToolImplementation = {
+            definition: { name: "tool1", description: "Tool 1", parameters: { type: "object", properties: {} } },
+            execute: jest.fn(async () => "Result 1")
+        };
+
+        const mockTool2: ToolImplementation = {
+            definition: { name: "tool2", description: "Tool 2", parameters: { type: "object", properties: {} } },
+            execute: jest.fn(async () => "Result 2")
+        };
+
+        const handler = new ChatResponder(
+            {
+                activeProvider: "FAKE",
+                llmProviderForChat: provider,
+                providers: { FAKE: { model: "fake-model", apiKey: "fake-key" } as IProviderConfig },
+                anonymizer: { enabled: false, words: [] }
+            } as MockConfig,
+            logger,
+            mockChatHistoryManager,
+            [mockTool1, mockTool2]
+        );
+
+        let streamedContent = "";
+        await handler.fetchStreamChatResponse(mockPrompt, (token) => { streamedContent += token; });
+
+        expect(streamedContent).toBe("Step 1Step 2Done.");
+        expect(mockTool1.execute).toHaveBeenCalled();
+        expect(mockTool2.execute).toHaveBeenCalled();
+        
+        // Verify flow:
+        // 1. Assistant (Tool 1)
+        // 2. Tool Result 1
+        // 3. Assistant (Tool 2)
+        // 4. Tool Result 2
+        // 5. Final Assistant
+        expect(mockChatHistory.length).toBe(5);
+        
+        expect(mockChatHistory[0]).toEqual(response1);
+        expect(mockChatHistory[1]).toEqual({
+            role: "tool",
+            content: "Result 1",
+            tool_call_id: "call_1"
+        });
+
+        expect(mockChatHistory[2]).toEqual(response2);
+        expect(mockChatHistory[3]).toEqual({
+            role: "tool",
+            content: "Result 2",
+            tool_call_id: "call_2"
+        });
+
+        expect(mockChatHistory[4]).toEqual(finalResponse);
+    });
 });
