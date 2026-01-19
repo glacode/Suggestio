@@ -2,8 +2,6 @@ import { Config, ToolImplementation } from "../types.js";
 import type { IChatHistoryManager, IPrompt, ChatMessage, ToolCall } from "../types.js";
 
 export class Agent {
-    private readonly MAX_ITERATIONS = 5;
-
     constructor(
         private config: Config,
         private log: (message: string) => void,
@@ -15,8 +13,9 @@ export class Agent {
         const toolDefinitions = this.tools.map(t => t.definition);
         let currentPrompt = prompt;
         let iterations = 0;
+        const maxIterations = this.config.maxAgentIterations ?? 5;
 
-        while (iterations < this.MAX_ITERATIONS) {
+        while (iterations < maxIterations) {
             iterations++;
 
             const response: ChatMessage | null = await this.queryLLM(currentPrompt, onToken, toolDefinitions);

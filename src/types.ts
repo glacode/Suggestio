@@ -710,6 +710,7 @@ export interface Config {
   anonymizerInstance?: IAnonymizer;
   llmProviderForInlineCompletion?: ILlmProvider;
   llmProviderForChat?: ILlmProvider;
+  maxAgentIterations?: number;
 }
 
 export interface ConfigContainer {

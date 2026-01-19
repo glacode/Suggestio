@@ -193,7 +193,17 @@
                 "fileMatch": "suggestio.config.json",
                 "url": "./resources/config.schema.json"
             }
-        ]
+        ],
+        "configuration": {
+            "title": "Suggestio",
+            "properties": {
+                "suggestio.maxAgentIterations": {
+                    "type": "number",
+                    "default": 5,
+                    "description": "Maximum number of iterations the agent can perform for a single request."
+                }
+            }
+        }
     },
     "scripts": {
         "vscode:prepublish": "npm run package",

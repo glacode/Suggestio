@@ -68,8 +68,13 @@ class ConfigProcessor {
     /**
      * Process raw config JSON and resolves API keys using a secret manager.
      */
-    public async processConfig(rawJson: string, secretManager: SecretManager, eventBus: EventEmitter): Promise<ConfigContainer> {
+    public async processConfig(rawJson: string, secretManager: SecretManager, eventBus: EventEmitter, overrides?: Partial<Config>): Promise<ConfigContainer> {
         const config: Config = JSON.parse(rawJson);
+
+        if (overrides) {
+            Object.assign(config, overrides);
+        }
+
         this.init(config, secretManager, eventBus);
 
         await this.updateProviders(config);
