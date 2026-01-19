@@ -1,30 +1,7 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
-import { IChatHistoryManager, ChatMessage, IPrompt, ILlmProvider, ToolDefinition, ToolImplementation, ToolCall } from "../../src/types.js";
-
-class FakeProvider implements ILlmProvider {
-    private callCount = 0;
-    constructor(private responses: (ChatMessage | null)[]) { }
-
-    async query(_prompt: IPrompt, _tools?: ToolDefinition[]): Promise<ChatMessage | null> {
-        return this.getNextResponse();
-    }
-
-    async queryStream(_prompt: IPrompt, onToken: (token: string) => void, _tools?: ToolDefinition[]): Promise<ChatMessage | null> {
-        const response = this.getNextResponse();
-        if (response && response.content) {
-            onToken(response.content);
-        }
-        return response || null;
-    }
-
-    private getNextResponse(): ChatMessage | null {
-        if (this.callCount < this.responses.length) {
-            return this.responses[this.callCount++];
-        }
-        return null;
-    }
-}
+import { IChatHistoryManager, ChatMessage, IPrompt, ToolImplementation, ToolCall } from "../../src/types.js";
+import { FakeProvider } from "../testUtils.js";
 
 describe("Agent", () => {
     let logs: string[];

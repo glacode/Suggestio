@@ -1,32 +1,9 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { ChatResponder } from "../../src/chat/chatResponder.js";
-import { IChatHistoryManager, ChatMessage, IPrompt, ChatHistory, Config, IProviderConfig, ILlmProvider, ToolDefinition, ToolImplementation, ToolCall } from "../../src/types.js";
+import { IChatHistoryManager, ChatMessage, IPrompt, ChatHistory, Config, IProviderConfig, ToolImplementation, ToolCall } from "../../src/types.js";
+import { FakeProvider } from "../testUtils.js";
 
 interface MockConfig extends Pick<Config, 'activeProvider' | 'llmProviderForChat' | 'providers' | 'anonymizer'> { }
-
-class SequentialFakeProvider implements ILlmProvider {
-    private callCount = 0;
-    constructor(private responses: (ChatMessage | null)[]) { }
-
-    async query(_prompt: IPrompt, _tools?: ToolDefinition[]): Promise<ChatMessage | null> {
-        return this.getNextResponse();
-    }
-
-    async queryStream(_prompt: IPrompt, onToken: (token: string) => void, _tools?: ToolDefinition[]): Promise<ChatMessage | null> {
-        const response = this.getNextResponse();
-        if (response && response.content) {
-            onToken(response.content);
-        }
-        return response;
-    }
-
-    private getNextResponse(): ChatMessage | null {
-        if (this.callCount < this.responses.length) {
-            return this.responses[this.callCount++];
-        }
-        return null;
-    }
-}
 
 describe("ChatResponder Tool Calling Integration", () => {
     let logs: string[];
@@ -74,7 +51,7 @@ describe("ChatResponder Tool Calling Integration", () => {
             content: "It is 12:00 PM"
         };
 
-        const provider = new SequentialFakeProvider([toolResponse, finalResponse]);
+        const provider = new FakeProvider([toolResponse, finalResponse]);
 
         const mockTool: ToolImplementation = {
             definition: {
