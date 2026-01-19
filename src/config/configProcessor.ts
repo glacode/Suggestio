@@ -20,7 +20,7 @@ class ConfigProcessor {
         this._config = config;
         this._secretManager = secretManager;
         this._eventBus = eventBus;
-        
+
         // Remove existing listeners to avoid duplicates if init is called multiple times
         this._eventBus.removeAllListeners('modelChanged');
         this._eventBus.on('modelChanged', (modelName: string) => {
@@ -67,6 +67,12 @@ class ConfigProcessor {
 
     /**
      * Process raw config JSON and resolves API keys using a secret manager.
+     * @param rawJson The raw JSON string from the configuration file.
+     * @param secretManager The secret manager to resolve API keys.
+     * @param eventBus The event bus for communication between components.
+     * @param overrides Optional partial configuration coming from standard VSCode extension settings.
+     *                  These can override existing properties from the JSON config or provide
+     *                  additional properties (e.g., maxAgentIterations) not present in the config file.
      */
     public async processConfig(rawJson: string, secretManager: SecretManager, eventBus: EventEmitter, overrides?: Partial<Config>): Promise<ConfigContainer> {
         const config: Config = JSON.parse(rawJson);
@@ -84,7 +90,7 @@ class ConfigProcessor {
 
     private async updateProviders(config: Config) {
         if (!this._eventBus) {
-             throw new Error('EventBus is not initialized');
+            throw new Error('EventBus is not initialized');
         }
 
         const { activeProvider, providers } = config;
