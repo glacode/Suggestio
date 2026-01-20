@@ -11,7 +11,7 @@
  * `UriLike` is a minimal type representing a Uniform Resource Identifier (URI).
  * It abstracts `vscode.Uri` to avoid runtime dependencies on the `vscode` module.
  */
-export interface UriLike {
+export interface IUriLike {
   /**
    * A file system path, like '/Users/name/project/file.txt'.
    * Optional because some URIs (e.g., 'http://') don't have a file system path.
@@ -35,7 +35,7 @@ export interface IExtensionContextMinimal {
    * The URI of the directory where the extension is installed.
    * Used to resolve paths to resources like icons, templates, etc.
    */
-  extensionUri: UriLike;
+  extensionUri: IUriLike;
 }
 
 /**
@@ -55,7 +55,7 @@ export interface IVscodeApiLocal {
      * @param paths The path segments to join.
      * @returns A new URI representing the combined path.
      */
-    joinPath(base: UriLike, ...paths: string[]): UriLike;
+    joinPath(base: IUriLike, ...paths: string[]): IUriLike;
   };
 }
 
@@ -75,7 +75,7 @@ export interface IWebviewOptions {
    * to load resources (like images, scripts, stylesheets) from.
    * This is a crucial security feature to prevent unauthorized file access.
    */
-  localResourceRoots?: readonly UriLike[];
+  localResourceRoots?: readonly IUriLike[];
 }
 
 /**
@@ -108,7 +108,7 @@ export interface IWebview {
    * @param uri The local URI to convert.
    * @returns A URI that can be used within the webview.
    */
-  asWebviewUri(uri: UriLike): UriLike;
+  asWebviewUri(uri: IUriLike): IUriLike;
 
   /**
    * Analogous to `vscode.Webview.onDidReceiveMessage`.
@@ -344,11 +344,11 @@ export interface ILlmProviderAccessor {
  */
 export type GetChatWebviewContent = (args: {
   /** The extension's base URI. */
-  extensionUri: UriLike;
+  extensionUri: IUriLike;
   /** URI for the main JavaScript bundle of the webview. */
-  scriptUri: UriLike;
+  scriptUri: IUriLike;
   /** URI for the syntax highlighting CSS. */
-  highlightCssUri: UriLike;
+  highlightCssUri: IUriLike;
   /** List of available models. */
   models: string[];
   /** The currently active model. */
@@ -368,7 +368,7 @@ export interface IActiveTextEditorProvider {
     /** The document associated with the active editor. */
     document: {
       /** The URI of the document. */
-      uri: UriLike;
+      uri: IUriLike;
       /**
        * Retrieves the full text of the document.
        * @returns The document text.
@@ -596,7 +596,7 @@ export interface ITextDocument {
   /**
    * The associated uri for this document.
    */
-  readonly uri: UriLike;
+  readonly uri: IUriLike;
 
   /**
    * The identifier of the programming language associated with this document.

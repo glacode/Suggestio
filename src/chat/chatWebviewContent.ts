@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import type { GetChatWebviewContent, UriLike } from '../types.js';
+import type { GetChatWebviewContent, IUriLike } from '../types.js';
 
 export interface IChatWebviewContentArgs {
-    extensionUri: UriLike;
-    scriptUri: UriLike;
-    highlightCssUri: UriLike;
+    extensionUri: IUriLike;
+    scriptUri: IUriLike;
+    highlightCssUri: IUriLike;
     models: string[];
     activeModel: string;
 }

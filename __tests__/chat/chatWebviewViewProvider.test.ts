@@ -5,7 +5,7 @@
 // Import necessary types from the chat module. These define the shapes of objects
 // like URIs, VS Code API, providers, webviews, and messages.
 import type {
-  UriLike, // A type representing a URI (Uniform Resource Identifier), similar to a file path.
+  IUriLike, // A type representing a URI (Uniform Resource Identifier), similar to a file path.
   IVscodeApiLocal, // A type for a local, faked VS Code API.
   ILlmProviderAccessor, // A type for accessing language model (LLM) providers.
   IChatResponder, // A type for handling chat logic (sending/receiving messages).
@@ -35,7 +35,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   it('sets up webview, sets html and handles messages (tokens + completion)', async () => {
     // `extensionUri` represents the base path of our extension.
     // We're faking it with a simple object that has a `fsPath` property.
-    const extensionUri: UriLike = { fsPath: '/ext' };
+    const extensionUri: IUriLike = { fsPath: '/ext' };
 
     const eventBus = new EventEmitter();
 
@@ -46,7 +46,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       Uri: {
         // This fake `joinPath` just returns an object showing what it received,
         // rather than creating an actual URI.
-        joinPath: (base: UriLike, ...paths: string[]) => ({ base, paths } as UriLike)
+        joinPath: (base: IUriLike, ...paths: string[]) => ({ base, paths } as IUriLike)
       }
     };
 
@@ -70,7 +70,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       options: undefined, // Webview options will be set by the provider.
       // `asWebviewUri` is a fake function that converts a local URI into a webview-compatible URI.
       // It simply serializes the URI for testing purposes.
-      asWebviewUri: (uri: UriLike) => `webview:${JSON.stringify(uri)}` as unknown as UriLike,
+      asWebviewUri: (uri: IUriLike) => `webview:${JSON.stringify(uri)}` as unknown as IUriLike,
       html: '', // This will hold the HTML content set by the provider.
       // `onDidReceiveMessage` is how the webview listens for messages *from* the webview (e.g., user input).
       // Here, we expose the `handler` function so our test can directly call it to simulate messages.
@@ -110,10 +110,10 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     // `receivedArgs` will capture the arguments passed to `getChatWebviewContent`.
     // We initialize it to `null` and expect it to be populated.
-    let receivedArgs: { extensionUri: UriLike; scriptUri: UriLike; highlightCssUri: UriLike; models: string[]; activeModel: string } | null = null;
+    let receivedArgs: { extensionUri: IUriLike; scriptUri: IUriLike; highlightCssUri: IUriLike; models: string[]; activeModel: string } | null = null;
     // `getChatWebviewContent` is a fake function that generates the HTML for the webview.
     // It captures its arguments and returns a simple HTML string for verification.
-    const getChatWebviewContent = (args: { extensionUri: UriLike; scriptUri: UriLike; highlightCssUri: UriLike; models: string[]; activeModel: string }) => {
+    const getChatWebviewContent = (args: { extensionUri: IUriLike; scriptUri: IUriLike; highlightCssUri: IUriLike; models: string[]; activeModel: string }) => {
       receivedArgs = args; // Store the arguments for assertion.
       return `HTML for ${args.models.join(',')}`; // Return a custom HTML string based on models.
     };
@@ -211,16 +211,16 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   // desired behavior is that chat history stores only the raw user message.
   // This test asserts the desired behavior and will fail until the code is fixed.
   it('does not add buildContext to chat history user messages', async () => {
-    const extensionUri: UriLike = { fsPath: '/ext' };
+    const extensionUri: IUriLike = { fsPath: '/ext' };
     const vscodeApi: IVscodeApiLocal = {
-      Uri: { joinPath: (b: UriLike, ...p: string[]) => ({ b, p } as UriLike) }
+      Uri: { joinPath: (b: IUriLike, ...p: string[]) => ({ b, p } as IUriLike) }
     };
 
     const providerAccessor: ILlmProviderAccessor = { getModels: () => [], getActiveModel: () => '' };
 
     const webview: IWebview & { __handler?: (msg: WebviewMessage) => void } = {
       options: undefined,
-      asWebviewUri: (uri: UriLike) => `webview:${JSON.stringify(uri)}` as unknown as UriLike,
+      asWebviewUri: (uri: IUriLike) => `webview:${JSON.stringify(uri)}` as unknown as IUriLike,
       html: '',
       onDidReceiveMessage: ((handler: (msg: WebviewMessage) => void): IDisposable => {
         webview.__handler = handler;
@@ -284,12 +284,12 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   // 3. Error reporting when `fetchStreamChatResponse` fails.
   it('emits modelChanged and calls clearHistory and reports errors', async () => {
     // Define a fake extension URI.
-    const extensionUri: UriLike = { fsPath: '/ext' };
+    const extensionUri: IUriLike = { fsPath: '/ext' };
     // Define a fake VS Code API, specifically `Uri.joinPath`.
     const vscodeApi: IVscodeApiLocal = {
       Uri: {
         // A simplified `joinPath` for testing.
-        joinPath: (b: UriLike, ...p: string[]) => ({ b, p } as UriLike)
+        joinPath: (b: IUriLike, ...p: string[]) => ({ b, p } as IUriLike)
       }
     };
 
@@ -304,7 +304,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // Fake `webview` implementation, similar to the previous test.
     const webview: IWebview & { __handler?: (msg: WebviewMessage) => void } = {
       options: undefined,
-      asWebviewUri: (uri: UriLike) => `webview:${JSON.stringify(uri)}` as unknown as UriLike,
+      asWebviewUri: (uri: IUriLike) => `webview:${JSON.stringify(uri)}` as unknown as IUriLike,
       html: '',
       onDidReceiveMessage: ((handler: (msg: WebviewMessage) => void): IDisposable => {
         webview.__handler = handler;
@@ -393,11 +393,11 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   // commands sent from the webview that it doesn't recognize.
   it('ignores unknown commands (no-op branch)', async () => {
     // Define a fake extension URI.
-    const extensionUri: UriLike = { fsPath: '/ext' };
+    const extensionUri: IUriLike = { fsPath: '/ext' };
     // Define a fake VS Code API, specifically `Uri.joinPath`.
     const vscodeApi: IVscodeApiLocal = {
       Uri: {
-        joinPath: (b: UriLike, ...p: string[]) => ({ b, p } as UriLike)
+        joinPath: (b: IUriLike, ...p: string[]) => ({ b, p } as IUriLike)
       }
     };
 
@@ -412,7 +412,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // Fake `webview` implementation, similar to previous tests.
     const webview: IWebview & { __handler?: (msg: WebviewMessage) => void } = {
       options: undefined,
-      asWebviewUri: (uri: UriLike) => `webview:${JSON.stringify(uri)}` as unknown as UriLike,
+      asWebviewUri: (uri: IUriLike) => `webview:${JSON.stringify(uri)}` as unknown as IUriLike,
       html: '',
       onDidReceiveMessage: ((handler: (msg: WebviewMessage) => void): IDisposable => {
         webview.__handler = handler;
@@ -478,14 +478,14 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   });
 
   it('anonymizes context if anonymizer is provided', async () => {
-    const extensionUri: UriLike = { fsPath: '/ext' };
+    const extensionUri: IUriLike = { fsPath: '/ext' };
     const vscodeApi: IVscodeApiLocal = {
-      Uri: { joinPath: (b: UriLike, ...p: string[]) => ({ b, p } as UriLike) }
+      Uri: { joinPath: (b: IUriLike, ...p: string[]) => ({ b, p } as IUriLike) }
     };
     const providerAccessor: ILlmProviderAccessor = { getModels: () => [], getActiveModel: () => '' };
     const webview: IWebview & { __handler?: (msg: WebviewMessage) => void } = {
       options: undefined,
-      asWebviewUri: (uri: UriLike) => `webview:${JSON.stringify(uri)}` as unknown as UriLike,
+      asWebviewUri: (uri: IUriLike) => `webview:${JSON.stringify(uri)}` as unknown as IUriLike,
       html: '',
       onDidReceiveMessage: ((handler: (msg: WebviewMessage) => void): IDisposable => {
         webview.__handler = handler;
