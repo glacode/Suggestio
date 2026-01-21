@@ -92,6 +92,31 @@
                 box-shadow: 0 0 0 1px var(--vscode-focusBorder);
             }
 
+            .chat-input textarea:disabled {
+                color: var(--vscode-disabledForeground);
+                opacity: 0.6;
+                cursor: not-allowed;
+            }
+
+            .input-wrapper.waiting {
+                opacity: 0.7;
+            }
+
+            .input-loading-indicator {
+                display: none;
+                gap: 3px;
+                align-items: center;
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                pointer-events: none;
+                z-index: 10;
+            }
+
+            .input-loading-indicator.visible {
+                display: flex;
+            }
+
             .chat-controls {
                 display: flex;
                 align-items: center;
@@ -264,6 +289,11 @@
             </div>
             <div class="chat-input">
                 <div class="input-wrapper">
+                    <div class="input-loading-indicator" id="inputLoadingIndicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
                     <textarea id="messageInput" placeholder="Type a request..."></textarea>
                     <div class="chat-controls">
                         <div id="modelSelector">
@@ -298,6 +328,36 @@
 
             let userMessageElement;
 
+            function disableInput() {
+                const input = document.getElementById('messageInput');
+                const wrapper = document.querySelector('.input-wrapper');
+                const sendIcon = document.querySelector('.send-icon');
+                const indicator = document.getElementById('inputLoadingIndicator');
+                
+                input.disabled = true;
+                input.placeholder = '';
+                wrapper.classList.add('waiting');
+                sendIcon.style.opacity = '0.5';
+                sendIcon.style.cursor = 'not-allowed';
+                sendIcon.style.pointerEvents = 'none';
+                indicator.classList.add('visible');
+            }
+
+            function enableInput() {
+                const input = document.getElementById('messageInput');
+                const wrapper = document.querySelector('.input-wrapper');
+                const sendIcon = document.querySelector('.send-icon');
+                const indicator = document.getElementById('inputLoadingIndicator');
+                
+                input.disabled = false;
+                input.placeholder = 'Type a request...';
+                wrapper.classList.remove('waiting');
+                sendIcon.style.opacity = '1';
+                sendIcon.style.cursor = 'pointer';
+                sendIcon.style.pointerEvents = 'auto';
+                indicator.classList.remove('visible');
+            }
+
             function sendMessage() {
                 const input = document.getElementById('messageInput');
                 const text = input.value.trim();
@@ -324,6 +384,9 @@
                     userMessageElement.scrollIntoView();
                 }
                 loadingMsg.scrollIntoView();
+                
+                // Disable input while processing
+                disableInput();
                 
                 vscode.postMessage({ command: 'sendMessage', text });
                 input.value = '';
@@ -373,6 +436,8 @@
                         indicator.remove();
                     }
                 }
+                // Re-enable input for next message
+                enableInput();
             }
 
             window.addEventListener('message', event => {
