@@ -1,6 +1,7 @@
 import { Config, ToolImplementation } from "../types.js";
 import type { IChatResponder, IChatHistoryManager, IPrompt } from "../types.js";
 import { Agent } from "../agent/agent.js";
+import { EventEmitter } from "events";
 
 export class ChatResponder implements IChatResponder {
     private agent: Agent;
@@ -9,9 +10,10 @@ export class ChatResponder implements IChatResponder {
         private config: Config,
         private log: (message: string) => void,
         private chatHistoryManager: IChatHistoryManager,
-        private tools: ToolImplementation[] = []
+        private tools: ToolImplementation[] = [],
+        eventBus?: EventEmitter
     ) {
-        this.agent = new Agent(config, log, this.chatHistoryManager, this.tools);
+        this.agent = new Agent(config, log, this.chatHistoryManager, this.tools, eventBus);
     }
 
     /**

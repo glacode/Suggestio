@@ -70,7 +70,8 @@ export async function activate(context: vscode.ExtensionContext) {
     configContainer.config,
     log,
     chatHistoryManager,
-    getTools(workspaceProvider, directoryProvider, path)
+    getTools(workspaceProvider, directoryProvider, path),
+    eventBus
   );
   const providerAccessor = {
     getModels: () => Object.values(configContainer.config.providers).map(p => p.model),

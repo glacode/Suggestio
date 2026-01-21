@@ -1,12 +1,14 @@
 import { Config, ToolImplementation } from "../types.js";
 import type { IChatHistoryManager, IPrompt, ChatMessage, ToolCall } from "../types.js";
+import { EventEmitter } from "events";
 
 export class Agent {
     constructor(
         private config: Config,
         private log: (message: string) => void,
         private chatHistoryManager: IChatHistoryManager,
-        private tools: ToolImplementation[] = []
+        private tools: ToolImplementation[] = [],
+        private eventBus?: EventEmitter
     ) { }
 
     async run(prompt: IPrompt, onToken: (token: string) => void): Promise<void> {
@@ -38,6 +40,10 @@ export class Agent {
 
             // No tool calls, we are done.
             break;
+        }
+
+        if (iterations >= maxIterations) {
+            this.eventBus?.emit('agent:maxIterationsReached', { maxIterations });
         }
     }
 

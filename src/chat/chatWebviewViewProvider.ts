@@ -21,6 +21,7 @@ import type {
 // to communicate by emitting and listening for events.
 import { EventEmitter } from 'events';
 import { ChatPrompt } from './chatPrompt.js';
+import { log } from '../logger.js';
 
 // This interface defines the arguments required to construct a `ChatWebviewViewProvider`.
 // It uses dependency injection to provide all necessary components.
@@ -77,6 +78,16 @@ export class ChatWebviewViewProvider {
         this._vscodeApi = vscodeApi;
         this._eventBus = eventBus;
         this._anonymizer = anonymizer;
+
+        this._eventBus.on('agent:maxIterationsReached', (payload: { maxIterations: number }) => {
+            log(`Agent reached max iterations (${payload.maxIterations}).`);
+            if (this._view) {
+                this._view.webview.postMessage({
+                    sender: 'assistant',
+                    text: `⚠️ **Max iterations reached (${payload.maxIterations}).** The agent stopped to prevent infinite loops. Please refine your prompt or increase the limit in settings.`
+                });
+            }
+        });
     }
 
     /**
