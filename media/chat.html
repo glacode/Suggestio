@@ -117,6 +117,16 @@
                 display: flex;
             }
 
+            .loading-text {
+                font-size: 12px;
+                color: var(--vscode-input-placeholderForeground);
+                margin-left: 4px;
+            }
+
+            .typing-indicator .loading-text {
+                font-size: 13px;
+            }
+
             .chat-controls {
                 display: flex;
                 align-items: center;
@@ -293,6 +303,7 @@
                         <div class="typing-dot"></div>
                         <div class="typing-dot"></div>
                         <div class="typing-dot"></div>
+                        <span class="loading-text">Working...</span>
                     </div>
                     <textarea id="messageInput" placeholder="Type a request..."></textarea>
                     <div class="chat-controls">
@@ -375,7 +386,7 @@
                 // Show loading indicator immediately before sending
                 const loadingMsg = document.createElement('div');
                 loadingMsg.className = 'message assistant loading';
-                loadingMsg.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div><div class="message-content"></div>';
+                loadingMsg.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div><span class="loading-text">Working...</span></div><div class="message-content"></div>';
                 loadingMsg.dataset.fullText = '';
                 loadingMsg.dataset.streaming = 'true';
                 chat.appendChild(loadingMsg);
