@@ -205,6 +205,37 @@
                 transition: transform 0.2s ease;
             }
 
+            @keyframes typingAnimation {
+                0%, 60%, 100% { opacity: 0.3; }
+                30% { opacity: 1; }
+            }
+
+            .typing-indicator {
+                display: inline-flex;
+                gap: 3px;
+                align-items: center;
+            }
+
+            .typing-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background-color: var(--vscode-input-foreground);
+                animation: typingAnimation 1.4s infinite;
+            }
+
+            .typing-dot:nth-child(2) {
+                animation-delay: 0.2s;
+            }
+
+            .typing-dot:nth-child(3) {
+                animation-delay: 0.4s;
+            }
+
+            .message.assistant.loading {
+                opacity: 0.8;
+            }
+
         </style>
     </head>
     <body>
@@ -280,9 +311,20 @@
                 appendMessage('user', text);
                 const chat = document.getElementById('chat');
                 userMessageElement = chat.lastElementChild;
+                
+                // Show loading indicator immediately before sending
+                const loadingMsg = document.createElement('div');
+                loadingMsg.className = 'message assistant loading';
+                loadingMsg.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div><div class="message-content"></div>';
+                loadingMsg.dataset.fullText = '';
+                loadingMsg.dataset.streaming = 'true';
+                chat.appendChild(loadingMsg);
+                
                 if (userMessageElement) {
                     userMessageElement.scrollIntoView();
                 }
+                loadingMsg.scrollIntoView();
+                
                 vscode.postMessage({ command: 'sendMessage', text });
                 input.value = '';
             }
@@ -321,6 +363,7 @@
 
             window.addEventListener('message', event => {
                 const { sender, type, text } = event.data;
+                console.log('Message received:', { sender, type, text: text?.substring(0, 50) });
 
                 if (event.data.command === 'newChat') {
                     newChat();
@@ -329,20 +372,31 @@
 
                 if (sender === 'assistant') {
                     if (type === 'token') {
+                        console.log('Token received, creating/updating loading indicator');
                         const allAssistantMessages = document.querySelectorAll('.message.assistant');
                         let lastMessage = allAssistantMessages.length > 0 ? allAssistantMessages[allAssistantMessages.length - 1] : null;
 
                         if (!lastMessage || lastMessage.dataset.streaming === 'false') {
-                            // Start of a new stream
-                            appendMessage('assistant', text);
-                            const newAllMessages = document.querySelectorAll('.message.assistant');
-                            const newLastMessage = newAllMessages[newAllMessages.length - 1];
-                            newLastMessage.dataset.fullText = text;
-                            newLastMessage.dataset.streaming = 'true';
+                            // Start of a new stream - show loading indicator with text container
+                            const loadingMsg = document.createElement('div');
+                            loadingMsg.className = 'message assistant loading';
+                            loadingMsg.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div><div class="message-content"></div>';
+                            loadingMsg.dataset.fullText = text;
+                            loadingMsg.dataset.streaming = 'true';
+                            
+                            // Add the first token to content
+                            const contentDiv = loadingMsg.querySelector('.message-content');
+                            contentDiv.innerHTML = window.renderMarkdown(text);
+                            
+                            chat.appendChild(loadingMsg);
+                            lastMessage = loadingMsg;
                         } else {
-                            // Continuing a stream
+                            // Continuing a stream - keep indicator, update content
                             lastMessage.dataset.fullText += text;
-                            lastMessage.innerHTML = window.renderMarkdown(lastMessage.dataset.fullText);
+                            const contentDiv = lastMessage.querySelector('.message-content');
+                            if (contentDiv) {
+                                contentDiv.innerHTML = window.renderMarkdown(lastMessage.dataset.fullText);
+                            }
 
                             if (userMessageElement) {
                                 const userMessageRect = userMessageElement.getBoundingClientRect();
@@ -353,12 +407,31 @@
                         }
 
                     } else if (type === 'completion') {
+                        console.log('Completion received, removing indicator');
                         const allAssistantMessages = document.querySelectorAll('.message.assistant');
                         let lastMessage = allAssistantMessages.length > 0 ? allAssistantMessages[allAssistantMessages.length - 1] : null;
                         if (lastMessage && lastMessage.dataset.streaming === 'true') {
                             lastMessage.dataset.streaming = 'false';
+                            lastMessage.classList.remove('loading');
+                            lastMessage.style.opacity = '1';
+                            // Remove the typing indicator
+                            const indicator = lastMessage.querySelector('.typing-indicator');
+                            if (indicator) {
+                                indicator.remove();
+                            }
                         }
                     } else {
+                        // Non-token, non-completion assistant message (could be an error).
+                        // Ensure any existing loading indicator is cleared so dots stop pulsing.
+                        const allAssistantMessages = document.querySelectorAll('.message.assistant');
+                        let lastMessage = allAssistantMessages.length > 0 ? allAssistantMessages[allAssistantMessages.length - 1] : null;
+                        if (lastMessage && lastMessage.dataset.streaming === 'true') {
+                            lastMessage.dataset.streaming = 'false';
+                            lastMessage.classList.remove('loading');
+                            lastMessage.style.opacity = '1';
+                            const indicator = lastMessage.querySelector('.typing-indicator');
+                            if (indicator) indicator.remove();
+                        }
                         appendMessage(sender, text);
                     }
                 } else {
