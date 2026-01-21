@@ -361,6 +361,20 @@
                 }
             }
 
+            function clearLoadingIndicator() {
+                const allAssistantMessages = document.querySelectorAll('.message.assistant');
+                let lastMessage = allAssistantMessages.length > 0 ? allAssistantMessages[allAssistantMessages.length - 1] : null;
+                if (lastMessage && lastMessage.dataset.streaming === 'true') {
+                    lastMessage.dataset.streaming = 'false';
+                    lastMessage.classList.remove('loading');
+                    lastMessage.style.opacity = '1';
+                    const indicator = lastMessage.querySelector('.typing-indicator');
+                    if (indicator) {
+                        indicator.remove();
+                    }
+                }
+            }
+
             window.addEventListener('message', event => {
                 const { sender, type, text } = event.data;
                 console.log('Message received:', { sender, type, text: text?.substring(0, 50) });
@@ -408,30 +422,11 @@
 
                     } else if (type === 'completion') {
                         console.log('Completion received, removing indicator');
-                        const allAssistantMessages = document.querySelectorAll('.message.assistant');
-                        let lastMessage = allAssistantMessages.length > 0 ? allAssistantMessages[allAssistantMessages.length - 1] : null;
-                        if (lastMessage && lastMessage.dataset.streaming === 'true') {
-                            lastMessage.dataset.streaming = 'false';
-                            lastMessage.classList.remove('loading');
-                            lastMessage.style.opacity = '1';
-                            // Remove the typing indicator
-                            const indicator = lastMessage.querySelector('.typing-indicator');
-                            if (indicator) {
-                                indicator.remove();
-                            }
-                        }
+                        clearLoadingIndicator();
                     } else {
                         // Non-token, non-completion assistant message (could be an error).
                         // Ensure any existing loading indicator is cleared so dots stop pulsing.
-                        const allAssistantMessages = document.querySelectorAll('.message.assistant');
-                        let lastMessage = allAssistantMessages.length > 0 ? allAssistantMessages[allAssistantMessages.length - 1] : null;
-                        if (lastMessage && lastMessage.dataset.streaming === 'true') {
-                            lastMessage.dataset.streaming = 'false';
-                            lastMessage.classList.remove('loading');
-                            lastMessage.style.opacity = '1';
-                            const indicator = lastMessage.querySelector('.typing-indicator');
-                            if (indicator) indicator.remove();
-                        }
+                        clearLoadingIndicator();
                         appendMessage(sender, text);
                     }
                 } else {
