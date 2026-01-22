@@ -446,6 +446,12 @@
                     if (indicator) {
                         indicator.remove();
                     }
+                    
+                    // Remove the entire bubble if no content was streamed (error case)
+                    const contentDiv = lastMessage.querySelector('.message-content');
+                    if (contentDiv && !contentDiv.textContent.trim()) {
+                        lastMessage.remove();
+                    }
                 }
                 // Re-enable input for next message
                 enableInput();
