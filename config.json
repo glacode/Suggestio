@@ -36,6 +36,11 @@
       "model": "qwen3-coder:480b-cloud",
       "apiKey": "${OLLAMA_API_KEY}"
     },
+    "mistral-devstral-2512": {
+      "endpoint": "https://api.mistral.ai/v1/chat/completions",
+      "model": "devstral-2512",
+      "apiKey": "${MISTRAL_API_KEY}"
+    },
     "groq-compound": {
       "endpoint": "https://api.groq.com/openai/v1/chat/completions",
       "model": "groq/compound",
