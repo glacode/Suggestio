@@ -10,6 +10,7 @@ export interface IEventBus<E extends EventMap = AppEvents> {
   on<K extends EventKey<E>>(eventName: K, fn: EventReceiver<E[K]>): IDisposable;
   once<K extends EventKey<E>>(eventName: K, fn: EventReceiver<E[K]>): void;
   off<K extends EventKey<E>>(eventName: K, fn: EventReceiver<E[K]>): void;
+  removeAllListeners<K extends EventKey<E>>(eventName?: K): void;
   emit<K extends EventKey<E>>(eventName: K, params: E[K]): void;
 }
 
@@ -35,6 +36,14 @@ export class EventBus<E extends EventMap = AppEvents> implements IEventBus<E> {
 
   public off<K extends EventKey<E>>(eventName: K, fn: EventReceiver<E[K]>): void {
     this.emitter.off(eventName, fn);
+  }
+
+  public removeAllListeners<K extends EventKey<E>>(eventName?: K): void {
+    if (eventName) {
+      this.emitter.removeAllListeners(eventName);
+    } else {
+      this.emitter.removeAllListeners();
+    }
   }
 
   public emit<K extends EventKey<E>>(eventName: K, params: E[K]): void {

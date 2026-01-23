@@ -69,4 +69,33 @@ describe('EventBus', () => {
       expect(handler).toHaveBeenCalledTimes(1);
       expect(handler).toHaveBeenCalledWith({ data: 'once' });
   });
+
+  it('should remove all listeners for a specific event', () => {
+    const handler1 = jest.fn();
+    const handler2 = jest.fn();
+    
+    bus.on('test-event', handler1);
+    bus.on('test-event', handler2);
+    
+    bus.removeAllListeners('test-event');
+    bus.emit('test-event', { data: 'gone' });
+    
+    expect(handler1).not.toHaveBeenCalled();
+    expect(handler2).not.toHaveBeenCalled();
+  });
+
+  it('should remove all listeners for all events when no argument is provided', () => {
+    const handler1 = jest.fn();
+    const handler2 = jest.fn();
+    
+    bus.on('test-event', handler1);
+    bus.on('number-event', handler2);
+    
+    bus.removeAllListeners();
+    bus.emit('test-event', { data: 'gone' });
+    bus.emit('number-event', { count: 0 });
+    
+    expect(handler1).not.toHaveBeenCalled();
+    expect(handler2).not.toHaveBeenCalled();
+  });
 });
