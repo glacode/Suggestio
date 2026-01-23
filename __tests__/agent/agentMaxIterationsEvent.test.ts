@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
 import { IChatHistoryManager, ChatMessage, IPrompt, ToolImplementation, ToolCall, Config } from "../../src/types.js";
-import { EventEmitter } from "events";
+import { EventBus } from "../../src/utils/eventBus.js";
 
 describe("Agent Max Iterations Event", () => {
     let logs: string[];
@@ -9,7 +9,7 @@ describe("Agent Max Iterations Event", () => {
     let mockChatHistoryManager: IChatHistoryManager;
     let mockChatHistory: ChatMessage[];
     let mockPrompt: IPrompt;
-    let eventBus: EventEmitter;
+    let eventBus: EventBus;
 
     beforeEach(() => {
         logs = [];
@@ -23,7 +23,7 @@ describe("Agent Max Iterations Event", () => {
         mockPrompt = {
             generateChatHistory: () => [{ role: 'user', content: 'Hi' }],
         };
-        eventBus = new EventEmitter();
+        eventBus = new EventBus();
     });
 
     it("emits agent:maxIterationsReached when limit is hit", async () => {

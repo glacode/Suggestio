@@ -19,7 +19,7 @@ import type {
 } from '../types.js';
 // Importing the `eventBus`, a custom mechanism for different parts of the extension
 // to communicate by emitting and listening for events.
-import { EventEmitter } from 'events';
+import { IEventBus } from '../utils/eventBus.js';
 import { ChatPrompt } from './chatPrompt.js';
 import { log } from '../logger.js';
 
@@ -33,7 +33,7 @@ interface IChatWebviewViewProviderArgs {
     buildContext: IContextBuilder; // A builder to create contextual information for the AI prompt.
     getChatWebviewContent: GetChatWebviewContent; // A function that provides the HTML content for the webview.
     vscodeApi: IVscodeApiLocal; // The VS Code API instance, used here for `Uri` operations.
-    eventBus: EventEmitter;
+    eventBus: IEventBus;
     anonymizer?: IAnonymizer;
 }
 
@@ -61,7 +61,7 @@ export class ChatWebviewViewProvider {
     private readonly _providerAccessor: ILlmProviderAccessor; // Stores the model provider accessor.
     private readonly _getChatWebviewContent: GetChatWebviewContent; // Stores the webview content generator.
     private readonly _vscodeApi: IVscodeApiLocal; // Stores the VS Code API for internal use.
-    private readonly _eventBus: EventEmitter;
+    private readonly _eventBus: IEventBus;
     private readonly _anonymizer?: IAnonymizer;
 
     /**

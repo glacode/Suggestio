@@ -1,6 +1,6 @@
 import { Config, ToolImplementation } from "../types.js";
 import type { IChatHistoryManager, IPrompt, ChatMessage, ToolCall } from "../types.js";
-import { EventEmitter } from "events";
+import { IEventBus } from "../utils/eventBus.js";
 
 export class Agent {
     constructor(
@@ -8,7 +8,7 @@ export class Agent {
         private log: (message: string) => void,
         private chatHistoryManager: IChatHistoryManager,
         private tools: ToolImplementation[] = [],
-        private eventBus?: EventEmitter
+        private eventBus?: IEventBus
     ) { }
 
     async run(prompt: IPrompt, onToken: (token: string) => void): Promise<void> {

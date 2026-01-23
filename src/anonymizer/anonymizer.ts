@@ -2,10 +2,10 @@ import { IAnonymizer } from "../types.js";
 import { Config } from "../types.js";
 import { SimpleWordAnonymizer } from "./simpleWordAnonymizer.js";
 import { EventBusAnonymizationNotifier } from "./anonymizationNotifier.js";
-import { EventEmitter } from "events";
+import { IEventBus } from "../utils/eventBus.js";
 
 
-export function getAnonymizer(config: Config, eventBus: EventEmitter): IAnonymizer | undefined {
+export function getAnonymizer(config: Config, eventBus: IEventBus): IAnonymizer | undefined {
   if (config.anonymizer?.enabled) {
     const notifier = new EventBusAnonymizationNotifier(eventBus);
     return new SimpleWordAnonymizer(

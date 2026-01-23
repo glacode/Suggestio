@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { configProcessor, SecretManager } from '../../src/config/configProcessor.js';
 import { ConfigContainer } from '../../src/types.js';
-import { EventEmitter } from 'events';
+import { EventBus } from '../../src/utils/eventBus.js';
 
 describe('processConfig', () => {
   let mockSecretManager: SecretManager;
@@ -23,7 +23,7 @@ describe('processConfig', () => {
       },
       anonymizer: { enabled: false, words: [] }
     });
-    const eventBus = new EventEmitter();
+    const eventBus = new EventBus();
 
     const configContainer: ConfigContainer = await configProcessor.processConfig(rawJson, mockSecretManager, eventBus);
 
@@ -41,7 +41,7 @@ describe('processConfig', () => {
       },
       anonymizer: { enabled: false, words: [] }
     });
-    const eventBus = new EventEmitter();
+    const eventBus = new EventBus();
 
     const configContainer: ConfigContainer = await configProcessor.processConfig(rawJson, mockSecretManager, eventBus);
 
@@ -58,7 +58,7 @@ describe('processConfig', () => {
       },
       anonymizer: { enabled: false, words: [] }
     });
-    const eventBus = new EventEmitter();
+    const eventBus = new EventBus();
 
     const configContainer: ConfigContainer = await configProcessor.processConfig(rawJson, mockSecretManager, eventBus);
 
@@ -76,7 +76,7 @@ describe('processConfig', () => {
       },
       anonymizer: { enabled: false, words: [] }
     });
-    const eventBus = new EventEmitter();
+    const eventBus = new EventBus();
 
     const configContainer: ConfigContainer = await configProcessor.processConfig(rawJson, mockSecretManager, eventBus);
 

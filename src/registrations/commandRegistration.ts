@@ -5,13 +5,13 @@ import { Config } from '../types.js';
 import { handleUpdateApiKeyCommand, handleDeleteApiKeyCommand } from '../config/secretManager.js';
 import { extractApiKeyPlaceholders } from '../config/apiKeyPlaceholders.js';
 import { ChatWebviewViewProvider } from '../chat/chatWebviewViewProvider.js';
-import { EventEmitter } from 'events';
+import { IEventBus } from '../utils/eventBus.js';
 
 interface INewChatCapable {
   newChat(): void;
 }
 
-export function registerCommands(context: vscode.ExtensionContext, config: Config, newChatCapable: INewChatCapable, eventBus: EventEmitter) {
+export function registerCommands(context: vscode.ExtensionContext, config: Config, newChatCapable: INewChatCapable, eventBus: IEventBus) {
   context.subscriptions.push(
     vscode.commands.registerCommand("suggestio.editGlobalConfig", () =>
       editGlobalConfig(context, config)

@@ -21,8 +21,7 @@ import type {
 } from '../../src/types.js';
 // Import the actual ChatWebviewViewProvider class that we are testing.
 import { ChatWebviewViewProvider } from '../../src/chat/chatWebviewViewProvider.js';
-// Import EventEmitter for local event bus usage.
-import { EventEmitter } from 'events';
+import { EventBus } from '../../src/utils/eventBus.js';
 
 // `describe` is used to group tests. Here, we're testing the `ChatWebviewViewProvider`.
 // The description "integration, no vscode mocks" indicates that while we're using
@@ -37,7 +36,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // We're faking it with a simple object that has a `fsPath` property.
     const extensionUri: IUriLike = { fsPath: '/ext' };
 
-    const eventBus = new EventEmitter();
+    const eventBus = new EventBus();
 
     // `vscodeApi` is a fake (mock) version of the VS Code API.
     // We only implement the parts that `ChatWebviewViewProvider` needs,
@@ -255,7 +254,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // Use the real ChatResponder which currently adds the (context+message) to history.
     const { ChatResponder } = await import('../../src/chat/chatResponder.js');
     const responder = new ChatResponder(config, () => { }, chatHistoryManager);
-    const eventBus = new EventEmitter();
+    const eventBus = new EventBus();
 
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri },
@@ -335,7 +334,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       getChatHistory: () => [],
     };
 
-    const eventBus = new EventEmitter();
+    const eventBus = new EventBus();
 
     // ********************************************************************************
     //  Instantiate and resolve the `ChatWebviewViewProvider`.
@@ -443,7 +442,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       getChatHistory: () => [],
     };
 
-    const eventBus = new EventEmitter();
+    const eventBus = new EventBus();
 
     // ********************************************************************************
     //  Instantiate and resolve the `ChatWebviewViewProvider`.
@@ -518,7 +517,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       })
     };
 
-    const eventBus = new EventEmitter();
+    const eventBus = new EventBus();
 
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri },

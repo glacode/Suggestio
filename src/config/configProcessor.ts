@@ -1,7 +1,7 @@
 import { getAnonymizer } from '../anonymizer/anonymizer.js';
 import { getActiveProvider } from '../providers/providerFactory.js';
 import { ConfigContainer, Config, IProviderConfig } from '../types.js';
-import { EventEmitter } from 'events';
+import { IEventBus } from '../utils/eventBus.js';
 import { log } from '../logger.js';
 
 export interface SecretManager {
@@ -11,12 +11,12 @@ export interface SecretManager {
 class ConfigProcessor {
     private _config: Config | undefined;
     private _secretManager: SecretManager | undefined;
-    private _eventBus: EventEmitter | undefined;
+    private _eventBus: IEventBus | undefined;
 
     constructor() {
     }
 
-    public init(config: Config, secretManager: SecretManager, eventBus: EventEmitter) {
+    public init(config: Config, secretManager: SecretManager, eventBus: IEventBus) {
         this._config = config;
         this._secretManager = secretManager;
         this._eventBus = eventBus;
@@ -74,7 +74,7 @@ class ConfigProcessor {
      *                  These can override existing properties from the JSON config or provide
      *                  additional properties (e.g., maxAgentIterations) not present in the config file.
      */
-    public async processConfig(rawJson: string, secretManager: SecretManager, eventBus: EventEmitter, overrides?: Partial<Config>): Promise<ConfigContainer> {
+    public async processConfig(rawJson: string, secretManager: SecretManager, eventBus: IEventBus, overrides?: Partial<Config>): Promise<ConfigContainer> {
         const config: Config = JSON.parse(rawJson);
 
         if (overrides) {

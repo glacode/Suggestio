@@ -1,7 +1,7 @@
 import { Config, ToolImplementation } from "../types.js";
 import type { IChatResponder, IChatHistoryManager, IPrompt } from "../types.js";
 import { Agent } from "../agent/agent.js";
-import { EventEmitter } from "events";
+import { IEventBus } from "../utils/eventBus.js";
 
 export class ChatResponder implements IChatResponder {
     private agent: Agent;
@@ -11,7 +11,7 @@ export class ChatResponder implements IChatResponder {
         private log: (message: string) => void,
         private chatHistoryManager: IChatHistoryManager,
         private tools: ToolImplementation[] = [],
-        eventBus?: EventEmitter
+        eventBus?: IEventBus
     ) {
         this.agent = new Agent(config, log, this.chatHistoryManager, this.tools, eventBus);
     }

@@ -16,7 +16,7 @@ import { ContextBuilder } from './chat/context.js';
 import { IgnoreManager } from './chat/ignoreManager.js';
 import { getChatWebviewContent } from './chat/chatWebviewContent.js';
 import './chat/activeEditorTracker.js';
-import { EventEmitter } from 'events';
+import { EventBus } from './utils/eventBus.js';
 import { ANONYMIZATION_EVENT, AnonymizationEventPayload } from './anonymizer/anonymizationNotifier.js';
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -24,7 +24,7 @@ export async function activate(context: vscode.ExtensionContext) {
   log("Suggestio: Activate");
   vscode.window.showInformationMessage("Suggestio Activated!");
 
-  const eventBus = new EventEmitter();
+  const eventBus = new EventBus();
 
   eventBus.on(ANONYMIZATION_EVENT, (payload: AnonymizationEventPayload) => {
     log(`[Anonymizer] Anonymized '${payload.original}' to '${payload.placeholder}' (Reason: ${payload.type})`);

@@ -1,4 +1,4 @@
-import { EventEmitter } from 'events';
+import { EventBus } from '../../src/utils/eventBus.js';
 import { 
     EventBusAnonymizationNotifier, 
     ANONYMIZATION_EVENT, 
@@ -6,11 +6,11 @@ import {
 } from '../../src/anonymizer/anonymizationNotifier.js';
 
 describe('EventBusAnonymizationNotifier', () => {
-    let eventBus: EventEmitter;
+    let eventBus: EventBus;
     let notifier: EventBusAnonymizationNotifier;
 
     beforeEach(() => {
-        eventBus = new EventEmitter();
+        eventBus = new EventBus();
         notifier = new EventBusAnonymizationNotifier(eventBus);
     });
 
