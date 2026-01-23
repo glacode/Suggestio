@@ -548,6 +548,23 @@ export interface IAnonymizationNotifier {
 }
 
 // --------------------------------------------------------------------------------
+//  Events
+// --------------------------------------------------------------------------------
+
+export interface AnonymizationEventPayload {
+  original: string;
+  placeholder: string;
+  type: 'word' | 'entropy';
+}
+
+export interface AppEvents {
+  'inlineCompletionToggled': boolean;
+  'modelChanged': string;
+  'agent:maxIterationsReached': { maxIterations: number };
+  'anonymization': AnonymizationEventPayload;
+}
+
+// --------------------------------------------------------------------------------
 //  Editor / Completion Abstractions
 // --------------------------------------------------------------------------------
 
