@@ -75,8 +75,8 @@ describe("Agent", () => {
         await agent.run(mockPrompt, (t) => output += t);
 
         expect(output).toBe("Calling tool...Final answer");
-        expect(tool.execute).toHaveBeenCalledWith({ arg: "val" });
-        
+        expect(tool.execute).toHaveBeenCalledWith({ arg: "val" }, undefined);
+
         // History should have: 
         // 1. Assistant tool call
         // 2. Tool result
@@ -118,7 +118,7 @@ describe("Agent", () => {
             [] // No tools
         );
 
-        await agent.run(mockPrompt, () => {});
+        await agent.run(mockPrompt, () => { });
 
         expect(logs).toContain("Tool not found: unknownTool");
         expect(mockChatHistoryManager.addMessage).toHaveBeenCalledWith(expect.objectContaining({
@@ -167,7 +167,7 @@ describe("Agent", () => {
             [mockTool]
         );
 
-        await agent.run(mockPrompt, () => {});
+        await agent.run(mockPrompt, () => { });
 
         expect(logs).toContain("Error executing tool: Tool failed");
         expect(mockChatHistoryManager.addMessage).toHaveBeenCalledWith(expect.objectContaining({
@@ -230,8 +230,8 @@ describe("Agent", () => {
         await agent.run(mockPrompt, (token) => { streamedContent += token; });
 
         expect(streamedContent).toBe("Processed both.");
-        expect(mockToolA.execute).toHaveBeenCalledWith({ arg: "valA" });
-        expect(mockToolB.execute).toHaveBeenCalledWith({ arg: "valB" });
+        expect(mockToolA.execute).toHaveBeenCalledWith({ arg: "valA" }, undefined);
+        expect(mockToolB.execute).toHaveBeenCalledWith({ arg: "valB" }, undefined);
 
         // Verify history
         expect(mockChatHistory.length).toBe(4);
@@ -305,7 +305,7 @@ describe("Agent", () => {
         expect(streamedContent).toBe("Step 1Step 2Done.");
         expect(mockTool1.execute).toHaveBeenCalled();
         expect(mockTool2.execute).toHaveBeenCalled();
-        
+
         // Verify flow
         expect(mockChatHistory.length).toBe(5);
         expect(mockChatHistory[0]).toEqual(response1);
@@ -322,4 +322,129 @@ describe("Agent", () => {
         });
         expect(mockChatHistory[4]).toEqual(finalResponse);
     });
+
+    it("STOPS the loop if AbortSignal is aborted between iterations", async () => {
+        const tool: ToolImplementation = {
+            definition: {
+                name: "test_tool",
+                description: "A test tool",
+                parameters: { type: "object", properties: { arg: { type: "string" } } }
+            },
+            execute: jest.fn(async () => `Result`)
+        };
+
+        const provider = new FakeProvider([
+            {
+                role: "assistant",
+                content: "Calling tool...",
+                tool_calls: [{
+                    id: "call_1",
+                    type: "function",
+                    function: { name: "test_tool", arguments: '{"arg": "val"}' }
+                }]
+            },
+            { role: "assistant", content: "Final answer" }
+        ]);
+
+        const agent = new Agent(
+            { llmProviderForChat: provider } as any,
+            logger,
+            mockChatHistoryManager,
+            [tool]
+        );
+
+        const controller = new AbortController();
+
+        // Mock execute to abort the controller mid-run
+        (tool.execute as any).mockImplementation(async () => {
+            controller.abort();
+            return "Tool result";
+        });
+
+        await agent.run(mockPrompt, () => { }, controller.signal);
+
+        // If the loop respected the signal, it should have stopped AFTER the first tool call
+        // and NOT called the provider for the "Final answer".
+        // Currently it WILL call the provider again because it doesn't check the signal in the loop.
+        expect(provider.queryCount).toBe(1);
+        expect(mockChatHistory.length).toBe(2); // Assistant call + Tool result, but no Final answer
+    });
+
+    it("passes AbortSignal to tools", async () => {
+
+        const tool: ToolImplementation = {
+
+            definition: {
+
+                name: "test_tool",
+
+                description: "A test tool",
+
+                parameters: { type: "object", properties: {} }
+
+            },
+
+            execute: jest.fn(async (_args: any, signal?: AbortSignal) => {
+
+                if (!signal) { throw new Error("Signal not passed to tool"); }
+
+                return "OK";
+
+            })
+
+        };
+
+
+
+        const provider = new FakeProvider([
+
+            {
+
+                role: "assistant",
+
+                content: "Calling tool...",
+
+                tool_calls: [{
+
+                    id: "call_1",
+
+                    type: "function",
+
+                    function: { name: "test_tool", arguments: '{}' }
+
+                }]
+
+            }
+
+        ]);
+
+
+
+        const agent = new Agent(
+
+            { llmProviderForChat: provider } as any,
+
+            logger,
+
+            mockChatHistoryManager,
+
+            [tool]
+
+        );
+
+
+
+        const controller = new AbortController();
+
+        await agent.run(mockPrompt, () => { }, controller.signal);
+
+
+
+        expect(tool.execute).toHaveBeenCalledWith(expect.anything(), controller.signal);
+
+    });
+
 });
+
+
+

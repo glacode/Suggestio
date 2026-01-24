@@ -21,7 +21,7 @@ export class ListFilesTool implements ToolImplementation {
         private pathResolver: IPathResolver
     ) {}
 
-    async execute(args: { directory?: string }): Promise<string> {
+    async execute(args: { directory?: string }, _signal?: AbortSignal): Promise<string> {
         const rootPath = this.workspaceProvider.rootPath();
         if (!rootPath) {
             return 'Error: No workspace open.';

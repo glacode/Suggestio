@@ -541,4 +541,75 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     expect(chatHistory[0].content).toContain('This is a ANONYMIZED');
     expect(chatHistory[0].content).not.toContain('SECRET');
   });
+
+  it('aborts request and stops sending tokens when cancelRequest is received', async () => {
+    const extensionUri: IUriLike = { fsPath: '/ext' };
+    const vscodeApi: IVscodeApiLocal = {
+      Uri: { joinPath: (b: IUriLike, ...p: string[]) => ({ b, p } as IUriLike) }
+    };
+    const providerAccessor: ILlmProviderAccessor = { getModels: () => [], getActiveModel: () => '' };
+    
+    const posted: MessageFromTheExtensionToTheWebview[] = [];
+    const webview: IWebview & { __handler?: (msg: WebviewMessage) => void } = {
+      options: undefined,
+      asWebviewUri: (uri: IUriLike) => `webview:${JSON.stringify(uri)}` as unknown as IUriLike,
+      html: '',
+      onDidReceiveMessage: ((handler: (msg: WebviewMessage) => void): IDisposable => {
+        webview.__handler = handler;
+        return { dispose: () => { } };
+      }) as IWebview['onDidReceiveMessage'],
+      postMessage: (msg: MessageFromTheExtensionToTheWebview) => {
+        posted.push(msg);
+        return Promise.resolve(true);
+      }
+    };
+    const webviewView: IWebviewView = { title: 'X', webview };
+
+    let signalAtFetch: AbortSignal | undefined;
+    const logicHandler: IChatResponder = {
+      fetchStreamChatResponse: async (_prompt: IPrompt, onToken: (t: string) => void, signal?: AbortSignal) => {
+        signalAtFetch = signal;
+        onToken('tok1');
+        
+        // Simulate cancellation mid-stream
+        if (webview.__handler) {
+          await webview.__handler({ command: 'cancelRequest' });
+        }
+        
+        onToken('tok2'); // This should be ignored by the provider
+        return Promise.resolve();
+      }
+    };
+
+    const chatHistoryManager: IChatHistoryManager = {
+      clearHistory: () => { },
+      addMessage: () => { },
+      getChatHistory: () => []
+    };
+
+    const provider = new ChatWebviewViewProvider({
+      extensionContext: { extensionUri },
+      providerAccessor,
+      logicHandler,
+      chatHistoryManager,
+      buildContext: { buildContext: async () => '' },
+      getChatWebviewContent: () => '',
+      vscodeApi,
+      eventBus: new EventBus()
+    });
+
+    provider.resolveWebviewView(webviewView);
+
+    const handler = webview.__handler as (msg: WebviewMessage) => Promise<void>;
+    await handler({ command: 'sendMessage', text: 'hello' });
+
+    // Verify signal was aborted
+    expect(signalAtFetch).toBeDefined();
+    expect(signalAtFetch?.aborted).toBe(true);
+
+    // Verify only the first token was posted, and NO completion message was posted
+    expect(posted).toEqual([
+      { sender: 'assistant', type: 'token', text: 'tok1' }
+    ]);
+  });
 });

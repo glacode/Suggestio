@@ -2,13 +2,16 @@ import { ChatMessage, ILlmProvider, IPrompt, ToolDefinition } from "../src/types
 
 export class FakeProvider implements ILlmProvider {
     private callCount = 0;
+    public get queryCount() { return this.callCount; }
     constructor(private responses: (ChatMessage | null)[]) { }
 
-    async query(_prompt: IPrompt, _tools?: ToolDefinition[]): Promise<ChatMessage | null> {
+    async query(_prompt: IPrompt, _tools?: ToolDefinition[], signal?: AbortSignal): Promise<ChatMessage | null> {
+        if (signal?.aborted) { throw new Error("Aborted"); }
         return this.getNextResponse();
     }
 
-    async queryStream(_prompt: IPrompt, onToken: (token: string) => void, _tools?: ToolDefinition[]): Promise<ChatMessage | null> {
+    async queryStream(_prompt: IPrompt, onToken: (token: string) => void, _tools?: ToolDefinition[], signal?: AbortSignal): Promise<ChatMessage | null> {
+        if (signal?.aborted) { throw new Error("Aborted"); }
         const response = this.getNextResponse();
         if (response && response.content) {
             onToken(response.content);

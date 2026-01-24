@@ -18,6 +18,9 @@ export class Agent {
         const maxIterations = this.config.maxAgentIterations ?? 5;
 
         while (iterations < maxIterations) {
+            if (signal?.aborted) {
+                return;
+            }
             iterations++;
 
             const response: ChatMessage | null = await this.queryLLM(currentPrompt, onToken, toolDefinitions, signal);
@@ -29,7 +32,7 @@ export class Agent {
             this.chatHistoryManager.addMessage(response);
 
             if (this.shouldProcessToolCalls(response)) {
-                await this.processToolCalls(response.tool_calls!);
+                await this.processToolCalls(response.tool_calls!, signal);
 
                 // After tool results are added, we need to query the LLM again to get the final answer.
                 // We create a new prompt with the updated history.
@@ -69,21 +72,24 @@ export class Agent {
     /**
      * Iterates over tool calls and executes them.
      */
-    private async processToolCalls(toolCalls: ToolCall[]): Promise<void> {
+    private async processToolCalls(toolCalls: ToolCall[], signal?: AbortSignal): Promise<void> {
         this.log(`Assistant requested ${toolCalls.length} tool calls.`);
 
         for (const toolCall of toolCalls) {
-            await this.executeTool(toolCall);
+            if (signal?.aborted) {
+                break;
+            }
+            await this.executeTool(toolCall, signal);
         }
     }
 
     /**
      * Executes a single tool and records the result.
      */
-    private async executeTool(toolCall: ToolCall): Promise<void> {
+    private async executeTool(toolCall: ToolCall, signal?: AbortSignal): Promise<void> {
         const tool = this.tools.find(t => t.definition.name === toolCall.function.name);
         if (tool) {
-            await this.runTool(tool, toolCall);
+            await this.runTool(tool, toolCall, signal);
         } else {
             this.handleToolNotFound(toolCall);
         }
@@ -92,11 +98,11 @@ export class Agent {
     /**
      * Runs the tool logic and handles execution errors.
      */
-    private async runTool(tool: ToolImplementation, toolCall: ToolCall): Promise<void> {
+    private async runTool(tool: ToolImplementation, toolCall: ToolCall, signal?: AbortSignal): Promise<void> {
         this.log(`Executing tool: ${toolCall.function.name}`);
         try {
             const args = JSON.parse(toolCall.function.arguments);
-            const result = await tool.execute(args);
+            const result = await tool.execute(args, signal);
             this.recordToolResult(toolCall.id, result);
         } catch (e: any) {
             this.handleToolError(toolCall.id, e);

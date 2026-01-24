@@ -691,7 +691,7 @@ export interface ToolDefinition {
  */
 export interface ToolImplementation {
   definition: ToolDefinition;
-  execute(args: any): Promise<string>;
+  execute(args: any, signal?: AbortSignal): Promise<string>;
 }
 
 // --------------------------------------------------------------------------------
