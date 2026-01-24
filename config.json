@@ -26,6 +26,11 @@
       "model": "devstral-2:123b-cloud",
       "apiKey": "${OLLAMA_API_KEY}"
     },
+    "ollama-devstral-small": {
+      "endpoint": "https://ollama.com/v1/chat/completions",
+      "model": "devstral-small-2:24b-cloud",
+      "apiKey": "${OLLAMA_API_KEY}"
+    },
     "ollama-gpt-oss-120b": {
       "endpoint": "https://ollama.com/v1/chat/completions",
       "model": "gpt-oss:120b-cloud",
