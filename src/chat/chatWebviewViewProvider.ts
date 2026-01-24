@@ -63,6 +63,7 @@ export class ChatWebviewViewProvider {
     private readonly _vscodeApi: IVscodeApiLocal; // Stores the VS Code API for internal use.
     private readonly _eventBus: IEventBus;
     private readonly _anonymizer?: IAnonymizer;
+    private _abortController?: AbortController; // For cancelling ongoing LLM requests
 
     /**
      * The constructor initializes the `ChatWebviewViewProvider` with its dependencies.
@@ -169,6 +170,9 @@ export class ChatWebviewViewProvider {
             if (message.command === 'sendMessage') {
                 // Handle a message sent by the user from the webview to initiate a chat response.
                 try {
+                    // Create a new AbortController for this request
+                    this._abortController = new AbortController();
+                    
                     this._chatHistoryManager.addMessage({ role: 'user', content: message.text });
                     let context = await this._buildContext.buildContext();
                     if (this._anonymizer) {
@@ -178,6 +182,10 @@ export class ChatWebviewViewProvider {
                     // Call the `logicHandler` to fetch a streaming chat response.
                     // The `onToken` callback is invoked for each partial token received from the LLM.
                     await this._logicHandler.fetchStreamChatResponse(prompt, (token: string) => {
+                        // Check if request was cancelled
+                        if (this._abortController?.signal.aborted) {
+                            return;
+                        }
                         // Send a 'token' type message from the extension back to the webview's frontend.
                         // The `webview.postMessage` method is part of the VS Code Webview API (`vscode.Webview.postMessage`)
                         // and is the primary way for the extension backend to communicate with the webview UI.
@@ -186,19 +194,34 @@ export class ChatWebviewViewProvider {
                             type: 'token',
                             text: token
                         });
-                    });
-                    // After all tokens are received, post a 'completion' message to signal the end of the response.
-                    webviewView.webview.postMessage({
-                        sender: 'assistant',
-                        type: 'completion',
-                        text: ''
-                    });
+                    }, this._abortController.signal);
+                    
+                    // Check if request was cancelled before sending completion
+                    if (!this._abortController.signal.aborted) {
+                        // After all tokens are received, post a 'completion' message to signal the end of the response.
+                        webviewView.webview.postMessage({
+                            sender: 'assistant',
+                            type: 'completion',
+                            text: ''
+                        });
+                    }
                 } catch (error) {
+                    // If request was cancelled, don't show error
+                    if (this._abortController?.signal.aborted) {
+                        log('Request was cancelled by user.');
+                        return;
+                    }
                     // If an error occurs during the chat response, post an error message back to the webview.
                     webviewView.webview.postMessage({
                         sender: 'assistant',
                         text: 'Sorry, there was an error processing your request: ' + error
                     });
+                }
+            } else if (message.command === 'cancelRequest') {
+                // Handle cancel request from webview
+                if (this._abortController) {
+                    log('Cancelling LLM request...');
+                    this._abortController.abort();
                 }
             } else if (message.command === 'modelChanged') {
                 // Handle a message indicating that the active model has changed in the webview.

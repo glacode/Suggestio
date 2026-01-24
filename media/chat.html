@@ -347,9 +347,14 @@
                 input.disabled = true;
                 input.placeholder = '';
                 wrapper.classList.add('waiting');
-                sendIcon.style.opacity = '0.5';
-                sendIcon.style.cursor = 'not-allowed';
-                sendIcon.style.pointerEvents = 'none';
+                sendIcon.style.opacity = '1';
+                sendIcon.style.cursor = 'pointer';
+                sendIcon.style.pointerEvents = 'auto';
+                sendIcon.onclick = cancelRequest;
+                
+                // Change to stop icon
+                sendIcon.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>';
+                
                 indicator.classList.add('visible');
             }
 
@@ -365,7 +370,39 @@
                 sendIcon.style.opacity = '1';
                 sendIcon.style.cursor = 'pointer';
                 sendIcon.style.pointerEvents = 'auto';
+                sendIcon.onclick = sendMessage;
+                
+                // Change back to send icon
+                sendIcon.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="12" x2="7" y2="12"></line></line><polygon points="22 12 2 2 7 12 2 22 22 12"></polygon></svg>';
+                
                 indicator.classList.remove('visible');
+            }
+
+            function cancelRequest() {
+                // Send cancel command to extension
+                vscode.postMessage({ command: 'cancelRequest' });
+                
+                // Clear loading indicator and re-enable input
+                const allAssistantMessages = document.querySelectorAll('.message.assistant');
+                let lastMessage = allAssistantMessages.length > 0 ? allAssistantMessages[allAssistantMessages.length - 1] : null;
+                
+                if (lastMessage && lastMessage.dataset.streaming === 'true') {
+                    lastMessage.dataset.streaming = 'false';
+                    lastMessage.classList.remove('loading');
+                    lastMessage.style.opacity = '1';
+                    const indicator = lastMessage.querySelector('.typing-indicator');
+                    if (indicator) {
+                        indicator.remove();
+                    }
+                    
+                    // Remove the entire bubble if no content was streamed
+                    const contentDiv = lastMessage.querySelector('.message-content');
+                    if (contentDiv && !contentDiv.textContent.trim()) {
+                        lastMessage.remove();
+                    }
+                }
+                
+                enableInput();
             }
 
             function sendMessage() {

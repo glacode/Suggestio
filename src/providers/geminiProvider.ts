@@ -47,7 +47,7 @@ export class GeminiProvider implements ILlmProvider {
     return { role: "assistant", content };
   }
 
-  async queryStream(prompt: IPrompt, onToken: (token: string) => void): Promise<ChatMessage | null> {
+  async queryStream(prompt: IPrompt, onToken: (token: string) => void, _tools?: any, signal?: AbortSignal): Promise<ChatMessage | null> {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:streamGenerateContent?key=${this.apiKey}&alt=sse`;
 
     const body = {
@@ -58,6 +58,7 @@ export class GeminiProvider implements ILlmProvider {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
+      signal,
     });
 
     if (!res.ok) {

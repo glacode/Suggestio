@@ -19,11 +19,11 @@ export class ChatResponder implements IChatResponder {
     /**
      * Fetches a streaming chat response, handling potential tool calls recursively.
      */
-    async fetchStreamChatResponse(prompt: IPrompt, onToken: (token: string) => void): Promise<void> {
+    async fetchStreamChatResponse(prompt: IPrompt, onToken: (token: string) => void, signal?: AbortSignal): Promise<void> {
         try {
             this.log(`Fetching stream completion from ${this.config.activeProvider}...`);
 
-            await this.agent.run(prompt, onToken);
+            await this.agent.run(prompt, onToken, signal);
 
             this.log("Stream completion finished.");
         } catch (err: any) {

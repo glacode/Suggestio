@@ -211,9 +211,10 @@ export class OpenAICompatibleProvider implements ILlmProvider {
    * Sends a POST request to the provider's endpoint.
    * 
    * @param body - The request body to be sent as JSON.
+   * @param signal - Optional AbortSignal to cancel the request.
    * @returns A promise that resolves to the fetch Response object.
    */
-  private async post(body: OpenAIRequestBody): Promise<Response> {
+  private async post(body: OpenAIRequestBody, signal?: AbortSignal): Promise<Response> {
     return await fetch(this.endpoint, {
       method: "POST",
       headers: {
@@ -221,6 +222,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
+      signal,
     });
   }
 
@@ -229,14 +231,16 @@ export class OpenAICompatibleProvider implements ILlmProvider {
    * 
    * @param prompt - The prompt to be sent.
    * @param tools - Optional tools available for the model to use.
+   * @param signal - Optional AbortSignal to cancel the request.
    * @returns A promise resolving to the assistant's message, or null if no choice was returned.
    */
   async query(
     prompt: IPrompt,
-    tools?: ToolDefinition[]
+    tools?: ToolDefinition[],
+    signal?: AbortSignal
   ): Promise<ChatMessage | null> {
     const body = this.createRequestBody(prompt, tools, false);
-    const response = await this.post(body);
+    const response = await this.post(body, signal);
 
     const json = (await response.json()) as OpenAIResponse;
     log("Response:" + JSON.stringify(json, null, 2));
@@ -269,12 +273,13 @@ export class OpenAICompatibleProvider implements ILlmProvider {
   async queryStream(
     prompt: IPrompt,
     onToken: (token: string) => void,
-    tools?: ToolDefinition[]
+    tools?: ToolDefinition[],
+    signal?: AbortSignal
   ): Promise<ChatMessage | null> {
     const body = this.createRequestBody(prompt, tools, true);
     log(`OpenAI Request Body: ${JSON.stringify(body, null, 2)}`);
 
-    const response = await this.post(body);
+    const response = await this.post(body, signal);
 
     if (!response.ok) {
       const errText = await response.text();

@@ -175,6 +175,10 @@ export type WebviewMessage =
   | {
       /** User wants to clear the chat history. */
       command: 'clearHistory';
+    }
+  | {
+      /** User wants to cancel the current LLM request. */
+      command: 'cancelRequest';
     };
 
 /**
@@ -290,9 +294,10 @@ export interface IChatResponder {
    *
    * @param prompt The prompt object containing context and history.
    * @param onToken A callback invoked for each received token from the stream.
+   * @param signal Optional AbortSignal to cancel the request.
    * @returns A promise that resolves when the stream is finished.
    */
-  fetchStreamChatResponse(prompt: IPrompt, onToken: (token: string) => void): Promise<void>;
+  fetchStreamChatResponse(prompt: IPrompt, onToken: (token: string) => void, signal?: AbortSignal): Promise<void>;
 }
 
 /**
@@ -693,8 +698,8 @@ export interface ToolImplementation {
 //  LLM Provider Types
 // --------------------------------------------------------------------------------
 export interface ILlmProvider {
-  query(prompt: IPrompt, tools?: ToolDefinition[]): Promise<ChatMessage | null>;
-  queryStream(prompt: IPrompt, onToken: (token: string) => void, tools?: ToolDefinition[]): Promise<ChatMessage | null>;
+  query(prompt: IPrompt, tools?: ToolDefinition[], signal?: AbortSignal): Promise<ChatMessage | null>;
+  queryStream(prompt: IPrompt, onToken: (token: string) => void, tools?: ToolDefinition[], signal?: AbortSignal): Promise<ChatMessage | null>;
 }
 
 // --------------------------------------------------------------------------------

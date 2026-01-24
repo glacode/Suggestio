@@ -11,7 +11,7 @@ export class Agent {
         private eventBus?: IEventBus
     ) { }
 
-    async run(prompt: IPrompt, onToken: (token: string) => void): Promise<void> {
+    async run(prompt: IPrompt, onToken: (token: string) => void, signal?: AbortSignal): Promise<void> {
         const toolDefinitions = this.tools.map(t => t.definition);
         let currentPrompt = prompt;
         let iterations = 0;
@@ -20,7 +20,7 @@ export class Agent {
         while (iterations < maxIterations) {
             iterations++;
 
-            const response: ChatMessage | null = await this.queryLLM(currentPrompt, onToken, toolDefinitions);
+            const response: ChatMessage | null = await this.queryLLM(currentPrompt, onToken, toolDefinitions, signal);
 
             if (!response) {
                 break;
@@ -50,11 +50,12 @@ export class Agent {
     /**
      * Queries the LLM provider for a response.
      */
-    private async queryLLM(prompt: IPrompt, onToken: (token: string) => void, toolDefinitions: any[]): Promise<ChatMessage | null> {
+    private async queryLLM(prompt: IPrompt, onToken: (token: string) => void, toolDefinitions: any[], signal?: AbortSignal): Promise<ChatMessage | null> {
         return await this.config.llmProviderForChat!.queryStream(
             prompt,
             onToken,
-            toolDefinitions.length > 0 ? toolDefinitions : undefined
+            toolDefinitions.length > 0 ? toolDefinitions : undefined,
+            signal
         );
     }
 
