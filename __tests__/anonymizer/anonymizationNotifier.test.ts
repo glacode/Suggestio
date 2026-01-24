@@ -2,8 +2,8 @@ import { EventBus } from '../../src/utils/eventBus.js';
 import { 
     EventBusAnonymizationNotifier, 
     ANONYMIZATION_EVENT, 
-    AnonymizationEventPayload 
 } from '../../src/anonymizer/anonymizationNotifier.js';
+import { AnonymizationEventPayload } from '../../src/types.js';
 
 describe('EventBusAnonymizationNotifier', () => {
     let eventBus: EventBus;

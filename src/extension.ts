@@ -5,7 +5,7 @@ import { registerCompletionProvider } from './registrations/completionRegistrati
 import { registerCommands } from './registrations/commandRegistration.js';
 import * as fs from 'fs';
 import * as path from 'path';
-import { IWorkspaceProvider, IFileContentProvider, ConfigContainer, IDirectoryProvider } from './types.js';
+import { IWorkspaceProvider, IFileContentProvider, ConfigContainer, IDirectoryProvider, AnonymizationEventPayload } from './types.js';
 import { ChatHistoryManager } from './chat/chatHistoryManager.js';
 import { SecretManager } from './config/secretManager.js';
 import { configProcessor } from './config/configProcessor.js';
@@ -17,7 +17,7 @@ import { IgnoreManager } from './chat/ignoreManager.js';
 import { getChatWebviewContent } from './chat/chatWebviewContent.js';
 import './chat/activeEditorTracker.js';
 import { EventBus } from './utils/eventBus.js';
-import { ANONYMIZATION_EVENT, AnonymizationEventPayload } from './anonymizer/anonymizationNotifier.js';
+import { ANONYMIZATION_EVENT } from './anonymizer/anonymizationNotifier.js';
 
 export async function activate(context: vscode.ExtensionContext) {
   initLogger();
