@@ -576,7 +576,12 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
           await webview.__handler({ command: 'cancelRequest' });
         }
         
-        onToken('tok2'); // This should be ignored by the provider
+        onToken('tok2'); // This should hit line 197 now because signal is aborted
+
+        if (signal?.aborted) {
+          throw new Error('AbortError');
+        }
+        
         return Promise.resolve();
       }
     };
@@ -612,5 +617,180 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       { sender: 'assistant', type: 'token', text: 'tok1' },
       { sender: 'assistant', type: 'completion', text: '' }
     ]);
+  });
+
+  it('newChat clears history and posts message to webview', async () => {
+    const extensionUri: IUriLike = { fsPath: '/ext' };
+    const vscodeApi: IVscodeApiLocal = {
+      Uri: { joinPath: (b: IUriLike, ...p: string[]) => ({ b, p } as IUriLike) }
+    };
+    const providerAccessor: ILlmProviderAccessor = { getModels: () => [], getActiveModel: () => '' };
+    const posted: MessageFromTheExtensionToTheWebview[] = [];
+    const webview: IWebview = {
+      options: undefined,
+      asWebviewUri: (uri: IUriLike) => `webview:${JSON.stringify(uri)}` as unknown as IUriLike,
+      html: '',
+      onDidReceiveMessage: () => ({ dispose: () => { } }),
+      postMessage: (msg: MessageFromTheExtensionToTheWebview) => {
+        posted.push(msg);
+        return Promise.resolve(true);
+      }
+    };
+    const webviewView: IWebviewView = { title: 'X', webview };
+
+    let historyCleared = false;
+    const chatHistoryManager: IChatHistoryManager = {
+      clearHistory: () => { historyCleared = true; },
+      addMessage: () => { },
+      getChatHistory: () => []
+    };
+
+    const provider = new ChatWebviewViewProvider({
+      extensionContext: { extensionUri },
+      providerAccessor,
+      logicHandler: {} as IChatResponder,
+      chatHistoryManager,
+      buildContext: { buildContext: async () => '' },
+      getChatWebviewContent: () => '',
+      vscodeApi,
+      eventBus: new EventBus()
+    });
+
+    // Test newChat before resolveWebviewView (view is undefined)
+    provider.newChat();
+    expect(historyCleared).toBe(true);
+    expect(posted.length).toBe(0);
+
+    historyCleared = false;
+    provider.resolveWebviewView(webviewView);
+    provider.newChat();
+    expect(historyCleared).toBe(true);
+    expect(posted).toContainEqual({ command: 'newChat' });
+  });
+
+  it('handles agent:maxIterationsReached event', async () => {
+    const extensionUri: IUriLike = { fsPath: '/ext' };
+    const vscodeApi: IVscodeApiLocal = {
+      Uri: { joinPath: (b: IUriLike, ...p: string[]) => ({ b, p } as IUriLike) }
+    };
+    const providerAccessor: ILlmProviderAccessor = { getModels: () => [], getActiveModel: () => '' };
+    const posted: MessageFromTheExtensionToTheWebview[] = [];
+    const webview: IWebview = {
+      options: undefined,
+      asWebviewUri: (uri: IUriLike) => `webview:${JSON.stringify(uri)}` as unknown as IUriLike,
+      html: '',
+      onDidReceiveMessage: () => ({ dispose: () => { } }),
+      postMessage: (msg: MessageFromTheExtensionToTheWebview) => {
+        posted.push(msg);
+        return Promise.resolve(true);
+      }
+    };
+    const webviewView: IWebviewView = { title: 'X', webview };
+
+    const eventBus = new EventBus();
+    const provider = new ChatWebviewViewProvider({
+      extensionContext: { extensionUri },
+      providerAccessor,
+      logicHandler: {} as IChatResponder,
+      chatHistoryManager: {} as IChatHistoryManager,
+      buildContext: { buildContext: async () => '' },
+      getChatWebviewContent: () => '',
+      vscodeApi,
+      eventBus
+    });
+
+    // Event before resolveWebviewView
+    eventBus.emit('agent:maxIterationsReached', { maxIterations: 5 });
+    expect(posted.length).toBe(0);
+
+    provider.resolveWebviewView(webviewView);
+    eventBus.emit('agent:maxIterationsReached', { maxIterations: 10 });
+    expect(posted.length).toBe(1);
+    expect((posted[0] as any).text).toContain('Max iterations reached (10)');
+  });
+
+  it('cancelRequest does nothing if no abortController', async () => {
+    const extensionUri: IUriLike = { fsPath: '/ext' };
+    const vscodeApi: IVscodeApiLocal = {
+      Uri: { joinPath: (b: IUriLike, ...p: string[]) => ({ b, p } as IUriLike) }
+    };
+    const providerAccessor: ILlmProviderAccessor = { getModels: () => [], getActiveModel: () => '' };
+    const webview: IWebview & { __handler?: (msg: WebviewMessage) => void } = {
+      options: undefined,
+      asWebviewUri: (uri: IUriLike) => `webview:${JSON.stringify(uri)}` as unknown as IUriLike,
+      html: '',
+      onDidReceiveMessage: ((handler: (msg: WebviewMessage) => void): IDisposable => {
+        webview.__handler = handler;
+        return { dispose: () => { } };
+      }) as IWebview['onDidReceiveMessage'],
+      postMessage: () => Promise.resolve(true)
+    };
+    const webviewView: IWebviewView = { title: 'X', webview };
+
+    const provider = new ChatWebviewViewProvider({
+      extensionContext: { extensionUri },
+      providerAccessor,
+      logicHandler: {} as IChatResponder,
+      chatHistoryManager: {} as IChatHistoryManager,
+      buildContext: { buildContext: async () => '' },
+      getChatWebviewContent: () => '',
+      vscodeApi,
+      eventBus: new EventBus()
+    });
+
+    provider.resolveWebviewView(webviewView);
+    const handler = webview.__handler as (msg: WebviewMessage) => Promise<void>;
+    
+    // Should not throw
+    await handler({ command: 'cancelRequest' });
+  });
+
+  it('_sendCompletionMessage does nothing if _view is undefined', async () => {
+    const extensionUri: IUriLike = { fsPath: '/ext' };
+    const vscodeApi: IVscodeApiLocal = {
+      Uri: { joinPath: (b: IUriLike, ...p: string[]) => ({ b, p } as IUriLike) }
+    };
+    const providerAccessor: ILlmProviderAccessor = { getModels: () => [], getActiveModel: () => '' };
+    
+    const webview: IWebview & { __handler?: (msg: WebviewMessage) => void } = {
+      options: undefined,
+      asWebviewUri: (uri: IUriLike) => `webview:${JSON.stringify(uri)}` as unknown as IUriLike,
+      html: '',
+      onDidReceiveMessage: ((handler: (msg: WebviewMessage) => void): IDisposable => {
+        webview.__handler = handler;
+        return { dispose: () => { } };
+      }) as IWebview['onDidReceiveMessage'],
+      postMessage: () => Promise.resolve(true)
+    };
+    const webviewView: IWebviewView = { title: 'X', webview };
+
+    const provider = new ChatWebviewViewProvider({
+      extensionContext: { extensionUri },
+      providerAccessor,
+      logicHandler: {
+        fetchStreamChatResponse: async () => {
+          // Simulate view being cleared during request
+          provider._view = undefined;
+          return Promise.resolve();
+        }
+      } as unknown as IChatResponder,
+      chatHistoryManager: {
+        addMessage: () => { },
+        getChatHistory: () => []
+      } as unknown as IChatHistoryManager,
+      buildContext: { buildContext: async () => '' },
+      getChatWebviewContent: () => '',
+      vscodeApi,
+      eventBus: new EventBus()
+    });
+
+    provider.resolveWebviewView(webviewView);
+    const handler = webview.__handler as (msg: WebviewMessage) => Promise<void>;
+    
+    // This will call fetchStreamChatResponse which clears _view, 
+    // and then calls _sendCompletionMessage.
+    await handler({ command: 'sendMessage', text: 'hello' });
+    
+    expect(provider._view).toBeUndefined();
   });
 });
