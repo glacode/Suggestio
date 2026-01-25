@@ -607,9 +607,10 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     expect(signalAtFetch).toBeDefined();
     expect(signalAtFetch?.aborted).toBe(true);
 
-    // Verify only the first token was posted, and NO completion message was posted
+    // Verify only the first token was posted, followed by a completion message
     expect(posted).toEqual([
-      { sender: 'assistant', type: 'token', text: 'tok1' }
+      { sender: 'assistant', type: 'token', text: 'tok1' },
+      { sender: 'assistant', type: 'completion', text: '' }
     ]);
   });
 });

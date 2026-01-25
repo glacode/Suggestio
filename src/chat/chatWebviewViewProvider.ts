@@ -154,6 +154,16 @@ export class ChatWebviewViewProvider {
         }
     }
 
+    private _sendCompletionMessage() {
+        if (this._view) {
+            this._view.webview.postMessage({
+                sender: 'assistant',
+                type: 'completion',
+                text: ''
+            });
+        }
+    }
+
     /**
      * `setupMessageHandler` configures the listener for messages sent *from* the webview.
      * This is the primary way the webview (e.g., user input, model selection) communicates
@@ -196,19 +206,14 @@ export class ChatWebviewViewProvider {
                         });
                     }, this._abortController.signal);
                     
-                    // Check if request was cancelled before sending completion
-                    if (!this._abortController.signal.aborted) {
-                        // After all tokens are received, post a 'completion' message to signal the end of the response.
-                        webviewView.webview.postMessage({
-                            sender: 'assistant',
-                            type: 'completion',
-                            text: ''
-                        });
-                    }
+                    // Always send completion to reset UI state (enable input, remove spinner)
+                    // even if the request was cancelled.
+                    this._sendCompletionMessage();
                 } catch (error) {
                     // If request was cancelled, don't show error
                     if (this._abortController?.signal.aborted) {
                         log('Request was cancelled by user.');
+                        this._sendCompletionMessage();
                         return;
                     }
                     // If an error occurs during the chat response, post an error message back to the webview.

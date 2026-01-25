@@ -381,28 +381,6 @@
             function cancelRequest() {
                 // Send cancel command to extension
                 vscode.postMessage({ command: 'cancelRequest' });
-                
-                // Clear loading indicator and re-enable input
-                const allAssistantMessages = document.querySelectorAll('.message.assistant');
-                let lastMessage = allAssistantMessages.length > 0 ? allAssistantMessages[allAssistantMessages.length - 1] : null;
-                
-                if (lastMessage && lastMessage.dataset.streaming === 'true') {
-                    lastMessage.dataset.streaming = 'false';
-                    lastMessage.classList.remove('loading');
-                    lastMessage.style.opacity = '1';
-                    const indicator = lastMessage.querySelector('.typing-indicator');
-                    if (indicator) {
-                        indicator.remove();
-                    }
-                    
-                    // Remove the entire bubble if no content was streamed
-                    const contentDiv = lastMessage.querySelector('.message-content');
-                    if (contentDiv && !contentDiv.textContent.trim()) {
-                        lastMessage.remove();
-                    }
-                }
-                
-                enableInput();
             }
 
             function sendMessage() {
