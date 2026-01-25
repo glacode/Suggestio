@@ -161,25 +161,25 @@ export interface IWebviewView {
  */
 export type WebviewMessage =
   | {
-      /** User wants to send a chat message. */
-      command: 'sendMessage';
-      /** The text of the message to send. */
-      text: string;
-    }
+    /** User wants to send a chat message. */
+    command: 'sendMessage';
+    /** The text of the message to send. */
+    text: string;
+  }
   | {
-      /** User has selected a different language model. */
-      command: 'modelChanged';
-      /** The ID of the selected model. */
-      model: string;
-    }
+    /** User has selected a different language model. */
+    command: 'modelChanged';
+    /** The ID of the selected model. */
+    model: string;
+  }
   | {
-      /** User wants to clear the chat history. */
-      command: 'clearHistory';
-    }
+    /** User wants to clear the chat history. */
+    command: 'clearHistory';
+  }
   | {
-      /** User wants to cancel the current LLM request. */
-      command: 'cancelRequest';
-    };
+    /** User wants to cancel the current LLM request. */
+    command: 'cancelRequest';
+  };
 
 /**
  * Defines the role of a participant in the chat.
@@ -237,31 +237,31 @@ export interface ChatMessage {
  */
 export type MessageFromTheExtensionToTheWebview =
   | {
-      /** Indicates the message comes from the AI assistant. */
-      sender: 'assistant';
-      /** Represents a partial piece of the AI's response (for streaming). */
-      type: 'token';
-      /** The text content of the token. */
-      text: string;
-    }
+    /** Indicates the message comes from the AI assistant. */
+    sender: 'assistant';
+    /** Represents a partial piece of the AI's response (for streaming). */
+    type: 'token';
+    /** The text content of the token. */
+    text: string;
+  }
   | {
-      /** Indicates the message comes from the AI assistant. */
-      sender: 'assistant';
-      /** Signals that the AI's response stream has finished. */
-      type: 'completion';
-      /** The final text of the completion (or empty if tokens were fully streamed). */
-      text: string;
-    }
+    /** Indicates the message comes from the AI assistant. */
+    sender: 'assistant';
+    /** Signals that the AI's response stream has finished. */
+    type: 'completion';
+    /** The final text of the completion (or empty if tokens were fully streamed). */
+    text: string;
+  }
   | {
-      /** Indicates the message comes from the AI assistant. */
-      sender: 'assistant';
-      /** A generic message, often used for error reporting or non-streaming info. */
-      text: string;
-    }
+    /** Indicates the message comes from the AI assistant. */
+    sender: 'assistant';
+    /** A generic message, often used for error reporting or non-streaming info. */
+    text: string;
+  }
   | {
-      /** Instructs the webview to initiate and display a new chat session. */
-      command: 'newChat';
-    };
+    /** Instructs the webview to initiate and display a new chat session. */
+    command: 'newChat';
+  };
 
 /**
  * Represents the full history of a chat conversation.
@@ -490,51 +490,51 @@ export interface IDirectoryProvider {
  * deanonymization placeholders that might be split across multiple chunks.
  */
 export interface IStreamingDeanonymizer {
-    /**
-     * Processes a new text chunk from the stream.
-     *
-     * The method buffers the input chunk and checks if the buffer contains any complete
-     * deanonymization placeholders (or safe text that can be released).
-     *
-     * @param chunk The new piece of text received from the stream.
-     * @returns An object containing:
-     *  - `processed`: The text that is safe to emit to the user.
-     *  - `buffer`: The content currently remaining in the internal buffer (debug info).
-     */
-    process(chunk: string): { processed: string; buffer: string };
+  /**
+   * Processes a new text chunk from the stream.
+   *
+   * The method buffers the input chunk and checks if the buffer contains any complete
+   * deanonymization placeholders (or safe text that can be released).
+   *
+   * @param chunk The new piece of text received from the stream.
+   * @returns An object containing:
+   *  - `processed`: The text that is safe to emit to the user.
+   *  - `buffer`: The content currently remaining in the internal buffer (debug info).
+   */
+  process(chunk: string): { processed: string; buffer: string };
 
-    /**
-     * Flushes any remaining text from the internal buffer.
-     * This should be called when the stream is complete (e.g., on "[DONE]").
-     *
-     * @returns The remaining text in the buffer.
-     */
-    flush(): string;
+  /**
+   * Flushes any remaining text from the internal buffer.
+   * This should be called when the stream is complete (e.g., on "[DONE]").
+   *
+   * @returns The remaining text in the buffer.
+   */
+  flush(): string;
 }
 
 /**
  * Interface for anonymizing and deanonymizing sensitive information in text.
  */
 export interface IAnonymizer {
-    /**
-     * Replaces sensitive information in the text with placeholders.
-     * @param text The input text containing sensitive info.
-     * @returns The anonymized text.
-     */
-    anonymize(text: string): string;
+  /**
+   * Replaces sensitive information in the text with placeholders.
+   * @param text The input text containing sensitive info.
+   * @returns The anonymized text.
+   */
+  anonymize(text: string): string;
 
-    /**
-     * Replaces placeholders in the text with the original sensitive information.
-     * @param text The anonymized text.
-     * @returns The original text (deanonymized).
-     */
-    deanonymize(text: string): string;
+  /**
+   * Replaces placeholders in the text with the original sensitive information.
+   * @param text The anonymized text.
+   * @returns The original text (deanonymized).
+   */
+  deanonymize(text: string): string;
 
-    /**
-     * Creates a stateful deanonymizer for processing streaming text.
-     * @returns An instance of `IStreamingDeanonymizer`.
-     */
-    createStreamingDeanonymizer(): IStreamingDeanonymizer;
+  /**
+   * Creates a stateful deanonymizer for processing streaming text.
+   * @returns An instance of `IStreamingDeanonymizer`.
+   */
+  createStreamingDeanonymizer(): IStreamingDeanonymizer;
 }
 
 /**
@@ -542,14 +542,14 @@ export interface IAnonymizer {
  * This decouples the Anonymizer from the event bus or logging mechanism.
  */
 export interface IAnonymizationNotifier {
-    /**
-     * Notifies that a piece of information has been anonymized.
-     *
-     * @param original The original sensitive text.
-     * @param placeholder The placeholder used to replace it.
-     * @param type The type of anonymization performed (e.g., 'word' or 'entropy').
-     */
-    notifyAnonymization(original: string, placeholder: string, type: 'word' | 'entropy'): void;
+  /**
+   * Notifies that a piece of information has been anonymized.
+   *
+   * @param original The original sensitive text.
+   * @param placeholder The placeholder used to replace it.
+   * @param type The type of anonymization performed (e.g., 'word' or 'entropy').
+   */
+  notifyAnonymization(original: string, placeholder: string, type: 'word' | 'entropy'): void;
 }
 
 // --------------------------------------------------------------------------------

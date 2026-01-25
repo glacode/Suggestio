@@ -548,7 +548,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       Uri: { joinPath: (b: IUriLike, ...p: string[]) => ({ b, p } as IUriLike) }
     };
     const providerAccessor: ILlmProviderAccessor = { getModels: () => [], getActiveModel: () => '' };
-    
+
     const posted: MessageFromTheExtensionToTheWebview[] = [];
     const webview: IWebview & { __handler?: (msg: WebviewMessage) => void } = {
       options: undefined,
@@ -570,18 +570,18 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       fetchStreamChatResponse: async (_prompt: IPrompt, onToken: (t: string) => void, signal?: AbortSignal) => {
         signalAtFetch = signal;
         onToken('tok1');
-        
+
         // Simulate cancellation mid-stream
         if (webview.__handler) {
           await webview.__handler({ command: 'cancelRequest' });
         }
-        
+
         onToken('tok2'); // This should hit line 197 now because signal is aborted
 
         if (signal?.aborted) {
           throw new Error('AbortError');
         }
-        
+
         return Promise.resolve();
       }
     };
@@ -740,7 +740,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     provider.resolveWebviewView(webviewView);
     const handler = webview.__handler as (msg: WebviewMessage) => Promise<void>;
-    
+
     // Should not throw
     await handler({ command: 'cancelRequest' });
   });
@@ -751,7 +751,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       Uri: { joinPath: (b: IUriLike, ...p: string[]) => ({ b, p } as IUriLike) }
     };
     const providerAccessor: ILlmProviderAccessor = { getModels: () => [], getActiveModel: () => '' };
-    
+
     const webview: IWebview & { __handler?: (msg: WebviewMessage) => void } = {
       options: undefined,
       asWebviewUri: (uri: IUriLike) => `webview:${JSON.stringify(uri)}` as unknown as IUriLike,
@@ -786,11 +786,11 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     provider.resolveWebviewView(webviewView);
     const handler = webview.__handler as (msg: WebviewMessage) => Promise<void>;
-    
+
     // This will call fetchStreamChatResponse which clears _view, 
     // and then calls _sendCompletionMessage.
     await handler({ command: 'sendMessage', text: 'hello' });
-    
+
     expect(provider._view).toBeUndefined();
   });
 });

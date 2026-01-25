@@ -19,7 +19,7 @@ export class ListFilesTool implements ToolImplementation {
         private workspaceProvider: IWorkspaceProvider,
         private directoryProvider: IDirectoryProvider,
         private pathResolver: IPathResolver
-    ) {}
+    ) { }
 
     async execute(args: { directory?: string }, _signal?: AbortSignal): Promise<string> {
         const rootPath = this.workspaceProvider.rootPath();
@@ -42,7 +42,7 @@ export class ListFilesTool implements ToolImplementation {
 
             const files = this.directoryProvider.readdir(dirPath);
             if (!files) {
-                 return `Error: Failed to read directory ${args.directory}.`;
+                return `Error: Failed to read directory ${args.directory}.`;
             }
             return JSON.stringify(files, null, 2);
         } catch (error: any) {

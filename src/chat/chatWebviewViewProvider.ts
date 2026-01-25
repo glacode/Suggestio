@@ -182,7 +182,7 @@ export class ChatWebviewViewProvider {
                 try {
                     // Create a new AbortController for this request
                     this._abortController = new AbortController();
-                    
+
                     this._chatHistoryManager.addMessage({ role: 'user', content: message.text });
                     let context = await this._buildContext.buildContext();
                     if (this._anonymizer) {
@@ -205,7 +205,7 @@ export class ChatWebviewViewProvider {
                             text: token
                         });
                     }, this._abortController.signal);
-                    
+
                     // Always send completion to reset UI state (enable input, remove spinner)
                     // even if the request was cancelled.
                     this._sendCompletionMessage();
