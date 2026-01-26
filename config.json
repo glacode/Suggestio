@@ -36,7 +36,7 @@
       "model": "gpt-oss:120b-cloud",
       "apiKey": "${OLLAMA_API_KEY}"
     },
-    "ollama-cloud-gemini": {
+    "ollama-qwen3-480b": {
       "endpoint": "https://ollama.com/v1/chat/completions",
       "model": "qwen3-coder:480b-cloud",
       "apiKey": "${OLLAMA_API_KEY}"
