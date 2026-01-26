@@ -5,7 +5,7 @@ import { registerCompletionProvider } from './registrations/completionRegistrati
 import { registerCommands } from './registrations/commandRegistration.js';
 import * as fs from 'fs';
 import * as path from 'path';
-import { IWorkspaceProvider, IFileContentProvider, ConfigContainer, IDirectoryProvider, AnonymizationEventPayload } from './types.js';
+import { IWorkspaceProvider, IFileContentProvider, ConfigContainer, IDirectoryProvider, IAnonymizationEventPayload } from './types.js';
 import { ChatHistoryManager } from './chat/chatHistoryManager.js';
 import { SecretManager } from './config/secretManager.js';
 import { configProcessor } from './config/configProcessor.js';
@@ -26,7 +26,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   const eventBus = new EventBus();
 
-  eventBus.on(ANONYMIZATION_EVENT, (payload: AnonymizationEventPayload) => {
+  eventBus.on(ANONYMIZATION_EVENT, (payload: IAnonymizationEventPayload) => {
     log(`[Anonymizer] Anonymized '${payload.original}' to '${payload.placeholder}' (Reason: ${payload.type})`);
   });
 

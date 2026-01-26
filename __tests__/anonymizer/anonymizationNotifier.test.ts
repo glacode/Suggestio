@@ -3,7 +3,7 @@ import {
     EventBusAnonymizationNotifier, 
     ANONYMIZATION_EVENT, 
 } from '../../src/anonymizer/anonymizationNotifier.js';
-import { AnonymizationEventPayload } from '../../src/types.js';
+import { IAnonymizationEventPayload } from '../../src/types.js';
 
 describe('EventBusAnonymizationNotifier', () => {
     let eventBus: EventBus;
@@ -19,7 +19,7 @@ describe('EventBusAnonymizationNotifier', () => {
         const placeholder = 'ANON_1';
         const type = 'word';
 
-        eventBus.on(ANONYMIZATION_EVENT, (payload: AnonymizationEventPayload) => {
+        eventBus.on(ANONYMIZATION_EVENT, (payload: IAnonymizationEventPayload) => {
             try {
                 expect(payload).toEqual({
                     original,
@@ -40,7 +40,7 @@ describe('EventBusAnonymizationNotifier', () => {
         const placeholder = 'ANON_2';
         const type = 'entropy';
 
-        eventBus.on(ANONYMIZATION_EVENT, (payload: AnonymizationEventPayload) => {
+        eventBus.on(ANONYMIZATION_EVENT, (payload: IAnonymizationEventPayload) => {
             try {
                 expect(payload).toEqual({
                     original,
