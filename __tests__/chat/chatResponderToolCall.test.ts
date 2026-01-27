@@ -1,5 +1,5 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
-import { ChatResponder } from "../../src/chat/chatResponder.js";
+import { Agent } from "../../src/agent/agent.js";
 import { IChatHistoryManager, ChatMessage, IPrompt, ChatHistory, Config, IProviderConfig, ToolImplementation, ToolCall } from "../../src/types.js";
 import { FakeProvider } from "../testUtils.js";
 
@@ -62,7 +62,7 @@ describe("ChatResponder Tool Calling Integration", () => {
             execute: jest.fn(async () => "12:00 PM")
         };
 
-        const handler = new ChatResponder(
+        const handler = new Agent(
             {
                 activeProvider: "FAKE",
                 llmProviderForChat: provider,

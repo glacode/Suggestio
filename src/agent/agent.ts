@@ -1,8 +1,8 @@
 import { Config, ToolImplementation } from "../types.js";
-import type { IChatHistoryManager, IPrompt, ChatMessage, ToolCall } from "../types.js";
+import type { IChatHistoryManager, IPrompt, ChatMessage, ToolCall, IChatResponder } from "../types.js";
 import { IEventBus } from "../utils/eventBus.js";
 
-export class Agent {
+export class Agent implements IChatResponder {
     constructor(
         private config: Config,
         private log: (message: string) => void,
@@ -11,7 +11,7 @@ export class Agent {
         private eventBus?: IEventBus
     ) { }
 
-    async run(prompt: IPrompt, onToken: (token: string) => void, signal?: AbortSignal): Promise<void> {
+    async fetchStreamChatResponse(prompt: IPrompt, onToken: (token: string) => void, signal?: AbortSignal): Promise<void> {
         const toolDefinitions = this.tools.map(t => t.definition);
         let currentPrompt = prompt;
         let iterations = 0;

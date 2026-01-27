@@ -69,7 +69,7 @@ describe("Agent Max Iterations Event", () => {
         const eventSpy = jest.fn();
         eventBus.on('agent:maxIterationsReached', eventSpy);
 
-        await agent.run(mockPrompt, () => {});
+        await agent.fetchStreamChatResponse(mockPrompt, () => {});
 
         expect(provider.queryStream).toHaveBeenCalledTimes(2);
         expect(eventSpy).toHaveBeenCalledWith({ maxIterations: 2 });
@@ -102,7 +102,7 @@ describe("Agent Max Iterations Event", () => {
         const eventSpy = jest.fn();
         eventBus.on('agent:maxIterationsReached', eventSpy);
 
-        await agent.run(mockPrompt, () => {});
+        await agent.fetchStreamChatResponse(mockPrompt, () => {});
 
         expect(eventSpy).not.toHaveBeenCalled();
     });

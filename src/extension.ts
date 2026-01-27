@@ -9,7 +9,7 @@ import { IWorkspaceProvider, IFileContentProvider, ConfigContainer, IDirectoryPr
 import { ChatHistoryManager } from './chat/chatHistoryManager.js';
 import { SecretManager } from './config/secretManager.js';
 import { configProcessor } from './config/configProcessor.js';
-import { ChatResponder } from './chat/chatResponder.js';
+import { Agent } from './agent/agent.js';
 import { ChatWebviewViewProvider } from './chat/chatWebviewViewProvider.js';
 import { getTools } from './agent/tools.js';
 import { ContextBuilder } from './chat/context.js';
@@ -66,7 +66,7 @@ export async function activate(context: vscode.ExtensionContext) {
     exists: (path: string) => fs.existsSync(path)
   };
 
-  const logicHandler = new ChatResponder(
+  const logicHandler = new Agent(
     configContainer.config,
     log,
     chatHistoryManager,

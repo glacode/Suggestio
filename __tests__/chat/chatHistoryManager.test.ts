@@ -1,5 +1,5 @@
 import { describe, it, beforeEach, expect } from "@jest/globals";
-import { ChatResponder } from "../../src/chat/chatResponder.js";
+import { Agent } from "../../src/agent/agent.js";
 import { IChatHistoryManager, IPrompt, Config, IProviderConfig, ILlmProvider, ChatMessage, ToolDefinition } from "../../src/types.js";
 import { ChatPrompt } from "../../src/chat/chatPrompt.js";
 import { ChatHistoryManager } from "../../src/chat/chatHistoryManager.js";
@@ -44,7 +44,7 @@ describe("Chat History Management (Unit Test)", () => {
         // Setup FakeProvider to return different responses for each turn
         const fakeProvider = new FakeProvider(["Assistant Reply 1", "Assistant Reply 2"]);
 
-        const handler = new ChatResponder(
+        const handler = new Agent(
             {
                 activeProvider: "FAKE",
                 llmProviderForChat: fakeProvider,

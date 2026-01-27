@@ -64,7 +64,7 @@ describe("Agent Max Iterations", () => {
             [mockTool]
         );
 
-        await agent.run(mockPrompt, () => {});
+        await agent.fetchStreamChatResponse(mockPrompt, () => {});
 
         // It should run exactly 3 times
         expect(provider.queryStream).toHaveBeenCalledTimes(3);
@@ -110,7 +110,7 @@ describe("Agent Max Iterations", () => {
             [mockTool]
         );
 
-        await agent.run(mockPrompt, () => {});
+        await agent.fetchStreamChatResponse(mockPrompt, () => {});
 
         // It should run exactly 5 times (default)
         expect(provider.queryStream).toHaveBeenCalledTimes(5);

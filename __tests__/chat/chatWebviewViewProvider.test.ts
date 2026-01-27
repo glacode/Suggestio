@@ -251,9 +251,9 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       }
     } as unknown as import('../../src/types.js').Config;
 
-    // Use the real ChatResponder which currently adds the (context+message) to history.
-    const { ChatResponder } = await import('../../src/chat/chatResponder.js');
-    const responder = new ChatResponder(config, () => { }, chatHistoryManager);
+    // Use the real Agent which currently adds the (context+message) to history.
+    const { Agent } = await import('../../src/agent/agent.js');
+    const responder = new Agent(config, () => { }, chatHistoryManager);
     const eventBus = new EventBus();
 
     const provider = new ChatWebviewViewProvider({

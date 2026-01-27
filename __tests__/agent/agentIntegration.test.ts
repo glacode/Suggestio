@@ -1,5 +1,5 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
-import { ChatResponder } from "../../src/chat/chatResponder.js";
+import { Agent } from "../../src/agent/agent.js";
 import { IChatHistoryManager, ChatMessage, IPrompt, ChatHistory, Config, IProviderConfig, ILlmProvider, ToolDefinition } from "../../src/types.js"; // Import ChatMessage from types.js
 
 // Define a minimal mock config interface for testing purposes
@@ -24,7 +24,7 @@ class FakeProvider implements ILlmProvider {
     }
 }
 
-describe("ChatResponder (DI) simple tests", () => {
+describe("Agent (Integration) simple tests", () => {
     let logs: string[];
     let logger: (msg: string) => void;
     let mockChatHistoryManager: IChatHistoryManager;
@@ -50,7 +50,7 @@ describe("ChatResponder (DI) simple tests", () => {
     });
 
     it("fetches stream chat response on success", async () => {
-        const handler = new ChatResponder(
+        const handler = new Agent(
             {
                 activeProvider: "FAKE",
                 llmProviderForChat: new FakeProvider("Hello world"),
@@ -68,17 +68,13 @@ describe("ChatResponder (DI) simple tests", () => {
 
         await handler.fetchStreamChatResponse(mockPrompt, onToken);
         expect(streamedContent).toBe("Hello world");
-        expect(logs).toEqual(expect.arrayContaining([
-            expect.stringContaining("Fetching stream completion"),
-            expect.stringContaining("Stream completion finished")
-        ]));
         expect(mockChatHistoryManager.addMessage).toHaveBeenCalledTimes(1);
         expect(mockChatHistoryManager.addMessage).toHaveBeenCalledWith({ role: "assistant", content: "Hello world" });
         expect(mockChatHistory.length).toBe(1);
     });
 
     it("handles error when fetching stream chat response", async () => {
-        const handler = new ChatResponder(
+        const handler = new Agent(
             {
                 activeProvider: "FAKE",
                 llmProviderForChat: new FakeProvider(null, true),
@@ -96,10 +92,6 @@ describe("ChatResponder (DI) simple tests", () => {
 
         await expect(handler.fetchStreamChatResponse(mockPrompt, onToken)).rejects.toThrow("Simulated failure");
         expect(streamedContent).toBe("");
-        expect(logs).toEqual(expect.arrayContaining([
-            expect.stringContaining("Fetching stream completion"),
-            expect.stringContaining("Error fetching stream completion")
-        ]));
         expect(mockChatHistoryManager.addMessage).toHaveBeenCalledTimes(0);
         expect(mockChatHistory.length).toBe(0);
     });
