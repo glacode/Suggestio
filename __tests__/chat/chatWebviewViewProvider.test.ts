@@ -768,7 +768,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       extensionContext: { extensionUri },
       providerAccessor,
       logicHandler: {
-        fetchStreamChatResponse: async () => {
+        run: async () => {
           // Simulate view being cleared during request
           provider._view = undefined;
           return Promise.resolve();
@@ -787,7 +787,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     provider.resolveWebviewView(webviewView);
     const handler = webview.__handler as (msg: WebviewMessage) => Promise<void>;
 
-    // This will call fetchStreamChatResponse which clears _view, 
+    // This will call run which clears _view, 
     // and then calls _sendCompletionMessage.
     await handler({ command: 'sendMessage', text: 'hello' });
 
