@@ -1,7 +1,8 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
-import { IChatHistoryManager, ChatMessage, IPrompt, ToolImplementation, ToolCall, Config } from "../../src/types.js";
+import { IChatHistoryManager, ChatMessage, IPrompt, ToolImplementation, ToolCall, ILlmProvider } from "../../src/types.js";
 import { EventBus } from "../../src/utils/eventBus.js";
+import { createMockHistoryManager, createDefaultConfig } from "../testUtils.js";
 
 describe("Agent Max Iterations Event", () => {
     let logs: string[];
@@ -15,11 +16,7 @@ describe("Agent Max Iterations Event", () => {
         logs = [];
         logger = (msg: string) => logs.push(msg);
         mockChatHistory = [];
-        mockChatHistoryManager = {
-            clearHistory: jest.fn(() => { mockChatHistory.length = 0; }),
-            addMessage: jest.fn((message: ChatMessage) => { mockChatHistory.push(message); }),
-            getChatHistory: jest.fn(() => mockChatHistory),
-        };
+        mockChatHistoryManager = createMockHistoryManager(mockChatHistory);
         mockPrompt = {
             generateChatHistory: () => [{ role: 'user', content: 'Hi' }],
         };
@@ -38,25 +35,23 @@ describe("Agent Max Iterations Event", () => {
             tool_calls: [toolCall]
         };
 
-        const provider = {
+        const provider: jest.Mocked<ILlmProvider> = {
+             query: jest.fn(),
              queryStream: jest.fn(async (_prompt: any, onToken: any, _tools: any) => {
                  onToken("Looping...");
                  return response;
              })
-        } as any;
+        };
 
         const mockTool: ToolImplementation = {
             definition: { name: "loop_tool", description: "Loop", parameters: { type: "object", properties: {} } },
             execute: jest.fn(async () => "Loop Result")
         };
 
-        const config: Config = {
-            activeProvider: "test",
-            providers: {},
-            anonymizer: { enabled: false, words: [] },
+        const config = createDefaultConfig({
             llmProviderForChat: provider,
             maxAgentIterations: 2 
-        };
+        });
 
         const agent = new Agent(
             config,
@@ -77,19 +72,17 @@ describe("Agent Max Iterations Event", () => {
 
     it("does NOT emit agent:maxIterationsReached when finished before limit", async () => {
         // Returns null to stop
-        const provider = {
+        const provider: jest.Mocked<ILlmProvider> = {
+             query: jest.fn(),
              queryStream: jest.fn(async (_prompt: any, _onToken: any, _tools: any) => {
                  return null;
              })
-        } as any;
+        };
 
-        const config: Config = {
-            activeProvider: "test",
-            providers: {},
-            anonymizer: { enabled: false, words: [] },
+        const config = createDefaultConfig({
             llmProviderForChat: provider,
             maxAgentIterations: 5 
-        };
+        });
 
         const agent = new Agent(
             config,

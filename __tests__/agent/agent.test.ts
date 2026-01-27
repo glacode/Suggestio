@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
 import { IChatHistoryManager, ChatMessage, IPrompt, ToolImplementation, ToolCall } from "../../src/types.js";
-import { FakeProvider } from "../testUtils.js";
+import { FakeProvider, createMockHistoryManager, createDefaultConfig } from "../testUtils.js";
 
 describe("Agent", () => {
     let logs: string[];
@@ -14,11 +14,7 @@ describe("Agent", () => {
         logs = [];
         logger = (msg: string) => logs.push(msg);
         mockChatHistory = [];
-        mockChatHistoryManager = {
-            clearHistory: jest.fn(() => { mockChatHistory.length = 0; }),
-            addMessage: jest.fn((message: ChatMessage) => { mockChatHistory.push(message); }),
-            getChatHistory: jest.fn(() => mockChatHistory),
-        };
+        mockChatHistoryManager = createMockHistoryManager(mockChatHistory);
         mockPrompt = {
             generateChatHistory: () => [{ role: 'user', content: 'Hi' }],
         };
@@ -27,7 +23,7 @@ describe("Agent", () => {
     it("runs a simple chat without tools", async () => {
         const provider = new FakeProvider([{ role: "assistant", content: "Hello!" }]);
         const agent = new Agent(
-            { llmProviderForChat: provider } as any,
+            createDefaultConfig({ llmProviderForChat: provider }),
             logger,
             mockChatHistoryManager,
             []
@@ -65,7 +61,7 @@ describe("Agent", () => {
         ]);
 
         const agent = new Agent(
-            { llmProviderForChat: provider } as any,
+            createDefaultConfig({ llmProviderForChat: provider }),
             logger,
             mockChatHistoryManager,
             [tool]
@@ -110,9 +106,10 @@ describe("Agent", () => {
         };
 
         const provider = new FakeProvider([toolResponse, finalResponse]);
+        const mockAddMessage = jest.spyOn(mockChatHistoryManager, 'addMessage');
 
         const agent = new Agent(
-            { llmProviderForChat: provider } as any,
+            createDefaultConfig({ llmProviderForChat: provider }),
             logger,
             mockChatHistoryManager,
             [] // No tools
@@ -121,7 +118,7 @@ describe("Agent", () => {
         await agent.run(mockPrompt, () => { });
 
         expect(logs).toContain("Tool not found: unknownTool");
-        expect(mockChatHistoryManager.addMessage).toHaveBeenCalledWith(expect.objectContaining({
+        expect(mockAddMessage).toHaveBeenCalledWith(expect.objectContaining({
             role: "tool",
             content: expect.stringContaining("Error: Tool unknownTool not found"),
             tool_call_id: "call_456"
@@ -150,6 +147,7 @@ describe("Agent", () => {
         };
 
         const provider = new FakeProvider([toolResponse, finalResponse]);
+        const mockAddMessage = jest.spyOn(mockChatHistoryManager, 'addMessage');
 
         const mockTool: ToolImplementation = {
             definition: {
@@ -161,7 +159,7 @@ describe("Agent", () => {
         };
 
         const agent = new Agent(
-            { llmProviderForChat: provider } as any,
+            createDefaultConfig({ llmProviderForChat: provider }),
             logger,
             mockChatHistoryManager,
             [mockTool]
@@ -170,7 +168,7 @@ describe("Agent", () => {
         await agent.run(mockPrompt, () => { });
 
         expect(logs).toContain("Error executing tool: Tool failed");
-        expect(mockChatHistoryManager.addMessage).toHaveBeenCalledWith(expect.objectContaining({
+        expect(mockAddMessage).toHaveBeenCalledWith(expect.objectContaining({
             role: "tool",
             content: "Error: Tool failed",
             tool_call_id: "call_789"
@@ -220,7 +218,7 @@ describe("Agent", () => {
         };
 
         const agent = new Agent(
-            { llmProviderForChat: provider } as any,
+            createDefaultConfig({ llmProviderForChat: provider }),
             logger,
             mockChatHistoryManager,
             [mockToolA, mockToolB]
@@ -293,7 +291,7 @@ describe("Agent", () => {
         };
 
         const agent = new Agent(
-            { llmProviderForChat: provider } as any,
+            createDefaultConfig({ llmProviderForChat: provider }),
             logger,
             mockChatHistoryManager,
             [mockTool1, mockTool2]
@@ -347,7 +345,7 @@ describe("Agent", () => {
         ]);
 
         const agent = new Agent(
-            { llmProviderForChat: provider } as any,
+            createDefaultConfig({ llmProviderForChat: provider }),
             logger,
             mockChatHistoryManager,
             [tool]
@@ -356,7 +354,7 @@ describe("Agent", () => {
         const controller = new AbortController();
 
         // Mock execute to abort the controller mid-run
-        (tool.execute as any).mockImplementation(async () => {
+        jest.spyOn(tool, 'execute').mockImplementation(async () => {
             controller.abort();
             return "Tool result";
         });
@@ -371,79 +369,42 @@ describe("Agent", () => {
     });
 
     it("passes AbortSignal to tools", async () => {
-
         const tool: ToolImplementation = {
-
             definition: {
-
                 name: "test_tool",
-
                 description: "A test tool",
-
                 parameters: { type: "object", properties: {} }
-
             },
-
             execute: jest.fn(async (_args: any, signal?: AbortSignal) => {
-
                 if (!signal) { throw new Error("Signal not passed to tool"); }
-
                 return "OK";
-
             })
-
         };
 
-
-
         const provider = new FakeProvider([
-
             {
-
                 role: "assistant",
-
                 content: "Calling tool...",
-
                 tool_calls: [{
-
                     id: "call_1",
-
                     type: "function",
-
                     function: { name: "test_tool", arguments: '{}' }
-
                 }]
-
             }
-
         ]);
 
-
-
         const agent = new Agent(
-
-            { llmProviderForChat: provider } as any,
-
+            createDefaultConfig({ llmProviderForChat: provider }),
             logger,
-
             mockChatHistoryManager,
-
             [tool]
-
         );
 
-
-
         const controller = new AbortController();
-
         await agent.run(mockPrompt, () => { }, controller.signal);
 
-
-
         expect(tool.execute).toHaveBeenCalledWith(expect.anything(), controller.signal);
-
     });
-
 });
 
 

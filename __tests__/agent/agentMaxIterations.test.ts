@@ -1,6 +1,7 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
-import { IChatHistoryManager, ChatMessage, IPrompt, ToolImplementation, ToolCall, Config } from "../../src/types.js";
+import { IChatHistoryManager, ChatMessage, IPrompt, ToolImplementation, ToolCall, ILlmProvider } from "../../src/types.js";
+import { createMockHistoryManager, createDefaultConfig } from "../testUtils.js";
 
 describe("Agent Max Iterations", () => {
     let logs: string[];
@@ -13,11 +14,7 @@ describe("Agent Max Iterations", () => {
         logs = [];
         logger = (msg: string) => logs.push(msg);
         mockChatHistory = [];
-        mockChatHistoryManager = {
-            clearHistory: jest.fn(() => { mockChatHistory.length = 0; }),
-            addMessage: jest.fn((message: ChatMessage) => { mockChatHistory.push(message); }),
-            getChatHistory: jest.fn(() => mockChatHistory),
-        };
+        mockChatHistoryManager = createMockHistoryManager(mockChatHistory);
         mockPrompt = {
             generateChatHistory: () => [{ role: 'user', content: 'Hi' }],
         };
@@ -37,25 +34,23 @@ describe("Agent Max Iterations", () => {
         };
 
         // Infinite stream of responses
-        const provider = {
+        const provider: jest.Mocked<ILlmProvider> = {
+             query: jest.fn(),
              queryStream: jest.fn(async (_prompt: any, onToken: any, _tools: any) => {
                  onToken("Looping...");
                  return response;
              })
-        } as any;
+        };
 
         const mockTool: ToolImplementation = {
             definition: { name: "loop_tool", description: "Loop", parameters: { type: "object", properties: {} } },
             execute: jest.fn(async () => "Loop Result")
         };
 
-        const config: Config = {
-            activeProvider: "test",
-            providers: {},
-            anonymizer: { enabled: false, words: [] },
+        const config = createDefaultConfig({
             llmProviderForChat: provider,
             maxAgentIterations: 3 // Limit to 3 iterations
-        };
+        });
 
         const agent = new Agent(
             config,
@@ -83,25 +78,24 @@ describe("Agent Max Iterations", () => {
             tool_calls: [toolCall]
         };
 
-        const provider = {
+        const provider: jest.Mocked<ILlmProvider> = {
+             query: jest.fn(),
              queryStream: jest.fn(async (_prompt: any, onToken: any, _tools: any) => {
                  onToken("Looping...");
                  return response;
              })
-        } as any;
+        };
 
         const mockTool: ToolImplementation = {
             definition: { name: "loop_tool", description: "Loop", parameters: { type: "object", properties: {} } },
             execute: jest.fn(async () => "Loop Result")
         };
 
-        const config: Config = {
-            activeProvider: "test",
-            providers: {},
-            anonymizer: { enabled: false, words: [] },
-            llmProviderForChat: provider,
+        const config = createDefaultConfig({
+            llmProviderForChat: provider
             // maxAgentIterations missing
-        };
+        });
+        delete config.maxAgentIterations;
 
         const agent = new Agent(
             config,

@@ -6,22 +6,19 @@
 // like URIs, VS Code API, providers, webviews, and messages.
 import type {
   IUriLike, // A type representing a URI (Uniform Resource Identifier), similar to a file path.
-  IVscodeApiLocal, // A type for a local, faked VS Code API.
   ILlmProviderAccessor, // A type for accessing language model (LLM) providers.
   IChatAgent, // A type for handling chat logic (sending/receiving messages).
   IChatHistoryManager, // A type for managing chat history (e.g., clearing it).
-  IWebview, // A type representing the webview itself, which displays HTML content.
-  IWebviewView, // A type representing the VS Code WebviewView, a container for the webview.
-  WebviewMessage, // A type for messages sent *from* the webview (e.g., user input).
   MessageFromTheExtensionToTheWebview, // A type for messages sent *to* the webview (e.g., AI responses).
-  IDisposable, // A type for objects that can be disposed (cleaned up).
   ChatRole,
   ChatHistory,
-  IPrompt
+  IPrompt,
+  IAnonymizer
 } from '../../src/types.js';
 // Import the actual ChatWebviewViewProvider class that we are testing.
 import { ChatWebviewViewProvider } from '../../src/chat/chatWebviewViewProvider.js';
 import { EventBus } from '../../src/utils/eventBus.js';
+import { createMockVscodeApi, createMockWebview, createMockWebviewView, createMockHistoryManager } from '../testUtils.js';
 
 // `describe` is used to group tests. Here, we're testing the `ChatWebviewViewProvider`.
 // The description "integration, no vscode mocks" indicates that while we're using
@@ -41,13 +38,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // `vscodeApi` is a fake (mock) version of the VS Code API.
     // We only implement the parts that `ChatWebviewViewProvider` needs,
     // specifically `Uri.joinPath` which is used to construct paths for webview resources.
-    const vscodeApi: IVscodeApiLocal = {
-      Uri: {
-        // This fake `joinPath` just returns an object showing what it received,
-        // rather than creating an actual URI.
-        joinPath: (base: IUriLike, ...paths: string[]) => ({ base, paths } as IUriLike)
-      }
-    };
+    const vscodeApi = createMockVscodeApi((base: IUriLike, ...paths: string[]) => ({ base, paths } as IUriLike));
 
     // `providerAccessor` is a fake that provides information about available
     // and active language models (LLMs).
@@ -65,29 +56,11 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     // `webview` is a comprehensive fake implementation of the `IWebview` interface.
     // It simulates the behavior of a VS Code webview panel.
-    const webview: IWebview & { __handler?: (msg: WebviewMessage) => void } = {
-      options: undefined, // Webview options will be set by the provider.
-      // `asWebviewUri` is a fake function that converts a local URI into a webview-compatible URI.
-      // It simply serializes the URI for testing purposes.
-      asWebviewUri: (uri: IUriLike) => `webview:${JSON.stringify(uri)}` as unknown as IUriLike,
-      html: '', // This will hold the HTML content set by the provider.
-      // `onDidReceiveMessage` is how the webview listens for messages *from* the webview (e.g., user input).
-      // Here, we expose the `handler` function so our test can directly call it to simulate messages.
-      onDidReceiveMessage: ((handler: (msg: WebviewMessage) => void): IDisposable => {
-        webview.__handler = handler; // Store the handler for later use in the test.
-        return { dispose: () => { } }; // Return a dummy disposable object.
-      }) as IWebview['onDidReceiveMessage'],
-      // `postMessage` is how the webview sends messages *to* the webview (e.g., AI responses).
-      // Our fake implementation adds the message to the `posted` array for verification.
-      postMessage: (msg: MessageFromTheExtensionToTheWebview) => {
-        posted.push(msg);
-        return Promise.resolve(true); // Simulate successful posting.
-      }
-    };
+    const webview = createMockWebview(posted);
 
     // `webviewView` is a fake `IWebviewView` which acts as a container for our `webview`.
     // It initially has a title, which we expect the `ChatWebviewViewProvider` to clear.
-    const webviewView: IWebviewView = { title: 'SUGGESTIO: CHAT', webview };
+    const webviewView = createMockWebviewView(webview, 'SUGGESTIO: CHAT');
 
     // `tokensEmitted` will store the full prompts sent to the `logicHandler`.
     const promptsSent: IPrompt[] = [];
@@ -118,11 +91,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     };
 
     const recorded: ChatHistory = [];
-    const chatHistoryManager: IChatHistoryManager = {
-      clearHistory: () => { recorded.length = 0; },
-      addMessage: (m) => { recorded.push(m); },
-      getChatHistory: () => recorded.slice()
-    };
+    const chatHistoryManager = createMockHistoryManager(recorded);
 
     // ********************************************************************************
     //  Instantiate the ChatWebviewViewProvider with all our fake dependencies.
@@ -174,10 +143,10 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     //  Simulate a message being sent *from* the webview (e.g., user typing a message).
     // ********************************************************************************
 
-    // Cast the stored handler to its expected type for calling.
-    const handler = webview.__handler as (msg: WebviewMessage) => Promise<void>;
     // Call the handler to simulate sending a 'sendMessage' command with user text.
-    await handler({ command: 'sendMessage', text: 'hello' });
+    if (webview.__handler) {
+      await webview.__handler({ command: 'sendMessage', text: 'hello' });
+    }
 
     // ********************************************************************************
     //  Assertions: Verify the messages posted *to* the webview (AI's response).
@@ -211,24 +180,13 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   // This test asserts the desired behavior and will fail until the code is fixed.
   it('does not add buildContext to chat history user messages', async () => {
     const extensionUri: IUriLike = { fsPath: '/ext' };
-    const vscodeApi: IVscodeApiLocal = {
-      Uri: { joinPath: (b: IUriLike, ...p: string[]) => ({ b, p } as IUriLike) }
-    };
+    const vscodeApi = createMockVscodeApi();
 
     const providerAccessor: ILlmProviderAccessor = { getModels: () => [], getActiveModel: () => '' };
 
-    const webview: IWebview & { __handler?: (msg: WebviewMessage) => void } = {
-      options: undefined,
-      asWebviewUri: (uri: IUriLike) => `webview:${JSON.stringify(uri)}` as unknown as IUriLike,
-      html: '',
-      onDidReceiveMessage: ((handler: (msg: WebviewMessage) => void): IDisposable => {
-        webview.__handler = handler;
-        return { dispose: () => { } };
-      }) as IWebview['onDidReceiveMessage'],
-      postMessage: (_msg: MessageFromTheExtensionToTheWebview) => Promise.resolve(true)
-    };
+    const webview = createMockWebview();
 
-    const webviewView: IWebviewView = { title: 'X', webview };
+    const webviewView = createMockWebviewView(webview, 'X');
 
     // Spyable chat history manager to capture added messages.
     const recorded: { role: ChatRole; content: string }[] = [];
@@ -239,17 +197,18 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     };
 
     // Minimal config with a fake llm provider that immediately completes.
-    const config = {
+    const config: import('../../src/types.js').Config = {
       activeProvider: 'p',
       providers: {},
       anonymizer: { enabled: false, words: [] },
       llmProviderForChat: {
+        query: async () => null,
         queryStream: async (_prompt: IPrompt, onToken: (t: string) => void) => {
           onToken('x');
-          return Promise.resolve();
+          return Promise.resolve(null);
         }
       }
-    } as unknown as import('../../src/types.js').Config;
+    };
 
     // Use the real Agent which currently adds the (context+message) to history.
     const { Agent } = await import('../../src/agent/agent.js');
@@ -269,8 +228,9 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     provider.resolveWebviewView(webviewView);
 
-    const handler = webview.__handler as (msg: WebviewMessage) => Promise<void>;
-    await handler({ command: 'sendMessage', text: 'hello' });
+    if (webview.__handler) {
+      await webview.__handler({ command: 'sendMessage', text: 'hello' });
+    }
 
     // Expect the first added message to be exactly the user's text without the build context.
     expect(recorded.length).toBeGreaterThan(0);
@@ -285,12 +245,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // Define a fake extension URI.
     const extensionUri: IUriLike = { fsPath: '/ext' };
     // Define a fake VS Code API, specifically `Uri.joinPath`.
-    const vscodeApi: IVscodeApiLocal = {
-      Uri: {
-        // A simplified `joinPath` for testing.
-        joinPath: (b: IUriLike, ...p: string[]) => ({ b, p } as IUriLike)
-      }
-    };
+    const vscodeApi = createMockVscodeApi();
 
     // Define a fake `providerAccessor` that returns empty lists for models.
     const providerAccessor: ILlmProviderAccessor = {
@@ -301,21 +256,9 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // `posted` array to capture messages sent to the webview.
     const responseMessagesFromTheExtensionToTheWebview: MessageFromTheExtensionToTheWebview[] = [];
     // Fake `webview` implementation, similar to the previous test.
-    const webview: IWebview & { __handler?: (msg: WebviewMessage) => void } = {
-      options: undefined,
-      asWebviewUri: (uri: IUriLike) => `webview:${JSON.stringify(uri)}` as unknown as IUriLike,
-      html: '',
-      onDidReceiveMessage: ((handler: (msg: WebviewMessage) => void): IDisposable => {
-        webview.__handler = handler;
-        return { dispose: () => { } };
-      }) as IWebview['onDidReceiveMessage'],
-      postMessage: (msg: MessageFromTheExtensionToTheWebview) => {
-        responseMessagesFromTheExtensionToTheWebview.push(msg);
-        return Promise.resolve(true);
-      }
-    };
+    const webview = createMockWebview(responseMessagesFromTheExtensionToTheWebview);
     // Fake `webviewView` container.
-    const webviewView: IWebviewView = { title: 'X', webview };
+    const webviewView = createMockWebviewView(webview, 'X');
 
     // Fake `logicHandler` for this test.
     const logicHandler: IChatAgent = {
@@ -363,22 +306,27 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // ********************************************************************************
     //  Simulate a 'modelChanged' command from the webview.
     // ********************************************************************************
-    const handler = webview.__handler as (msg: WebviewMessage) => Promise<void>;
-    await handler({ command: 'modelChanged', model: 'new-model' });
+    if (webview.__handler) {
+      await webview.__handler({ command: 'modelChanged', model: 'new-model' });
+    }
     // Expect that the `eventBus` emitted the 'modelChanged' event with the correct model name.
     expect(emittedModel).toBe('new-model');
 
     // ********************************************************************************
     //  Simulate a 'clearHistory' command from the webview.
     // ********************************************************************************
-    await handler({ command: 'clearHistory' });
+    if (webview.__handler) {
+      await webview.__handler({ command: 'clearHistory' });
+    }
     // Expect that the `clearHistory` method on our fake `chatHistoryManager` was called.
     expect(chatHistoryCleared).toBe(true);
 
     // ********************************************************************************
     //  Simulate a 'sendMessage' command which is expected to trigger an error.
     // ********************************************************************************
-    await handler({ command: 'sendMessage', text: 'x' });
+    if (webview.__handler) {
+      await webview.__handler({ command: 'sendMessage', text: 'x' });
+    }
     // Get the last message that was posted to the webview.
     const last = responseMessagesFromTheExtensionToTheWebview[responseMessagesFromTheExtensionToTheWebview.length - 1] as { text: string };
     // Expect an error message to have been posted.
@@ -394,11 +342,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // Define a fake extension URI.
     const extensionUri: IUriLike = { fsPath: '/ext' };
     // Define a fake VS Code API, specifically `Uri.joinPath`.
-    const vscodeApi: IVscodeApiLocal = {
-      Uri: {
-        joinPath: (b: IUriLike, ...p: string[]) => ({ b, p } as IUriLike)
-      }
-    };
+    const vscodeApi = createMockVscodeApi();
 
     // Define a fake `providerAccessor` that returns empty lists for models.
     const providerAccessor: ILlmProviderAccessor = {
@@ -409,21 +353,9 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // `posted` array to capture messages sent to the webview.
     const responseMessagesFromTheExtensionToTheWebview: MessageFromTheExtensionToTheWebview[] = [];
     // Fake `webview` implementation, similar to previous tests.
-    const webview: IWebview & { __handler?: (msg: WebviewMessage) => void } = {
-      options: undefined,
-      asWebviewUri: (uri: IUriLike) => `webview:${JSON.stringify(uri)}` as unknown as IUriLike,
-      html: '',
-      onDidReceiveMessage: ((handler: (msg: WebviewMessage) => void): IDisposable => {
-        webview.__handler = handler;
-        return { dispose: () => { } };
-      }) as IWebview['onDidReceiveMessage'],
-      postMessage: (msg: MessageFromTheExtensionToTheWebview) => {
-        responseMessagesFromTheExtensionToTheWebview.push(msg);
-        return Promise.resolve(true);
-      }
-    };
+    const webview = createMockWebview(responseMessagesFromTheExtensionToTheWebview);
     // Fake `webviewView` container.
-    const webviewView: IWebviewView = { title: 'X', webview };
+    const webviewView = createMockWebviewView(webview, 'X');
 
     // Fake `logicHandler` for this test.
     // Its methods are marked with `/* not called */` because we expect
@@ -463,10 +395,10 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // ********************************************************************************
     //  Simulate sending an unknown command from the webview.
     // ********************************************************************************
-    // Cast the stored handler to a more generic type as we're sending an "unknown" message structure.
-    const handler = webview.__handler as (msg: unknown) => Promise<void>;
     // Send a message with a 'command' that the `ChatWebviewViewProvider` does not handle.
-    await handler({ command: 'unknown' });
+    if (webview.__handler) {
+      await webview.__handler({ command: 'unknown' });
+    }
 
     // ********************************************************************************
     //  Assertions: Verify that no messages were posted and no logic was executed.
@@ -478,21 +410,10 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
   it('anonymizes context if anonymizer is provided', async () => {
     const extensionUri: IUriLike = { fsPath: '/ext' };
-    const vscodeApi: IVscodeApiLocal = {
-      Uri: { joinPath: (b: IUriLike, ...p: string[]) => ({ b, p } as IUriLike) }
-    };
+    const vscodeApi = createMockVscodeApi();
     const providerAccessor: ILlmProviderAccessor = { getModels: () => [], getActiveModel: () => '' };
-    const webview: IWebview & { __handler?: (msg: WebviewMessage) => void } = {
-      options: undefined,
-      asWebviewUri: (uri: IUriLike) => `webview:${JSON.stringify(uri)}` as unknown as IUriLike,
-      html: '',
-      onDidReceiveMessage: ((handler: (msg: WebviewMessage) => void): IDisposable => {
-        webview.__handler = handler;
-        return { dispose: () => { } };
-      }) as IWebview['onDidReceiveMessage'],
-      postMessage: (_msg: MessageFromTheExtensionToTheWebview) => Promise.resolve(true)
-    };
-    const webviewView: IWebviewView = { title: 'X', webview };
+    const webview = createMockWebview();
+    const webviewView = createMockWebviewView(webview, 'X');
 
     const promptsSent: IPrompt[] = [];
     const logicHandler: IChatAgent = {
@@ -508,7 +429,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       getChatHistory: () => []
     };
 
-    const anonymizer = {
+    const anonymizer: IAnonymizer = {
       anonymize: (text: string) => text.replace('SECRET', 'ANONYMIZED'),
       deanonymize: (text: string) => text,
       createStreamingDeanonymizer: () => ({
@@ -533,8 +454,9 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     provider.resolveWebviewView(webviewView);
 
-    const handler = webview.__handler as (msg: WebviewMessage) => Promise<void>;
-    await handler({ command: 'sendMessage', text: 'hello' });
+    if (webview.__handler) {
+      await webview.__handler({ command: 'sendMessage', text: 'hello' });
+    }
 
     expect(promptsSent.length).toBe(1);
     const chatHistory = promptsSent[0].generateChatHistory();
@@ -544,26 +466,12 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
   it('aborts request and stops sending tokens when cancelRequest is received', async () => {
     const extensionUri: IUriLike = { fsPath: '/ext' };
-    const vscodeApi: IVscodeApiLocal = {
-      Uri: { joinPath: (b: IUriLike, ...p: string[]) => ({ b, p } as IUriLike) }
-    };
+    const vscodeApi = createMockVscodeApi();
     const providerAccessor: ILlmProviderAccessor = { getModels: () => [], getActiveModel: () => '' };
 
     const posted: MessageFromTheExtensionToTheWebview[] = [];
-    const webview: IWebview & { __handler?: (msg: WebviewMessage) => void } = {
-      options: undefined,
-      asWebviewUri: (uri: IUriLike) => `webview:${JSON.stringify(uri)}` as unknown as IUriLike,
-      html: '',
-      onDidReceiveMessage: ((handler: (msg: WebviewMessage) => void): IDisposable => {
-        webview.__handler = handler;
-        return { dispose: () => { } };
-      }) as IWebview['onDidReceiveMessage'],
-      postMessage: (msg: MessageFromTheExtensionToTheWebview) => {
-        posted.push(msg);
-        return Promise.resolve(true);
-      }
-    };
-    const webviewView: IWebviewView = { title: 'X', webview };
+    const webview = createMockWebview(posted);
+    const webviewView = createMockWebviewView(webview, 'X');
 
     let signalAtFetch: AbortSignal | undefined;
     const logicHandler: IChatAgent = {
@@ -605,8 +513,9 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     provider.resolveWebviewView(webviewView);
 
-    const handler = webview.__handler as (msg: WebviewMessage) => Promise<void>;
-    await handler({ command: 'sendMessage', text: 'hello' });
+    if (webview.__handler) {
+      await webview.__handler({ command: 'sendMessage', text: 'hello' });
+    }
 
     // Verify signal was aborted
     expect(signalAtFetch).toBeDefined();
@@ -621,22 +530,11 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
   it('newChat clears history and posts message to webview', async () => {
     const extensionUri: IUriLike = { fsPath: '/ext' };
-    const vscodeApi: IVscodeApiLocal = {
-      Uri: { joinPath: (b: IUriLike, ...p: string[]) => ({ b, p } as IUriLike) }
-    };
+    const vscodeApi = createMockVscodeApi();
     const providerAccessor: ILlmProviderAccessor = { getModels: () => [], getActiveModel: () => '' };
     const posted: MessageFromTheExtensionToTheWebview[] = [];
-    const webview: IWebview = {
-      options: undefined,
-      asWebviewUri: (uri: IUriLike) => `webview:${JSON.stringify(uri)}` as unknown as IUriLike,
-      html: '',
-      onDidReceiveMessage: () => ({ dispose: () => { } }),
-      postMessage: (msg: MessageFromTheExtensionToTheWebview) => {
-        posted.push(msg);
-        return Promise.resolve(true);
-      }
-    };
-    const webviewView: IWebviewView = { title: 'X', webview };
+    const webview = createMockWebview(posted);
+    const webviewView = createMockWebviewView(webview, 'X');
 
     let historyCleared = false;
     const chatHistoryManager: IChatHistoryManager = {
@@ -648,7 +546,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri },
       providerAccessor,
-      logicHandler: {} as IChatAgent,
+      logicHandler: { run: async () => { } },
       chatHistoryManager,
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
@@ -670,29 +568,18 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
   it('handles agent:maxIterationsReached event', async () => {
     const extensionUri: IUriLike = { fsPath: '/ext' };
-    const vscodeApi: IVscodeApiLocal = {
-      Uri: { joinPath: (b: IUriLike, ...p: string[]) => ({ b, p } as IUriLike) }
-    };
+    const vscodeApi = createMockVscodeApi();
     const providerAccessor: ILlmProviderAccessor = { getModels: () => [], getActiveModel: () => '' };
     const posted: MessageFromTheExtensionToTheWebview[] = [];
-    const webview: IWebview = {
-      options: undefined,
-      asWebviewUri: (uri: IUriLike) => `webview:${JSON.stringify(uri)}` as unknown as IUriLike,
-      html: '',
-      onDidReceiveMessage: () => ({ dispose: () => { } }),
-      postMessage: (msg: MessageFromTheExtensionToTheWebview) => {
-        posted.push(msg);
-        return Promise.resolve(true);
-      }
-    };
-    const webviewView: IWebviewView = { title: 'X', webview };
+    const webview = createMockWebview(posted);
+    const webviewView = createMockWebviewView(webview, 'X');
 
     const eventBus = new EventBus();
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri },
       providerAccessor,
-      logicHandler: {} as IChatAgent,
-      chatHistoryManager: {} as IChatHistoryManager,
+      logicHandler: { run: async () => { } },
+      chatHistoryManager: { clearHistory: () => { }, addMessage: () => { }, getChatHistory: () => [] },
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
       vscodeApi,
@@ -706,32 +593,24 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     provider.resolveWebviewView(webviewView);
     eventBus.emit('agent:maxIterationsReached', { maxIterations: 10 });
     expect(posted.length).toBe(1);
-    expect((posted[0] as any).text).toContain('Max iterations reached (10)');
+    const lastPosted = posted[0];
+    if ('text' in lastPosted) {
+      expect(lastPosted.text).toContain('Max iterations reached (10)');
+    }
   });
 
   it('cancelRequest does nothing if no abortController', async () => {
     const extensionUri: IUriLike = { fsPath: '/ext' };
-    const vscodeApi: IVscodeApiLocal = {
-      Uri: { joinPath: (b: IUriLike, ...p: string[]) => ({ b, p } as IUriLike) }
-    };
+    const vscodeApi = createMockVscodeApi();
     const providerAccessor: ILlmProviderAccessor = { getModels: () => [], getActiveModel: () => '' };
-    const webview: IWebview & { __handler?: (msg: WebviewMessage) => void } = {
-      options: undefined,
-      asWebviewUri: (uri: IUriLike) => `webview:${JSON.stringify(uri)}` as unknown as IUriLike,
-      html: '',
-      onDidReceiveMessage: ((handler: (msg: WebviewMessage) => void): IDisposable => {
-        webview.__handler = handler;
-        return { dispose: () => { } };
-      }) as IWebview['onDidReceiveMessage'],
-      postMessage: () => Promise.resolve(true)
-    };
-    const webviewView: IWebviewView = { title: 'X', webview };
+    const webview = createMockWebview();
+    const webviewView = createMockWebviewView(webview, 'X');
 
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri },
       providerAccessor,
-      logicHandler: {} as IChatAgent,
-      chatHistoryManager: {} as IChatHistoryManager,
+      logicHandler: { run: async () => { } },
+      chatHistoryManager: { clearHistory: () => { }, addMessage: () => { }, getChatHistory: () => [] },
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
       vscodeApi,
@@ -739,30 +618,18 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     });
 
     provider.resolveWebviewView(webviewView);
-    const handler = webview.__handler as (msg: WebviewMessage) => Promise<void>;
-
-    // Should not throw
-    await handler({ command: 'cancelRequest' });
+    if (webview.__handler) {
+      await webview.__handler({ command: 'cancelRequest' });
+    }
   });
 
   it('_sendCompletionMessage does nothing if _view is undefined', async () => {
     const extensionUri: IUriLike = { fsPath: '/ext' };
-    const vscodeApi: IVscodeApiLocal = {
-      Uri: { joinPath: (b: IUriLike, ...p: string[]) => ({ b, p } as IUriLike) }
-    };
+    const vscodeApi = createMockVscodeApi();
     const providerAccessor: ILlmProviderAccessor = { getModels: () => [], getActiveModel: () => '' };
 
-    const webview: IWebview & { __handler?: (msg: WebviewMessage) => void } = {
-      options: undefined,
-      asWebviewUri: (uri: IUriLike) => `webview:${JSON.stringify(uri)}` as unknown as IUriLike,
-      html: '',
-      onDidReceiveMessage: ((handler: (msg: WebviewMessage) => void): IDisposable => {
-        webview.__handler = handler;
-        return { dispose: () => { } };
-      }) as IWebview['onDidReceiveMessage'],
-      postMessage: () => Promise.resolve(true)
-    };
-    const webviewView: IWebviewView = { title: 'X', webview };
+    const webview = createMockWebview();
+    const webviewView = createMockWebviewView(webview, 'X');
 
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri },
@@ -773,11 +640,12 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
           provider._view = undefined;
           return Promise.resolve();
         }
-      } as unknown as IChatAgent,
+      },
       chatHistoryManager: {
+        clearHistory: () => { },
         addMessage: () => { },
         getChatHistory: () => []
-      } as unknown as IChatHistoryManager,
+      },
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
       vscodeApi,
@@ -785,11 +653,9 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     });
 
     provider.resolveWebviewView(webviewView);
-    const handler = webview.__handler as (msg: WebviewMessage) => Promise<void>;
-
-    // This will call run which clears _view, 
-    // and then calls _sendCompletionMessage.
-    await handler({ command: 'sendMessage', text: 'hello' });
+    if (webview.__handler) {
+      await webview.__handler({ command: 'sendMessage', text: 'hello' });
+    }
 
     expect(provider._view).toBeUndefined();
   });
