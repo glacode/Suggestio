@@ -1,6 +1,6 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
 import { provideInlineCompletionItems } from '../../src/completion/completionProvider.js';
-import { IIgnoreManager, ITextDocument, IPosition, Config, ILlmProvider } from '../../src/types.js';
+import { IIgnoreManager, ITextDocument, IPosition, Config, ILlmProvider, ICancellationToken, ChatMessage } from '../../src/types.js';
 
 // Mock DebounceManager
 jest.mock('../../src/completion/debounceManager.js', () => ({
@@ -11,31 +11,37 @@ jest.mock('../../src/completion/debounceManager.js', () => ({
 }));
 
 // Mock IgnoreManager
-const mockIgnoreManager = {
-    shouldIgnore: jest.fn<() => Promise<boolean>>().mockResolvedValue(false),
-} as unknown as IIgnoreManager;
+const mockIgnoreManager: jest.Mocked<IIgnoreManager> = {
+    shouldIgnore: jest.fn<(filePath: string) => Promise<boolean>>().mockResolvedValue(false),
+};
 
 // Mock Provider
-const mockProvider = {
-    query: jest.fn(),
-} as unknown as ILlmProvider;
+const mockProvider: jest.Mocked<ILlmProvider> = {
+    query: jest.fn<(prompt: any, tools?: any, signal?: any) => Promise<ChatMessage | null>>(),
+    queryStream: jest.fn<(prompt: any, onToken: any, tools?: any, signal?: any) => Promise<ChatMessage | null>>(),
+};
 
 // Mock Document
-const mockDocument = {
+const mockDocument: ITextDocument = {
     uri: { fsPath: '/path/to/file.ts', toString: () => '/path/to/file.ts' },
     languageId: 'typescript',
     lineCount: 1,
     lineAt: () => ({ text: 'content' }),
-} as unknown as ITextDocument;
+};
 
 // Mock Position
 const mockPosition: IPosition = { line: 0, character: 0 };
 
+// Mock Cancellation Token
+const mockCancellationToken: ICancellationToken = {
+    isCancellationRequested: false,
+};
+
 describe('provideInlineCompletionItems', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        (mockProvider as any).query.mockResolvedValue({ role: 'assistant', content: ' suggestion ' });
-        (mockIgnoreManager as any).shouldIgnore.mockResolvedValue(false);
+        mockProvider.query.mockResolvedValue({ role: 'assistant', content: ' suggestion ' });
+        mockIgnoreManager.shouldIgnore.mockResolvedValue(false);
     });
 
     it('should return empty list immediately if enableInlineCompletion is false', async () => {
@@ -44,7 +50,7 @@ describe('provideInlineCompletionItems', () => {
             enableInlineCompletion: false,
             providers: {},
             anonymizer: { enabled: false, words: [] }
-        } as any;
+        };
 
         const result = await provideInlineCompletionItems(
             mockProvider,
@@ -52,7 +58,7 @@ describe('provideInlineCompletionItems', () => {
             mockIgnoreManager,
             mockDocument,
             mockPosition,
-            {} as any
+            mockCancellationToken
         );
 
         expect(result.items).toHaveLength(0);
@@ -66,7 +72,7 @@ describe('provideInlineCompletionItems', () => {
             enableInlineCompletion: true,
             providers: {},
             anonymizer: { enabled: false, words: [] }
-        } as any;
+        };
 
         const promise = provideInlineCompletionItems(
             mockProvider,
@@ -74,7 +80,7 @@ describe('provideInlineCompletionItems', () => {
             mockIgnoreManager,
             mockDocument,
             mockPosition,
-            {} as any
+            mockCancellationToken
         );
         
         // Wait for async operations
@@ -95,7 +101,7 @@ describe('provideInlineCompletionItems', () => {
             activeProvider: 'test',
             providers: {},
             anonymizer: { enabled: false, words: [] }
-        } as any;
+        };
 
         const promise = provideInlineCompletionItems(
             mockProvider,
@@ -103,7 +109,7 @@ describe('provideInlineCompletionItems', () => {
             mockIgnoreManager,
             mockDocument,
             mockPosition,
-            {} as any
+            mockCancellationToken
         );
         
         // Wait for async operations
