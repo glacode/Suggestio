@@ -8,7 +8,7 @@ import type {
   IUriLike, // A type representing a URI (Uniform Resource Identifier), similar to a file path.
   IVscodeApiLocal, // A type for a local, faked VS Code API.
   ILlmProviderAccessor, // A type for accessing language model (LLM) providers.
-  IChatResponder, // A type for handling chat logic (sending/receiving messages).
+  IChatAgent, // A type for handling chat logic (sending/receiving messages).
   IChatHistoryManager, // A type for managing chat history (e.g., clearing it).
   IWebview, // A type representing the webview itself, which displays HTML content.
   IWebviewView, // A type representing the VS Code WebviewView, a container for the webview.
@@ -92,7 +92,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // `tokensEmitted` will store the full prompts sent to the `logicHandler`.
     const promptsSent: IPrompt[] = [];
     // `logicHandler` is a fake `IChatResponder` that simulates the AI's response logic.
-    const logicHandler: IChatResponder = {
+    const logicHandler: IChatAgent = {
       // `fetchStreamChatResponse` simulates getting a chat response in parts (tokens).
       // It immediately calls `onToken` twice with fake tokens and records the prompt.
       fetchStreamChatResponse: async (prompt: IPrompt, onToken: (t: string) => void) => {
@@ -318,7 +318,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const webviewView: IWebviewView = { title: 'X', webview };
 
     // Fake `logicHandler` for this test.
-    const logicHandler: IChatResponder = {
+    const logicHandler: IChatAgent = {
       // For this test, `fetchStreamChatResponse` is made to throw an error immediately.
       fetchStreamChatResponse: async () => {
         throw new Error('boom'); // Simulate an error during AI response.
@@ -428,7 +428,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // Fake `logicHandler` for this test.
     // Its methods are marked with `/* not called */` because we expect
     // them *not* to be invoked when an unknown command is received.
-    const logicHandler: IChatResponder = {
+    const logicHandler: IChatAgent = {
       fetchStreamChatResponse: async () => {
         /* not called */ // This should not be called.
       }
@@ -495,7 +495,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const webviewView: IWebviewView = { title: 'X', webview };
 
     const promptsSent: IPrompt[] = [];
-    const logicHandler: IChatResponder = {
+    const logicHandler: IChatAgent = {
       fetchStreamChatResponse: async (prompt: IPrompt, _onToken: (t: string) => void) => {
         promptsSent.push(prompt);
         return Promise.resolve();
@@ -566,7 +566,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const webviewView: IWebviewView = { title: 'X', webview };
 
     let signalAtFetch: AbortSignal | undefined;
-    const logicHandler: IChatResponder = {
+    const logicHandler: IChatAgent = {
       fetchStreamChatResponse: async (_prompt: IPrompt, onToken: (t: string) => void, signal?: AbortSignal) => {
         signalAtFetch = signal;
         onToken('tok1');
@@ -648,7 +648,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri },
       providerAccessor,
-      logicHandler: {} as IChatResponder,
+      logicHandler: {} as IChatAgent,
       chatHistoryManager,
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
@@ -691,7 +691,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri },
       providerAccessor,
-      logicHandler: {} as IChatResponder,
+      logicHandler: {} as IChatAgent,
       chatHistoryManager: {} as IChatHistoryManager,
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
@@ -730,7 +730,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri },
       providerAccessor,
-      logicHandler: {} as IChatResponder,
+      logicHandler: {} as IChatAgent,
       chatHistoryManager: {} as IChatHistoryManager,
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
@@ -773,7 +773,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
           provider._view = undefined;
           return Promise.resolve();
         }
-      } as unknown as IChatResponder,
+      } as unknown as IChatAgent,
       chatHistoryManager: {
         addMessage: () => { },
         getChatHistory: () => []

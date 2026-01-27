@@ -1,8 +1,8 @@
 import { Config, ToolImplementation } from "../types.js";
-import type { IChatHistoryManager, IPrompt, ChatMessage, ToolCall, IChatResponder } from "../types.js";
+import type { IChatHistoryManager, IPrompt, ChatMessage, ToolCall, IChatAgent } from "../types.js";
 import { IEventBus } from "../utils/eventBus.js";
 
-export class Agent implements IChatResponder {
+export class Agent implements IChatAgent {
     constructor(
         private config: Config,
         private log: (message: string) => void,

@@ -5,7 +5,7 @@
 // Importing custom types defined in `types.ts`. These types help ensure consistency
 // and define the expected structure for various objects and functions used in the chat feature.
 import type {
-    IChatResponder, // Defines the interface for handling chat logic (e.g., sending prompts to an LLM).
+    IChatAgent, // Defines the interface for handling chat logic (e.g., sending prompts to an LLM).
     IChatHistoryManager, // Defines the interface for managing chat history (e.g., clearing it).
     GetChatWebviewContent, // A function type for generating the HTML content for the webview.
     ILlmProviderAccessor, // Defines the interface for accessing information about LLM providers (models).
@@ -28,7 +28,7 @@ import { log } from '../logger.js';
 interface IChatWebviewViewProviderArgs {
     extensionContext: IExtensionContextMinimal; // The VS Code extension context, vital for managing extension resources.
     providerAccessor: ILlmProviderAccessor; // An accessor to retrieve available and active LLM models.
-    logicHandler: IChatResponder; // The core logic handler responsible for interacting with the LLM.
+    logicHandler: IChatAgent; // The core logic handler responsible for interacting with the LLM.
     chatHistoryManager: IChatHistoryManager; // The manager responsible for chat history operations.
     buildContext: IContextBuilder; // A builder to create contextual information for the AI prompt.
     getChatWebviewContent: GetChatWebviewContent; // A function that provides the HTML content for the webview.
@@ -54,7 +54,7 @@ export class ChatWebviewViewProvider {
     // `_view` holds a reference to the `IWebviewView` object provided by VS Code
     // when the view is resolved. This allows the provider to interact with the webview.
     public _view?: IWebviewView;
-    private readonly _logicHandler: IChatResponder; // Stores the handler for chat backend logic.
+    private readonly _logicHandler: IChatAgent; // Stores the handler for chat backend logic.
     private readonly _chatHistoryManager: IChatHistoryManager; // Stores the chat history manager.
     private readonly _buildContext: IContextBuilder; // Stores the context builder instance.
     private readonly _extensionContext: IExtensionContextMinimal; // Stores the extension context.

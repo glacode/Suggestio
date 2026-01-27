@@ -285,10 +285,13 @@ export interface IPrompt {
 }
 
 /**
- * `IChatResponder` defines the interface for the backend logic that handles
+ * `IChatAgent` defines the interface for the backend logic that handles
  * interacting with the Language Model (LLM).
+ *
+ * This interface provides the core functionality for communicating with AI models,
+ * including streaming responses and handling cancellation signals.
  */
-export interface IChatResponder {
+export interface IChatAgent {
   /**
    * Sends a `userPrompt` to the LLM and receives the response as a stream of tokens.
    *
