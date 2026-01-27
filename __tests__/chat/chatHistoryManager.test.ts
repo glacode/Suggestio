@@ -59,13 +59,13 @@ describe("Chat History Management (Unit Test)", () => {
         const userMessage1 = "User message 1";
         chatHistoryManager.addMessage({ role: "user", content: userMessage1 });
         const prompt1 = new ChatPrompt(chatHistoryManager.getChatHistory());
-        await handler.fetchStreamChatResponse(prompt1, (_token: string) => { /* do nothing with tokens in this test */ });
+        await handler.run(prompt1, (_token: string) => { /* do nothing with tokens in this test */ });
 
         // --- Turn 2 ---
         const userMessage2 = "User message 2";
         chatHistoryManager.addMessage({ role: "user", content: userMessage2 });
         const prompt2 = new ChatPrompt(chatHistoryManager.getChatHistory());
-        await handler.fetchStreamChatResponse(prompt2, (_token: string) => { /* do nothing with tokens in this test */ });
+        await handler.run(prompt2, (_token: string) => { /* do nothing with tokens in this test */ });
 
         // --- Verification ---
         const finalHistory = chatHistoryManager.getChatHistory();

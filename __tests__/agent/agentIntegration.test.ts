@@ -66,7 +66,7 @@ describe("Agent (Integration) simple tests", () => {
             streamedContent += token;
         };
 
-        await handler.fetchStreamChatResponse(mockPrompt, onToken);
+        await handler.run(mockPrompt, onToken);
         expect(streamedContent).toBe("Hello world");
         expect(mockChatHistoryManager.addMessage).toHaveBeenCalledTimes(1);
         expect(mockChatHistoryManager.addMessage).toHaveBeenCalledWith({ role: "assistant", content: "Hello world" });
@@ -90,7 +90,7 @@ describe("Agent (Integration) simple tests", () => {
             streamedContent += token;
         };
 
-        await expect(handler.fetchStreamChatResponse(mockPrompt, onToken)).rejects.toThrow("Simulated failure");
+        await expect(handler.run(mockPrompt, onToken)).rejects.toThrow("Simulated failure");
         expect(streamedContent).toBe("");
         expect(mockChatHistoryManager.addMessage).toHaveBeenCalledTimes(0);
         expect(mockChatHistory.length).toBe(0);

@@ -34,7 +34,7 @@ describe("Agent", () => {
         );
 
         let output = "";
-        await agent.fetchStreamChatResponse(mockPrompt, (t) => output += t);
+        await agent.run(mockPrompt, (t) => output += t);
 
         expect(output).toBe("Hello!");
         expect(mockChatHistory.length).toBe(1);
@@ -72,7 +72,7 @@ describe("Agent", () => {
         );
 
         let output = "";
-        await agent.fetchStreamChatResponse(mockPrompt, (t) => output += t);
+        await agent.run(mockPrompt, (t) => output += t);
 
         expect(output).toBe("Calling tool...Final answer");
         expect(tool.execute).toHaveBeenCalledWith({ arg: "val" }, undefined);
@@ -118,7 +118,7 @@ describe("Agent", () => {
             [] // No tools
         );
 
-        await agent.fetchStreamChatResponse(mockPrompt, () => { });
+        await agent.run(mockPrompt, () => { });
 
         expect(logs).toContain("Tool not found: unknownTool");
         expect(mockChatHistoryManager.addMessage).toHaveBeenCalledWith(expect.objectContaining({
@@ -167,7 +167,7 @@ describe("Agent", () => {
             [mockTool]
         );
 
-        await agent.fetchStreamChatResponse(mockPrompt, () => { });
+        await agent.run(mockPrompt, () => { });
 
         expect(logs).toContain("Error executing tool: Tool failed");
         expect(mockChatHistoryManager.addMessage).toHaveBeenCalledWith(expect.objectContaining({
@@ -227,7 +227,7 @@ describe("Agent", () => {
         );
 
         let streamedContent = "";
-        await agent.fetchStreamChatResponse(mockPrompt, (token) => { streamedContent += token; });
+        await agent.run(mockPrompt, (token) => { streamedContent += token; });
 
         expect(streamedContent).toBe("Processed both.");
         expect(mockToolA.execute).toHaveBeenCalledWith({ arg: "valA" }, undefined);
@@ -300,7 +300,7 @@ describe("Agent", () => {
         );
 
         let streamedContent = "";
-        await agent.fetchStreamChatResponse(mockPrompt, (token) => { streamedContent += token; });
+        await agent.run(mockPrompt, (token) => { streamedContent += token; });
 
         expect(streamedContent).toBe("Step 1Step 2Done.");
         expect(mockTool1.execute).toHaveBeenCalled();
@@ -361,7 +361,7 @@ describe("Agent", () => {
             return "Tool result";
         });
 
-        await agent.fetchStreamChatResponse(mockPrompt, () => { }, controller.signal);
+        await agent.run(mockPrompt, () => { }, controller.signal);
 
         // If the loop respected the signal, it should have stopped AFTER the first tool call
         // and NOT called the provider for the "Final answer".
@@ -436,7 +436,7 @@ describe("Agent", () => {
 
         const controller = new AbortController();
 
-        await agent.fetchStreamChatResponse(mockPrompt, () => { }, controller.signal);
+        await agent.run(mockPrompt, () => { }, controller.signal);
 
 
 

@@ -191,7 +191,7 @@ export class ChatWebviewViewProvider {
                     const prompt = new ChatPrompt(this._chatHistoryManager.getChatHistory(), context);
                     // Call the `logicHandler` to fetch a streaming chat response.
                     // The `onToken` callback is invoked for each partial token received from the LLM.
-                    await this._logicHandler.fetchStreamChatResponse(prompt, (token: string) => {
+                    await this._logicHandler.run(prompt, (token: string) => {
                         // Check if request was cancelled
                         if (this._abortController?.signal.aborted) {
                             return;

@@ -95,7 +95,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const logicHandler: IChatAgent = {
       // `fetchStreamChatResponse` simulates getting a chat response in parts (tokens).
       // It immediately calls `onToken` twice with fake tokens and records the prompt.
-      fetchStreamChatResponse: async (prompt: IPrompt, onToken: (t: string) => void) => {
+      run: async (prompt: IPrompt, onToken: (t: string) => void) => {
         onToken('tok1'); // First fake token.
         onToken('tok2'); // Second fake token.
         promptsSent.push(prompt); // Record the prompt that was processed.
@@ -320,7 +320,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // Fake `logicHandler` for this test.
     const logicHandler: IChatAgent = {
       // For this test, `fetchStreamChatResponse` is made to throw an error immediately.
-      fetchStreamChatResponse: async () => {
+      run: async () => {
         throw new Error('boom'); // Simulate an error during AI response.
       }
     };
@@ -429,7 +429,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // Its methods are marked with `/* not called */` because we expect
     // them *not* to be invoked when an unknown command is received.
     const logicHandler: IChatAgent = {
-      fetchStreamChatResponse: async () => {
+      run: async () => {
         /* not called */ // This should not be called.
       }
     };
@@ -496,7 +496,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     const promptsSent: IPrompt[] = [];
     const logicHandler: IChatAgent = {
-      fetchStreamChatResponse: async (prompt: IPrompt, _onToken: (t: string) => void) => {
+      run: async (prompt: IPrompt, _onToken: (t: string) => void) => {
         promptsSent.push(prompt);
         return Promise.resolve();
       }
@@ -567,7 +567,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     let signalAtFetch: AbortSignal | undefined;
     const logicHandler: IChatAgent = {
-      fetchStreamChatResponse: async (_prompt: IPrompt, onToken: (t: string) => void, signal?: AbortSignal) => {
+      run: async (_prompt: IPrompt, onToken: (t: string) => void, signal?: AbortSignal) => {
         signalAtFetch = signal;
         onToken('tok1');
 

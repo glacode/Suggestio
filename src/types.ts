@@ -300,7 +300,7 @@ export interface IChatAgent {
    * @param signal Optional AbortSignal to cancel the request.
    * @returns A promise that resolves when the stream is finished.
    */
-  fetchStreamChatResponse(prompt: IPrompt, onToken: (token: string) => void, signal?: AbortSignal): Promise<void>;
+  run(prompt: IPrompt, onToken: (token: string) => void, signal?: AbortSignal): Promise<void>;
 }
 
 /**

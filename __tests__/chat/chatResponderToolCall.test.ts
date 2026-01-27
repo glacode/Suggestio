@@ -79,7 +79,7 @@ describe("ChatResponder Tool Calling Integration", () => {
             streamedContent += token;
         };
 
-        await handler.fetchStreamChatResponse(mockPrompt, onToken);
+        await handler.run(mockPrompt, onToken);
 
         // Verify final output
         expect(streamedContent).toBe("It is 12:00 PM");

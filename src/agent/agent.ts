@@ -11,7 +11,7 @@ export class Agent implements IChatAgent {
         private eventBus?: IEventBus
     ) { }
 
-    async fetchStreamChatResponse(prompt: IPrompt, onToken: (token: string) => void, signal?: AbortSignal): Promise<void> {
+    async run(prompt: IPrompt, onToken: (token: string) => void, signal?: AbortSignal): Promise<void> {
         const toolDefinitions = this.tools.map(t => t.definition);
         let currentPrompt = prompt;
         let iterations = 0;
