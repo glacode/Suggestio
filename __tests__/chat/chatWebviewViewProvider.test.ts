@@ -329,12 +329,13 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       await webview.__handler({ command: 'sendMessage', text: 'x' });
     }
     // Get the last message that was posted to the webview.
-    const last = responseMessagesFromTheExtensionToTheWebview[responseMessagesFromTheExtensionToTheWebview.length - 1] as { text: string };
+    const last = responseMessagesFromTheExtensionToTheWebview[responseMessagesFromTheExtensionToTheWebview.length - 1];
     // Expect an error message to have been posted.
     expect(last).toBeDefined();
-    expect(typeof last.text).toBe('string');
     // Expect the error message to contain a specific user-friendly error string.
-    expect(last.text).toContain('Sorry, there was an error processing your request');
+    expect(last).toMatchObject({
+      text: expect.stringContaining('Sorry, there was an error processing your request')
+    });
   });
 
   // This test case verifies that the `ChatWebviewViewProvider` gracefully ignores
