@@ -1,9 +1,7 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
-import { IChatHistoryManager, ChatMessage, IPrompt, ChatHistory, Config, IProviderConfig, ToolImplementation, ToolCall } from "../../src/types.js";
-import { FakeProvider } from "../testUtils.js";
-
-interface MockConfig extends Pick<Config, 'activeProvider' | 'llmProviderForChat' | 'providers' | 'anonymizer'> { }
+import { IChatHistoryManager, ChatMessage, IPrompt, ChatHistory, ToolImplementation, ToolCall } from "../../src/types.js";
+import { FakeProvider, createDefaultConfig, createMockProviderConfig } from "../testUtils.js";
 
 describe("ChatResponder Tool Calling Integration", () => {
     let logs: string[];
@@ -63,12 +61,11 @@ describe("ChatResponder Tool Calling Integration", () => {
         };
 
         const handler = new Agent(
-            {
+            createDefaultConfig({
                 activeProvider: "FAKE",
                 llmProviderForChat: provider,
-                providers: { FAKE: { model: "fake-model", apiKey: "fake-key" } as IProviderConfig },
-                anonymizer: { enabled: false, words: [] }
-            } as MockConfig,
+                providers: { FAKE: createMockProviderConfig() },
+            }),
             logger,
             mockChatHistoryManager,
             [mockTool]

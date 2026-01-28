@@ -1,9 +1,9 @@
 import { describe, it, beforeEach, expect } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
-import { IChatHistoryManager, IProviderConfig } from "../../src/types.js";
+import { IChatHistoryManager } from "../../src/types.js";
 import { ChatPrompt } from "../../src/chat/chatPrompt.js";
 import { ChatHistoryManager } from "../../src/chat/chatHistoryManager.js";
-import { FakeProvider, createDefaultConfig } from "../testUtils.js";
+import { FakeProvider, createDefaultConfig, createMockProviderConfig } from "../testUtils.js";
 
 describe("Chat History Management (Unit Test)", () => {
     let logs: string[];
@@ -27,7 +27,7 @@ describe("Chat History Management (Unit Test)", () => {
             createDefaultConfig({
                 activeProvider: "FAKE",
                 llmProviderForChat: fakeProvider,
-                providers: { FAKE: { model: "fake-model", apiKey: "fake-key" } as IProviderConfig }
+                providers: { FAKE: createMockProviderConfig() }
             }),
             logger,
             chatHistoryManager

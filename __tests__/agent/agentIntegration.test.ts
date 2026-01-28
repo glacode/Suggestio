@@ -1,28 +1,7 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
-import { IChatHistoryManager, ChatMessage, IPrompt, ChatHistory, Config, IProviderConfig, ILlmProvider, ToolDefinition } from "../../src/types.js"; // Import ChatMessage from types.js
-
-// Define a minimal mock config interface for testing purposes
-interface MockConfig extends Pick<Config, 'activeProvider' | 'llmProviderForChat' | 'providers' | 'anonymizer'> { }
-
-class FakeProvider implements ILlmProvider {
-    constructor(private reply: string | null, private shouldThrow = false) { }
-
-    async query(_prompt: IPrompt, _tools?: ToolDefinition[]): Promise<ChatMessage | null> {
-        if (this.shouldThrow) { throw new Error("Simulated failure"); }
-        if (this.reply === null) { return null; }
-        return { role: "assistant", content: this.reply };
-    }
-
-    async queryStream(_prompt: IPrompt, onToken: (token: string) => void, _tools?: ToolDefinition[]): Promise<ChatMessage | null> {
-        if (this.shouldThrow) { throw new Error("Simulated failure"); }
-        if (this.reply) {
-            onToken(this.reply);
-        }
-        if (this.reply === null) { return null; }
-        return { role: "assistant", content: this.reply };
-    }
-}
+import { IChatHistoryManager, ChatMessage, IPrompt, ChatHistory } from "../../src/types.js"; // Import ChatMessage from types.js
+import { createDefaultConfig, createMockProviderConfig, FakeProvider } from "../testUtils.js";
 
 describe("Agent (Integration) simple tests", () => {
     let logs: string[];
@@ -51,12 +30,11 @@ describe("Agent (Integration) simple tests", () => {
 
     it("fetches stream chat response on success", async () => {
         const handler = new Agent(
-            {
+            createDefaultConfig({
                 activeProvider: "FAKE",
-                llmProviderForChat: new FakeProvider("Hello world"),
-                providers: { FAKE: { model: "fake-model", apiKey: "fake-key" } as IProviderConfig },
-                anonymizer: { enabled: false, words: [] }
-            } as MockConfig,
+                llmProviderForChat: new FakeProvider([{ role: "assistant", content: "Hello world" }]),
+                providers: { FAKE: createMockProviderConfig() },
+            }),
             logger,
             mockChatHistoryManager // Injected mock
         );
@@ -74,13 +52,15 @@ describe("Agent (Integration) simple tests", () => {
     });
 
     it("handles error when fetching stream chat response", async () => {
+        const fakeProvider = new FakeProvider([]);
+        jest.spyOn(fakeProvider, 'queryStream').mockRejectedValue(new Error("Simulated failure"));
+
         const handler = new Agent(
-            {
+            createDefaultConfig({
                 activeProvider: "FAKE",
-                llmProviderForChat: new FakeProvider(null, true),
-                providers: { FAKE: { model: "fake-model", apiKey: "fake-key" } as IProviderConfig },
-                anonymizer: { enabled: false, words: [] }
-            } as MockConfig,
+                llmProviderForChat: fakeProvider,
+                providers: { FAKE: createMockProviderConfig() },
+            }),
             logger,
             mockChatHistoryManager // Injected mock
         );

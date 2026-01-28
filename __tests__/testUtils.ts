@@ -13,7 +13,8 @@ import {
     IIgnoreManager,
     Config,
     IChatHistoryManager,
-    ChatHistory
+    ChatHistory,
+    IProviderConfig
 } from "../src/types.js";
 import { jest } from "@jest/globals";
 
@@ -103,6 +104,12 @@ export const createMockHistoryManager = (recorded: ChatHistory = []): IChatHisto
     clearHistory: () => { recorded.length = 0; },
     addMessage: (m) => { recorded.push(m); },
     getChatHistory: () => [...recorded]
+});
+
+export const createMockProviderConfig = (overrides: Partial<IProviderConfig> = {}): IProviderConfig => ({
+    model: "fake-model",
+    apiKey: "fake-key",
+    ...overrides
 });
 
 export const createDefaultConfig = (overrides: Partial<Config> = {}): Config => ({

@@ -18,7 +18,7 @@ import type {
 // Import the actual ChatWebviewViewProvider class that we are testing.
 import { ChatWebviewViewProvider } from '../../src/chat/chatWebviewViewProvider.js';
 import { EventBus } from '../../src/utils/eventBus.js';
-import { createMockVscodeApi, createMockWebview, createMockWebviewView, createMockHistoryManager } from '../testUtils.js';
+import { createMockVscodeApi, createMockWebview, createMockWebviewView, createMockHistoryManager, createMockUri } from '../testUtils.js';
 
 // `describe` is used to group tests. Here, we're testing the `ChatWebviewViewProvider`.
 // The description "integration, no vscode mocks" indicates that while we're using
@@ -30,15 +30,16 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   // receives its HTML content, and can handle messages to get AI responses (tokens and completion).
   it('sets up webview, sets html and handles messages (tokens + completion)', async () => {
     // `extensionUri` represents the base path of our extension.
-    // We're faking it with a simple object that has a `fsPath` property.
-    const extensionUri: IUriLike = { fsPath: '/ext' };
+    const extensionUri = createMockUri('/ext');
 
     const eventBus = new EventBus();
 
     // `vscodeApi` is a fake (mock) version of the VS Code API.
     // We only implement the parts that `ChatWebviewViewProvider` needs,
     // specifically `Uri.joinPath` which is used to construct paths for webview resources.
-    const vscodeApi = createMockVscodeApi((base: IUriLike, ...paths: string[]) => ({ base, paths } as IUriLike));
+    const vscodeApi = createMockVscodeApi((base: IUriLike, ...paths: string[]) => 
+        createMockUri(base.toString() + '/' + paths.join('/'))
+    );
 
     // `providerAccessor` is a fake that provides information about available
     // and active language models (LLMs).
@@ -179,7 +180,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   // desired behavior is that chat history stores only the raw user message.
   // This test asserts the desired behavior and will fail until the code is fixed.
   it('does not add buildContext to chat history user messages', async () => {
-    const extensionUri: IUriLike = { fsPath: '/ext' };
+    const extensionUri = createMockUri('/ext');
     const vscodeApi = createMockVscodeApi();
 
     const providerAccessor: ILlmProviderAccessor = { getModels: () => [], getActiveModel: () => '' };
@@ -243,7 +244,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   // 3. Error reporting when `fetchStreamChatResponse` fails.
   it('emits modelChanged and calls clearHistory and reports errors', async () => {
     // Define a fake extension URI.
-    const extensionUri: IUriLike = { fsPath: '/ext' };
+    const extensionUri = createMockUri('/ext');
     // Define a fake VS Code API, specifically `Uri.joinPath`.
     const vscodeApi = createMockVscodeApi();
 
@@ -340,7 +341,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   // commands sent from the webview that it doesn't recognize.
   it('ignores unknown commands (no-op branch)', async () => {
     // Define a fake extension URI.
-    const extensionUri: IUriLike = { fsPath: '/ext' };
+    const extensionUri = createMockUri('/ext');
     // Define a fake VS Code API, specifically `Uri.joinPath`.
     const vscodeApi = createMockVscodeApi();
 
@@ -409,7 +410,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   });
 
   it('anonymizes context if anonymizer is provided', async () => {
-    const extensionUri: IUriLike = { fsPath: '/ext' };
+    const extensionUri = createMockUri('/ext');
     const vscodeApi = createMockVscodeApi();
     const providerAccessor: ILlmProviderAccessor = { getModels: () => [], getActiveModel: () => '' };
     const webview = createMockWebview();
@@ -465,7 +466,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   });
 
   it('aborts request and stops sending tokens when cancelRequest is received', async () => {
-    const extensionUri: IUriLike = { fsPath: '/ext' };
+    const extensionUri = createMockUri('/ext');
     const vscodeApi = createMockVscodeApi();
     const providerAccessor: ILlmProviderAccessor = { getModels: () => [], getActiveModel: () => '' };
 
@@ -529,7 +530,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   });
 
   it('newChat clears history and posts message to webview', async () => {
-    const extensionUri: IUriLike = { fsPath: '/ext' };
+    const extensionUri = createMockUri('/ext');
     const vscodeApi = createMockVscodeApi();
     const providerAccessor: ILlmProviderAccessor = { getModels: () => [], getActiveModel: () => '' };
     const posted: MessageFromTheExtensionToTheWebview[] = [];
@@ -567,7 +568,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   });
 
   it('handles agent:maxIterationsReached event', async () => {
-    const extensionUri: IUriLike = { fsPath: '/ext' };
+    const extensionUri = createMockUri('/ext');
     const vscodeApi = createMockVscodeApi();
     const providerAccessor: ILlmProviderAccessor = { getModels: () => [], getActiveModel: () => '' };
     const posted: MessageFromTheExtensionToTheWebview[] = [];
@@ -600,7 +601,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   });
 
   it('cancelRequest does nothing if no abortController', async () => {
-    const extensionUri: IUriLike = { fsPath: '/ext' };
+    const extensionUri = createMockUri('/ext');
     const vscodeApi = createMockVscodeApi();
     const providerAccessor: ILlmProviderAccessor = { getModels: () => [], getActiveModel: () => '' };
     const webview = createMockWebview();
@@ -624,7 +625,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   });
 
   it('_sendCompletionMessage does nothing if _view is undefined', async () => {
-    const extensionUri: IUriLike = { fsPath: '/ext' };
+    const extensionUri = createMockUri('/ext');
     const vscodeApi = createMockVscodeApi();
     const providerAccessor: ILlmProviderAccessor = { getModels: () => [], getActiveModel: () => '' };
 
