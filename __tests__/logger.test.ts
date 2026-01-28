@@ -1,18 +1,33 @@
-// __tests__/logger.test.ts
-import { jest } from '@jest/globals';
-import { window } from 'vscode';
+import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import * as vscode from 'vscode';
 import { initLogger, log, __resetLogger } from '../src/logger.js';
 
 describe('logger', () => {
-  let mockOutputChannel: { appendLine: jest.Mock };
-  let createOutputChannelSpy: any;
-  let consoleSpy: any;
+  let mockOutputChannel: vscode.LogOutputChannel;
+  let createOutputChannelSpy: jest.SpiedFunction<typeof vscode.window.createOutputChannel>;
+  let consoleSpy: jest.SpiedFunction<typeof console.log>;
 
   beforeEach(() => {
-    mockOutputChannel = { appendLine: jest.fn() };
+    mockOutputChannel = { 
+      appendLine: jest.fn(),
+      append: jest.fn(),
+      replace: jest.fn(),
+      clear: jest.fn(),
+      show: jest.fn(),
+      hide: jest.fn(),
+      dispose: jest.fn(),
+      name: 'Suggestio',
+      logLevel: 1, // vscode.LogLevel.Info
+      onDidChangeLogLevel: jest.fn(() => ({ dispose: () => {} })),
+      trace: jest.fn(),
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+    } as vscode.LogOutputChannel;
     createOutputChannelSpy = jest
-      .spyOn(window, 'createOutputChannel')
-      .mockReturnValue(mockOutputChannel as any);
+      .spyOn(vscode.window, 'createOutputChannel')
+      .mockReturnValue(mockOutputChannel);
 
     consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
     __resetLogger(); // reset internal state before each test
@@ -24,7 +39,8 @@ describe('logger', () => {
 
   it('should initialize logger only once', () => {
     initLogger();
-    expect(createOutputChannelSpy).toHaveBeenCalledWith('Suggestio');
+    // Check the first argument of the first call directly to avoid overload issues with toHaveBeenCalledWith
+    expect(createOutputChannelSpy.mock.calls[0][0]).toBe('Suggestio');
     expect(mockOutputChannel.appendLine).toHaveBeenCalledWith('Logger initialized');
 
     initLogger(); // second call shouldn't create a new channel

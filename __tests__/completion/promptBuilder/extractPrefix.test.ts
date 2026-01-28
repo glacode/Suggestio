@@ -1,8 +1,11 @@
 
 import { extractPrefix } from '../../../src/completion/promptBuilder/extractPrefixAndSuffix.js';
+import { ITextDocument, IPosition } from '../../../src/types.js';
 
 // Helper to create a mock TextDocument
-const createMockDocument = (lines: string[]) => ({
+const createMockDocument = (lines: string[]): ITextDocument => ({
+  uri: { toString: () => 'test://test', fsPath: 'test' },
+  languageId: 'typescript',
   lineAt: (index: number) => ({
     text: lines[index] || '',
   }),
@@ -10,7 +13,7 @@ const createMockDocument = (lines: string[]) => ({
 });
 
 // Helper to create a mock Position
-const createMockPosition = (line: number, character: number) => ({
+const createMockPosition = (line: number, character: number): IPosition => ({
   line,
   character,
 });
@@ -24,28 +27,28 @@ describe('extractPrefix', () => {
       'line 4',
     ]);
     const pos = createMockPosition(2, 8);
-    const prefix = extractPrefix(doc as any, pos as any);
+    const prefix = extractPrefix(doc, pos);
     expect(prefix).toBe('line 1\nline 2\nline 3 w');
   });
 
   it('should extract prefix from the beginning of a line', () => {
     const doc = createMockDocument(['first line', 'second line']);
     const pos = createMockPosition(1, 0);
-    const prefix = extractPrefix(doc as any, pos as any);
+    const prefix = extractPrefix(doc, pos);
     expect(prefix).toBe('first line\n');
   });
 
   it('should handle position at the very beginning of the document', () => {
     const doc = createMockDocument(['hello', 'world']);
     const pos = createMockPosition(0, 0);
-    const prefix = extractPrefix(doc as any, pos as any);
+    const prefix = extractPrefix(doc, pos);
     expect(prefix).toBe('');
   });
 
   it('should extract the full content up to the position', () => {
     const doc = createMockDocument(['one', 'two', 'three']);
     const pos = createMockPosition(2, 5);
-    const prefix = extractPrefix(doc as any, pos as any);
+    const prefix = extractPrefix(doc, pos);
     expect(prefix).toBe('one\ntwo\nthree');
   });
 
@@ -58,7 +61,7 @@ describe('extractPrefix', () => {
       'line 4',
     ]);
     const pos = createMockPosition(4, 2);
-    const prefix = extractPrefix(doc as any, pos as any, 3);
+    const prefix = extractPrefix(doc, pos, 3);
     // Should only include lines 2, 3, and 4 (up to position)
     expect(prefix).toBe('line 2\nline 3\nli');
   });
@@ -66,14 +69,14 @@ describe('extractPrefix', () => {
   it('should handle an empty document', () => {
     const doc = createMockDocument([]);
     const pos = createMockPosition(0, 0);
-    const prefix = extractPrefix(doc as any, pos as any);
+    const prefix = extractPrefix(doc, pos);
     expect(prefix).toBe('');
   });
 
   it('should handle an empty line', () => {
     const doc = createMockDocument(['line 1', '', 'line 3']);
     const pos = createMockPosition(2, 4);
-    const prefix = extractPrefix(doc as any, pos as any);
+    const prefix = extractPrefix(doc, pos);
     expect(prefix).toBe('line 1\n\nline');
   });
 });
