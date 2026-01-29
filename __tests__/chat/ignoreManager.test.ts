@@ -1,6 +1,6 @@
 import { describe, beforeEach, test, expect } from '@jest/globals';
 import { IgnoreManager } from '../../src/chat/ignoreManager.js';
-import { IWorkspaceProvider, IFileContentProvider, IPathResolver } from '../../src/types.js';
+import { IWorkspaceProvider, IFileContentReader, IPathResolver } from '../../src/types.js';
 import * as path from 'path';
 
 describe('IgnoreManager', () => {
@@ -11,7 +11,7 @@ describe('IgnoreManager', () => {
   const workspaceRoot = '/project/folder1';
 
   let mockWorkspaceProvider: IWorkspaceProvider;
-  let mockFileContentProvider: IFileContentProvider;
+  let mockFileContentProvider: IFileContentReader;
   let mockPathResolver: IPathResolver;
 
   beforeEach(() => {
@@ -33,7 +33,8 @@ describe('IgnoreManager', () => {
         return to;
       },
       basename: (p) => p.split('/').pop() || '',
-      resolve: (...paths: string[]) => paths.join('/')
+      resolve: (...paths: string[]) => paths.join('/'),
+      dirname: (p) => p.split('/').slice(0, -1).join('/') || '/'
     };
   });
   

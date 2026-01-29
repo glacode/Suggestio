@@ -1,44 +1,50 @@
-import * as vscode from 'vscode';
-import * as fs from 'fs';
-import * as path from 'path';
+import { 
+    IExtensionContextMinimal, 
+    IDirectoryReader, 
+    IFileContentReader, 
+    IWindowProvider, 
+    IWorkspaceProvider, 
+    IPathResolver 
+} from '../types.js';
 
-type FsModule = {
-    existsSync: (path: fs.PathLike) => boolean;
-    readFileSync: (path: fs.PathOrFileDescriptor, options: BufferEncoding) => string;
-};
-
-type VscodeModule = {
-    workspace: {
-        workspaceFolders?: readonly vscode.WorkspaceFolder[];
-    };
-    window: {
-        showErrorMessage: (message: string) => void;
-    };
-};
-
-function getConfigPath(context: vscode.ExtensionContext, fs: FsModule, vscodeModule: VscodeModule): string {
-  const workspaceConfig = vscodeModule.workspace.workspaceFolders?.[0]
-    ? path.join(vscodeModule.workspace.workspaceFolders[0].uri.fsPath, 'suggestio.config.json')
+function getConfigPath(
+    context: IExtensionContextMinimal,
+    workspaceProvider: IWorkspaceProvider,
+    directoryProvider: IDirectoryReader,
+    pathResolver: IPathResolver
+): string {
+  const rootPath = workspaceProvider.rootPath();
+  const workspaceConfig = rootPath
+    ? pathResolver.join(rootPath, 'suggestio.config.json')
     : null;
 
-  if (workspaceConfig && fs.existsSync(workspaceConfig)) { return workspaceConfig; }
+  if (workspaceConfig && directoryProvider.exists(workspaceConfig)) { return workspaceConfig; }
 
-  const globalConfig = path.join(context.globalStorageUri.fsPath, 'config.json');
-  if (fs.existsSync(globalConfig)) { return globalConfig; }
+  const globalConfig = context.globalStorageUri?.fsPath 
+    ? pathResolver.join(context.globalStorageUri.fsPath, 'config.json')
+    : null;
+  if (globalConfig && directoryProvider.exists(globalConfig)) { return globalConfig; }
 
-  return path.join(context.extensionPath, 'config.json');
+  return pathResolver.join(context.extensionUri?.fsPath || '', 'config.json');
 }
 
 export async function readConfig(
-    context: vscode.ExtensionContext,
-    fsModule: FsModule = fs,
-    vscodeModule: VscodeModule = vscode
+    context: IExtensionContextMinimal,
+    workspaceProvider: IWorkspaceProvider,
+    fileProvider: IFileContentReader,
+    directoryProvider: IDirectoryReader,
+    windowProvider: IWindowProvider,
+    pathResolver: IPathResolver
 ): Promise<string> {
-    const configPath = getConfigPath(context, fsModule, vscodeModule);
+    const configPath = getConfigPath(context, workspaceProvider, directoryProvider, pathResolver);
     try {
-        return fsModule.readFileSync(configPath, 'utf8');
+        const content = fileProvider.read(configPath);
+        if (content === undefined) {
+             throw new Error(`File not found or unreadable: ${configPath}`);
+        }
+        return content;
     } catch (err) {
-        vscodeModule.window.showErrorMessage(`Failed to load config.json: ${err}`);
+        windowProvider.showErrorMessage(`Failed to load config.json: ${err}`);
         return JSON.stringify({
             activeProvider: '',
             providers: {},

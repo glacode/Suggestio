@@ -1,4 +1,4 @@
-import { IWorkspaceProvider, ToolDefinition, IDirectoryProvider, IPathResolver, ToolImplementation } from '../types.js';
+import { IWorkspaceProvider, ToolDefinition, IDirectoryReader, IPathResolver, ToolImplementation } from '../types.js';
 
 export class ListFilesTool implements ToolImplementation {
     definition: ToolDefinition = {
@@ -17,7 +17,7 @@ export class ListFilesTool implements ToolImplementation {
 
     constructor(
         private workspaceProvider: IWorkspaceProvider,
-        private directoryProvider: IDirectoryProvider,
+        private directoryProvider: IDirectoryReader,
         private pathResolver: IPathResolver
     ) { }
 
@@ -53,7 +53,7 @@ export class ListFilesTool implements ToolImplementation {
 
 export function getTools(
     workspaceProvider: IWorkspaceProvider,
-    directoryProvider: IDirectoryProvider,
+    directoryProvider: IDirectoryReader,
     pathResolver: IPathResolver
 ): ToolImplementation[] {
     return [

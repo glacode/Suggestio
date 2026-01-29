@@ -14,14 +14,24 @@ import {
     Config,
     IChatHistoryManager,
     ChatHistory,
-    IProviderConfig
+    IProviderConfig,
+    IWindowProvider,
+    IWorkspaceProvider,
+    IFileContentReader,
+    IFileContentWriter,
+    IDirectoryReader,
+    IDirectoryCreator,
+    IPathResolver,
+    IFileContentProvider,
+    IDirectoryProvider,
+    IWorkspaceProviderFull
 } from "../src/types.js";
 import { jest } from "@jest/globals";
 
 export class FakeProvider implements ILlmProvider {
     private callCount = 0;
-    public get queryCount() { return this.callCount; }
-    constructor(private responses: (ChatMessage | null)[]) { }
+    public get queryCount() { return this.callCount; } 
+    constructor(private responses: (ChatMessage | null)[]) { } 
 
     async query (_prompt: IPrompt, _tools?: ToolDefinition[], signal?: AbortSignal): Promise<ChatMessage | null> {
         if (signal?.aborted) { throw new Error("Aborted"); }
@@ -104,6 +114,59 @@ export const createMockHistoryManager = (recorded: ChatHistory = []): IChatHisto
     clearHistory: () => { recorded.length = 0; },
     addMessage: (m) => { recorded.push(m); },
     getChatHistory: () => [...recorded]
+});
+
+export const createMockWindowProvider = (): jest.Mocked<IWindowProvider> => ({
+    showErrorMessage: jest.fn(),
+    showInformationMessage: jest.fn(),
+    showTextDocument: jest.fn(),
+    showInputBox: jest.fn(),
+    showQuickPick: jest.fn(),
+});
+
+export const createMockWorkspaceProvider = (): jest.Mocked<IWorkspaceProvider> => ({
+    rootPath: jest.fn(),
+});
+
+export const createMockWorkspaceProviderFull = (): jest.Mocked<IWorkspaceProviderFull> => ({
+    rootPath: jest.fn(),
+    openTextDocument: jest.fn(),
+});
+
+export const createMockFileContentReader = (): jest.Mocked<IFileContentReader> => ({
+    read: jest.fn(),
+});
+
+export const createMockFileContentWriter = (): jest.Mocked<IFileContentWriter> => ({
+    write: jest.fn(),
+});
+
+export const createMockFileContentProvider = (): jest.Mocked<IFileContentProvider> => ({
+    read: jest.fn(),
+    write: jest.fn(),
+});
+
+export const createMockDirectoryReader = (): jest.Mocked<IDirectoryReader> => ({
+    readdir: jest.fn(),
+    exists: jest.fn(),
+});
+
+export const createMockDirectoryCreator = (): jest.Mocked<IDirectoryCreator> => ({
+    mkdir: jest.fn(),
+});
+
+export const createMockDirectoryProvider = (): jest.Mocked<IDirectoryProvider> => ({
+    readdir: jest.fn(),
+    exists: jest.fn(),
+    mkdir: jest.fn(),
+});
+
+export const createMockPathResolver = (): jest.Mocked<IPathResolver> => ({
+    join: jest.fn((...paths: string[]) => paths.join('/')),
+    relative: jest.fn(),
+    basename: jest.fn(),
+    resolve: jest.fn(),
+    dirname: jest.fn(),
 });
 
 export const createMockProviderConfig = (overrides: Partial<IProviderConfig> = {}): IProviderConfig => ({

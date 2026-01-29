@@ -36,6 +36,11 @@ export interface IExtensionContextMinimal {
    * Used to resolve paths to resources like icons, templates, etc.
    */
   extensionUri: IUriLike;
+
+  /**
+   * The URI of the directory where the extension can store global state.
+   */
+  globalStorageUri: IUriLike;
 }
 
 /**
@@ -422,15 +427,38 @@ export interface IWorkspaceProvider {
 }
 
 /**
+ * Provides a way to open documents.
+ */
+export interface IDocumentOpener {
+  /**
+   * Opens a text document from the given path.
+   * @param path The path of the file to open.
+   */
+  openTextDocument(path: string): Promise<any>;
+}
+
+/**
  * Provides a way to read file contents from the file system.
  */
-export interface IFileContentProvider {
+export interface IFileContentReader {
   /**
    * Reads the content of a file at the given path.
    * @param path The path of the file to read.
    * @returns The file content as a string, or undefined if the read failed.
    */
   read(path: string): string | undefined;
+}
+
+/**
+ * Provides a way to write file contents to the file system.
+ */
+export interface IFileContentWriter {
+  /**
+   * Writes the content to a file at the given path.
+   * @param path The path of the file to write.
+   * @param content The content to write.
+   */
+  write(path: string, content: string): void;
 }
 
 /**
@@ -465,12 +493,18 @@ export interface IPathResolver {
    * @returns The absolute path.
    */
   resolve(...paths: string[]): string;
+
+  /**
+   * Returns the directory name of a path.
+   * @param path The path to evaluate.
+   */
+  dirname(path: string): string;
 }
 
 /**
- * Provides access to directory contents and file existence.
+ * Provides access to directory contents and existence.
  */
-export interface IDirectoryProvider {
+export interface IDirectoryReader {
   /**
    * Reads the contents of a directory.
    * @param path The path of the directory to read.
@@ -485,6 +519,71 @@ export interface IDirectoryProvider {
    */
   exists(path: string): boolean;
 }
+
+/**
+ * Provides a way to create directories.
+ */
+export interface IDirectoryCreator {
+  /**
+   * Creates a directory.
+   * @param path The path to create.
+   * @param options Options for directory creation.
+   */
+  mkdir(path: string, options?: { recursive: boolean }): void;
+}
+
+export interface IInputBoxOptions {
+  prompt?: string;
+  placeHolder?: string;
+  password?: boolean;
+  ignoreFocusOut?: boolean;
+}
+
+export interface IQuickPickOptions {
+  placeHolder?: string;
+}
+
+/**
+ * `IWindowProvider` provides a way to show messages and interact with the user.
+ * This is a minimal abstraction over `vscode.window`.
+ */
+export interface IWindowProvider {
+  /**
+   * Shows an error message to the user.
+   * @param message The message to show.
+   */
+  showErrorMessage(message: string): void;
+
+  /**
+   * Shows an information message to the user.
+   * @param message The message to show.
+   */
+  showInformationMessage(message: string): void;
+
+  /**
+   * Shows a text document in the editor.
+   * @param doc The document to show.
+   */
+  showTextDocument(doc: any): Promise<void>;
+
+  /**
+   * Shows an input box to the user.
+   * @param options Options for the input box.
+   */
+  showInputBox(options?: IInputBoxOptions): Promise<string | undefined>;
+
+  /**
+   * Shows a quick pick to the user.
+   * @param items The items to pick from.
+   * @param options Options for the quick pick.
+   */
+  showQuickPick(items: string[], options?: IQuickPickOptions): Promise<string | undefined>;
+}
+
+// Composition interfaces for convenience
+export interface IFileContentProvider extends IFileContentReader, IFileContentWriter { }
+export interface IDirectoryProvider extends IDirectoryReader, IDirectoryCreator { }
+export interface IWorkspaceProviderFull extends IWorkspaceProvider, IDocumentOpener { }
 
 /**
  * Interface for a stateful, streaming deanonymizer.
@@ -742,12 +841,12 @@ export interface ConfigContainer {
   config: Config;
 }
 
-interface SecretStorage {
+export interface ISecretStorage {
   get(key: string): Promise<string | undefined>;
   store(key: string, value: string): Promise<void>;
   delete(key: string): Promise<void>;
 }
 
 export interface SecretContext {
-  secrets: SecretStorage;
+  secrets: ISecretStorage;
 }

@@ -1,4 +1,4 @@
-import { IIgnoreManager, IWorkspaceProvider, IFileContentProvider, IPathResolver } from '../types.js';
+import { IIgnoreManager, IWorkspaceProvider, IFileContentReader, IPathResolver } from '../types.js';
 
 // A very simple glob-to-regex converter
 function globToRegex(pattern: string): RegExp {
@@ -27,10 +27,10 @@ function globToRegex(pattern: string): RegExp {
 export class IgnoreManager implements IIgnoreManager {
     private ignorePatterns: RegExp[] = [];
     private readonly workspaceProvider: IWorkspaceProvider;
-    private readonly fileProvider: IFileContentProvider;
+    private readonly fileProvider: IFileContentReader;
     private readonly pathResolver: IPathResolver;
 
-    constructor(workspaceProvider: IWorkspaceProvider, fileProvider: IFileContentProvider, pathResolver: IPathResolver) {
+    constructor(workspaceProvider: IWorkspaceProvider, fileProvider: IFileContentReader, pathResolver: IPathResolver) {
         this.workspaceProvider = workspaceProvider;
         this.fileProvider = fileProvider;
         this.pathResolver = pathResolver;

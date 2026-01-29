@@ -5,7 +5,18 @@ import { registerCompletionProvider } from './registrations/completionRegistrati
 import { registerCommands } from './registrations/commandRegistration.js';
 import * as fs from 'fs';
 import * as path from 'path';
-import { IWorkspaceProvider, IFileContentProvider, ConfigContainer, IDirectoryProvider, IAnonymizationEventPayload } from './types.js';
+import { 
+  IWorkspaceProvider, 
+  IFileContentReader, 
+  IFileContentWriter,
+  ConfigContainer, 
+  IDirectoryReader, 
+  IDirectoryCreator,
+  IAnonymizationEventPayload, 
+  IWindowProvider, 
+  IPathResolver,
+  IDocumentOpener
+} from './types.js';
 import { ChatHistoryManager } from './chat/chatHistoryManager.js';
 import { SecretManager } from './config/secretManager.js';
 import { configProcessor } from './config/configProcessor.js';
@@ -30,8 +41,70 @@ export async function activate(context: vscode.ExtensionContext) {
     log(`[Anonymizer] Anonymized '${payload.original}' to '${payload.placeholder}' (Reason: ${payload.type})`);
   });
 
-  const secretManager = new SecretManager(context);
-  const rawConfig = await readConfig(context);
+  const workspaceProvider: IWorkspaceProvider = {
+    rootPath: () => {
+      if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
+        return vscode.workspace.workspaceFolders[0].uri.fsPath;
+      }
+      return undefined;
+    }
+  };
+
+  const directoryReader: IDirectoryReader = {
+    readdir: (path: string) => {
+      try {
+        if (fs.existsSync(path)) {
+            return fs.readdirSync(path);
+        }
+      } catch (e) {
+          log(`Error reading directory ${path}: ${e}`);
+      }
+      return undefined;
+    },
+    exists: (path: string) => fs.existsSync(path),
+  };
+
+  const directoryCreator: IDirectoryCreator = {
+    mkdir: (path: string, options?: { recursive: boolean }) => fs.mkdirSync(path, options)
+  };
+
+  const fileContentReader: IFileContentReader = {
+    read: (filePath: string) => {
+      if (fs.existsSync(filePath)) {
+        return fs.readFileSync(filePath, 'utf-8');
+      }
+      return undefined;
+    },
+  };
+
+  const fileContentWriter: IFileContentWriter = {
+    write: (filePath: string, content: string) => fs.writeFileSync(filePath, content)
+  };
+
+  const windowProvider: IWindowProvider = {
+    showErrorMessage: (message: string) => vscode.window.showErrorMessage(message),
+    showInformationMessage: (message: string) => vscode.window.showInformationMessage(message),
+    showTextDocument: async (doc: any) => { await vscode.window.showTextDocument(doc); },
+    showInputBox: async (options) => await vscode.window.showInputBox(options),
+    showQuickPick: async (items, options) => await vscode.window.showQuickPick(items, options)
+  };
+
+  const pathResolver: IPathResolver = path;
+
+  const secretManager = new SecretManager({
+    get: async (key: string) => await context.secrets.get(key),
+    store: async (key: string, value: string) => await context.secrets.store(key, value),
+    delete: async (key: string) => await context.secrets.delete(key)
+  }, windowProvider);
+
+  const rawConfig = await readConfig(
+    context,
+    workspaceProvider,
+    fileContentReader,
+    directoryReader,
+    windowProvider,
+    pathResolver
+  );
   const vsCodeConfig = vscode.workspace.getConfiguration('suggestio');
   const overrides = {
     maxAgentIterations: vsCodeConfig.get<number>('maxAgentIterations')
@@ -43,34 +116,15 @@ export async function activate(context: vscode.ExtensionContext) {
   const conversationHistory = new ChatHistoryManager();
   const chatHistoryManager = conversationHistory;
 
-  const workspaceProvider: IWorkspaceProvider = {
-    rootPath: () => {
-      if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
-        return vscode.workspace.workspaceFolders[0].uri.fsPath;
-      }
-      return undefined;
-    }
-  };
-
-  const directoryProvider: IDirectoryProvider = {
-    readdir: (path: string) => {
-      try {
-        if (fs.existsSync(path)) {
-            return fs.readdirSync(path);
-        }
-      } catch (e) {
-          log(`Error reading directory ${path}: ${e}`);
-      }
-      return undefined;
-    },
-    exists: (path: string) => fs.existsSync(path)
+  const documentOpener: IDocumentOpener = {
+    openTextDocument: async (path: string) => await vscode.workspace.openTextDocument(path)
   };
 
   const logicHandler = new Agent(
     configContainer.config,
     log,
     chatHistoryManager,
-    getTools(workspaceProvider, directoryProvider, path),
+    getTools(workspaceProvider, { ...directoryReader, ...directoryCreator }, pathResolver),
     eventBus
   );
   const providerAccessor = {
@@ -78,18 +132,9 @@ export async function activate(context: vscode.ExtensionContext) {
     getActiveModel: () => configContainer.config.providers[configContainer.config.activeProvider].model,
   };
 
-  const fileContentProvider: IFileContentProvider = {
-    read: (filePath: string) => {
-      if (fs.existsSync(filePath)) {
-        return fs.readFileSync(filePath, 'utf-8');
-      }
-      return undefined;
-    }
-  };
+  const ignoreManager = new IgnoreManager(workspaceProvider, fileContentReader, pathResolver);
 
-  const ignoreManager = new IgnoreManager(workspaceProvider, fileContentProvider, path);
-
-  const chatWebviewViewProvider: vscode.WebviewViewProvider = new ChatWebviewViewProvider({
+  const chatWebviewViewProvider = new ChatWebviewViewProvider({
     extensionContext: context,
     providerAccessor,
     logicHandler,
@@ -107,7 +152,19 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   registerCompletionProvider(context, configContainer.config, ignoreManager);
-  registerCommands(context, configContainer.config, chatWebviewViewProvider as ChatWebviewViewProvider, eventBus);
+  registerCommands(
+    context,
+    configContainer.config,
+    chatWebviewViewProvider,
+    eventBus,
+    pathResolver,
+    directoryReader,
+    directoryCreator,
+    fileContentWriter,
+    documentOpener,
+    windowProvider,
+    secretManager
+  );
 
 
 }

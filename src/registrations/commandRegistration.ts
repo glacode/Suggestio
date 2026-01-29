@@ -1,8 +1,16 @@
 // registrations/commandRegistration.ts
 import * as vscode from 'vscode';
 import { editGlobalConfig } from '../config/editGlobalConfig.js';
-import { Config } from '../types.js';
-import { handleUpdateApiKeyCommand, handleDeleteApiKeyCommand } from '../config/secretManager.js';
+import { 
+  Config, 
+  IPathResolver, 
+  IDirectoryReader, 
+  IDirectoryCreator, 
+  IFileContentWriter, 
+  IWindowProvider, 
+  IDocumentOpener 
+} from '../types.js';
+import { handleUpdateApiKeyCommand, handleDeleteApiKeyCommand, SecretManager } from '../config/secretManager.js';
 import { extractApiKeyPlaceholders } from '../config/apiKeyPlaceholders.js';
 import { ChatWebviewViewProvider } from '../chat/chatWebviewViewProvider.js';
 import { IEventBus } from '../utils/eventBus.js';
@@ -11,10 +19,31 @@ interface INewChatCapable {
   newChat(): void;
 }
 
-export function registerCommands(context: vscode.ExtensionContext, config: Config, newChatCapable: INewChatCapable, eventBus: IEventBus) {
+export function registerCommands(
+  context: vscode.ExtensionContext,
+  config: Config,
+  newChatCapable: INewChatCapable,
+  eventBus: IEventBus,
+  pathResolver: IPathResolver,
+  directoryReader: IDirectoryReader,
+  directoryCreator: IDirectoryCreator,
+  fileWriter: IFileContentWriter,
+  documentOpener: IDocumentOpener,
+  windowProvider: IWindowProvider,
+  secretManager: SecretManager
+) {
   context.subscriptions.push(
     vscode.commands.registerCommand("suggestio.editGlobalConfig", () =>
-      editGlobalConfig(context, config)
+      editGlobalConfig(
+        context,
+        config,
+        pathResolver,
+        directoryReader,
+        directoryCreator,
+        fileWriter,
+        documentOpener,
+        windowProvider
+      )
     )
   );
 
@@ -22,13 +51,13 @@ export function registerCommands(context: vscode.ExtensionContext, config: Confi
 
   context.subscriptions.push(
     vscode.commands.registerCommand("suggestio.updateApiKey", () =>
-      handleUpdateApiKeyCommand(context, apiKeyPlaceholders)
+      handleUpdateApiKeyCommand(secretManager, windowProvider, apiKeyPlaceholders)
     )
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand("suggestio.deleteApiKey", () =>
-      handleDeleteApiKeyCommand(context, apiKeyPlaceholders)
+      handleDeleteApiKeyCommand(secretManager, windowProvider, apiKeyPlaceholders)
     )
   );
 

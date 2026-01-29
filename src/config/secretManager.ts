@@ -1,23 +1,25 @@
-
-import * as vscode from 'vscode';
+import { ISecretStorage, IWindowProvider } from '../types.js';
 
 export class SecretManager {
-    constructor(private readonly context: vscode.ExtensionContext) { }
+    constructor(
+        private readonly secrets: ISecretStorage,
+        private readonly windowProvider: IWindowProvider
+    ) { }
 
     public async getSecret(apiKeyPlaceholder: string): Promise<string | undefined> {
-        return await this.context.secrets.get(apiKeyPlaceholder);
+        return await this.secrets.get(apiKeyPlaceholder);
     }
 
     public async storeSecret(apiKeyPlaceholder: string, apiKeyValue: string): Promise<void> {
-        await this.context.secrets.store(apiKeyPlaceholder, apiKeyValue);
+        await this.secrets.store(apiKeyPlaceholder, apiKeyValue);
     }
 
     public async deleteSecret(apiKeyPlaceholder: string): Promise<void> {
-        await this.context.secrets.delete(apiKeyPlaceholder);
+        await this.secrets.delete(apiKeyPlaceholder);
     }
 
     public async updateAPIKey(apiKeyPlaceholder: string): Promise<void> {
-        const newApiKey = await vscode.window.showInputBox({
+        const newApiKey = await this.windowProvider.showInputBox({
             prompt: `Enter new API key for ${apiKeyPlaceholder}`,
             placeHolder: `Your ${apiKeyPlaceholder} API key here...`,
             password: true,
@@ -26,7 +28,7 @@ export class SecretManager {
 
         if (newApiKey && newApiKey.trim() !== '') {
             await this.storeSecret(apiKeyPlaceholder, newApiKey.trim());
-            vscode.window.showInformationMessage(`API key for ${apiKeyPlaceholder} updated.`);
+            this.windowProvider.showInformationMessage(`API key for ${apiKeyPlaceholder} updated.`);
         }
     }
 
@@ -48,7 +50,7 @@ export class SecretManager {
     }
 
     private async promptForAPIKey(providerKey: string): Promise<string | undefined> {
-        return await vscode.window.showInputBox({
+        return await this.windowProvider.showInputBox({
             prompt: `Enter your ${providerKey} API Key`,
             placeHolder: `Your ${providerKey} API key here...`,
             password: true,
@@ -60,12 +62,15 @@ export class SecretManager {
 /**
 * Command handler: update API key after selecting provider
 */
-export async function handleUpdateApiKeyCommand(context: vscode.ExtensionContext, providerApiKeys: string[]): Promise<void> {
-    const apiKeyPlaceholder = await vscode.window.showQuickPick(providerApiKeys, {
+export async function handleUpdateApiKeyCommand(
+    secretManager: SecretManager, 
+    windowProvider: IWindowProvider,
+    providerApiKeys: string[]
+): Promise<void> {
+    const apiKeyPlaceholder = await windowProvider.showQuickPick(providerApiKeys, {
         placeHolder: 'Select an API key to update'
     });
     if (apiKeyPlaceholder) {
-        const secretManager = new SecretManager(context);
         await secretManager.updateAPIKey(apiKeyPlaceholder);
     }
 }
@@ -73,13 +78,16 @@ export async function handleUpdateApiKeyCommand(context: vscode.ExtensionContext
 /**
 * Command handler: delete API key after selecting provider
 */
-export async function handleDeleteApiKeyCommand(context: vscode.ExtensionContext, providerApiKeys: string[]): Promise<void> {
-    const apiKeyPlaceholder = await vscode.window.showQuickPick(providerApiKeys, {
+export async function handleDeleteApiKeyCommand(
+    secretManager: SecretManager, 
+    windowProvider: IWindowProvider,
+    providerApiKeys: string[]
+): Promise<void> {
+    const apiKeyPlaceholder = await windowProvider.showQuickPick(providerApiKeys, {
         placeHolder: 'Select an API key to delete'
     });
     if (apiKeyPlaceholder) {
-        const secretManager = new SecretManager(context);
         await secretManager.deleteSecret(apiKeyPlaceholder);
-        vscode.window.showInformationMessage(`API key value for ${apiKeyPlaceholder} deleted.`);
+        windowProvider.showInformationMessage(`API key value for ${apiKeyPlaceholder} deleted.`);
     }
 }
