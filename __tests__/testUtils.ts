@@ -27,6 +27,7 @@ import {
     IWorkspaceProviderFull
 } from "../src/types.js";
 import { jest } from "@jest/globals";
+import * as path from 'path';
 
 export class FakeProvider implements ILlmProvider {
     private callCount = 0;
@@ -162,11 +163,11 @@ export const createMockDirectoryProvider = (): jest.Mocked<IDirectoryProvider> =
 });
 
 export const createMockPathResolver = (): jest.Mocked<IPathResolver> => ({
-    join: jest.fn((...paths: string[]) => paths.join('/')),
-    relative: jest.fn(),
-    basename: jest.fn(),
-    resolve: jest.fn(),
-    dirname: jest.fn(),
+    join: jest.fn((...paths: string[]) => path.join(...paths)),
+    relative: jest.fn((from: string, to: string) => path.relative(from, to)),
+    basename: jest.fn((p: string) => path.basename(p)),
+    resolve: jest.fn((...paths: string[]) => path.resolve(...paths)),
+    dirname: jest.fn((p: string) => path.dirname(p)),
 });
 
 export const createMockProviderConfig = (overrides: Partial<IProviderConfig> = {}): IProviderConfig => ({

@@ -1,6 +1,7 @@
 import { describe, beforeEach, test, expect } from '@jest/globals';
 import { IgnoreManager } from '../../src/chat/ignoreManager.js';
 import { IWorkspaceProvider, IFileContentReader, IPathResolver } from '../../src/types.js';
+import { createMockPathResolver } from '../testUtils.js';
 import * as path from 'path';
 
 describe('IgnoreManager', () => {
@@ -24,13 +25,7 @@ describe('IgnoreManager', () => {
     mockFileContentProvider = {
       read: (p: string) => fileContents[p],
     };
-    mockPathResolver = {
-      join: (...paths: string[]) => path.join(...paths),
-      relative: (from, to) => path.relative(from, to),
-      basename: (p) => path.basename(p),
-      resolve: (...paths: string[]) => path.resolve(...paths),
-      dirname: (p) => path.dirname(p)
-    };
+    mockPathResolver = createMockPathResolver();
   });
   
   const createManager = () => new IgnoreManager(mockWorkspaceProvider, mockFileContentProvider, mockPathResolver);

@@ -1,7 +1,7 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { ListFilesTool } from "../../src/agent/tools.js";
 import { IWorkspaceProvider, IDirectoryReader, IPathResolver } from "../../src/types.js";
-import * as path from 'path';
+import { createMockPathResolver } from "../testUtils.js";
 
 describe("ListFilesTool Security", () => {
     let workspaceProvider: IWorkspaceProvider;
@@ -20,14 +20,7 @@ describe("ListFilesTool Security", () => {
             exists: jest.fn<any>().mockReturnValue(true),
         };
 
-        // Simple mock for path resolver that mimics node's path module behavior
-        pathResolver = {
-            join: (...paths: string[]) => path.join(...paths),
-            resolve: (...paths: string[]) => path.resolve(...paths),
-            relative: (from, to) => path.relative(from, to),
-            basename: (p) => path.basename(p),
-            dirname: (p) => path.dirname(p)
-        };
+        pathResolver = createMockPathResolver();
 
         tool = new ListFilesTool(workspaceProvider, directoryProvider, pathResolver);
     });
