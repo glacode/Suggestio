@@ -25,16 +25,11 @@ describe('IgnoreManager', () => {
       read: (p: string) => fileContents[p],
     };
     mockPathResolver = {
-      join: (...paths: string[]) => paths.join('/'),
-      relative: (from, to) => {
-        if (to.startsWith(from)) {
-          return to.substring(from.length + 1);
-        }
-        return to;
-      },
-      basename: (p) => p.split('/').pop() || '',
-      resolve: (...paths: string[]) => paths.join('/'),
-      dirname: (p) => p.split('/').slice(0, -1).join('/') || '/'
+      join: (...paths: string[]) => path.join(...paths),
+      relative: (from, to) => path.relative(from, to),
+      basename: (p) => path.basename(p),
+      resolve: (...paths: string[]) => path.resolve(...paths),
+      dirname: (p) => path.dirname(p)
     };
   });
   

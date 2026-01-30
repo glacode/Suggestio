@@ -98,7 +98,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     //  Instantiate the ChatWebviewViewProvider with all our fake dependencies.
     // ********************************************************************************
     const webViewViewProvider = new ChatWebviewViewProvider({
-      extensionContext: { extensionUri, globalStorageUri: extensionUri }, // Provides the extension's URI.
+      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') }, // Provides the extension's URI.
       providerAccessor, // Provides access to LLM models.
       logicHandler, // Handles the actual chat response logic.
       chatHistoryManager, // No-op for this test
@@ -213,7 +213,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const eventBus = new EventBus();
 
     const provider = new ChatWebviewViewProvider({
-      extensionContext: { extensionUri, globalStorageUri: extensionUri },
+      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       providerAccessor,
       logicHandler: responder,
       chatHistoryManager,
@@ -280,7 +280,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     //  Instantiate and resolve the `ChatWebviewViewProvider`.
     // ********************************************************************************
     const provider = new ChatWebviewViewProvider({
-      extensionContext: { extensionUri, globalStorageUri: extensionUri },
+      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       providerAccessor,
       logicHandler,
       chatHistoryManager,
@@ -378,7 +378,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     //  Instantiate and resolve the `ChatWebviewViewProvider`.
     // ********************************************************************************
     const provider = new ChatWebviewViewProvider({
-      extensionContext: { extensionUri, globalStorageUri: extensionUri },
+      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       providerAccessor,
       logicHandler,
       chatHistoryManager,
@@ -439,7 +439,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const eventBus = new EventBus();
 
     const provider = new ChatWebviewViewProvider({
-      extensionContext: { extensionUri, globalStorageUri: extensionUri },
+      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       providerAccessor,
       logicHandler,
       chatHistoryManager,
@@ -499,7 +499,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     };
 
     const provider = new ChatWebviewViewProvider({
-      extensionContext: { extensionUri, globalStorageUri: extensionUri },
+      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       providerAccessor,
       logicHandler,
       chatHistoryManager,
@@ -542,7 +542,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     };
 
     const provider = new ChatWebviewViewProvider({
-      extensionContext: { extensionUri, globalStorageUri: extensionUri },
+      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       providerAccessor,
       logicHandler: { run: async () => { } },
       chatHistoryManager,
@@ -574,7 +574,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     const eventBus = new EventBus();
     const provider = new ChatWebviewViewProvider({
-      extensionContext: { extensionUri, globalStorageUri: extensionUri },
+      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       providerAccessor,
       logicHandler: { run: async () => { } },
       chatHistoryManager: { clearHistory: () => { }, addMessage: () => { }, getChatHistory: () => [] },
@@ -605,7 +605,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const webviewView = createMockWebviewView(webview, 'X');
 
     const provider = new ChatWebviewViewProvider({
-      extensionContext: { extensionUri, globalStorageUri: extensionUri },
+      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       providerAccessor,
       logicHandler: { run: async () => { } },
       chatHistoryManager: { clearHistory: () => { }, addMessage: () => { }, getChatHistory: () => [] },
@@ -630,7 +630,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const webviewView = createMockWebviewView(webview, 'X');
 
     const provider = new ChatWebviewViewProvider({
-      extensionContext: { extensionUri, globalStorageUri: extensionUri },
+      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       providerAccessor,
       logicHandler: {
         run: async () => {

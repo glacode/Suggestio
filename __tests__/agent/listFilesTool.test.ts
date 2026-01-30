@@ -1,6 +1,7 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { ListFilesTool } from "../../src/agent/tools.js";
 import { IWorkspaceProvider, IDirectoryReader, IPathResolver } from "../../src/types.js";
+import * as path from 'path';
 
 describe("ListFilesTool Security", () => {
     let workspaceProvider: IWorkspaceProvider;
@@ -19,41 +20,14 @@ describe("ListFilesTool Security", () => {
             exists: jest.fn<any>().mockReturnValue(true),
         };
 
-        // Simple mock for path resolver that mimics node's path module behavior for posix
+        // Simple mock for path resolver that mimics node's path module behavior
         pathResolver = {
-            join: (...paths: string[]) => paths.join('/'),
-            resolve: (...paths: string[]) => {
-                // ... same logic as before ...
-                let resolved = paths.join('/');
-                return resolved;
-            },
-            relative: (_from, _to) => { return ""; }, // Not used in tool
-            basename: (_p) => { return ""; }, // Not used in tool
-            dirname: (p) => p.split('/').slice(0, -1).join('/') || '/'
+            join: (...paths: string[]) => path.join(...paths),
+            resolve: (...paths: string[]) => path.resolve(...paths),
+            relative: (from, to) => path.relative(from, to),
+            basename: (p) => path.basename(p),
+            dirname: (p) => path.dirname(p)
         };
-
-        // Improve mock pathResolver to be more realistic for the test cases
-        pathResolver.join = (...paths: string[]) => {
-            // Simplified join logic for testing
-            return paths.join('/').replace(/\/+/g, '/');
-        };
-        pathResolver.resolve = (...paths: string[]) => {
-            // We need to simulate normalizing ".."
-            // Since we know the inputs for the tests, we can map them or use a smarter mock.
-            const fullPath = paths.join('/');
-            
-            if (fullPath.includes('/home/user/project/../')) {
-                return '/home/user';
-            }
-            if (fullPath.includes('/home/user/project/../../../../etc/passwd')) {
-                return '/etc/passwd';
-            }
-             if (fullPath.includes('/home/user/project/src')) {
-                return '/home/user/project/src';
-            }
-            return fullPath;
-        };
-
 
         tool = new ListFilesTool(workspaceProvider, directoryProvider, pathResolver);
     });
