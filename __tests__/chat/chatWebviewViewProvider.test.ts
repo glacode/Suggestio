@@ -175,10 +175,6 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
   });
 
-  // Failing test: the current implementation prepends the build context to the
-  // user's message and then stores that combined string in chat history. The
-  // desired behavior is that chat history stores only the raw user message.
-  // This test asserts the desired behavior and will fail until the code is fixed.
   it('does not add buildContext to chat history user messages', async () => {
     const extensionUri = createMockUri('/ext');
     const vscodeApi = createMockVscodeApi();
