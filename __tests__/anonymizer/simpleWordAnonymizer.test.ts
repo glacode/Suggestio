@@ -62,12 +62,13 @@ describe('SimpleWordAnonymizer', () => {
 
   test('assigns placeholders consistently across calls', () => {
     const anonymizer = new SimpleWordAnonymizer(['one', 'two']);
-    anonymizer.anonymize('one two');
-    anonymizer.anonymize('one two');
+    const result1 = anonymizer.anonymize('one');
+    const result2 = anonymizer.anonymize('two');
+    const result3 = anonymizer.anonymize('one two');
 
-    // Should have placeholders ANON_0, ANON_1 only
-    const keys = Array.from((anonymizer as any).mapping.keys());
-    expect(keys).toEqual(['ANON_0', 'ANON_1']);
+    expect(result1).toBe('ANON_0');
+    expect(result2).toBe('ANON_1');
+    expect(result3).toBe('ANON_0 ANON_1');
   });
 
   test('anonymizes word that appears multiple times with same placeholder', () => {
@@ -84,20 +85,18 @@ describe('SimpleWordAnonymizer', () => {
   });
 
   test('handles overlapping placeholders correctly during deanonymization', () => {
-    const anonymizer = new SimpleWordAnonymizer([]);
-    const mapping = (anonymizer as any).mapping;
+    // Generate 11 placeholders: ANON_0 to ANON_10
+    const words = Array.from({ length: 11 }, (_, i) => `word${i}`);
+    const anonymizer = new SimpleWordAnonymizer(words);
     
-    // We insert ANON_1 FIRST. Because JS Maps iterate in insertion order,
-    // the previous implementation tried to replace ANON_1 before ANON_10.
-    // The optimized regex implementation should handle this correctly regardless of order.
-    mapping.set('ANON_1', 'Apple');
-    mapping.set('ANON_10', 'Banana');
+    // Anonymize all words to populate the mapping
+    words.forEach(w => anonymizer.anonymize(w));
 
-    const input = 'I have ANON_1 and ANON_10';
+    const input = 'ANON_1 and ANON_10';
     const result = anonymizer.deanonymize(input);
 
-    // This checks that "ANON_10" is not partially replaced as "Apple" + "0"
-    expect(result).toBe('I have Apple and Banana');
+    // This checks that "ANON_10" is not partially replaced as "word1" + "0"
+    expect(result).toBe('word1 and word10');
   });
 
   describe('Streaming Deanonymization', () => {
