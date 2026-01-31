@@ -12,7 +12,6 @@ import {
 } from '../types.js';
 import { handleUpdateApiKeyCommand, handleDeleteApiKeyCommand, SecretManager } from '../config/secretManager.js';
 import { extractApiKeyPlaceholders } from '../config/apiKeyPlaceholders.js';
-import { ChatWebviewViewProvider } from '../chat/chatWebviewViewProvider.js';
 import { IEventBus } from '../utils/eventBus.js';
 
 interface INewChatCapable {
@@ -69,7 +68,7 @@ export function registerCommands(
 
   context.subscriptions.push(
     vscode.commands.registerCommand('suggestio.newChat', () => {
-      (newChatCapable as ChatWebviewViewProvider).newChat();
+      newChatCapable.newChat();
     })
   );
 
