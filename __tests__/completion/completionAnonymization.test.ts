@@ -1,8 +1,11 @@
 import { OpenAICompatibleProvider } from "../../src/providers/openAICompatibleProvider.js";
 import { SimpleWordAnonymizer } from "../../src/anonymizer/simpleWordAnonymizer.js";
 import { UserPrompt } from "../../src/completion/promptBuilder/userPrompt.js";
+import { ShannonEntropyCalculator } from "../../src/utils/entropy.js";
 import * as http from "http";
 import { AddressInfo } from "net";
+
+const entropyCalculator = new ShannonEntropyCalculator();
 
 describe("Inline Completion Anonymization", () => {
     let server: http.Server;
@@ -31,7 +34,7 @@ describe("Inline Completion Anonymization", () => {
     });
 
     it("should anonymize sensitive words in inline completion prompt", async () => {
-        const anonymizer = new SimpleWordAnonymizer(["SECRET_KEY"]);
+        const anonymizer = new SimpleWordAnonymizer(["SECRET_KEY"], entropyCalculator);
         const provider = new OpenAICompatibleProvider(endpoint, "key", "model", anonymizer);
         
         const promptText = "const api = 'SECRET_KEY';\n// cursor here";
@@ -45,7 +48,7 @@ describe("Inline Completion Anonymization", () => {
 
     it("should anonymize high entropy tokens in inline completion prompt", async () => {
         // Entropy anonymization: allowedEntropy=0.8, minLength=10
-        const anonymizer = new SimpleWordAnonymizer([], 0.8, 10);
+        const anonymizer = new SimpleWordAnonymizer([], entropyCalculator, 0.8, 10);
         const provider = new OpenAICompatibleProvider(endpoint, "key", "model", anonymizer);
         
         const highEntropyString = "a1b2c3d4e5f6g7h8i9j0"; // Very high entropy (Hn = 1.0)

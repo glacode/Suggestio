@@ -3,6 +3,9 @@ import { ChatHistory, ChatMessage, IAnonymizer, IPrompt } from "../../src/types.
 import * as http from "http";
 import { AddressInfo } from "net";
 import { SimpleWordAnonymizer } from "../../src/anonymizer/simpleWordAnonymizer.js";
+import { ShannonEntropyCalculator } from "../../src/utils/entropy.js";
+
+const entropyCalculator = new ShannonEntropyCalculator();
 
 class TestPrompt implements IPrompt {
   constructor(private messages: ChatMessage[]) {
@@ -101,7 +104,7 @@ describe("OpenAICompatibleProvider", () => {
     let anonymizer: IAnonymizer;
 
     beforeEach(() => {
-      anonymizer = new SimpleWordAnonymizer(["secret"]);
+      anonymizer = new SimpleWordAnonymizer(["secret"], entropyCalculator);
     });
 
     it("should anonymize user messages before sending", async () => {

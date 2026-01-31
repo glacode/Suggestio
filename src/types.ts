@@ -269,6 +269,20 @@ export type MessageFromTheExtensionToTheWebview =
   };
 
 /**
+ * Interface for calculating the entropy of a string.
+ */
+export interface IEntropyCalculator {
+  /**
+   * Calculates the normalized entropy of a string.
+   * Normalized entropy ranges from 0 to 1.
+   * Higher values often indicate random keys, passwords, or encrypted data.
+   * @param str The string to calculate entropy for.
+   * @returns The normalized entropy value between 0 and 1.
+   */
+  getEntropy(str: string): number;
+}
+
+/**
  * Represents the full history of a chat conversation.
  */
 export type ChatHistory = ChatMessage[];

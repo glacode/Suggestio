@@ -1,5 +1,6 @@
 import { SimpleWordAnonymizer } from '../../src/anonymizer/simpleWordAnonymizer.js';
 import { IAnonymizationNotifier } from '../../src/types.js';
+import { ShannonEntropyCalculator } from '../../src/utils/entropy.js';
 
 class MockNotifier implements IAnonymizationNotifier {
     public notifications: { original: string; placeholder: string; type: 'word' | 'entropy' }[] = [];
@@ -9,9 +10,11 @@ class MockNotifier implements IAnonymizationNotifier {
     }
 }
 
+const entropyCalculator = new ShannonEntropyCalculator();
+
 describe('SimpleWordAnonymizer', () => {
   test('anonymizes and deanonymizes single word', () => {
-    const anonymizer = new SimpleWordAnonymizer(['secret']);
+    const anonymizer = new SimpleWordAnonymizer(['secret'], entropyCalculator);
     const input = 'This is a secret message';
     
     const anonymized = anonymizer.anonymize(input);
@@ -23,7 +26,7 @@ describe('SimpleWordAnonymizer', () => {
   });
 
   test('anonymizes multiple different words', () => {
-    const anonymizer = new SimpleWordAnonymizer(['apple', 'banana']);
+    const anonymizer = new SimpleWordAnonymizer(['apple', 'banana'], entropyCalculator);
     const input = 'I like apple and banana';
 
     const anonymized = anonymizer.anonymize(input);
@@ -37,7 +40,7 @@ describe('SimpleWordAnonymizer', () => {
   });
 
   test('handles case-insensitive matches', () => {
-    const anonymizer = new SimpleWordAnonymizer(['secret']);
+    const anonymizer = new SimpleWordAnonymizer(['secret'], entropyCalculator);
     const input = 'Secret and SECRET and secret';
     
     const anonymized = anonymizer.anonymize(input);
@@ -49,7 +52,7 @@ describe('SimpleWordAnonymizer', () => {
   });
 
   test('does not anonymize partial words', () => {
-    const anonymizer = new SimpleWordAnonymizer(['cat']);
+    const anonymizer = new SimpleWordAnonymizer(['cat'], entropyCalculator);
     const input = 'concatenate catalog cat';
     
     const anonymized = anonymizer.anonymize(input);
@@ -61,7 +64,7 @@ describe('SimpleWordAnonymizer', () => {
   });
 
   test('assigns placeholders consistently across calls', () => {
-    const anonymizer = new SimpleWordAnonymizer(['one', 'two']);
+    const anonymizer = new SimpleWordAnonymizer(['one', 'two'], entropyCalculator);
     const result1 = anonymizer.anonymize('one');
     const result2 = anonymizer.anonymize('two');
     const result3 = anonymizer.anonymize('one two');
@@ -72,7 +75,7 @@ describe('SimpleWordAnonymizer', () => {
   });
 
   test('anonymizes word that appears multiple times with same placeholder', () => {
-    const anonymizer = new SimpleWordAnonymizer(['secret']);
+    const anonymizer = new SimpleWordAnonymizer(['secret'], entropyCalculator);
     const input = 'This is a secret message with another secret word';
     
     const anonymized = anonymizer.anonymize(input);
@@ -87,7 +90,7 @@ describe('SimpleWordAnonymizer', () => {
   test('handles overlapping placeholders correctly during deanonymization', () => {
     // Generate 11 placeholders: ANON_0 to ANON_10
     const words = Array.from({ length: 11 }, (_, i) => `word${i}`);
-    const anonymizer = new SimpleWordAnonymizer(words);
+    const anonymizer = new SimpleWordAnonymizer(words, entropyCalculator);
     
     // Anonymize all words to populate the mapping
     words.forEach(w => anonymizer.anonymize(w));
@@ -103,7 +106,7 @@ describe('SimpleWordAnonymizer', () => {
     let anonymizer: SimpleWordAnonymizer;
 
     beforeEach(() => {
-        anonymizer = new SimpleWordAnonymizer(['secret']);
+        anonymizer = new SimpleWordAnonymizer(['secret'], entropyCalculator);
     });
 
     test('handles a single chunk containing a full placeholder surrounded by text', () => {
@@ -145,7 +148,7 @@ describe('SimpleWordAnonymizer', () => {
     test('anonymizes high entropy strings', () => {
       // A random-looking string: "gH7p2K9wL4xN1" has high entropy
       // A common word: "password" has high-ish normalized entropy but we test it with a threshold
-      const anonymizer = new SimpleWordAnonymizer([], 0.95, 8);
+      const anonymizer = new SimpleWordAnonymizer([], entropyCalculator, 0.95, 8);
       const input = 'My key is gH7p2K9w@L4xN1 and my word is password';
       
       const anonymized = anonymizer.anonymize(input);
@@ -161,7 +164,7 @@ describe('SimpleWordAnonymizer', () => {
     });
 
     test('uses same placeholder for same high entropy token', () => {
-      const anonymizer = new SimpleWordAnonymizer([], 0.9, 8);
+      const anonymizer = new SimpleWordAnonymizer([], entropyCalculator, 0.9, 8);
       const input = 'Key1: gH7p#2K9wL4xN91, Key2: gH7p#2K9wL4xN91';
       
       const anonymized = anonymizer.anonymize(input);
@@ -172,7 +175,7 @@ describe('SimpleWordAnonymizer', () => {
     });
 
     test('does not anonymize identifiers (alphabetic or underscore)', () => {
-      const anonymizer = new SimpleWordAnonymizer([], 0.8, 8);
+      const anonymizer = new SimpleWordAnonymizer([], entropyCalculator, 0.8, 8);
       // "SimpleWordAnonymizer" is long and has reasonable entropy, but should be skipped.
       // "_privateIdentifier" should also be skipped.
       const input = 'Class SimpleWordAnonymizer has a member _privateIdentifier';
@@ -182,7 +185,7 @@ describe('SimpleWordAnonymizer', () => {
     });
 
     test('does not anonymize snake_case identifiers', () => {
-        const anonymizer = new SimpleWordAnonymizer([], 0.8, 8);
+        const anonymizer = new SimpleWordAnonymizer([], entropyCalculator, 0.8, 8);
         
         const safe = 'long_variable_name_1';
         const stillSafe = 'long_Variable_name_2'; 
@@ -196,56 +199,57 @@ describe('SimpleWordAnonymizer', () => {
     });
 
     test('anonymizes tokens with special characters like #, *, £, ?, ^', () => {
-        const anonymizer = new SimpleWordAnonymizer([], 0.8, 8);
+        const anonymizer = new SimpleWordAnonymizer([], entropyCalculator, 0.8, 8);
         const input = 'My secret is eT5*yu3^£uYv?BCh#126';
         
         const anonymized = anonymizer.anonymize(input);
         expect(anonymized).not.toContain('eT5*yu3^£uYv?BCh#126');
         expect(anonymized).toMatch(/My secret is ANON_\d+/);
     });
+  });
 
-    test('getEntropy returns expected values for various strings', () => {
-        const anonymizer = new SimpleWordAnonymizer([]);
-        const getEntropy = (str: string) => (anonymizer as any).getEntropy(str);
+  describe('ShannonEntropyCalculator', () => {
+    const calculator = new ShannonEntropyCalculator();
 
+    test('returns expected values for various strings', () => {
         // Check code patterns
         // "console.log" -> 11 chars. Hn ≈ 0.822
-        expect(getEntropy('console.log')).toBeCloseTo(0.822, 3);
+        expect(calculator.getEntropy('console.log')).toBeCloseTo(0.822, 3);
 
         // "myFunction(arg)" -> 15 chars.
         // Hn ≈ 0.98
-        expect(getEntropy('myFunction(arg)')).toBeGreaterThan(0.95);
+        expect(calculator.getEntropy('myFunction(arg)')).toBeGreaterThan(0.95);
 
         // Low entropy (repetitions)
-        expect(getEntropy('aaaaa')).toBe(0);
+        expect(calculator.getEntropy('aaaaa')).toBe(0);
         // "ababab": Hn ≈ 0.38685
-        expect(getEntropy('ababab')).toBeCloseTo(0.38685, 4); 
+        expect(calculator.getEntropy('ababab')).toBeCloseTo(0.38685, 4); 
 
         // Standard words (moderate entropy)
         // "password": 8 chars. Hn ≈ 0.91666
-        expect(getEntropy('password')).toBeCloseTo(0.91666, 4); 
+        expect(calculator.getEntropy('password')).toBeCloseTo(0.91666, 4); 
         
         // "correct": 7 chars. Hn ≈ 0.79644
-        expect(getEntropy('correct')).toBeCloseTo(0.79644, 4);
+        expect(calculator.getEntropy('correct')).toBeCloseTo(0.79644, 4);
 
         // High entropy (random strings)
         // all unique chars -> Hn = 1.0
-        expect(getEntropy('0123456789')).toBeCloseTo(1.0, 2);
+        expect(calculator.getEntropy('0123456789')).toBeCloseTo(1.0, 2);
 
         // "SimpleWordAnonymizer": 20 chars. Hn ≈ 0.8612
-        expect(getEntropy('SimpleWordAnonymizer')).toBeCloseTo(0.8612, 3);
+        expect(calculator.getEntropy('SimpleWordAnonymizer')).toBeCloseTo(0.8612, 3);
         
         // Base64-like string (more randomness)
         // all unique chars -> Hn = 1.0
         const key = 'aB1+cD2/eF3g'; 
-        expect(getEntropy(key)).toBe(1.0);
+        expect(calculator.getEntropy(key)).toBe(1.0);
     });
   });
 
   describe('Anonymization Notifications', () => {
     test('notifies when anonymizing words', () => {
         const notifier = new MockNotifier();
-        const anonymizer = new SimpleWordAnonymizer(['secret'], undefined, undefined, notifier);
+        const anonymizer = new SimpleWordAnonymizer(['secret'], entropyCalculator, undefined, undefined, notifier);
         
         anonymizer.anonymize('This is a secret message');
         
@@ -259,7 +263,7 @@ describe('SimpleWordAnonymizer', () => {
 
     test('notifies when anonymizing by entropy', () => {
         const notifier = new MockNotifier();
-        const anonymizer = new SimpleWordAnonymizer([], 0.8, 8, notifier);
+        const anonymizer = new SimpleWordAnonymizer([], entropyCalculator, 0.8, 8, notifier);
         const highEntropy = 'gH7p2K9wL4x8N1';
         
         anonymizer.anonymize(`Key: ${highEntropy}`);

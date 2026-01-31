@@ -1,4 +1,4 @@
-import { IAnonymizer, IStreamingDeanonymizer, IAnonymizationNotifier } from "../types.js";
+import { IAnonymizer, IStreamingDeanonymizer, IAnonymizationNotifier, IEntropyCalculator } from "../types.js";
 import { isLikeIdentifier } from "./isLikeIdentifier.js";
 import { isLikePath } from "./isLikePath.js";
 import { matchesWellKnownSecret } from "./matchesWellKnownSecret.js";
@@ -12,42 +12,18 @@ export class SimpleWordAnonymizer implements IAnonymizer {
     /**
      * Creates an instance of SimpleWordAnonymizer.
      * @param wordsToAnonymize List of words that should be explicitly anonymized.
+     * @param entropyCalculator Calculator for entropy-based anonymization.
      * @param allowedEntropy Optional threshold for entropy-based anonymization. Strings with entropy higher than this will be anonymized.
      * @param minLength Optional minimum length for entropy-based anonymization.
      * @param notifier Optional notifier to receive events when anonymization occurs.
      */
     constructor(
         private wordsToAnonymize: string[],
+        private entropyCalculator: IEntropyCalculator,
         private allowedEntropy?: number,
         private minLength?: number,
         private notifier?: IAnonymizationNotifier
     ) {
-    }
-
-    /**
-     * Calculates the normalized Shannon entropy of a string.
-     * Entropy is a measure of randomness or unpredictability.
-     * Normalized entropy (H / log2(length)) ranges from 0 to 1.
-     * Higher values (typically > 0.8-0.9) often indicate
-     * random keys, passwords, or encrypted data rather than natural language.
-     */
-    private getEntropy(str: string): number {
-        const len = str.length;
-        if (len <= 1) {
-            return 0;
-        }
-        const frequencies = new Map<string, number>();
-        for (const char of str) {
-            frequencies.set(char, (frequencies.get(char) || 0) + 1);
-        }
-
-        let entropy = 0;
-        for (const count of frequencies.values()) {
-            const p = count / len;
-            entropy -= p * Math.log2(p);
-        }
-        // Normalize by log2(length) to get a value between 0 and 1
-        return entropy / Math.log2(len);
     }
 
     private anonymizeEntropy(text: string): string {
@@ -80,7 +56,7 @@ export class SimpleWordAnonymizer implements IAnonymizer {
                 }
 
                 // 4. Entropy check
-                if (this.getEntropy(token) > this.allowedEntropy) {
+                if (this.entropyCalculator.getEntropy(token) > this.allowedEntropy) {
                     candidates.push({
                         start: match.index,
                         end: match.index + token.length,
