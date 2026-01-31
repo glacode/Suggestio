@@ -1,6 +1,6 @@
 import { SimpleWordAnonymizer } from '../../src/anonymizer/simpleWordAnonymizer.js';
 import { IAnonymizationNotifier } from '../../src/types.js';
-import { ShannonEntropyCalculator } from '../../src/utils/ShannonEntropyCalculator.js';
+import { ShannonEntropyCalculator } from '../../src/utils/shannonEntropyCalculator.js';
 
 class MockNotifier implements IAnonymizationNotifier {
     public notifications: { original: string; placeholder: string; type: 'word' | 'entropy' }[] = [];

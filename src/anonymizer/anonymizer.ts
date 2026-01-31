@@ -3,7 +3,7 @@ import { Config } from "../types.js";
 import { SimpleWordAnonymizer } from "./simpleWordAnonymizer.js";
 import { EventBusAnonymizationNotifier } from "./anonymizationNotifier.js";
 import { IEventBus } from "../utils/eventBus.js";
-import { ShannonEntropyCalculator } from "../utils/ShannonEntropyCalculator.js";
+import { ShannonEntropyCalculator } from "../utils/shannonEntropyCalculator.js";
 
 
 export function getAnonymizer(config: Config, eventBus: IEventBus): IAnonymizer | undefined {

@@ -1,4 +1,4 @@
-import { ShannonEntropyCalculator } from '../../src/utils/ShannonEntropyCalculator.js';
+import { ShannonEntropyCalculator } from '../../src/utils/shannonEntropyCalculator.js';
 
 describe('ShannonEntropyCalculator', () => {
     const calculator = new ShannonEntropyCalculator();
