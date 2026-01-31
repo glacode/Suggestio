@@ -1,7 +1,7 @@
 import { OpenAICompatibleProvider } from "../../src/providers/openAICompatibleProvider.js";
 import { SimpleWordAnonymizer } from "../../src/anonymizer/simpleWordAnonymizer.js";
 import { UserPrompt } from "../../src/completion/promptBuilder/userPrompt.js";
-import { ShannonEntropyCalculator } from "../../src/utils/entropy.js";
+import { ShannonEntropyCalculator } from "../../src/utils/ShannonEntropyCalculator.js";
 import * as http from "http";
 import { AddressInfo } from "net";
 

@@ -3,7 +3,7 @@ import { ChatHistory, ChatMessage, IAnonymizer, IPrompt } from "../../src/types.
 import * as http from "http";
 import { AddressInfo } from "net";
 import { SimpleWordAnonymizer } from "../../src/anonymizer/simpleWordAnonymizer.js";
-import { ShannonEntropyCalculator } from "../../src/utils/entropy.js";
+import { ShannonEntropyCalculator } from "../../src/utils/ShannonEntropyCalculator.js";
 
 const entropyCalculator = new ShannonEntropyCalculator();
 
