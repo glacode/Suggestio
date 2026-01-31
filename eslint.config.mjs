@@ -15,7 +15,6 @@ export default [{
     },
 
     rules: {
-        //TODO just adde, adjust later
         "@typescript-eslint/consistent-type-assertions": ["warn", {
             "assertionStyle": "never" 
         }],

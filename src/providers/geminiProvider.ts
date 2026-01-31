@@ -37,6 +37,7 @@ export class GeminiProvider implements ILlmProvider {
       throw new Error(`Gemini API error: ${res.status} - ${errText}`);
     }
 
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     const data = (await res.json()) as GeminiResponse;
     log("Response:" + JSON.stringify(data, null, 2));
 
