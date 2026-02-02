@@ -678,7 +678,7 @@ export interface IAnonymizationEventPayload {
   type: 'word' | 'entropy';
 }
 
-export interface AppEvents {
+export interface IAppEvents {
   'inlineCompletionToggled': boolean;
   'modelChanged': string;
   'agent:maxIterationsReached': { maxIterations: number };

@@ -1,12 +1,12 @@
 import { EventEmitter } from 'events';
-import { IDisposable, AppEvents } from '../types.js';
+import { IDisposable, IAppEvents } from '../types.js';
 
 export type EventMap = Record<string, any>;
 
 export type EventKey<E extends EventMap> = string & keyof E;
 export type EventReceiver<T> = (params: T) => void;
 
-export interface IEventBus<E extends EventMap = AppEvents> {
+export interface IEventBus<E extends EventMap = IAppEvents> {
   on<K extends EventKey<E>>(eventName: K, fn: EventReceiver<E[K]>): IDisposable;
   once<K extends EventKey<E>>(eventName: K, fn: EventReceiver<E[K]>): void;
   off<K extends EventKey<E>>(eventName: K, fn: EventReceiver<E[K]>): void;
@@ -14,7 +14,7 @@ export interface IEventBus<E extends EventMap = AppEvents> {
   emit<K extends EventKey<E>>(eventName: K, params: E[K]): void;
 }
 
-export class EventBus<E extends EventMap = AppEvents> implements IEventBus<E> {
+export class EventBus<E extends EventMap = IAppEvents> implements IEventBus<E> {
   private emitter = new EventEmitter();
 
   constructor() {
