@@ -380,6 +380,10 @@ export type GetChatWebviewContent = (args: {
   models: string[];
   /** The currently active model. */
   activeModel: string;
+  /** VS Code API abstraction. */
+  vscodeApi: IVscodeApiLocal;
+  /** File reader abstraction. */
+  fileReader: IFileContentReader;
 }) => string;
 
 /**

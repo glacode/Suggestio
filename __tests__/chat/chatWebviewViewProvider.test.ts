@@ -13,12 +13,14 @@ import type {
   ChatRole,
   ChatHistory,
   IPrompt,
-  IAnonymizer
+  IAnonymizer,
+  IVscodeApiLocal,
+  IFileContentReader
 } from '../../src/types.js';
 // Import the actual ChatWebviewViewProvider class that we are testing.
 import { ChatWebviewViewProvider } from '../../src/chat/chatWebviewViewProvider.js';
 import { EventBus } from '../../src/utils/eventBus.js';
-import { createMockVscodeApi, createMockWebview, createMockWebviewView, createMockHistoryManager, createMockUri } from '../testUtils.js';
+import { createMockVscodeApi, createMockWebview, createMockWebviewView, createMockHistoryManager, createMockUri, createMockFileContentReader } from '../testUtils.js';
 
 // `describe` is used to group tests. Here, we're testing the `ChatWebviewViewProvider`.
 // The description "integration, no vscode mocks" indicates that while we're using
@@ -40,6 +42,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const vscodeApi = createMockVscodeApi((base: IUriLike, ...paths: string[]) => 
         createMockUri(base.toString() + '/' + paths.join('/'))
     );
+
+    const fileReader = createMockFileContentReader();
 
     // `providerAccessor` is a fake that provides information about available
     // and active language models (LLMs).
@@ -83,10 +87,10 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     // `receivedArgs` will capture the arguments passed to `getChatWebviewContent`.
     // We initialize it to `null` and expect it to be populated.
-    let receivedArgs: { extensionUri: IUriLike; scriptUri: IUriLike; highlightCssUri: IUriLike; models: string[]; activeModel: string } | null = null;
+    let receivedArgs: { extensionUri: IUriLike; scriptUri: IUriLike; highlightCssUri: IUriLike; models: string[]; activeModel: string; vscodeApi: IVscodeApiLocal; fileReader: IFileContentReader } | null = null;
     // `getChatWebviewContent` is a fake function that generates the HTML for the webview.
     // It captures its arguments and returns a simple HTML string for verification.
-    const getChatWebviewContent = (args: { extensionUri: IUriLike; scriptUri: IUriLike; highlightCssUri: IUriLike; models: string[]; activeModel: string }) => {
+    const getChatWebviewContent = (args: { extensionUri: IUriLike; scriptUri: IUriLike; highlightCssUri: IUriLike; models: string[]; activeModel: string; vscodeApi: IVscodeApiLocal; fileReader: IFileContentReader }) => {
       receivedArgs = args; // Store the arguments for assertion.
       return `HTML for ${args.models.join(',')}`; // Return a custom HTML string based on models.
     };
@@ -105,6 +109,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       buildContext, // Provides additional context for prompts.
       getChatWebviewContent, // Function to generate webview HTML.
       vscodeApi, // Faked VS Code API.
+      fileReader,
       eventBus
     });
 
@@ -220,6 +225,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       buildContext: { buildContext: async () => 'CONTEXT' },
       getChatWebviewContent: () => '',
       vscodeApi,
+      fileReader: createMockFileContentReader(),
       eventBus
     });
 
@@ -287,6 +293,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       buildContext: { buildContext: async () => '' }, // Empty context for this test.
       getChatWebviewContent: () => '', // Empty HTML content for this test.
       vscodeApi,
+      fileReader: createMockFileContentReader(),
       eventBus
     });
 
@@ -385,6 +392,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
       vscodeApi,
+      fileReader: createMockFileContentReader(),
       eventBus
     });
 
@@ -446,6 +454,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       buildContext: { buildContext: async () => 'This is a SECRET' },
       getChatWebviewContent: () => '',
       vscodeApi,
+      fileReader: createMockFileContentReader(),
       eventBus,
       anonymizer
     });
@@ -506,6 +515,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
       vscodeApi,
+      fileReader: createMockFileContentReader(),
       eventBus: new EventBus()
     });
 
@@ -549,6 +559,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
       vscodeApi,
+      fileReader: createMockFileContentReader(),
       eventBus: new EventBus()
     });
 
@@ -581,6 +592,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
       vscodeApi,
+      fileReader: createMockFileContentReader(),
       eventBus
     });
 
@@ -612,6 +624,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
       vscodeApi,
+      fileReader: createMockFileContentReader(),
       eventBus: new EventBus()
     });
 
@@ -647,6 +660,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
       vscodeApi,
+      fileReader: createMockFileContentReader(),
       eventBus: new EventBus()
     });
 

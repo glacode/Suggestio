@@ -12,6 +12,7 @@ import type {
     IExtensionContextMinimal, // A minimal representation of VS Code's `ExtensionContext`,
     // providing access to essential extension resources like `extensionUri`.
     IVscodeApiLocal, // A minimal, faked representation of the VS Code API, used primarily for URI handling.
+    IFileContentReader, // Defines the interface for reading file contents.
     IWebviewView, // Defines the interface for a VS Code `WebviewView`, which is a container for the webview.
     WebviewMessage, // Defines the structure of messages sent from the webview to the extension.
     IContextBuilder, // Defines the interface for building context strings to be used as additional information in prompts.
@@ -33,6 +34,7 @@ interface IChatWebviewViewProviderArgs {
     buildContext: IContextBuilder; // A builder to create contextual information for the AI prompt.
     getChatWebviewContent: GetChatWebviewContent; // A function that provides the HTML content for the webview.
     vscodeApi: IVscodeApiLocal; // The VS Code API instance, used here for `Uri` operations.
+    fileReader: IFileContentReader;
     eventBus: IEventBus;
     anonymizer?: IAnonymizer;
 }
@@ -61,6 +63,7 @@ export class ChatWebviewViewProvider {
     private readonly _providerAccessor: ILlmProviderAccessor; // Stores the model provider accessor.
     private readonly _getChatWebviewContent: GetChatWebviewContent; // Stores the webview content generator.
     private readonly _vscodeApi: IVscodeApiLocal; // Stores the VS Code API for internal use.
+    private readonly _fileReader: IFileContentReader;
     private readonly _eventBus: IEventBus;
     private readonly _anonymizer?: IAnonymizer;
     private _abortController?: AbortController; // For cancelling ongoing LLM requests
@@ -69,7 +72,7 @@ export class ChatWebviewViewProvider {
      * The constructor initializes the `ChatWebviewViewProvider` with its dependencies.
      * These dependencies are typically passed from `extension.ts` during activation.
      */
-    constructor({ extensionContext, providerAccessor, logicHandler, chatHistoryManager, buildContext, getChatWebviewContent, vscodeApi, eventBus, anonymizer }: IChatWebviewViewProviderArgs) {
+    constructor({ extensionContext, providerAccessor, logicHandler, chatHistoryManager, buildContext, getChatWebviewContent, vscodeApi, fileReader, eventBus, anonymizer }: IChatWebviewViewProviderArgs) {
         this._extensionContext = extensionContext;
         this._providerAccessor = providerAccessor;
         this._logicHandler = logicHandler;
@@ -77,6 +80,7 @@ export class ChatWebviewViewProvider {
         this._buildContext = buildContext;
         this._getChatWebviewContent = getChatWebviewContent;
         this._vscodeApi = vscodeApi;
+        this._fileReader = fileReader;
         this._eventBus = eventBus;
         this._anonymizer = anonymizer;
 
@@ -140,7 +144,9 @@ export class ChatWebviewViewProvider {
             scriptUri,
             highlightCssUri,
             models,
-            activeModel
+            activeModel,
+            vscodeApi: this._vscodeApi,
+            fileReader: this._fileReader
         });
 
         // Set up the message listener to handle communication from the webview (frontend).

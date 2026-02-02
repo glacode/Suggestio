@@ -142,6 +142,7 @@ export async function activate(context: vscode.ExtensionContext) {
     buildContext: new ContextBuilder(vscode.window, ignoreManager),
     getChatWebviewContent,
     vscodeApi: vscode,
+    fileReader: fileContentReader,
     eventBus,
     anonymizer: configContainer.config.anonymizerInstance
   });
