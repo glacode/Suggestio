@@ -29,6 +29,7 @@ import { getChatWebviewContent } from './chat/chatWebviewContent.js';
 import './chat/activeEditorTracker.js';
 import { EventBus } from './utils/eventBus.js';
 import { ANONYMIZATION_EVENT } from './anonymizer/anonymizationNotifier.js';
+import { NodeFetchClient } from './utils/httpClient.js';
 
 export async function activate(context: vscode.ExtensionContext) {
   initLogger();
@@ -97,7 +98,7 @@ export async function activate(context: vscode.ExtensionContext) {
     delete: async (key: string) => await context.secrets.delete(key)
   }, windowProvider);
 
-  const rawConfig = await readConfig(
+  const rawJson = await readConfig(
     context,
     workspaceProvider,
     fileContentReader,
@@ -109,7 +110,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const overrides = {
     maxAgentIterations: vsCodeConfig.get<number>('maxAgentIterations')
   };
-  const configContainer: ConfigContainer = await configProcessor.processConfig(rawConfig, secretManager, eventBus, overrides);
+  const configContainer: ConfigContainer = await configProcessor.processConfig(rawJson, secretManager, eventBus, new NodeFetchClient(), overrides);
   // Initialize UI context for inline completion toggle (default true in config)
   await vscode.commands.executeCommand('setContext', 'suggestio.inlineCompletionEnabled', configContainer.config.enableInlineCompletion !== false);
 

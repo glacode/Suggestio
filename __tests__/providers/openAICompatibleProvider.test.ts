@@ -4,8 +4,10 @@ import * as http from "http";
 import { AddressInfo } from "net";
 import { SimpleWordAnonymizer } from "../../src/anonymizer/simpleWordAnonymizer.js";
 import { ShannonEntropyCalculator } from "../../src/utils/shannonEntropyCalculator.js";
+import { NodeFetchClient } from "../../src/utils/httpClient.js";
 
 const entropyCalculator = new ShannonEntropyCalculator();
+const httpClient = new NodeFetchClient();
 
 class TestPrompt implements IPrompt {
   constructor(private messages: ChatMessage[]) {
@@ -76,6 +78,7 @@ describe("OpenAICompatibleProvider", () => {
 
   it("should not get a trimmed response from the query method", async () => {
     const provider = new OpenAICompatibleProvider(
+      httpClient,
       endpoint,
       "test-key",
       "test-model"
@@ -86,7 +89,7 @@ describe("OpenAICompatibleProvider", () => {
   });
 
   it("should get a streamed response from the queryStream method", async () => {
-    const provider = new OpenAICompatibleProvider(
+    const provider = new OpenAICompatibleProvider(httpClient, 
       endpoint,
       "test-key",
       "test-model"
@@ -108,7 +111,7 @@ describe("OpenAICompatibleProvider", () => {
     });
 
     it("should anonymize user messages before sending", async () => {
-      const provider = new OpenAICompatibleProvider(
+      const provider = new OpenAICompatibleProvider(httpClient, 
         endpoint,
         "test-key",
         "test-model",
@@ -139,7 +142,7 @@ describe("OpenAICompatibleProvider", () => {
         );
       };
 
-      const provider = new OpenAICompatibleProvider(
+      const provider = new OpenAICompatibleProvider(httpClient, 
         endpoint,
         "test-key",
         "test-model",
@@ -164,7 +167,7 @@ describe("OpenAICompatibleProvider", () => {
         res.end();
       };
 
-      const provider = new OpenAICompatibleProvider(
+      const provider = new OpenAICompatibleProvider(httpClient, 
         endpoint,
         "test-key",
         "test-model",
@@ -192,7 +195,7 @@ describe("OpenAICompatibleProvider", () => {
         res.end();
       };
 
-      const provider = new OpenAICompatibleProvider(endpoint, "test-key", "test-model");
+      const provider = new OpenAICompatibleProvider(httpClient, endpoint, "test-key", "test-model");
       const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
       const response = await provider.queryStream(prompt, () => { });
       expect(response?.tool_calls).toHaveLength(1);
@@ -214,7 +217,7 @@ describe("OpenAICompatibleProvider", () => {
         res.end();
       };
 
-      const provider = new OpenAICompatibleProvider(endpoint, "test-key", "test-model");
+      const provider = new OpenAICompatibleProvider(httpClient, endpoint, "test-key", "test-model");
       const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
       const tokens: string[] = [];
       const response = await provider.queryStream(prompt, (token) => tokens.push(token));
@@ -236,7 +239,7 @@ describe("OpenAICompatibleProvider", () => {
         res.end();
       };
 
-      const provider = new OpenAICompatibleProvider(endpoint, "test-key", "test-model");
+      const provider = new OpenAICompatibleProvider(httpClient, endpoint, "test-key", "test-model");
       const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
       const tokens: string[] = [];
       const response = await provider.queryStream(prompt, (token) => tokens.push(token));
@@ -246,7 +249,7 @@ describe("OpenAICompatibleProvider", () => {
   });
 
   it("should throw an error if response body is null in queryStream", async () => {
-    const provider = new OpenAICompatibleProvider(endpoint, "test-key", "test-model");
+    const provider = new OpenAICompatibleProvider(httpClient, endpoint, "test-key", "test-model");
     // const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
     
     // Use type assertion to call private method for testing purpose or mock the whole fetch
@@ -271,7 +274,7 @@ describe("OpenAICompatibleProvider", () => {
       res.end();
     };
 
-    const provider = new OpenAICompatibleProvider(endpoint, "test-key", "test-model");
+    const provider = new OpenAICompatibleProvider(httpClient, endpoint, "test-key", "test-model");
     const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
     const response = await provider.queryStream(prompt, () => { });
     expect(response?.tool_calls).toBeUndefined();
@@ -302,7 +305,7 @@ describe("OpenAICompatibleProvider", () => {
       res.end();
     };
 
-    const provider = new OpenAICompatibleProvider(endpoint, "test-key", "test-model", anonymizer as any);
+    const provider = new OpenAICompatibleProvider(httpClient, endpoint, "test-key", "test-model", anonymizer as any);
     const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
     const tokens: string[] = [];
     const response = await provider.queryStream(prompt, (token) => tokens.push(token));
@@ -329,7 +332,7 @@ describe("OpenAICompatibleProvider", () => {
       res.end();
     };
 
-    const provider = new OpenAICompatibleProvider(endpoint, "test-key", "test-model", anonymizer as any);
+    const provider = new OpenAICompatibleProvider(httpClient, endpoint, "test-key", "test-model", anonymizer as any);
     const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
     const tokens: string[] = [];
     const response = await provider.queryStream(prompt, (token) => tokens.push(token));
@@ -342,7 +345,7 @@ describe("OpenAICompatibleProvider", () => {
       res.writeHead(500, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: { message: "Internal Server Error", code: 500 } }));
     };
-    const provider = new OpenAICompatibleProvider(
+    const provider = new OpenAICompatibleProvider(httpClient, 
       endpoint,
       "test-key",
       "test-model"
@@ -356,7 +359,7 @@ describe("OpenAICompatibleProvider", () => {
       res.writeHead(500, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: "Internal Server Error" }));
     };
-    const provider = new OpenAICompatibleProvider(
+    const provider = new OpenAICompatibleProvider(httpClient, 
       endpoint,
       "test-key",
       "test-model"
@@ -370,7 +373,7 @@ describe("OpenAICompatibleProvider", () => {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end("not json");
     };
-    const provider = new OpenAICompatibleProvider(
+    const provider = new OpenAICompatibleProvider(httpClient, 
       endpoint,
       "test-key",
       "test-model"
@@ -384,7 +387,7 @@ describe("OpenAICompatibleProvider", () => {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ }));
     };
-    const provider = new OpenAICompatibleProvider(
+    const provider = new OpenAICompatibleProvider(httpClient, 
       endpoint,
       "test-key",
       "test-model"
@@ -398,7 +401,7 @@ describe("OpenAICompatibleProvider", () => {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ choices: [{ }] }));
     };
-    const provider = new OpenAICompatibleProvider(endpoint, "test-key", "test-model");
+    const provider = new OpenAICompatibleProvider(httpClient, endpoint, "test-key", "test-model");
     const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
     const response = await provider.query(prompt);
     expect(response).toBeNull();
@@ -418,7 +421,7 @@ describe("OpenAICompatibleProvider", () => {
       res.end();
     };
 
-    const provider = new OpenAICompatibleProvider(endpoint, "test-key", "test-model");
+    const provider = new OpenAICompatibleProvider(httpClient, endpoint, "test-key", "test-model");
     const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
     const response = await provider.queryStream(prompt, () => { });
     expect(response?.tool_calls?.[0].id).toBe("call_1_updated");
@@ -436,7 +439,7 @@ describe("OpenAICompatibleProvider", () => {
       res.end();
     };
 
-    const provider = new OpenAICompatibleProvider(endpoint, "test-key", "test-model");
+    const provider = new OpenAICompatibleProvider(httpClient, endpoint, "test-key", "test-model");
     const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
     const response = await provider.queryStream(prompt, () => { });
     expect(response?.content).toBe("");
@@ -451,7 +454,7 @@ describe("OpenAICompatibleProvider", () => {
       res.end();
     };
 
-    const provider = new OpenAICompatibleProvider(endpoint, "test-key", "test-model");
+    const provider = new OpenAICompatibleProvider(httpClient, endpoint, "test-key", "test-model");
     const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
     const response = await provider.queryStream(prompt, () => { });
     expect(response?.content).toBe("ok");
@@ -462,7 +465,7 @@ describe("OpenAICompatibleProvider", () => {
       res.writeHead(500, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: { code: "some_code" } }));
     };
-    const provider = new OpenAICompatibleProvider(endpoint, "test-key", "test-model");
+    const provider = new OpenAICompatibleProvider(httpClient, endpoint, "test-key", "test-model");
     const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
     await expect(provider.query(prompt)).rejects.toThrow('OpenAI API error: {"code":"some_code"}');
   });
@@ -472,7 +475,7 @@ describe("OpenAICompatibleProvider", () => {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ choices: [{ message: { content: "ok" } }] }));
     };
-    const provider = new OpenAICompatibleProvider(endpoint, "test-key", "test-model");
+    const provider = new OpenAICompatibleProvider(httpClient, endpoint, "test-key", "test-model");
     const prompt = new TestPrompt([
       { role: "system", content: "You are a bot" },
       { role: "tool", content: "result", tool_call_id: "123" }
@@ -490,7 +493,7 @@ describe("OpenAICompatibleProvider", () => {
       res.end();
     };
 
-    const provider = new OpenAICompatibleProvider(endpoint, "test-key", "test-model");
+    const provider = new OpenAICompatibleProvider(httpClient, endpoint, "test-key", "test-model");
     const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
     const response = await provider.queryStream(prompt, () => { });
     expect(response?.content).toBe("ok");
@@ -510,7 +513,7 @@ describe("OpenAICompatibleProvider", () => {
       res.end();
     };
 
-    const provider = new OpenAICompatibleProvider(endpoint, "test-key", "test-model");
+    const provider = new OpenAICompatibleProvider(httpClient, endpoint, "test-key", "test-model");
     const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
     const response = await provider.queryStream(prompt, () => { });
     expect(response?.tool_calls?.[0].function.arguments).toBe('{"a":1,"b":2}');
@@ -521,7 +524,7 @@ describe("OpenAICompatibleProvider", () => {
       res.writeHead(500);
       res.end("Internal Server Error");
     };
-    const provider = new OpenAICompatibleProvider(
+    const provider = new OpenAICompatibleProvider(httpClient, 
       endpoint,
       "test-key",
       "test-model"

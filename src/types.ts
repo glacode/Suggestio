@@ -802,6 +802,36 @@ export interface ToolImplementation {
 }
 
 // --------------------------------------------------------------------------------
+//  HTTP Client Abstractions
+// --------------------------------------------------------------------------------
+
+/**
+ * Minimal abstraction for an HTTP response to support both Node.js and Web environments.
+ */
+export interface IHttpResponse {
+  readonly ok: boolean;
+  readonly status: number;
+  readonly statusText: string;
+  readonly body: AsyncIterable<any> | null;
+  json(): Promise<any>;
+  text(): Promise<string>;
+}
+
+/**
+ * Minimal abstraction for an HTTP client.
+ */
+export interface IHttpClient {
+  post(
+    url: string,
+    options: {
+      headers: Record<string, string>;
+      body: string;
+      signal?: AbortSignal;
+    }
+  ): Promise<IHttpResponse>;
+}
+
+// --------------------------------------------------------------------------------
 //  LLM Provider Types
 // --------------------------------------------------------------------------------
 export interface ILlmProvider {

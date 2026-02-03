@@ -1,10 +1,11 @@
-import { Config, IProviderConfig, ILlmProvider, IAnonymizer } from "../types.js";
+import { Config, IProviderConfig, ILlmProvider, IAnonymizer, IHttpClient } from "../types.js";
 import { OpenAICompatibleProvider } from "./openAICompatibleProvider.js";
 import { GeminiProvider } from "./geminiProvider.js";
 import * as vscode from "vscode";
 
 export function getActiveProvider(
   config: Config,
+  httpClient: IHttpClient,
   anonymizer?: IAnonymizer
 ): ILlmProvider | null {
   const activeProviderName = config.activeProvider;
@@ -29,6 +30,7 @@ export function getActiveProvider(
       return null;
     }
     return new OpenAICompatibleProvider(
+      httpClient,
       providerConfig.endpoint,
       apiKey,
       providerConfig.model,

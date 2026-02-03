@@ -1,6 +1,6 @@
 import { getAnonymizer } from '../anonymizer/anonymizer.js';
 import { getActiveProvider } from '../providers/providerFactory.js';
-import { ConfigContainer, Config, IProviderConfig } from '../types.js';
+import { ConfigContainer, Config, IProviderConfig, IHttpClient } from '../types.js';
 import { IEventBus } from '../utils/eventBus.js';
 import { log } from '../logger.js';
 
@@ -12,14 +12,16 @@ class ConfigProcessor {
     private _config: Config | undefined;
     private _secretManager: SecretManager | undefined;
     private _eventBus: IEventBus | undefined;
+    private _httpClient: IHttpClient | undefined;
 
     constructor() {
     }
 
-    public init(config: Config, secretManager: SecretManager, eventBus: IEventBus) {
+    public init(config: Config, secretManager: SecretManager, eventBus: IEventBus, httpClient: IHttpClient) {
         this._config = config;
         this._secretManager = secretManager;
         this._eventBus = eventBus;
+        this._httpClient = httpClient;
 
         // Remove existing listeners to avoid duplicates if init is called multiple times
         this._eventBus.removeAllListeners('modelChanged');
@@ -74,14 +76,14 @@ class ConfigProcessor {
      *                  These can override existing properties from the JSON config or provide
      *                  additional properties (e.g., maxAgentIterations) not present in the config file.
      */
-    public async processConfig(rawJson: string, secretManager: SecretManager, eventBus: IEventBus, overrides?: Partial<Config>): Promise<ConfigContainer> {
+    public async processConfig(rawJson: string, secretManager: SecretManager, eventBus: IEventBus, httpClient: IHttpClient, overrides?: Partial<Config>): Promise<ConfigContainer> {
         const config: Config = JSON.parse(rawJson);
 
         if (overrides) {
             Object.assign(config, overrides);
         }
 
-        this.init(config, secretManager, eventBus);
+        this.init(config, secretManager, eventBus, httpClient);
 
         await this.updateProviders(config);
 
@@ -89,8 +91,8 @@ class ConfigProcessor {
     }
 
     private async updateProviders(config: Config) {
-        if (!this._eventBus) {
-            throw new Error('EventBus is not initialized');
+        if (!this._eventBus || !this._httpClient) {
+            throw new Error('ConfigProcessor is not initialized');
         }
 
         const { activeProvider, providers } = config;
@@ -106,8 +108,8 @@ class ConfigProcessor {
         // `getActiveProvider` can return null; `inlineCompletionProvider` expects
         // `llmProvider | undefined`, so normalize null -> undefined to satisfy
         // the TypeScript type.
-        config.llmProviderForInlineCompletion = getActiveProvider(config, config.anonymizerInstance) ?? undefined;
-        config.llmProviderForChat = getActiveProvider(config, config.anonymizerInstance) ?? undefined;
+        config.llmProviderForInlineCompletion = getActiveProvider(config, this._httpClient, config.anonymizerInstance) ?? undefined;
+        config.llmProviderForChat = getActiveProvider(config, this._httpClient, config.anonymizerInstance) ?? undefined;
     }
 
     private async updateActiveProvider(modelName: string) {

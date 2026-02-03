@@ -1,7 +1,6 @@
-import fetch, { Response } from "node-fetch";
 import { z } from "zod";
 import { log } from "../logger.js";
-import { ChatMessage, IAnonymizer, IPrompt, ILlmProvider, ToolDefinition, ToolCall, IStreamingDeanonymizer } from "../types.js";
+import { ChatMessage, IAnonymizer, IPrompt, ILlmProvider, ToolDefinition, ToolCall, IStreamingDeanonymizer, IHttpClient, IHttpResponse } from "../types.js";
 import { ToolCallSchema } from "../schemas.js";
 
 /**
@@ -138,30 +137,22 @@ type OpenAIRequestBody = {
 };
 
 export class OpenAICompatibleProvider implements ILlmProvider {
-  private endpoint: string;
-  private apiKey: string;
-  private model: string;
-  private anonymizer?: IAnonymizer;
-
   /**
    * Creates an instance of OpenAICompatibleProvider.
    * 
+   * @param httpClient - The HTTP client to use for requests.
    * @param endpoint - The API endpoint URL for the OpenAI-compatible service.
    * @param apiKey - The API key for authentication.
    * @param model - The model identifier to be used for completions.
    * @param anonymizer - Optional anonymizer to protect sensitive data in user messages.
    */
   constructor(
-    endpoint: string,
-    apiKey: string,
-    model: string,
-    anonymizer?: IAnonymizer
-  ) {
-    this.endpoint = endpoint;
-    this.apiKey = apiKey;
-    this.model = model;
-    this.anonymizer = anonymizer;
-  }
+    private httpClient: IHttpClient,
+    private endpoint: string,
+    private apiKey: string,
+    private model: string,
+    private anonymizer?: IAnonymizer
+  ) {}
 
   /**
    * Prepares chat messages for the API request, applying anonymization to user messages if configured.
@@ -224,15 +215,14 @@ export class OpenAICompatibleProvider implements ILlmProvider {
   }
 
   /**
-   * Sends a POST request to the provider's endpoint.
+   * Sends a POST request to the provider's endpoint using the injected httpClient.
    * 
    * @param body - The request body to be sent as JSON.
    * @param signal - Optional AbortSignal to cancel the request.
-   * @returns A promise that resolves to the fetch Response object.
+   * @returns A promise that resolves to the IHttpResponse object.
    */
-  private async post(body: OpenAIRequestBody, signal?: AbortSignal): Promise<Response> {
-    return await fetch(this.endpoint, {
-      method: "POST",
+  private async post(body: OpenAIRequestBody, signal?: AbortSignal): Promise<IHttpResponse> {
+    return await this.httpClient.post(this.endpoint, {
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
         "Content-Type": "application/json",
@@ -331,13 +321,13 @@ export class OpenAICompatibleProvider implements ILlmProvider {
   /**
    * Parses the Server-Sent Events (SSE) stream from the provider's response.
    * 
-   * @param response - The fetch Response object containing the body stream.
+   * @param response - The IHttpResponse object containing the body stream.
    * @param onToken - Callback function for each content token.
    * @returns A promise resolving to the complete assistant's message after the stream ends.
    * @throws Error if the response body is missing.
    */
   private async parseStream(
-    response: Response,
+    response: IHttpResponse,
     onToken: (token: string) => void
   ): Promise<ChatMessage> {
     if (!response.body) {
