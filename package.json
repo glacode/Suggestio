@@ -230,7 +230,8 @@
     "dependencies": {
         "highlight.js": "^11.11.1",
         "marked": "^16.3.0",
-        "node-fetch": "^3.3.2"
+        "node-fetch": "^3.3.2",
+        "zod": "^4.3.6"
     },
     "devDependencies": {
         "@playwright/test": "^1.56.1",

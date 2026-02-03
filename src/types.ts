@@ -1,7 +1,6 @@
-// This file contains only type declarations. It is designed to be "runtime-free"
-// by avoiding direct `import * as vscode from 'vscode'` statements.
-// This allows other modules to `import type` from this file without pulling in
-// the entire `vscode` runtime, which is beneficial for testing and build processes.
+import type { ToolCall } from "./schemas.js";
+
+export type { ToolCall };
 
 // --------------------------------------------------------------------------------
 //  VS Code API Type Mocks/Abstractions
@@ -194,18 +193,6 @@ export type WebviewMessage =
  * - `tool`: The result of a tool execution.
  */
 export type ChatRole = "system" | "user" | "assistant" | "tool";
-
-/**
- * Represents a tool call request from the AI.
- */
-export interface ToolCall {
-  id: string;
-  type: "function";
-  function: {
-    name: string;
-    arguments: string;
-  };
-}
 
 /**
  * Represents a single message in the chat history.
