@@ -21,7 +21,7 @@ class NodeFetchResponse implements IHttpResponse {
 
   get body(): AsyncIterable<any> | null {
     // node-fetch response.body is a Readable stream, which is an AsyncIterable.
-    return this.response.body as any;
+    return this.response.body;
   }
 
   async json(): Promise<any> {
@@ -49,7 +49,7 @@ export class NodeFetchClient implements IHttpClient {
       method: "POST",
       headers: options.headers,
       body: options.body,
-      signal: options.signal as any, // node-fetch uses its own AbortSignal type
+      signal: options.signal, // node-fetch uses its own AbortSignal type
     });
 
     return new NodeFetchResponse(response);

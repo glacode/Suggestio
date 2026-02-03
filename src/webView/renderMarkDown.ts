@@ -13,9 +13,19 @@ renderer.code = ({ text, lang }: { text: string; lang?: string; escaped?: boolea
   return `<pre><code class="hljs ${validLang ?? ''}">${highlighted}</code></pre>`;
 };
 
+declare global {
+  interface Window {
+    renderMarkdown: (text: string) => string;
+  }
+}
+
 function renderMarkdown(text: string): string {
-  return marked.parse(text, { renderer }) as string;
+  const parsed = marked.parse(text, { renderer });
+  if (typeof parsed !== "string") {
+    throw new Error("Expected marked.parse to return a string");
+  }
+  return parsed;
 }
 
 // Expose globally for the webview
-(window as any).renderMarkdown = renderMarkdown;
+window.renderMarkdown = renderMarkdown;
