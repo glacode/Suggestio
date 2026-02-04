@@ -136,23 +136,42 @@ type OpenAIRequestBody = {
   }[];
 };
 
+/**
+ * Arguments for the OpenAICompatibleProvider constructor.
+ */
+export interface IOpenAICompatibleProviderArgs {
+  httpClient: IHttpClient;
+  endpoint: string;
+  apiKey: string;
+  model: string;
+  anonymizer?: IAnonymizer;
+}
+
 export class OpenAICompatibleProvider implements ILlmProvider {
+  private httpClient: IHttpClient;
+  private endpoint: string;
+  private apiKey: string;
+  private model: string;
+  private anonymizer?: IAnonymizer;
+
   /**
    * Creates an instance of OpenAICompatibleProvider.
    * 
-   * @param httpClient - The HTTP client to use for requests.
-   * @param endpoint - The API endpoint URL for the OpenAI-compatible service.
-   * @param apiKey - The API key for authentication.
-   * @param model - The model identifier to be used for completions.
-   * @param anonymizer - Optional anonymizer to protect sensitive data in user messages.
+   * @param args - The configuration arguments for the provider.
    */
-  constructor(
-    private httpClient: IHttpClient,
-    private endpoint: string,
-    private apiKey: string,
-    private model: string,
-    private anonymizer?: IAnonymizer
-  ) {}
+  constructor({
+    httpClient,
+    endpoint,
+    apiKey,
+    model,
+    anonymizer,
+  }: IOpenAICompatibleProviderArgs) {
+    this.httpClient = httpClient;
+    this.endpoint = endpoint;
+    this.apiKey = apiKey;
+    this.model = model;
+    this.anonymizer = anonymizer;
+  }
 
   /**
    * Prepares chat messages for the API request, applying anonymization to user messages if configured.

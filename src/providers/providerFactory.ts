@@ -29,13 +29,13 @@ export function getActiveProvider(
       );
       return null;
     }
-    return new OpenAICompatibleProvider(
+    return new OpenAICompatibleProvider({
       httpClient,
-      providerConfig.endpoint,
+      endpoint: providerConfig.endpoint,
       apiKey,
-      providerConfig.model,
-      anonymizer
-    );
+      model: providerConfig.model,
+      anonymizer,
+    });
   }
 
   // Otherwise switch on type
