@@ -3,27 +3,44 @@ import { isLikeIdentifier } from "./isLikeIdentifier.js";
 import { isLikePath } from "./isLikePath.js";
 import { matchesWellKnownSecret } from "./matchesWellKnownSecret.js";
 
+/**
+ * Arguments for the SimpleWordAnonymizer constructor.
+ */
+export interface ISimpleWordAnonymizerArgs {
+    wordsToAnonymize: string[];
+    entropyCalculator: IEntropyCalculator;
+    allowedEntropy?: number;
+    minLength?: number;
+    notifier?: IAnonymizationNotifier;
+}
+
 export class SimpleWordAnonymizer implements IAnonymizer {
     private mapping: Map<string, string> = new Map();
     private reverseMapping: Map<string, string> = new Map();
     private placeholderPrefix = 'ANON_';
     private counter = -1;
+    private wordsToAnonymize: string[];
+    private entropyCalculator: IEntropyCalculator;
+    private allowedEntropy?: number;
+    private minLength?: number;
+    private notifier?: IAnonymizationNotifier;
 
     /**
      * Creates an instance of SimpleWordAnonymizer.
-     * @param wordsToAnonymize List of words that should be explicitly anonymized.
-     * @param entropyCalculator Calculator for entropy-based anonymization.
-     * @param allowedEntropy Optional threshold for entropy-based anonymization. Strings with entropy higher than this will be anonymized.
-     * @param minLength Optional minimum length for entropy-based anonymization.
-     * @param notifier Optional notifier to receive events when anonymization occurs.
+     * @param args - The configuration arguments for the anonymizer.
      */
-    constructor(
-        private wordsToAnonymize: string[],
-        private entropyCalculator: IEntropyCalculator,
-        private allowedEntropy?: number,
-        private minLength?: number,
-        private notifier?: IAnonymizationNotifier
-    ) {
+    constructor({
+        wordsToAnonymize,
+        entropyCalculator,
+        allowedEntropy,
+        minLength,
+        notifier
+    }: ISimpleWordAnonymizerArgs) {
+        this.wordsToAnonymize = wordsToAnonymize;
+        this.entropyCalculator = entropyCalculator;
+        this.allowedEntropy = allowedEntropy;
+        this.minLength = minLength;
+        this.notifier = notifier;
     }
 
     private anonymizeEntropy(text: string): string {

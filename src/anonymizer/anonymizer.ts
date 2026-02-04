@@ -10,13 +10,13 @@ export function getAnonymizer(config: Config, eventBus: IEventBus): IAnonymizer 
   if (config.anonymizer?.enabled) {
     const notifier = new EventBusAnonymizationNotifier(eventBus);
     const entropyCalculator = new ShannonEntropyCalculator();
-    return new SimpleWordAnonymizer(
-      config.anonymizer.words,
+    return new SimpleWordAnonymizer({
+      wordsToAnonymize: config.anonymizer.words,
       entropyCalculator,
-      config.anonymizer.sensitiveData?.allowedEntropy,
-      config.anonymizer.sensitiveData?.minLength,
+      allowedEntropy: config.anonymizer.sensitiveData?.allowedEntropy,
+      minLength: config.anonymizer.sensitiveData?.minLength,
       notifier
-    );
+    });
   }
   return undefined;
 }

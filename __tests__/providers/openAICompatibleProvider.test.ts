@@ -108,7 +108,7 @@ describe("OpenAICompatibleProvider", () => {
     let anonymizer: IAnonymizer;
 
     beforeEach(() => {
-      anonymizer = new SimpleWordAnonymizer(["secret"], entropyCalculator);
+      anonymizer = new SimpleWordAnonymizer({ wordsToAnonymize: ["secret"], entropyCalculator });
     });
 
     it("should anonymize user messages before sending", async () => {

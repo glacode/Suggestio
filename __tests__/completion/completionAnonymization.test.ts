@@ -36,7 +36,7 @@ describe("Inline Completion Anonymization", () => {
     });
 
     it("should anonymize sensitive words in inline completion prompt", async () => {
-        const anonymizer = new SimpleWordAnonymizer(["SECRET_KEY"], entropyCalculator);
+        const anonymizer = new SimpleWordAnonymizer({ wordsToAnonymize: ["SECRET_KEY"], entropyCalculator });
         const provider = new OpenAICompatibleProvider({
       httpClient,
       endpoint,
@@ -56,7 +56,12 @@ describe("Inline Completion Anonymization", () => {
 
     it("should anonymize high entropy tokens in inline completion prompt", async () => {
         // Entropy anonymization: allowedEntropy=0.8, minLength=10
-        const anonymizer = new SimpleWordAnonymizer([], entropyCalculator, 0.8, 10);
+        const anonymizer = new SimpleWordAnonymizer({
+            wordsToAnonymize: [],
+            entropyCalculator,
+            allowedEntropy: 0.8,
+            minLength: 10
+        });
         const provider = new OpenAICompatibleProvider({
       httpClient,
       endpoint,
