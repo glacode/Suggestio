@@ -140,10 +140,15 @@ type OpenAIRequestBody = {
  * Arguments for the OpenAICompatibleProvider constructor.
  */
 export interface IOpenAICompatibleProviderArgs {
+  /** The HTTP client to use for requests. */
   httpClient: IHttpClient;
+  /** The API endpoint URL for the OpenAI-compatible service. */
   endpoint: string;
+  /** The API key for authentication. */
   apiKey: string;
+  /** The model identifier to be used for completions. */
   model: string;
+  /** Optional anonymizer to protect sensitive data in user messages. */
   anonymizer?: IAnonymizer;
 }
 

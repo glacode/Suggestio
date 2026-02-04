@@ -2,11 +2,19 @@ import { Config, ToolImplementation } from "../types.js";
 import type { IChatHistoryManager, IPrompt, ChatMessage, ToolCall, IChatAgent } from "../types.js";
 import { IEventBus } from "../utils/eventBus.js";
 
+/**
+ * Arguments for the Agent constructor.
+ */
 export interface IAgentArgs {
+    /** The configuration for the agent. */
     config: Config;
+    /** The logger function for the agent. */
     log: (message: string) => void;
+    /** The chat history manager for the agent. */
     chatHistoryManager: IChatHistoryManager;
+    /** The tools available to the agent. */
     tools?: ToolImplementation[];
+    /** The event bus for the agent to emit events. */
     eventBus?: IEventBus;
 }
 

@@ -7,10 +7,15 @@ import { matchesWellKnownSecret } from "./matchesWellKnownSecret.js";
  * Arguments for the SimpleWordAnonymizer constructor.
  */
 export interface ISimpleWordAnonymizerArgs {
+    /** List of words that should be explicitly anonymized. */
     wordsToAnonymize: string[];
+    /** Calculator for entropy-based anonymization. */
     entropyCalculator: IEntropyCalculator;
+    /** Optional threshold for entropy-based anonymization. Strings with entropy higher than this will be anonymized. */
     allowedEntropy?: number;
+    /** Optional minimum length for entropy-based anonymization. */
     minLength?: number;
+    /** Optional notifier to receive events when anonymization occurs. */
     notifier?: IAnonymizationNotifier;
 }
 
