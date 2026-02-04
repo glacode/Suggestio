@@ -121,13 +121,13 @@ export async function activate(context: vscode.ExtensionContext) {
     openTextDocument: async (path: string) => await vscode.workspace.openTextDocument(path)
   };
 
-  const logicHandler = new Agent(
-    configContainer.config,
+  const logicHandler = new Agent({
+    config: configContainer.config,
     log,
     chatHistoryManager,
-    getTools(workspaceProvider, { ...directoryReader, ...directoryCreator }, pathResolver),
+    tools: getTools(workspaceProvider, { ...directoryReader, ...directoryCreator }, pathResolver),
     eventBus
-  );
+  });
   const providerAccessor = {
     getModels: () => Object.values(configContainer.config.providers).map(p => p.model),
     getActiveModel: () => configContainer.config.providers[configContainer.config.activeProvider].model,

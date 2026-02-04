@@ -2,14 +2,34 @@ import { Config, ToolImplementation } from "../types.js";
 import type { IChatHistoryManager, IPrompt, ChatMessage, ToolCall, IChatAgent } from "../types.js";
 import { IEventBus } from "../utils/eventBus.js";
 
+export interface IAgentArgs {
+    config: Config;
+    log: (message: string) => void;
+    chatHistoryManager: IChatHistoryManager;
+    tools?: ToolImplementation[];
+    eventBus?: IEventBus;
+}
+
 export class Agent implements IChatAgent {
-    constructor(
-        private config: Config,
-        private log: (message: string) => void,
-        private chatHistoryManager: IChatHistoryManager,
-        private tools: ToolImplementation[] = [],
-        private eventBus?: IEventBus
-    ) { }
+    private config: Config;
+    private log: (message: string) => void;
+    private chatHistoryManager: IChatHistoryManager;
+    private tools: ToolImplementation[];
+    private eventBus?: IEventBus;
+
+    constructor({
+        config,
+        log,
+        chatHistoryManager,
+        tools = [],
+        eventBus
+    }: IAgentArgs) {
+        this.config = config;
+        this.log = log;
+        this.chatHistoryManager = chatHistoryManager;
+        this.tools = tools;
+        this.eventBus = eventBus;
+    }
 
     async run(prompt: IPrompt, onToken: (token: string) => void, signal?: AbortSignal): Promise<void> {
         const toolDefinitions = this.tools.map(t => t.definition);

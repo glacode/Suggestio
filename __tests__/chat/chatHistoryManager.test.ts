@@ -23,15 +23,15 @@ describe("Chat History Management (Unit Test)", () => {
             { role: "assistant", content: "Assistant Reply 2" }
         ]);
 
-        const handler = new Agent(
-            createDefaultConfig({
+        const handler = new Agent({
+            config: createDefaultConfig({
                 activeProvider: "FAKE",
                 llmProviderForChat: fakeProvider,
                 providers: { FAKE: createMockProviderConfig() }
             }),
-            logger,
-            chatHistoryManager
-        );
+            log: logger,
+            chatHistoryManager: chatHistoryManager
+        });
 
         // --- Turn 1 ---
         const userMessage1 = "User message 1";

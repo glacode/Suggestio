@@ -60,16 +60,16 @@ describe("ChatResponder Tool Calling Integration", () => {
             execute: jest.fn(async () => "12:00 PM")
         };
 
-        const handler = new Agent(
-            createDefaultConfig({
+        const handler = new Agent({
+            config: createDefaultConfig({
                 activeProvider: "FAKE",
                 llmProviderForChat: provider,
                 providers: { FAKE: createMockProviderConfig() },
             }),
-            logger,
-            mockChatHistoryManager,
-            [mockTool]
-        );
+            log: logger,
+            chatHistoryManager: mockChatHistoryManager,
+            tools: [mockTool]
+        });
 
         let streamedContent = "";
         const onToken = (token: string) => {

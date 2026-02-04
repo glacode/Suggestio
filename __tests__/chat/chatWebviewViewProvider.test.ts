@@ -214,7 +214,11 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     // Use the real Agent which currently adds the (context+message) to history.
     const { Agent } = await import('../../src/agent/agent.js');
-    const responder = new Agent(config, () => { }, chatHistoryManager);
+    const responder = new Agent({
+      config,
+      log: () => { },
+      chatHistoryManager
+    });
     const eventBus = new EventBus();
 
     const provider = new ChatWebviewViewProvider({

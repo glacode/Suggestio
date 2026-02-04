@@ -52,12 +52,12 @@ describe("Agent Max Iterations", () => {
             maxAgentIterations: 3 // Limit to 3 iterations
         });
 
-        const agent = new Agent(
+        const agent = new Agent({
             config,
-            logger,
-            mockChatHistoryManager,
-            [mockTool]
-        );
+            log: logger,
+            chatHistoryManager: mockChatHistoryManager,
+            tools: [mockTool]
+        });
 
         await agent.run(mockPrompt, () => {});
 
@@ -97,12 +97,12 @@ describe("Agent Max Iterations", () => {
         });
         delete config.maxAgentIterations;
 
-        const agent = new Agent(
+        const agent = new Agent({
             config,
-            logger,
-            mockChatHistoryManager,
-            [mockTool]
-        );
+            log: logger,
+            chatHistoryManager: mockChatHistoryManager,
+            tools: [mockTool]
+        });
 
         await agent.run(mockPrompt, () => {});
 

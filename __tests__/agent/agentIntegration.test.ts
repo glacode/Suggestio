@@ -29,15 +29,15 @@ describe("Agent (Integration) simple tests", () => {
     });
 
     it("fetches stream chat response on success", async () => {
-        const handler = new Agent(
-            createDefaultConfig({
+        const handler = new Agent({
+            config: createDefaultConfig({
                 activeProvider: "FAKE",
                 llmProviderForChat: new FakeProvider([{ role: "assistant", content: "Hello world" }]),
                 providers: { FAKE: createMockProviderConfig() },
             }),
-            logger,
-            mockChatHistoryManager // Injected mock
-        );
+            log: logger,
+            chatHistoryManager: mockChatHistoryManager // Injected mock
+        });
 
         let streamedContent = "";
         const onToken = (token: string) => {
@@ -55,15 +55,15 @@ describe("Agent (Integration) simple tests", () => {
         const fakeProvider = new FakeProvider([]);
         jest.spyOn(fakeProvider, 'queryStream').mockRejectedValue(new Error("Simulated failure"));
 
-        const handler = new Agent(
-            createDefaultConfig({
+        const handler = new Agent({
+            config: createDefaultConfig({
                 activeProvider: "FAKE",
                 llmProviderForChat: fakeProvider,
                 providers: { FAKE: createMockProviderConfig() },
             }),
-            logger,
-            mockChatHistoryManager // Injected mock
-        );
+            log: logger,
+            chatHistoryManager: mockChatHistoryManager // Injected mock
+        });
 
         let streamedContent = "";
         const onToken = (token: string) => {
