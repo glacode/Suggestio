@@ -872,7 +872,7 @@ export interface Config {
   maxAgentIterations?: number;
 }
 
-export interface ConfigContainer {
+export interface IConfigContainer {
   config: Config;
 }
 

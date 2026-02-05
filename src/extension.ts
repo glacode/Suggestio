@@ -9,7 +9,7 @@ import {
   IWorkspaceProvider, 
   IFileContentReader, 
   IFileContentWriter,
-  ConfigContainer, 
+  IConfigContainer, 
   IDirectoryReader, 
   IDirectoryCreator,
   IAnonymizationEventPayload, 
@@ -110,7 +110,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const overrides = {
     maxAgentIterations: vsCodeConfig.get<number>('maxAgentIterations')
   };
-  const configContainer: ConfigContainer = await configProcessor.processConfig(rawJson, secretManager, eventBus, new NodeFetchClient(), overrides);
+  const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, secretManager, eventBus, new NodeFetchClient(), overrides);
   // Initialize UI context for inline completion toggle (default true in config)
   await vscode.commands.executeCommand('setContext', 'suggestio.inlineCompletionEnabled', configContainer.config.enableInlineCompletion !== false);
 

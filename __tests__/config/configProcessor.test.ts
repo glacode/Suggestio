@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { configProcessor, SecretManager } from '../../src/config/configProcessor.js';
-import { ConfigContainer } from '../../src/types.js';
+import { IConfigContainer } from '../../src/types.js';
 import { EventBus } from '../../src/utils/eventBus.js';
 import { NodeFetchClient } from '../../src/utils/httpClient.js';
 
@@ -28,7 +28,7 @@ describe('processConfig', () => {
     });
     const eventBus = new EventBus();
 
-    const configContainer: ConfigContainer = await configProcessor.processConfig(rawJson, mockSecretManager, eventBus, httpClient);
+    const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, mockSecretManager, eventBus, httpClient);
 
     const provider = configContainer.config.providers.provider1;
     expect(provider.resolvedApiKey).toBe('my-key');
@@ -46,7 +46,7 @@ describe('processConfig', () => {
     });
     const eventBus = new EventBus();
 
-    const configContainer: ConfigContainer = await configProcessor.processConfig(rawJson, mockSecretManager, eventBus, httpClient);
+    const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, mockSecretManager, eventBus, httpClient);
 
     const provider = configContainer.config.providers.provider1;
     expect(provider.resolvedApiKey).toBe('env-secret');
@@ -63,7 +63,7 @@ describe('processConfig', () => {
     });
     const eventBus = new EventBus();
 
-    const configContainer: ConfigContainer = await configProcessor.processConfig(rawJson, mockSecretManager, eventBus, httpClient);
+    const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, mockSecretManager, eventBus, httpClient);
 
     const provider = configContainer.config.providers.provider1;
     expect(provider.resolvedApiKey).toBe('secret-for-TEST_KEY');
@@ -81,7 +81,7 @@ describe('processConfig', () => {
     });
     const eventBus = new EventBus();
 
-    const configContainer: ConfigContainer = await configProcessor.processConfig(rawJson, mockSecretManager, eventBus, httpClient);
+    const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, mockSecretManager, eventBus, httpClient);
 
     const provider = configContainer.config.providers.provider1;
     expect(provider.resolvedApiKey).toBe('');

@@ -1,6 +1,6 @@
 import { getAnonymizer } from '../anonymizer/anonymizer.js';
 import { getActiveProvider } from '../providers/providerFactory.js';
-import { ConfigContainer, Config, IProviderConfig, IHttpClient } from '../types.js';
+import { IConfigContainer, Config, IProviderConfig, IHttpClient } from '../types.js';
 import { IEventBus } from '../utils/eventBus.js';
 import { log } from '../logger.js';
 
@@ -76,7 +76,7 @@ class ConfigProcessor {
      *                  These can override existing properties from the JSON config or provide
      *                  additional properties (e.g., maxAgentIterations) not present in the config file.
      */
-    public async processConfig(rawJson: string, secretManager: SecretManager, eventBus: IEventBus, httpClient: IHttpClient, overrides?: Partial<Config>): Promise<ConfigContainer> {
+    public async processConfig(rawJson: string, secretManager: SecretManager, eventBus: IEventBus, httpClient: IHttpClient, overrides?: Partial<Config>): Promise<IConfigContainer> {
         const config: Config = JSON.parse(rawJson);
 
         if (overrides) {
