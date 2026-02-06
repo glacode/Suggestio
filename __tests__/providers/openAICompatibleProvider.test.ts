@@ -187,12 +187,11 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
     expect(tokens.join("")).toBe("ok!");
   });
 
-  it("should handle malformed stream chunks that fail zod validation", async () => {
+  it("should handle malformed stream chunks that fail zod validation (choices not an array)", async () => {
     mockHttpClient.post.mockResolvedValue(createMockResponse({
       body: createStream([
+        'data: {"choices": "not-an-array"}\n\n',
         'data: {"choices":[{"delta":{"content":"ok"}}]}\n\n',
-        'data: {"unexpected": "field"}\n\n',
-        'data: {"choices":[{"delta":{"content":"!"}}]}\n\n',
         'data: [DONE]\n\n'
       ])
     }));
@@ -200,7 +199,22 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
     const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
     const tokens: string[] = [];
     await provider.queryStream(new TestPrompt([]), (token) => tokens.push(token));
-    expect(tokens.join("")).toBe("ok!");
+    expect(tokens.join("")).toBe("ok");
+  });
+
+  it("should handle chunks with missing delta", async () => {
+    mockHttpClient.post.mockResolvedValue(createMockResponse({
+      body: createStream([
+        'data: {"choices":[{"something":"else"}]}\n\n',
+        'data: {"choices":[{"delta":{"content":"ok"}}]}\n\n',
+        'data: [DONE]\n\n'
+      ])
+    }));
+
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
+    const tokens: string[] = [];
+    await provider.queryStream(new TestPrompt([]), (token) => tokens.push(token));
+    expect(tokens.join("")).toBe("ok");
   });
 
   it("should throw an error if response body is null in queryStream", async () => {
@@ -289,6 +303,27 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
     const tokens: string[] = [];
     await provider.queryStream(new TestPrompt([]), (token) => tokens.push(token));
     expect(tokens).toContain("flushed");
+  });
+
+  it("should handle deanonymizer flush returning empty", async () => {
+    const anonymizer = {
+      createStreamingDeanonymizer: () => ({
+        process: (chunk: string) => ({ processed: chunk, buffer: "" }),
+        flush: () => ""
+      })
+    };
+
+    mockHttpClient.post.mockResolvedValue(createMockResponse({
+      body: createStream([
+        'data: {"choices":[{"delta":{"content":"ok"}}]}\n\n',
+        'data: [DONE]\n\n'
+      ])
+    }));
+
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer: anonymizer as any });
+    const tokens: string[] = [];
+    await provider.queryStream(new TestPrompt([]), (token) => tokens.push(token));
+    expect(tokens).toEqual(["ok"]);
   });
 
   it("should throw an error for query on API error (object)", async () => {
@@ -455,13 +490,27 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
     expect(response?.content).toBe("ok");
   });
 
-  it("should handle error object without message", async () => {
+  it("should handle error object without message or code", async () => {
     mockHttpClient.post.mockResolvedValue(createMockResponse({
       status: 500,
-      json: { error: { code: "some_code" } }
+      json: { error: {} }
     }));
     const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
-    await expect(provider.query(new TestPrompt([]))).rejects.toThrow('OpenAI API error: {"code":"some_code"}');
+    await expect(provider.query(new TestPrompt([]))).rejects.toThrow('OpenAI API error: {}');
+  });
+
+  it("should handle tool calls with missing function name or arguments", async () => {
+    mockHttpClient.post.mockResolvedValue(createMockResponse({
+      body: createStream([
+        'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_1","function":{}}]}}]}\n\n',
+        'data: [DONE]\n\n'
+      ])
+    }));
+
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
+    const response = await provider.queryStream(new TestPrompt([]), () => { });
+    expect(response?.tool_calls?.[0].function.name).toBe("");
+    expect(response?.tool_calls?.[0].function.arguments).toBe("");
   });
 
   it("should return null if parseStream returns no content and no tool calls", async () => {
