@@ -490,9 +490,6 @@ export class OpenAICompatibleProvider implements ILlmProvider {
   ): void {
     if (delta.tool_calls) {
       for (const tc of delta.tool_calls) {
-        if (tc.index === undefined) {
-          continue;
-        }
         if (!toolCalls[tc.index]) {
           toolCalls[tc.index] = {
             id: tc.id || "",
