@@ -44,7 +44,7 @@ const OpenAIStreamingToolCallSchema = z.object({
   /**
    * The index of the tool call in the response array.
    */
-  index: z.number(),
+  index: z.number().optional().nullable(),
   /**
    * The unique identifier for the tool call.
    */
@@ -490,13 +490,24 @@ export class OpenAICompatibleProvider implements ILlmProvider {
   ): void {
     if (delta.tool_calls) {
       for (const tc of delta.tool_calls) {
+        if (tc.index === undefined || tc.index === null) {
+          continue;
+        }
         if (!toolCalls[tc.index]) {
           toolCalls[tc.index] = {
             id: tc.id || "",
             type: "function",
             function: { name: "", arguments: "" },
           };
+        } else if (tc.id && toolCalls[tc.index].id && toolCalls[tc.index].id !== tc.id) {
+          // If we see a new ID for an existing index, it means the model is starting a new tool call
+          // at the same index (non-standard behavior from some providers). 
+          // We reset the function name and arguments to avoid merging them.
+          toolCalls[tc.index].id = tc.id;
+          toolCalls[tc.index].function.name = "";
+          toolCalls[tc.index].function.arguments = "";
         }
+
         if (tc.id) {
           toolCalls[tc.index].id = tc.id;
         }

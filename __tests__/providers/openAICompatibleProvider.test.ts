@@ -223,6 +223,25 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
     expect(response?.tool_calls).toBeUndefined();
   });
 
+  it("should reset tool call when a new ID arrives for the same index", async () => {
+    mockHttpClient.post.mockResolvedValue(createMockResponse({
+      body: createStream([
+        'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_1","function":{"name":"list_files","arguments":"{\\"directory\\":\\"A\\"}"}}]}}]}\n\n',
+        'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_2","function":{"name":"list_files","arguments":"{\\"directory\\":\\"B\\"}"}}]}}]}\n\n',
+        'data: [DONE]\n\n'
+      ])
+    }));
+
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
+    const response = await provider.queryStream(new TestPrompt([]), () => { });
+    
+    // It should have the content of the LAST tool call for that index, not merged
+    expect(response?.tool_calls).toHaveLength(1);
+    expect(response?.tool_calls?.[0].id).toBe("call_2");
+    expect(response?.tool_calls?.[0].function.name).toBe("list_files");
+    expect(response?.tool_calls?.[0].function.arguments).toBe('{"directory":"B"}');
+  });
+
   it("should handle streaming deanonymization with buffered tokens", async () => {
     const anonymizer = {
       anonymize: (text: string) => text.replace("secret", "ANON_0"),
