@@ -12,6 +12,11 @@ export type { ToolCall };
  */
 export interface IUriLike {
   /**
+   * The scheme of the URI, such as 'file' or 'untitled'.
+   */
+  scheme?: string;
+
+  /**
    * A file system path, like '/Users/name/project/file.txt'.
    * Optional because some URIs (e.g., 'http://') don't have a file system path.
    */

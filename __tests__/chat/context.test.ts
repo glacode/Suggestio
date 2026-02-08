@@ -74,6 +74,27 @@ describe('ContextBuilder', () => {
     expect(result).toBe('[No file path found for the active editor.]');
   });
 
+  it('should return a specific message if the editor is not a file (e.g., Output tab)', async () => {
+    const mockDocument = {
+      uri: {
+        scheme: 'output',
+        fsPath: '/some/output/path',
+      },
+      getText: () => 'Some log content',
+    };
+
+    const mockEditor = {
+      document: mockDocument,
+    };
+
+    const mockProvider: IActiveTextEditorProvider = {
+      activeTextEditor: mockEditor,
+    };
+
+    const result = await new ContextBuilder(mockProvider, mockIgnoreManager).buildContext();
+    expect(result).toBe('[Active editor is not a file (e.g., Output tab) and will not be included in context.]');
+  });
+
   it('should exclude the .venv file', async () => {
     const filePath = '/project/root/.venv';
     const fileContent = 'some virtual env content';

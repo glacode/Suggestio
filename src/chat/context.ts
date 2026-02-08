@@ -22,6 +22,12 @@ export class ContextBuilder implements IContextBuilder {
         }
 
         const doc = editor.document;
+
+        // Filter out non-file editors (like Output tab, which uses 'output' or 'vscode-log' scheme)
+        if (doc.uri.scheme && doc.uri.scheme !== 'file' && doc.uri.scheme !== 'untitled') {
+            return '[Active editor is not a file (e.g., Output tab) and will not be included in context.]';
+        }
+
         const filePath = doc.uri.fsPath;
 
         if (!filePath) {
