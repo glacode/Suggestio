@@ -23,6 +23,7 @@ import type {
 import { IEventBus } from '../utils/eventBus.js';
 import { ChatPrompt } from './chatPrompt.js';
 import { log } from '../logger.js';
+import { CHAT_MESSAGES, AGENT_LOGS } from '../constants/messages.js';
 
 // This interface defines the arguments required to construct a `ChatWebviewViewProvider`.
 // It uses dependency injection to provide all necessary components.
@@ -85,11 +86,11 @@ export class ChatWebviewViewProvider {
         this._anonymizer = anonymizer;
 
         this._eventBus.on('agent:maxIterationsReached', (payload: { maxIterations: number }) => {
-            log(`Agent reached max iterations (${payload.maxIterations}).`);
+            log(AGENT_LOGS.MAX_ITERATIONS_REACHED(payload.maxIterations));
             if (this._view) {
                 this._view.webview.postMessage({
                     sender: 'assistant',
-                    text: `⚠️ **Max iterations reached (${payload.maxIterations}).** The agent stopped to prevent infinite loops. Please refine your prompt or increase the limit in settings.`
+                    text: CHAT_MESSAGES.MAX_ITERATIONS_REACHED(payload.maxIterations)
                 });
             }
         });
@@ -218,20 +219,20 @@ export class ChatWebviewViewProvider {
                 } catch (error) {
                     // If request was cancelled, don't show error
                     if (this._abortController?.signal.aborted) {
-                        log('Request was cancelled by user.');
+                        log(AGENT_LOGS.REQUEST_CANCELLED);
                         this._sendCompletionMessage();
                         return;
                     }
                     // If an error occurs during the chat response, post an error message back to the webview.
                     webviewView.webview.postMessage({
                         sender: 'assistant',
-                        text: 'Sorry, there was an error processing your request: ' + error
+                        text: CHAT_MESSAGES.ERROR_PROCESSING_REQUEST(error)
                     });
                 }
             } else if (message.command === 'cancelRequest') {
                 // Handle cancel request from webview
                 if (this._abortController) {
-                    log('Cancelling LLM request...');
+                    log(AGENT_LOGS.CANCEL_REQUEST);
                     this._abortController.abort();
                 }
             } else if (message.command === 'modelChanged') {

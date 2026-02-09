@@ -2,6 +2,7 @@ import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
 import { IChatHistoryManager, ChatMessage, IPrompt, ChatHistory, ToolImplementation, ToolCall } from "../../src/types.js";
 import { FakeProvider, createDefaultConfig, createMockProviderConfig } from "../testUtils.js";
+import { AGENT_MESSAGES } from "../../src/constants/messages.js";
 
 describe("ChatResponder Tool Calling Integration", () => {
     let logs: string[];
@@ -84,7 +85,7 @@ describe("ChatResponder Tool Calling Integration", () => {
         // Verify tool execution
         expect(mockTool.execute).toHaveBeenCalled();
         expect(logs).toContain("Executing tool: getTime");
-        expect(logs).toContain("Re-querying LLM with tool results...");
+        expect(logs).toContain(AGENT_MESSAGES.REQUERYING_LLM);
 
         // Verify history updates
         expect(mockChatHistoryManager.addMessage).toHaveBeenCalledTimes(3);

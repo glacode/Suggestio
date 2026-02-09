@@ -1,4 +1,5 @@
 import { ISecretStorage, IWindowProvider } from '../types.js';
+import { CONFIG_MESSAGES } from '../constants/messages.js';
 
 export class SecretManager {
     constructor(
@@ -20,15 +21,15 @@ export class SecretManager {
 
     public async updateAPIKey(apiKeyPlaceholder: string): Promise<void> {
         const newApiKey = await this.windowProvider.showInputBox({
-            prompt: `Enter new API key for ${apiKeyPlaceholder}`,
-            placeHolder: `Your ${apiKeyPlaceholder} API key here...`,
+            prompt: CONFIG_MESSAGES.ENTER_NEW_API_KEY(apiKeyPlaceholder),
+            placeHolder: CONFIG_MESSAGES.API_KEY_PLACEHOLDER(apiKeyPlaceholder),
             password: true,
             ignoreFocusOut: true
         });
 
         if (newApiKey && newApiKey.trim() !== '') {
             await this.storeSecret(apiKeyPlaceholder, newApiKey.trim());
-            this.windowProvider.showInformationMessage(`API key for ${apiKeyPlaceholder} updated.`);
+            this.windowProvider.showInformationMessage(CONFIG_MESSAGES.API_KEY_UPDATED(apiKeyPlaceholder));
         }
     }
 
@@ -46,13 +47,13 @@ export class SecretManager {
             return userApiKey;
         }
 
-        throw new Error(`API key for ${apiKeyPlaceholder} is required for this feature to work.`);
+        throw new Error(CONFIG_MESSAGES.API_KEY_REQUIRED(apiKeyPlaceholder));
     }
 
     private async promptForAPIKey(providerKey: string): Promise<string | undefined> {
         return await this.windowProvider.showInputBox({
-            prompt: `Enter your ${providerKey} API Key`,
-            placeHolder: `Your ${providerKey} API key here...`,
+            prompt: CONFIG_MESSAGES.ENTER_API_KEY(providerKey),
+            placeHolder: CONFIG_MESSAGES.API_KEY_PLACEHOLDER(providerKey),
             password: true,
             ignoreFocusOut: true
         });
@@ -68,7 +69,7 @@ export async function handleUpdateApiKeyCommand(
     providerApiKeys: string[]
 ): Promise<void> {
     const apiKeyPlaceholder = await windowProvider.showQuickPick(providerApiKeys, {
-        placeHolder: 'Select an API key to update'
+        placeHolder: CONFIG_MESSAGES.SELECT_API_KEY_TO_UPDATE
     });
     if (apiKeyPlaceholder) {
         await secretManager.updateAPIKey(apiKeyPlaceholder);
@@ -84,10 +85,10 @@ export async function handleDeleteApiKeyCommand(
     providerApiKeys: string[]
 ): Promise<void> {
     const apiKeyPlaceholder = await windowProvider.showQuickPick(providerApiKeys, {
-        placeHolder: 'Select an API key to delete'
+        placeHolder: CONFIG_MESSAGES.SELECT_API_KEY_TO_DELETE
     });
     if (apiKeyPlaceholder) {
         await secretManager.deleteSecret(apiKeyPlaceholder);
-        windowProvider.showInformationMessage(`API key value for ${apiKeyPlaceholder} deleted.`);
+        windowProvider.showInformationMessage(CONFIG_MESSAGES.API_KEY_DELETED(apiKeyPlaceholder));
     }
 }

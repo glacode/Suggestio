@@ -1,4 +1,5 @@
 import { IWorkspaceProvider, ToolDefinition, IDirectoryReader, IPathResolver, ToolImplementation } from '../types.js';
+import { AGENT_MESSAGES } from '../constants/messages.js';
 
 export class ListFilesTool implements ToolImplementation {
     definition: ToolDefinition = {
@@ -24,7 +25,7 @@ export class ListFilesTool implements ToolImplementation {
     async execute(args: { directory?: string }, _signal?: AbortSignal): Promise<string> {
         const rootPath = this.workspaceProvider.rootPath();
         if (!rootPath) {
-            return 'Error: No workspace open.';
+            return AGENT_MESSAGES.ERROR_NO_WORKSPACE;
         }
 
         const dirPath = args.directory ? this.pathResolver.join(rootPath, args.directory) : rootPath;

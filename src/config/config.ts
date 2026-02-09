@@ -6,6 +6,7 @@ import {
     IWorkspaceProvider, 
     IPathResolver 
 } from '../types.js';
+import { CONFIG_MESSAGES } from '../constants/messages.js';
 
 function getConfigPath(
     context: IExtensionContextMinimal,
@@ -40,11 +41,11 @@ export async function readConfig(
     try {
         const content = fileProvider.read(configPath);
         if (content === undefined) {
-             throw new Error(`File not found or unreadable: ${configPath}`);
+             throw new Error(CONFIG_MESSAGES.FILE_NOT_FOUND(configPath));
         }
         return content;
     } catch (err) {
-        windowProvider.showErrorMessage(`Failed to load config.json: ${err}`);
+        windowProvider.showErrorMessage(CONFIG_MESSAGES.LOAD_FAILED(err));
         return JSON.stringify({
             activeProvider: '',
             providers: {},

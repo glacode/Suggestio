@@ -2,6 +2,7 @@ import { z } from "zod";
 import { log } from "../logger.js";
 import { ChatMessage, IAnonymizer, IPrompt, ILlmProvider, ToolDefinition, ToolCall, IStreamingDeanonymizer, IHttpClient, IHttpResponse } from "../types.js";
 import { ToolCallSchema } from "../schemas.js";
+import { LLM_MESSAGES } from "../constants/messages.js";
 
 /**
  * Represents the response from a non-streaming OpenAI-compatible completion request.
@@ -276,26 +277,26 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     try {
       rawJson = await response.json();
     } catch (e) {
-      throw new Error(`Failed to parse response as JSON: ${response.status} ${response.statusText}`);
+      throw new Error(LLM_MESSAGES.PARSE_JSON_FAILED(response.status, response.statusText));
     }
 
     const result = OpenAIResponseSchema.safeParse(rawJson);
     if (!result.success) {
       if (rawJson && typeof rawJson === "object" && "error" in rawJson) {
         const errMsg = typeof rawJson.error === "string" ? rawJson.error : (rawJson.error?.message || JSON.stringify(rawJson.error));
-        throw new Error(`OpenAI API error: ${errMsg}`);
+        throw new Error(LLM_MESSAGES.OPENAI_GENERIC_ERROR(errMsg));
       }
-      throw new Error(`Malformed OpenAI API response: ${result.error.message}`);
+      throw new Error(LLM_MESSAGES.MALFORMED_RESPONSE(result.error.message));
     }
 
     const json = result.data;
 
     if (json.error) {
-      throw new Error(`OpenAI API error: ${json.error.message || JSON.stringify(json.error)}`);
+      throw new Error(LLM_MESSAGES.OPENAI_GENERIC_ERROR(json.error.message || JSON.stringify(json.error)));
     }
 
     if (!json.choices || json.choices.length === 0) {
-      throw new Error("Unexpected OpenAI API response: Missing 'choices' field.");
+      throw new Error(LLM_MESSAGES.MISSING_CHOICES);
     }
 
     const choice = json.choices[0].message;
@@ -336,7 +337,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
 
     if (!response.ok) {
       const errText = await response.text();
-      throw new Error(`OpenAI API error: ${response.status} - ${errText}`);
+      throw new Error(LLM_MESSAGES.OPENAI_ERROR(response.status, errText));
     }
 
     return this.parseStream(response, onToken);
@@ -355,7 +356,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     onToken: (token: string) => void
   ): Promise<ChatMessage> {
     if (!response.body) {
-      throw new Error("Response body is null");
+      throw new Error(LLM_MESSAGES.RESPONSE_BODY_NULL);
     }
 
     const streamingDeanonymizer = this.anonymizer?.createStreamingDeanonymizer();
@@ -432,7 +433,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
       const rawJson = JSON.parse(data);
       const result = OpenAIStreamChunkSchema.safeParse(rawJson);
       if (!result.success) {
-        log(`Malformed stream chunk: ${result.error.message}. Chunk: ${data}`);
+        log(LLM_MESSAGES.MALFORMED_RESPONSE(`${result.error.message}. Chunk: ${data}`));
         return "";
       }
       const json = result.data;
@@ -444,7 +445,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
       this.handleToolCallsDelta(delta, toolCalls);
       return this.handleContentDelta(delta, onToken, streamingDeanonymizer);
     } catch (e) {
-      log("Error parsing chunk: " + data);
+      log(LLM_MESSAGES.PARSE_CHUNK_ERROR(data));
       return "";
     }
   }

@@ -1,6 +1,7 @@
 import fetch from "node-fetch";
 import { log } from "../logger.js";
 import { ChatMessage , IPrompt, ILlmProvider } from "../types.js";
+import { LLM_MESSAGES } from "../constants/messages.js";
 
 type GeminiResponse = {
   candidates?: {
@@ -34,7 +35,7 @@ export class GeminiProvider implements ILlmProvider {
 
     if (!res.ok) {
       const errText = await res.text();
-      throw new Error(`Gemini API error: ${res.status} - ${errText}`);
+      throw new Error(LLM_MESSAGES.GEMINI_ERROR(res.status, errText));
     }
 
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
@@ -64,11 +65,11 @@ export class GeminiProvider implements ILlmProvider {
 
     if (!res.ok) {
       const errText = await res.text();
-      throw new Error(`Gemini API error: ${res.status} - ${errText}`);
+      throw new Error(LLM_MESSAGES.GEMINI_ERROR(res.status, errText));
     }
 
     if (!res.body) {
-      throw new Error("Response body is null");
+      throw new Error(LLM_MESSAGES.RESPONSE_BODY_NULL);
     }
 
     let fullContent = "";
@@ -95,7 +96,7 @@ export class GeminiProvider implements ILlmProvider {
                 }
               }
             } catch (e) {
-              log(`Error parsing chunk: ${jsonStr}`);
+              log(LLM_MESSAGES.PARSE_CHUNK_ERROR(jsonStr));
             }
           }
         }
@@ -120,7 +121,7 @@ export class GeminiProvider implements ILlmProvider {
               }
             }
           } catch (e) {
-            log(`Error parsing chunk: ${jsonStr}`);
+            log(LLM_MESSAGES.PARSE_CHUNK_ERROR(jsonStr));
           }
         }
       }

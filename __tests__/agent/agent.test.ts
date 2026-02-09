@@ -2,6 +2,7 @@ import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
 import { IChatHistoryManager, ChatMessage, IPrompt, ToolImplementation, ToolCall } from "../../src/types.js";
 import { FakeProvider, createMockHistoryManager, createDefaultConfig } from "../testUtils.js";
+import { AGENT_MESSAGES } from "../../src/constants/messages.js";
 
 describe("Agent", () => {
     let logs: string[];
@@ -120,7 +121,7 @@ describe("Agent", () => {
         expect(logs).toContain("Tool not found: unknownTool");
         expect(mockAddMessage).toHaveBeenCalledWith(expect.objectContaining({
             role: "tool",
-            content: expect.stringContaining("Error: Tool unknownTool not found"),
+            content: expect.stringContaining(AGENT_MESSAGES.ERROR_TOOL_NOT_FOUND("unknownTool")),
             tool_call_id: "call_456"
         }));
     });
@@ -170,7 +171,7 @@ describe("Agent", () => {
         expect(logs).toContain("Error executing tool: Tool failed");
         expect(mockAddMessage).toHaveBeenCalledWith(expect.objectContaining({
             role: "tool",
-            content: "Error: Tool failed",
+            content: AGENT_MESSAGES.ERROR_TOOL_FAILED,
             tool_call_id: "call_789"
         }));
     });

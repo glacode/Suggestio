@@ -30,16 +30,17 @@ import './chat/activeEditorTracker.js';
 import { EventBus } from './utils/eventBus.js';
 import { ANONYMIZATION_EVENT } from './anonymizer/anonymizationNotifier.js';
 import { NodeFetchClient } from './utils/httpClient.js';
+import { EXTENSION_MESSAGES, EXTENSION_LOGS } from './constants/messages.js';
 
 export async function activate(context: vscode.ExtensionContext) {
   initLogger();
-  log("Suggestio: Activate");
-  vscode.window.showInformationMessage("Suggestio Activated!");
+  log(EXTENSION_LOGS.ACTIVATE);
+  vscode.window.showInformationMessage(EXTENSION_MESSAGES.ACTIVATED);
 
   const eventBus = new EventBus();
 
   eventBus.on(ANONYMIZATION_EVENT, (payload: IAnonymizationEventPayload) => {
-    log(`[Anonymizer] Anonymized '${payload.original}' to '${payload.placeholder}' (Reason: ${payload.type})`);
+    log(EXTENSION_LOGS.ANONYMIZED(payload.original, payload.placeholder, payload.type));
   });
 
   const workspaceProvider: IWorkspaceProvider = {
@@ -58,7 +59,7 @@ export async function activate(context: vscode.ExtensionContext) {
             return fs.readdirSync(path);
         }
       } catch (e) {
-          log(`Error reading directory ${path}: ${e}`);
+          log(EXTENSION_LOGS.DIRECTORY_READ_ERROR(path, e));
       }
       return undefined;
     },

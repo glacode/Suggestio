@@ -1,6 +1,7 @@
 import { Config, ToolImplementation } from "../types.js";
 import type { IChatHistoryManager, IPrompt, ChatMessage, ToolCall, IChatAgent } from "../types.js";
 import { IEventBus } from "../utils/eventBus.js";
+import { AGENT_MESSAGES, AGENT_LOGS } from "../constants/messages.js";
 
 /**
  * Arguments for the Agent constructor.
@@ -65,7 +66,7 @@ export class Agent implements IChatAgent {
                 // After tool results are added, we need to query the LLM again to get the final answer.
                 // We create a new prompt with the updated history.
                 currentPrompt = this.createFollowUpPrompt();
-                this.log("Re-querying LLM with tool results...");
+                this.log(AGENT_MESSAGES.REQUERYING_LLM);
                 continue;
             }
 
@@ -101,7 +102,7 @@ export class Agent implements IChatAgent {
      * Iterates over tool calls and executes them.
      */
     private async processToolCalls(toolCalls: ToolCall[], signal?: AbortSignal): Promise<void> {
-        this.log(`Assistant requested ${toolCalls.length} tool calls.`);
+        this.log(AGENT_LOGS.ASSISTANT_TOOL_CALLS(toolCalls.length));
 
         for (const toolCall of toolCalls) {
             if (signal?.aborted) {
@@ -127,7 +128,7 @@ export class Agent implements IChatAgent {
      * Runs the tool logic and handles execution errors.
      */
     private async runTool(tool: ToolImplementation, toolCall: ToolCall, signal?: AbortSignal): Promise<void> {
-        this.log(`Executing tool: ${toolCall.function.name}`);
+        this.log(AGENT_LOGS.EXECUTING_TOOL(toolCall.function.name));
         try {
             const args = JSON.parse(toolCall.function.arguments);
             const result = await tool.execute(args, signal);
@@ -141,15 +142,15 @@ export class Agent implements IChatAgent {
      * Handles the case where a requested tool is not found.
      */
     private handleToolNotFound(toolCall: ToolCall): void {
-        this.log(`Tool not found: ${toolCall.function.name}`);
-        this.recordToolResult(toolCall.id, `Error: Tool ${toolCall.function.name} not found.`);
+        this.log(AGENT_LOGS.TOOL_NOT_FOUND(toolCall.function.name));
+        this.recordToolResult(toolCall.id, AGENT_MESSAGES.ERROR_TOOL_NOT_FOUND(toolCall.function.name));
     }
 
     /**
      * Handles errors that occur during tool execution.
      */
     private handleToolError(toolCallId: string, error: any): void {
-        this.log(`Error executing tool: ${error.message}`);
+        this.log(AGENT_LOGS.TOOL_ERROR(error.message));
         this.recordToolResult(toolCallId, `Error: ${error.message}`);
     }
 
