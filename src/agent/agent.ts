@@ -2,6 +2,7 @@ import { Config, ToolImplementation } from "../types.js";
 import type { IChatHistoryManager, IPrompt, ChatMessage, ToolCall, IChatAgent } from "../types.js";
 import { IEventBus } from "../utils/eventBus.js";
 import { AGENT_MESSAGES, AGENT_LOGS } from "../constants/messages.js";
+import { ChatPrompt } from "../chat/chatPrompt.js";
 
 /**
  * Arguments for the Agent constructor.
@@ -51,25 +52,30 @@ export class Agent implements IChatAgent {
                 return;
             }
             iterations++;
+            this.log(AGENT_LOGS.ITERATION_START(iterations, maxIterations));
 
             const response: ChatMessage | null = await this.queryLLM(currentPrompt, onToken, toolDefinitions, signal);
 
             if (!response) {
+                this.log(AGENT_LOGS.NO_RESPONSE_RECEIVED);
                 break;
             }
 
+            this.log(AGENT_LOGS.RESPONSE_RECEIVED);
             this.chatHistoryManager.addMessage(response);
 
             if (this.shouldProcessToolCalls(response)) {
+                this.log(AGENT_LOGS.TOOL_CALLS_RECEIVED(response.tool_calls!.length));
                 await this.processToolCalls(response.tool_calls!, signal);
 
                 // After tool results are added, we need to query the LLM again to get the final answer.
                 // We create a new prompt with the updated history.
-                currentPrompt = this.createFollowUpPrompt();
+                currentPrompt = this.createFollowUpPrompt(currentPrompt.context);
                 this.log(AGENT_MESSAGES.REQUERYING_LLM);
                 continue;
             }
 
+            this.log(AGENT_LOGS.TEXT_RESPONSE_RECEIVED(response.content?.length || 0));
             // No tool calls, we are done.
             break;
         }
@@ -77,6 +83,7 @@ export class Agent implements IChatAgent {
         if (iterations >= maxIterations) {
             this.eventBus?.emit('agent:maxIterationsReached', { maxIterations });
         }
+        this.log(AGENT_LOGS.AGENT_FINISHED);
     }
 
     /**
@@ -158,6 +165,7 @@ export class Agent implements IChatAgent {
      * Adds the tool execution result (or error) to the chat history.
      */
     private recordToolResult(toolCallId: string, content: string): void {
+        this.log(AGENT_LOGS.TOOL_RESULT_RECORDED(toolCallId));
         this.chatHistoryManager.addMessage({
             role: 'tool',
             content: content,
@@ -168,9 +176,7 @@ export class Agent implements IChatAgent {
     /**
      * Creates a prompt for the follow-up query after tool execution.
      */
-    private createFollowUpPrompt(): IPrompt {
-        return {
-            generateChatHistory: () => this.chatHistoryManager.getChatHistory()
-        };
+    private createFollowUpPrompt(context?: string): IPrompt {
+        return new ChatPrompt(this.chatHistoryManager.getChatHistory(), context);
     }
 }

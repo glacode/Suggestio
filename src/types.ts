@@ -214,6 +214,11 @@ export interface ChatMessage {
   content: string;
 
   /**
+   * The reasoning content of the message (Chain of Thought).
+   */
+  reasoning?: string;
+
+  /**
    * Tool calls requested by the assistant.
    */
   tool_calls?: ToolCall[];
@@ -293,6 +298,11 @@ export interface IPrompt {
    * @returns The constructed chat history.
    */
   generateChatHistory(): ChatHistory;
+
+  /**
+   * The additional context used when building the system prompt.
+   */
+  readonly context?: string;
 }
 
 /**

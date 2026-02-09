@@ -15,7 +15,10 @@ const SYSTEM_PROMPT: ChatMessage = {
  * them out before prepending its own constructed system message.
  */
 export class ChatPrompt implements IPrompt {
+  public readonly context?: string;
+
   constructor(private conversation: ChatHistory, context?: string) {
+    this.context = context;
     // The spec says 'Typically, a conversation is formatted with a system message first,
     // followed by alternating user and assistant messages.' So we merge the system prompt
     // with any provided context and ensure it's the first message in the conversation.

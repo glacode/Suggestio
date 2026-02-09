@@ -11,11 +11,18 @@ export const CHAT_MESSAGES = {
 } as const;
 
 export const AGENT_LOGS = {
+    ITERATION_START: (iteration: number, max: number) => `Agent iteration ${iteration}/${max} starting...`,
+    RESPONSE_RECEIVED: 'LLM response received.',
+    TEXT_RESPONSE_RECEIVED: (length: number) => `LLM returned a text response (${length} chars).`,
+    TOOL_CALLS_RECEIVED: (count: number) => `LLM returned ${count} tool calls.`,
+    NO_RESPONSE_RECEIVED: 'LLM returned no response.',
+    AGENT_FINISHED: 'Agent finished execution.',
     MAX_ITERATIONS_REACHED: (max: number) => `Agent reached max iterations (${max}).`,
     ASSISTANT_TOOL_CALLS: (count: number) => `Assistant requested ${count} tool calls.`,
     EXECUTING_TOOL: (name: string) => `Executing tool: ${name}`,
     TOOL_NOT_FOUND: (name: string) => `Tool not found: ${name}`,
     TOOL_ERROR: (error: string) => `Error executing tool: ${error}`,
+    TOOL_RESULT_RECORDED: (id: string) => `Recorded result for tool call ${id}.`,
     REQUERYING_LLM: 'Re-querying LLM with tool results...',
     CANCEL_REQUEST: 'Cancelling LLM request...',
     REQUEST_CANCELLED: 'Request was cancelled by user.',
@@ -53,4 +60,13 @@ export const LLM_MESSAGES = {
     MALFORMED_RESPONSE: (msg: string) => `Malformed OpenAI API response: ${msg}`,
     MISSING_CHOICES: "Unexpected OpenAI API response: Missing 'choices' field.",
     PARSE_CHUNK_ERROR: (chunk: string) => `Error parsing chunk: ${chunk}`,
+} as const;
+
+export const LLM_LOGS = {
+    RECEIVING_STREAM: 'Receiving streaming response...',
+    STREAM_CHUNK_RECEIVED: (size: number) => `Received chunk of size ${size}.`,
+    STREAM_DATA_RECEIVED: (data: string) => `Stream data: ${data}`,
+    STREAM_FINISHED: 'Stream finished.',
+    STREAM_DONE: '[DONE] received.',
+    STREAM_FINISH_REASON: (reason: string) => `Stream finish reason: ${reason}`,
 } as const;
