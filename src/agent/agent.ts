@@ -3,6 +3,7 @@ import type { IChatHistoryManager, IPrompt, ChatMessage, ToolCall, IChatAgent } 
 import { IEventBus } from "../utils/eventBus.js";
 import { AGENT_MESSAGES, AGENT_LOGS } from "../constants/messages.js";
 import { ChatPrompt } from "../chat/chatPrompt.js";
+import { ILogger } from "../logger.js";
 
 /**
  * Arguments for the Agent constructor.
@@ -10,8 +11,8 @@ import { ChatPrompt } from "../chat/chatPrompt.js";
 export interface IAgentArgs {
     /** The configuration for the agent. */
     config: Config;
-    /** The logger function for the agent. */
-    log: (message: string) => void;
+    /** The logger for the agent. Can be an ILogger instance or a legacy log function. */
+    logger: ILogger | ((message: string) => void);
     /** The chat history manager for the agent. */
     chatHistoryManager: IChatHistoryManager;
     /** The tools available to the agent. */
@@ -22,23 +23,35 @@ export interface IAgentArgs {
 
 export class Agent implements IChatAgent {
     private config: Config;
-    private log: (message: string) => void;
+    private logger: ILogger;
     private chatHistoryManager: IChatHistoryManager;
     private tools: ToolImplementation[];
     private eventBus?: IEventBus;
 
     constructor({
         config,
-        log,
+        logger,
         chatHistoryManager,
         tools = [],
         eventBus
     }: IAgentArgs) {
         this.config = config;
-        this.log = log;
         this.chatHistoryManager = chatHistoryManager;
         this.tools = tools;
         this.eventBus = eventBus;
+
+        // Backward compatibility: if a function is passed, wrap it in an ILogger-like object
+        if (typeof logger === 'function') {
+            this.logger = {
+                debug: logger,
+                info: logger,
+                warn: logger,
+                error: logger,
+                setLogLevel: () => { }
+            };
+        } else {
+            this.logger = logger;
+        }
     }
 
     async run(prompt: IPrompt, signal?: AbortSignal): Promise<void> {
@@ -52,30 +65,30 @@ export class Agent implements IChatAgent {
                 return;
             }
             iterations++;
-            this.log(AGENT_LOGS.ITERATION_START(iterations, maxIterations));
+            this.logger.info(AGENT_LOGS.ITERATION_START(iterations, maxIterations));
 
             const response: ChatMessage | null = await this.queryLLM(currentPrompt, toolDefinitions, signal);
 
             if (!response) {
-                this.log(AGENT_LOGS.NO_RESPONSE_RECEIVED);
+                this.logger.warn(AGENT_LOGS.NO_RESPONSE_RECEIVED);
                 break;
             }
 
-            this.log(AGENT_LOGS.RESPONSE_RECEIVED);
+            this.logger.debug(AGENT_LOGS.RESPONSE_RECEIVED);
             this.chatHistoryManager.addMessage(response);
 
             if (this.shouldProcessToolCalls(response)) {
-                this.log(AGENT_LOGS.TOOL_CALLS_RECEIVED(response.tool_calls!.length));
+                this.logger.info(AGENT_LOGS.TOOL_CALLS_RECEIVED(response.tool_calls!.length));
                 await this.processToolCalls(response.tool_calls!, signal);
 
                 // After tool results are added, we need to query the LLM again to get the final answer.
                 // We create a new prompt with the updated history.
                 currentPrompt = this.createFollowUpPrompt(currentPrompt.context);
-                this.log(AGENT_MESSAGES.REQUERYING_LLM);
+                this.logger.info(AGENT_MESSAGES.REQUERYING_LLM);
                 continue;
             }
 
-            this.log(AGENT_LOGS.TEXT_RESPONSE_RECEIVED(response.content?.length || 0));
+            this.logger.debug(AGENT_LOGS.TEXT_RESPONSE_RECEIVED(response.content?.length || 0));
             // No tool calls, we are done.
             break;
         }
@@ -83,7 +96,7 @@ export class Agent implements IChatAgent {
         if (iterations >= maxIterations) {
             this.eventBus?.emit('agent:maxIterationsReached', { maxIterations });
         }
-        this.log(AGENT_LOGS.AGENT_FINISHED);
+        this.logger.info(AGENT_LOGS.AGENT_FINISHED);
     }
 
     /**
@@ -108,7 +121,7 @@ export class Agent implements IChatAgent {
      * Iterates over tool calls and executes them.
      */
     private async processToolCalls(toolCalls: ToolCall[], signal?: AbortSignal): Promise<void> {
-        this.log(AGENT_LOGS.ASSISTANT_TOOL_CALLS(toolCalls.length));
+        this.logger.debug(AGENT_LOGS.ASSISTANT_TOOL_CALLS(toolCalls.length));
 
         for (const toolCall of toolCalls) {
             if (signal?.aborted) {
@@ -134,7 +147,7 @@ export class Agent implements IChatAgent {
      * Runs the tool logic and handles execution errors.
      */
     private async runTool(tool: ToolImplementation, toolCall: ToolCall, signal?: AbortSignal): Promise<void> {
-        this.log(AGENT_LOGS.EXECUTING_TOOL(toolCall.function.name));
+        this.logger.info(AGENT_LOGS.EXECUTING_TOOL(toolCall.function.name));
         try {
             const args = JSON.parse(toolCall.function.arguments);
             const result = await tool.execute(args, signal);
@@ -148,7 +161,7 @@ export class Agent implements IChatAgent {
      * Handles the case where a requested tool is not found.
      */
     private handleToolNotFound(toolCall: ToolCall): void {
-        this.log(AGENT_LOGS.TOOL_NOT_FOUND(toolCall.function.name));
+        this.logger.error(AGENT_LOGS.TOOL_NOT_FOUND(toolCall.function.name));
         this.recordToolResult(toolCall.id, AGENT_MESSAGES.ERROR_TOOL_NOT_FOUND(toolCall.function.name));
     }
 
@@ -156,7 +169,7 @@ export class Agent implements IChatAgent {
      * Handles errors that occur during tool execution.
      */
     private handleToolError(toolCallId: string, error: any): void {
-        this.log(AGENT_LOGS.TOOL_ERROR(error.message));
+        this.logger.error(AGENT_LOGS.TOOL_ERROR(error.message));
         this.recordToolResult(toolCallId, `Error: ${error.message}`);
     }
 
@@ -164,7 +177,7 @@ export class Agent implements IChatAgent {
      * Adds the tool execution result (or error) to the chat history.
      */
     private recordToolResult(toolCallId: string, content: string): void {
-        this.log(AGENT_LOGS.TOOL_RESULT_RECORDED(toolCallId));
+        this.logger.debug(AGENT_LOGS.TOOL_RESULT_RECORDED(toolCallId));
         this.chatHistoryManager.addMessage({
             role: 'tool',
             content: content,

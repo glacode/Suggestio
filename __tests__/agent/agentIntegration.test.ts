@@ -37,7 +37,7 @@ describe("Agent (Integration) simple tests", () => {
                 llmProviderForChat: new FakeProvider([{ role: "assistant", content: "Hello world" }], mockEventBus),
                 providers: { FAKE: createMockProviderConfig() },
             }),
-            log: logger,
+            logger,
             chatHistoryManager: mockChatHistoryManager,
             eventBus: mockEventBus
         });
@@ -66,7 +66,7 @@ describe("Agent (Integration) simple tests", () => {
                 llmProviderForChat: fakeProvider,
                 providers: { FAKE: createMockProviderConfig() },
             }),
-            log: logger,
+            logger,
             chatHistoryManager: mockChatHistoryManager,
             eventBus: mockEventBus
         });

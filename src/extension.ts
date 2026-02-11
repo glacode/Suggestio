@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { initLogger, log } from './logger.js';
+import { initLogger, log, defaultLogger } from './logger.js';
 import { readConfig } from './config/config.js';
 import { registerCompletionProvider } from './registrations/completionRegistration.js';
 import { registerCommands } from './registrations/commandRegistration.js';
@@ -124,7 +124,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   const logicHandler = new Agent({
     config: configContainer.config,
-    log,
+    logger: defaultLogger,
     chatHistoryManager,
     tools: getTools(workspaceProvider, { ...directoryReader, ...directoryCreator }, pathResolver),
     eventBus

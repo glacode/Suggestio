@@ -54,7 +54,7 @@ describe("Agent Max Iterations Event", () => {
 
         const agent = new Agent({
             config,
-            log: logger,
+            logger,
             chatHistoryManager: mockChatHistoryManager,
             tools: [mockTool],
             eventBus
@@ -85,7 +85,7 @@ describe("Agent Max Iterations Event", () => {
 
         const agent = new Agent({
             config,
-            log: logger,
+            logger,
             chatHistoryManager: mockChatHistoryManager,
             tools: [],
             eventBus

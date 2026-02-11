@@ -53,7 +53,7 @@ describe("Agent Max Iterations", () => {
 
         const agent = new Agent({
             config,
-            log: logger,
+            logger,
             chatHistoryManager: mockChatHistoryManager,
             tools: [mockTool]
         });
@@ -97,7 +97,7 @@ describe("Agent Max Iterations", () => {
 
         const agent = new Agent({
             config,
-            log: logger,
+            logger,
             chatHistoryManager: mockChatHistoryManager,
             tools: [mockTool]
         });

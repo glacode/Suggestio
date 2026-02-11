@@ -32,7 +32,7 @@ describe("Chat History Management (Unit Test)", () => {
                 llmProviderForChat: fakeProvider,
                 providers: { FAKE: createMockProviderConfig() }
             }),
-            log: logger,
+            logger,
             chatHistoryManager: chatHistoryManager,
             eventBus
         });

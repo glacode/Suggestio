@@ -69,7 +69,7 @@ describe("ChatResponder Tool Calling Integration", () => {
                 llmProviderForChat: provider,
                 providers: { FAKE: createMockProviderConfig() },
             }),
-            log: logger,
+            logger,
             chatHistoryManager: mockChatHistoryManager,
             tools: [mockTool],
             eventBus: mockEventBus

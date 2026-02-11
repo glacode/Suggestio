@@ -27,7 +27,7 @@ describe("Agent", () => {
         const provider = new FakeProvider([{ role: "assistant", content: "Hello!" }], mockEventBus);
         const agent = new Agent({
             config: createDefaultConfig({ llmProviderForChat: provider }),
-            log: logger,
+            logger,
             chatHistoryManager: mockChatHistoryManager,
             tools: [],
             eventBus: mockEventBus
@@ -72,7 +72,7 @@ describe("Agent", () => {
 
         const agent = new Agent({
             config: createDefaultConfig({ llmProviderForChat: provider }),
-            log: logger,
+            logger,
             chatHistoryManager: mockChatHistoryManager,
             tools: [tool],
             eventBus: mockEventBus
@@ -127,7 +127,7 @@ describe("Agent", () => {
 
         const agent = new Agent({
             config: createDefaultConfig({ llmProviderForChat: provider }),
-            log: logger,
+            logger,
             chatHistoryManager: mockChatHistoryManager,
             tools: [], // No tools
             eventBus: mockEventBus
@@ -178,7 +178,7 @@ describe("Agent", () => {
 
         const agent = new Agent({
             config: createDefaultConfig({ llmProviderForChat: provider }),
-            log: logger,
+            logger,
             chatHistoryManager: mockChatHistoryManager,
             tools: [mockTool],
             eventBus: mockEventBus
@@ -238,7 +238,7 @@ describe("Agent", () => {
 
         const agent = new Agent({
             config: createDefaultConfig({ llmProviderForChat: provider }),
-            log: logger,
+            logger,
             chatHistoryManager: mockChatHistoryManager,
             tools: [mockToolA, mockToolB],
             eventBus: mockEventBus
@@ -318,7 +318,7 @@ describe("Agent", () => {
 
         const agent = new Agent({
             config: createDefaultConfig({ llmProviderForChat: provider }),
-            log: logger,
+            logger,
             chatHistoryManager: mockChatHistoryManager,
             tools: [mockTool1, mockTool2],
             eventBus: mockEventBus
@@ -379,7 +379,7 @@ describe("Agent", () => {
 
         const agent = new Agent({
             config: createDefaultConfig({ llmProviderForChat: provider }),
-            log: logger,
+            logger,
             chatHistoryManager: mockChatHistoryManager,
             tools: [tool],
             eventBus: mockEventBus
@@ -428,7 +428,7 @@ describe("Agent", () => {
 
         const agent = new Agent({
             config: createDefaultConfig({ llmProviderForChat: provider }),
-            log: logger,
+            logger,
             chatHistoryManager: mockChatHistoryManager,
             tools: [tool],
             eventBus: mockEventBus
