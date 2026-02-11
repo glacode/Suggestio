@@ -64,7 +64,7 @@ const jestConfig: JestConfigWithTsJest = {
   resetModules: true,
   
   // Setup files (optional - create jest.setup.ts if needed)
-  // setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/__tests__/setup.ts'],
   
   // Verbose output
   verbose: true,

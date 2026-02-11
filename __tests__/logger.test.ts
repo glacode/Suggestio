@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import * as vscode from 'vscode';
-import { initLogger, log, __resetLogger } from '../src/logger.js';
+import { initLogger, log, __resetLogger, LogLevel, setLogLevel } from '../src/logger.js';
 
 describe('logger', () => {
   let mockOutputChannel: vscode.LogOutputChannel;
@@ -42,7 +42,9 @@ describe('logger', () => {
     initLogger();
     // Check the first argument of the first call directly to avoid overload issues with toHaveBeenCalledWith
     expect(createOutputChannelSpy.mock.calls[0][0]).toBe('Suggestio');
-    expect(mockOutputChannel.appendLine).toHaveBeenCalledWith('Logger initialized');
+    expect(mockOutputChannel.appendLine).toHaveBeenCalledWith(
+      expect.stringMatching(/\[.*\] \[INFO\] Logger initialized/)
+    );
 
     initLogger(); // second call shouldn't create a new channel
     expect(createOutputChannelSpy).toHaveBeenCalledTimes(1);
@@ -54,15 +56,31 @@ describe('logger', () => {
     log('test message');
 
     expect(mockOutputChannel.appendLine).toHaveBeenCalledWith(
-      expect.stringMatching(/\[.*\] test message/)
+      expect.stringMatching(/\[.*\] \[INFO\] test message/)
     );
-    expect(consoleSpy).toHaveBeenCalledWith('[Suggestio] test message');
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringMatching(/\[Suggestio\] \[INFO\] test message/)
+    );
   });
 
   it('should log only to console if logger not initialized', () => {
     log('console only');
 
-    expect(consoleSpy).toHaveBeenCalledWith('[Suggestio] console only');
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringMatching(/\[Suggestio\] \[INFO\] console only/)
+    );
     expect(mockOutputChannel.appendLine).not.toHaveBeenCalled();
+  });
+
+  it('should respect log level', () => {
+    setLogLevel(LogLevel.Error);
+    log('this should not be logged');
+    expect(consoleSpy).not.toHaveBeenCalled();
+
+    setLogLevel(LogLevel.Info);
+    log('this should be logged');
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringMatching(/\[Suggestio\] \[INFO\] this should be logged/)
+    );
   });
 });
