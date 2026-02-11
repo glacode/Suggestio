@@ -221,6 +221,7 @@
         "build:e2e": "tsc -p ./tsconfig.e2e.json && node ./scripts/rename-e2e.js",
         "test:e2e": "npm run build:e2e && node ./dist-e2e/runTest.cjs",
         "test:e2e-playwright": "playwright test --config=e2e-tests-playwright/playwright.config.ts",
+        "test:e2e-playwright-headless": "xvfb-run -a npm run test:e2e-playwright",
         "test:debug": "node --inspect --experimental-vm-modules node_modules/.bin/jest --runInBand --debug",
         "build:webview": "esbuild src/webView/renderMarkDown.ts --bundle --outfile=builtResources/renderMarkDown.js --format=iife",
         "watch:webview": "esbuild src/webView/renderMarkDown.ts --bundle --outfile=builtResources/renderMarkDown.js --format=iife --watch",
