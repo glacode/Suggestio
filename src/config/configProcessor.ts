@@ -108,8 +108,8 @@ class ConfigProcessor {
         // `getActiveProvider` can return null; `inlineCompletionProvider` expects
         // `llmProvider | undefined`, so normalize null -> undefined to satisfy
         // the TypeScript type.
-        config.llmProviderForInlineCompletion = getActiveProvider(config, this._httpClient, config.anonymizerInstance) ?? undefined;
-        config.llmProviderForChat = getActiveProvider(config, this._httpClient, config.anonymizerInstance) ?? undefined;
+        config.llmProviderForInlineCompletion = getActiveProvider(config, this._httpClient, this._eventBus, config.anonymizerInstance) ?? undefined;
+        config.llmProviderForChat = getActiveProvider(config, this._httpClient, this._eventBus, config.anonymizerInstance) ?? undefined;
     }
 
     private async updateActiveProvider(modelName: string) {

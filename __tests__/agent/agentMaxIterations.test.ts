@@ -36,8 +36,7 @@ describe("Agent Max Iterations", () => {
         // Infinite stream of responses
         const provider: jest.Mocked<ILlmProvider> = {
              query: jest.fn(),
-             queryStream: jest.fn(async (_prompt: any, onToken: any, _tools: any) => {
-                 onToken("Looping...");
+             queryStream: jest.fn(async () => {
                  return response;
              })
         };
@@ -59,7 +58,7 @@ describe("Agent Max Iterations", () => {
             tools: [mockTool]
         });
 
-        await agent.run(mockPrompt, () => {});
+        await agent.run(mockPrompt);
 
         // It should run exactly 3 times
         expect(provider.queryStream).toHaveBeenCalledTimes(3);
@@ -80,8 +79,7 @@ describe("Agent Max Iterations", () => {
 
         const provider: jest.Mocked<ILlmProvider> = {
              query: jest.fn(),
-             queryStream: jest.fn(async (_prompt: any, onToken: any, _tools: any) => {
-                 onToken("Looping...");
+             queryStream: jest.fn(async () => {
                  return response;
              })
         };
@@ -104,7 +102,7 @@ describe("Agent Max Iterations", () => {
             tools: [mockTool]
         });
 
-        await agent.run(mockPrompt, () => {});
+        await agent.run(mockPrompt);
 
         // It should run exactly 5 times (default)
         expect(provider.queryStream).toHaveBeenCalledTimes(5);

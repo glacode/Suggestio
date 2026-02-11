@@ -24,7 +24,8 @@ import {
     IPathResolver,
     IFileContentProvider,
     IDirectoryProvider,
-    IWorkspaceProviderFull
+    IWorkspaceProviderFull,
+    IEventBus
 } from "../src/types.js";
 import { jest } from "@jest/globals";
 import * as path from 'path';
@@ -32,18 +33,21 @@ import * as path from 'path';
 export class FakeProvider implements ILlmProvider {
     private callCount = 0;
     public get queryCount() { return this.callCount; } 
-    constructor(private responses: (ChatMessage | null)[]) { } 
+    constructor(private responses: (ChatMessage | null)[], private eventBus?: IEventBus) { } 
 
     async query (_prompt: IPrompt, _tools?: ToolDefinition[], signal?: AbortSignal): Promise<ChatMessage | null> {
         if (signal?.aborted) { throw new Error("Aborted"); }
         return this.getNextResponse();
     }
 
-    async queryStream (_prompt: IPrompt, onToken: (token: string) => void, _tools?: ToolDefinition[], signal?: AbortSignal): Promise<ChatMessage | null> {
+    async queryStream (_prompt: IPrompt, _tools?: ToolDefinition[], signal?: AbortSignal): Promise<ChatMessage | null> {
         if (signal?.aborted) { throw new Error("Aborted"); }
         const response = this.getNextResponse();
-        if (response && response.content) {
-            onToken(response.content);
+        if (response && response.content && this.eventBus) {
+            this.eventBus.emit('agent:token', { token: response.content, type: 'content' });
+        }
+        if (response && response.reasoning && this.eventBus) {
+            this.eventBus.emit('agent:token', { token: response.reasoning, type: 'reasoning' });
         }
         return response || null;
     }
@@ -104,7 +108,7 @@ export const createMockDocument = (content: string = 'content', languageId: stri
 
 export const createMockProvider = (): jest.Mocked<ILlmProvider> => ({
     query: jest.fn<(prompt: any, tools?: any, signal?: any) => Promise<ChatMessage | null>>(),
-    queryStream: jest.fn<(prompt: any, onToken: any, tools?: any, signal?: any) => Promise<ChatMessage | null>>(),
+    queryStream: jest.fn<(prompt: any, tools?: any, signal?: any) => Promise<ChatMessage | null>>(),
 });
 
 export const createMockIgnoreManager = (): jest.Mocked<IIgnoreManager> => ({

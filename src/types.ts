@@ -1,6 +1,7 @@
 import type { ToolCall } from "./schemas.js";
+import type { IEventBus, EventMap } from "./utils/eventBus.js";
 
-export type { ToolCall };
+export type { ToolCall, IEventBus, EventMap };
 
 // --------------------------------------------------------------------------------
 //  VS Code API Type Mocks/Abstractions
@@ -317,11 +318,10 @@ export interface IChatAgent {
    * Sends a `userPrompt` to the LLM and receives the response as a stream of tokens.
    *
    * @param prompt The prompt object containing context and history.
-   * @param onToken A callback invoked for each received token from the stream.
    * @param signal Optional AbortSignal to cancel the request.
    * @returns A promise that resolves when the stream is finished.
    */
-  run(prompt: IPrompt, onToken: (token: string) => void, signal?: AbortSignal): Promise<void>;
+  run(prompt: IPrompt, signal?: AbortSignal): Promise<void>;
 }
 
 /**
@@ -684,11 +684,17 @@ export interface IAnonymizationEventPayload {
   type: 'word' | 'entropy';
 }
 
+export interface ITokenEventPayload {
+  token: string;
+  type: 'content' | 'reasoning';
+}
+
 export interface IAppEvents {
   'inlineCompletionToggled': boolean;
   'modelChanged': string;
   'agent:maxIterationsReached': { maxIterations: number };
   'anonymization': IAnonymizationEventPayload;
+  'agent:token': ITokenEventPayload;
 }
 
 // --------------------------------------------------------------------------------
@@ -851,7 +857,7 @@ export interface IHttpClient {
 // --------------------------------------------------------------------------------
 export interface ILlmProvider {
   query(prompt: IPrompt, tools?: ToolDefinition[], signal?: AbortSignal): Promise<ChatMessage | null>;
-  queryStream(prompt: IPrompt, onToken: (token: string) => void, tools?: ToolDefinition[], signal?: AbortSignal): Promise<ChatMessage | null>;
+  queryStream(prompt: IPrompt, tools?: ToolDefinition[], signal?: AbortSignal): Promise<ChatMessage | null>;
 }
 
 // --------------------------------------------------------------------------------

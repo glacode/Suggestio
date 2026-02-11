@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
-import { IChatHistoryManager, ChatMessage, IPrompt, ToolImplementation, ToolCall } from "../../src/types.js";
+import { IChatHistoryManager, ChatMessage, IPrompt, ToolImplementation, ToolCall, IEventBus } from "../../src/types.js";
 import { FakeProvider, createMockHistoryManager, createDefaultConfig } from "../testUtils.js";
 import { AGENT_MESSAGES } from "../../src/constants/messages.js";
 
@@ -10,6 +10,7 @@ describe("Agent", () => {
     let mockChatHistoryManager: IChatHistoryManager;
     let mockChatHistory: ChatMessage[];
     let mockPrompt: IPrompt;
+    let mockEventBus: jest.Mocked<IEventBus>;
 
     beforeEach(() => {
         logs = [];
@@ -19,21 +20,35 @@ describe("Agent", () => {
         mockPrompt = {
             generateChatHistory: () => [{ role: 'user', content: 'Hi' }],
         };
+        mockEventBus = {
+            on: jest.fn<any>(),
+            once: jest.fn<any>(),
+            off: jest.fn<any>(),
+            emit: jest.fn<any>(),
+            removeAllListeners: jest.fn<any>(),
+        };
     });
 
     it("runs a simple chat without tools", async () => {
-        const provider = new FakeProvider([{ role: "assistant", content: "Hello!" }]);
+        const provider = new FakeProvider([{ role: "assistant", content: "Hello!" }], mockEventBus);
         const agent = new Agent({
             config: createDefaultConfig({ llmProviderForChat: provider }),
             log: logger,
             chatHistoryManager: mockChatHistoryManager,
-            tools: []
+            tools: [],
+            eventBus: mockEventBus
         });
 
-        let output = "";
-        await agent.run(mockPrompt, (t) => output += t);
+        let streamedContent = "";
+        mockEventBus.emit.mockImplementation((event: string, payload: any) => {
+            if (event === 'agent:token') {
+                streamedContent += payload.token;
+            }
+        });
 
-        expect(output).toBe("Hello!");
+        await agent.run(mockPrompt);
+
+        expect(streamedContent).toBe("Hello!");
         expect(mockChatHistory.length).toBe(1);
         expect(mockChatHistory[0].content).toBe("Hello!");
     });
@@ -59,19 +74,26 @@ describe("Agent", () => {
                 }]
             },
             { role: "assistant", content: "Final answer" }
-        ]);
+        ], mockEventBus);
 
         const agent = new Agent({
             config: createDefaultConfig({ llmProviderForChat: provider }),
             log: logger,
             chatHistoryManager: mockChatHistoryManager,
-            tools: [tool]
+            tools: [tool],
+            eventBus: mockEventBus
         });
 
-        let output = "";
-        await agent.run(mockPrompt, (t) => output += t);
+        let streamedContent = "";
+        mockEventBus.emit.mockImplementation((event: string, payload: any) => {
+            if (event === 'agent:token') {
+                streamedContent += payload.token;
+            }
+        });
 
-        expect(output).toBe("Calling tool...Final answer");
+        await agent.run(mockPrompt);
+
+        expect(streamedContent).toBe("Calling tool...Final answer");
         expect(tool.execute).toHaveBeenCalledWith({ arg: "val" }, undefined);
 
         // History should have: 
@@ -106,17 +128,18 @@ describe("Agent", () => {
             content: "I could not find the tool."
         };
 
-        const provider = new FakeProvider([toolResponse, finalResponse]);
+        const provider = new FakeProvider([toolResponse, finalResponse], mockEventBus);
         const mockAddMessage = jest.spyOn(mockChatHistoryManager, 'addMessage');
 
         const agent = new Agent({
             config: createDefaultConfig({ llmProviderForChat: provider }),
             log: logger,
             chatHistoryManager: mockChatHistoryManager,
-            tools: [] // No tools
+            tools: [], // No tools
+            eventBus: mockEventBus
         });
 
-        await agent.run(mockPrompt, () => { });
+        await agent.run(mockPrompt);
 
         expect(logs).toContain("Tool not found: unknownTool");
         expect(mockAddMessage).toHaveBeenCalledWith(expect.objectContaining({
@@ -147,7 +170,7 @@ describe("Agent", () => {
             content: "Something went wrong."
         };
 
-        const provider = new FakeProvider([toolResponse, finalResponse]);
+        const provider = new FakeProvider([toolResponse, finalResponse], mockEventBus);
         const mockAddMessage = jest.spyOn(mockChatHistoryManager, 'addMessage');
 
         const mockTool: ToolImplementation = {
@@ -163,10 +186,11 @@ describe("Agent", () => {
             config: createDefaultConfig({ llmProviderForChat: provider }),
             log: logger,
             chatHistoryManager: mockChatHistoryManager,
-            tools: [mockTool]
+            tools: [mockTool],
+            eventBus: mockEventBus
         });
 
-        await agent.run(mockPrompt, () => { });
+        await agent.run(mockPrompt);
 
         expect(logs).toContain("Error executing tool: Tool failed");
         expect(mockAddMessage).toHaveBeenCalledWith(expect.objectContaining({
@@ -206,7 +230,7 @@ describe("Agent", () => {
             content: "Processed both."
         };
 
-        const provider = new FakeProvider([toolResponse, finalResponse]);
+        const provider = new FakeProvider([toolResponse, finalResponse], mockEventBus);
 
         const mockToolA: ToolImplementation = {
             definition: { name: "toolA", description: "Tool A", parameters: { type: "object", properties: {} } },
@@ -222,11 +246,18 @@ describe("Agent", () => {
             config: createDefaultConfig({ llmProviderForChat: provider }),
             log: logger,
             chatHistoryManager: mockChatHistoryManager,
-            tools: [mockToolA, mockToolB]
+            tools: [mockToolA, mockToolB],
+            eventBus: mockEventBus
         });
 
         let streamedContent = "";
-        await agent.run(mockPrompt, (token) => { streamedContent += token; });
+        mockEventBus.emit.mockImplementation((event: string, payload: any) => {
+            if (event === 'agent:token') {
+                streamedContent += payload.token;
+            }
+        });
+
+        await agent.run(mockPrompt);
 
         expect(streamedContent).toBe("Processed both.");
         expect(mockToolA.execute).toHaveBeenCalledWith({ arg: "valA" }, undefined);
@@ -279,7 +310,7 @@ describe("Agent", () => {
             content: "Done."
         };
 
-        const provider = new FakeProvider([response1, response2, finalResponse]);
+        const provider = new FakeProvider([response1, response2, finalResponse], mockEventBus);
 
         const mockTool1: ToolImplementation = {
             definition: { name: "tool1", description: "Tool 1", parameters: { type: "object", properties: {} } },
@@ -295,11 +326,18 @@ describe("Agent", () => {
             config: createDefaultConfig({ llmProviderForChat: provider }),
             log: logger,
             chatHistoryManager: mockChatHistoryManager,
-            tools: [mockTool1, mockTool2]
+            tools: [mockTool1, mockTool2],
+            eventBus: mockEventBus
         });
 
         let streamedContent = "";
-        await agent.run(mockPrompt, (token) => { streamedContent += token; });
+        mockEventBus.emit.mockImplementation((event: string, payload: any) => {
+            if (event === 'agent:token') {
+                streamedContent += payload.token;
+            }
+        });
+
+        await agent.run(mockPrompt);
 
         expect(streamedContent).toBe("Step 1Step 2Done.");
         expect(mockTool1.execute).toHaveBeenCalled();
@@ -343,13 +381,14 @@ describe("Agent", () => {
                 }]
             },
             { role: "assistant", content: "Final answer" }
-        ]);
+        ], mockEventBus);
 
         const agent = new Agent({
             config: createDefaultConfig({ llmProviderForChat: provider }),
             log: logger,
             chatHistoryManager: mockChatHistoryManager,
-            tools: [tool]
+            tools: [tool],
+            eventBus: mockEventBus
         });
 
         const controller = new AbortController();
@@ -360,11 +399,10 @@ describe("Agent", () => {
             return "Tool result";
         });
 
-        await agent.run(mockPrompt, () => { }, controller.signal);
+        await agent.run(mockPrompt, controller.signal);
 
         // If the loop respected the signal, it should have stopped AFTER the first tool call
         // and NOT called the provider for the "Final answer".
-        // Currently it WILL call the provider again because it doesn't check the signal in the loop.
         expect(provider.queryCount).toBe(1);
         expect(mockChatHistory.length).toBe(2); // Assistant call + Tool result, but no Final answer
     });
@@ -392,21 +430,19 @@ describe("Agent", () => {
                     function: { name: "test_tool", arguments: '{}' }
                 }]
             }
-        ]);
+        ], mockEventBus);
 
         const agent = new Agent({
             config: createDefaultConfig({ llmProviderForChat: provider }),
             log: logger,
             chatHistoryManager: mockChatHistoryManager,
-            tools: [tool]
+            tools: [tool],
+            eventBus: mockEventBus
         });
 
         const controller = new AbortController();
-        await agent.run(mockPrompt, () => { }, controller.signal);
+        await agent.run(mockPrompt, controller.signal);
 
         expect(tool.execute).toHaveBeenCalledWith(expect.anything(), controller.signal);
     });
 });
-
-
-

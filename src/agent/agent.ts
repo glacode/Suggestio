@@ -41,7 +41,7 @@ export class Agent implements IChatAgent {
         this.eventBus = eventBus;
     }
 
-    async run(prompt: IPrompt, onToken: (token: string) => void, signal?: AbortSignal): Promise<void> {
+    async run(prompt: IPrompt, signal?: AbortSignal): Promise<void> {
         const toolDefinitions = this.tools.map(t => t.definition);
         let currentPrompt = prompt;
         let iterations = 0;
@@ -54,7 +54,7 @@ export class Agent implements IChatAgent {
             iterations++;
             this.log(AGENT_LOGS.ITERATION_START(iterations, maxIterations));
 
-            const response: ChatMessage | null = await this.queryLLM(currentPrompt, onToken, toolDefinitions, signal);
+            const response: ChatMessage | null = await this.queryLLM(currentPrompt, toolDefinitions, signal);
 
             if (!response) {
                 this.log(AGENT_LOGS.NO_RESPONSE_RECEIVED);
@@ -89,10 +89,9 @@ export class Agent implements IChatAgent {
     /**
      * Queries the LLM provider for a response.
      */
-    private async queryLLM(prompt: IPrompt, onToken: (token: string) => void, toolDefinitions: any[], signal?: AbortSignal): Promise<ChatMessage | null> {
+    private async queryLLM(prompt: IPrompt, toolDefinitions: any[], signal?: AbortSignal): Promise<ChatMessage | null> {
         return await this.config.llmProviderForChat!.queryStream(
             prompt,
-            onToken,
             toolDefinitions.length > 0 ? toolDefinitions : undefined,
             signal
         );

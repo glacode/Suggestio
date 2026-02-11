@@ -37,8 +37,7 @@ describe("Agent Max Iterations Event", () => {
 
         const provider: jest.Mocked<ILlmProvider> = {
              query: jest.fn(),
-             queryStream: jest.fn(async (_prompt: any, onToken: any, _tools: any) => {
-                 onToken("Looping...");
+             queryStream: jest.fn(async () => {
                  return response;
              })
         };
@@ -64,7 +63,7 @@ describe("Agent Max Iterations Event", () => {
         const eventSpy = jest.fn();
         eventBus.on('agent:maxIterationsReached', eventSpy);
 
-        await agent.run(mockPrompt, () => {});
+        await agent.run(mockPrompt);
 
         expect(provider.queryStream).toHaveBeenCalledTimes(2);
         expect(eventSpy).toHaveBeenCalledWith({ maxIterations: 2 });
@@ -74,7 +73,7 @@ describe("Agent Max Iterations Event", () => {
         // Returns null to stop
         const provider: jest.Mocked<ILlmProvider> = {
              query: jest.fn(),
-             queryStream: jest.fn(async (_prompt: any, _onToken: any, _tools: any) => {
+             queryStream: jest.fn(async () => {
                  return null;
              })
         };
@@ -95,7 +94,7 @@ describe("Agent Max Iterations Event", () => {
         const eventSpy = jest.fn();
         eventBus.on('agent:maxIterationsReached', eventSpy);
 
-        await agent.run(mockPrompt, () => {});
+        await agent.run(mockPrompt);
 
         expect(eventSpy).not.toHaveBeenCalled();
     });

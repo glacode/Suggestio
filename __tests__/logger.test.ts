@@ -8,7 +8,7 @@ describe('logger', () => {
   let consoleSpy: jest.SpiedFunction<typeof console.log>;
 
   beforeEach(() => {
-    mockOutputChannel = { 
+    const mockChannel: any = {
       appendLine: jest.fn(),
       append: jest.fn(),
       replace: jest.fn(),
@@ -18,13 +18,14 @@ describe('logger', () => {
       dispose: jest.fn(),
       name: 'Suggestio',
       logLevel: 1, // vscode.LogLevel.Info
-      onDidChangeLogLevel: jest.fn(() => ({ dispose: () => {} })),
+      onDidChangeLogLevel: jest.fn(() => ({ dispose: () => { } })),
       trace: jest.fn(),
       debug: jest.fn(),
       info: jest.fn(),
       warn: jest.fn(),
       error: jest.fn(),
-    } as vscode.LogOutputChannel;
+    };
+    mockOutputChannel = mockChannel;
     createOutputChannelSpy = jest
       .spyOn(vscode.window, 'createOutputChannel')
       .mockReturnValue(mockOutputChannel);

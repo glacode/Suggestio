@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
-import { IChatHistoryManager, ChatMessage, IPrompt, ChatHistory, ToolImplementation, ToolCall } from "../../src/types.js";
+import { IChatHistoryManager, ChatMessage, IPrompt, ChatHistory, ToolImplementation, ToolCall, IEventBus } from "../../src/types.js";
 import { FakeProvider, createDefaultConfig, createMockProviderConfig } from "../testUtils.js";
 import { AGENT_MESSAGES } from "../../src/constants/messages.js";
 
@@ -10,6 +10,7 @@ describe("ChatResponder Tool Calling Integration", () => {
     let mockChatHistoryManager: IChatHistoryManager;
     let mockChatHistory: ChatHistory;
     let mockPrompt: IPrompt;
+    let mockEventBus: jest.Mocked<IEventBus>;
 
     beforeEach(() => {
         logs = [];
@@ -26,6 +27,13 @@ describe("ChatResponder Tool Calling Integration", () => {
         };
         mockPrompt = {
             generateChatHistory: () => [{ role: 'user', content: 'What time is it?' }],
+        };
+        mockEventBus = {
+            on: jest.fn<any>(),
+            once: jest.fn<any>(),
+            off: jest.fn<any>(),
+            emit: jest.fn<any>(),
+            removeAllListeners: jest.fn<any>(),
         };
     });
 
@@ -50,7 +58,7 @@ describe("ChatResponder Tool Calling Integration", () => {
             content: "It is 12:00 PM"
         };
 
-        const provider = new FakeProvider([toolResponse, finalResponse]);
+        const provider = new FakeProvider([toolResponse, finalResponse], mockEventBus);
 
         const mockTool: ToolImplementation = {
             definition: {
@@ -69,15 +77,18 @@ describe("ChatResponder Tool Calling Integration", () => {
             }),
             log: logger,
             chatHistoryManager: mockChatHistoryManager,
-            tools: [mockTool]
+            tools: [mockTool],
+            eventBus: mockEventBus
         });
 
         let streamedContent = "";
-        const onToken = (token: string) => {
-            streamedContent += token;
-        };
+        mockEventBus.emit.mockImplementation((event: string, payload: any) => {
+            if (event === 'agent:token') {
+                streamedContent += payload.token;
+            }
+        });
 
-        await handler.run(mockPrompt, onToken);
+        await handler.run(mockPrompt);
 
         // Verify final output
         expect(streamedContent).toBe("It is 12:00 PM");
@@ -90,12 +101,12 @@ describe("ChatResponder Tool Calling Integration", () => {
         // Verify history updates
         expect(mockChatHistoryManager.addMessage).toHaveBeenCalledTimes(3);
         
-        expect(mockChatHistory[0]).toEqual(toolResponse);
+        expect(mockChatHistory[0]).toEqual(expect.objectContaining({ role: "assistant", content: "" }));
         expect(mockChatHistory[1]).toEqual({
             role: "tool",
             content: "12:00 PM",
             tool_call_id: "call_123"
         });
-        expect(mockChatHistory[2]).toEqual(finalResponse);
+        expect(mockChatHistory[2]).toEqual(expect.objectContaining({ role: "assistant", content: "It is 12:00 PM" }));
     });
 });

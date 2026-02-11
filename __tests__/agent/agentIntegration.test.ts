@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
-import { IChatHistoryManager, ChatMessage, IPrompt, ChatHistory } from "../../src/types.js"; // Import ChatMessage from types.js
+import { IChatHistoryManager, ChatMessage, IPrompt, ChatHistory, IEventBus } from "../../src/types.js";
 import { createDefaultConfig, createMockProviderConfig, FakeProvider } from "../testUtils.js";
 
 describe("Agent (Integration) simple tests", () => {
@@ -9,6 +9,7 @@ describe("Agent (Integration) simple tests", () => {
     let mockChatHistoryManager: IChatHistoryManager;
     let mockChatHistory: ChatHistory;
     let mockPrompt: IPrompt;
+    let mockEventBus: jest.Mocked<IEventBus>;
 
     beforeEach(() => {
         logs = [];
@@ -26,33 +27,43 @@ describe("Agent (Integration) simple tests", () => {
         mockPrompt = {
             generateChatHistory: () => [{ role: 'user', content: 'Hi' }],
         };
+        mockEventBus = {
+            on: jest.fn<any>(),
+            once: jest.fn<any>(),
+            off: jest.fn<any>(),
+            emit: jest.fn<any>(),
+            removeAllListeners: jest.fn<any>(),
+        };
     });
 
     it("fetches stream chat response on success", async () => {
         const handler = new Agent({
             config: createDefaultConfig({
                 activeProvider: "FAKE",
-                llmProviderForChat: new FakeProvider([{ role: "assistant", content: "Hello world" }]),
+                llmProviderForChat: new FakeProvider([{ role: "assistant", content: "Hello world" }], mockEventBus),
                 providers: { FAKE: createMockProviderConfig() },
             }),
             log: logger,
-            chatHistoryManager: mockChatHistoryManager // Injected mock
+            chatHistoryManager: mockChatHistoryManager,
+            eventBus: mockEventBus
         });
 
         let streamedContent = "";
-        const onToken = (token: string) => {
-            streamedContent += token;
-        };
+        mockEventBus.emit.mockImplementation((event: string, payload: any) => {
+            if (event === 'agent:token') {
+                streamedContent += payload.token;
+            }
+        });
 
-        await handler.run(mockPrompt, onToken);
+        await handler.run(mockPrompt);
         expect(streamedContent).toBe("Hello world");
         expect(mockChatHistoryManager.addMessage).toHaveBeenCalledTimes(1);
-        expect(mockChatHistoryManager.addMessage).toHaveBeenCalledWith({ role: "assistant", content: "Hello world" });
+        expect(mockChatHistoryManager.addMessage).toHaveBeenCalledWith(expect.objectContaining({ role: "assistant", content: "Hello world" }));
         expect(mockChatHistory.length).toBe(1);
     });
 
     it("handles error when fetching stream chat response", async () => {
-        const fakeProvider = new FakeProvider([]);
+        const fakeProvider = new FakeProvider([], mockEventBus);
         jest.spyOn(fakeProvider, 'queryStream').mockRejectedValue(new Error("Simulated failure"));
 
         const handler = new Agent({
@@ -62,15 +73,18 @@ describe("Agent (Integration) simple tests", () => {
                 providers: { FAKE: createMockProviderConfig() },
             }),
             log: logger,
-            chatHistoryManager: mockChatHistoryManager // Injected mock
+            chatHistoryManager: mockChatHistoryManager,
+            eventBus: mockEventBus
         });
 
         let streamedContent = "";
-        const onToken = (token: string) => {
-            streamedContent += token;
-        };
+        mockEventBus.emit.mockImplementation((event: string, payload: any) => {
+            if (event === 'agent:token') {
+                streamedContent += payload.token;
+            }
+        });
 
-        await expect(handler.run(mockPrompt, onToken)).rejects.toThrow("Simulated failure");
+        await expect(handler.run(mockPrompt)).rejects.toThrow("Simulated failure");
         expect(streamedContent).toBe("");
         expect(mockChatHistoryManager.addMessage).toHaveBeenCalledTimes(0);
         expect(mockChatHistory.length).toBe(0);

@@ -16,7 +16,8 @@ import type {
     IWebviewView, // Defines the interface for a VS Code `WebviewView`, which is a container for the webview.
     WebviewMessage, // Defines the structure of messages sent from the webview to the extension.
     IContextBuilder, // Defines the interface for building context strings to be used as additional information in prompts.
-    IAnonymizer
+    IAnonymizer,
+    ITokenEventPayload
 } from '../types.js';
 // Importing the `eventBus`, a custom mechanism for different parts of the extension
 // to communicate by emitting and listening for events.
@@ -91,6 +92,20 @@ export class ChatWebviewViewProvider {
                 this._view.webview.postMessage({
                     sender: 'assistant',
                     text: CHAT_MESSAGES.MAX_ITERATIONS_REACHED(payload.maxIterations)
+                });
+            }
+        });
+
+        this._eventBus.on('agent:token', (payload: ITokenEventPayload) => {
+            if (this._abortController?.signal.aborted) {
+                return;
+            }
+            if (this._view) {
+                // For now, reasoning tokens are displayed as normal tokens
+                this._view.webview.postMessage({
+                    sender: 'assistant',
+                    type: 'token',
+                    text: payload.token
                 });
             }
         });
@@ -197,21 +212,8 @@ export class ChatWebviewViewProvider {
                     }
                     const prompt = new ChatPrompt(this._chatHistoryManager.getChatHistory(), context);
                     // Call the `logicHandler` to fetch a streaming chat response.
-                    // The `onToken` callback is invoked for each partial token received from the LLM.
-                    await this._chatAgent.run(prompt, (token: string) => {
-                        // Check if request was cancelled
-                        if (this._abortController?.signal.aborted) {
-                            return;
-                        }
-                        // Send a 'token' type message from the extension back to the webview's frontend.
-                        // The `webview.postMessage` method is part of the VS Code Webview API (`vscode.Webview.postMessage`)
-                        // and is the primary way for the extension backend to communicate with the webview UI.
-                        webviewView.webview.postMessage({
-                            sender: 'assistant',
-                            type: 'token',
-                            text: token
-                        });
-                    }, this._abortController.signal);
+                    // Tokens are now received via the 'agent:token' event on the event bus.
+                    await this._chatAgent.run(prompt, this._abortController.signal);
 
                     // Always send completion to reset UI state (enable input, remove spinner)
                     // even if the request was cancelled.

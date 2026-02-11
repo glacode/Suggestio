@@ -3,17 +3,20 @@ import { Agent } from "../../src/agent/agent.js";
 import { IChatHistoryManager } from "../../src/types.js";
 import { ChatPrompt } from "../../src/chat/chatPrompt.js";
 import { ChatHistoryManager } from "../../src/chat/chatHistoryManager.js";
+import { EventBus } from "../../src/utils/eventBus.js";
 import { FakeProvider, createDefaultConfig, createMockProviderConfig } from "../testUtils.js";
 
 describe("Chat History Management (Unit Test)", () => {
     let logs: string[];
     let logger: (msg: string) => void;
     let chatHistoryManager: IChatHistoryManager;
+    let eventBus: EventBus;
 
     beforeEach(() => {
         logs = [];
         logger = (msg: string) => logs.push(msg);
         chatHistoryManager = new ChatHistoryManager();
+        eventBus = new EventBus();
     });
 
     it("should maintain history across two complete turns", async () => {
@@ -21,7 +24,7 @@ describe("Chat History Management (Unit Test)", () => {
         const fakeProvider = new FakeProvider([
             { role: "assistant", content: "Assistant Reply 1" },
             { role: "assistant", content: "Assistant Reply 2" }
-        ]);
+        ], eventBus);
 
         const handler = new Agent({
             config: createDefaultConfig({
@@ -30,20 +33,21 @@ describe("Chat History Management (Unit Test)", () => {
                 providers: { FAKE: createMockProviderConfig() }
             }),
             log: logger,
-            chatHistoryManager: chatHistoryManager
+            chatHistoryManager: chatHistoryManager,
+            eventBus
         });
 
         // --- Turn 1 ---
         const userMessage1 = "User message 1";
         chatHistoryManager.addMessage({ role: "user", content: userMessage1 });
         const prompt1 = new ChatPrompt(chatHistoryManager.getChatHistory());
-        await handler.run(prompt1, (_token: string) => { /* do nothing with tokens in this test */ });
+        await handler.run(prompt1);
 
         // --- Turn 2 ---
         const userMessage2 = "User message 2";
         chatHistoryManager.addMessage({ role: "user", content: userMessage2 });
         const prompt2 = new ChatPrompt(chatHistoryManager.getChatHistory());
-        await handler.run(prompt2, (_token: string) => { /* do nothing with tokens in this test */ });
+        await handler.run(prompt2);
 
         // --- Verification ---
         const finalHistory = chatHistoryManager.getChatHistory();

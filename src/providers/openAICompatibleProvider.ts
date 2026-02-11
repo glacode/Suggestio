@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { log } from "../logger.js";
 import { ChatMessage, IAnonymizer, IPrompt, ILlmProvider, ToolDefinition, ToolCall, IStreamingDeanonymizer, IHttpClient, IHttpResponse } from "../types.js";
+import { IEventBus } from "../utils/eventBus.js";
 import { ToolCallSchema } from "../schemas.js";
 import { LLM_MESSAGES, LLM_LOGS } from "../constants/messages.js";
 
@@ -169,6 +170,8 @@ export interface IOpenAICompatibleProviderArgs {
   apiKey: string;
   /** The model identifier to be used for completions. */
   model: string;
+  /** The event bus to emit token events. */
+  eventBus: IEventBus;
   /** Optional anonymizer to protect sensitive data in user messages. */
   anonymizer?: IAnonymizer;
 }
@@ -178,6 +181,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
   private endpoint: string;
   private apiKey: string;
   private model: string;
+  private eventBus: IEventBus;
   private anonymizer?: IAnonymizer;
 
   /**
@@ -190,12 +194,14 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     endpoint,
     apiKey,
     model,
+    eventBus,
     anonymizer,
   }: IOpenAICompatibleProviderArgs) {
     this.httpClient = httpClient;
     this.endpoint = endpoint;
     this.apiKey = apiKey;
     this.model = model;
+    this.eventBus = eventBus;
     this.anonymizer = anonymizer;
   }
 
@@ -342,13 +348,11 @@ export class OpenAICompatibleProvider implements ILlmProvider {
    * Performs a streaming completion request.
    * 
    * @param prompt - The prompt to be sent.
-   * @param onToken - Callback function invoked for each new content token received.
    * @param tools - Optional tools available for the model to use.
    * @returns A promise resolving to the final consolidated assistant's message.
    */
   async queryStream(
     prompt: IPrompt,
-    onToken: (token: string) => void,
     tools?: ToolDefinition[],
     signal?: AbortSignal
   ): Promise<ChatMessage | null> {
@@ -363,7 +367,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     }
 
     log(LLM_LOGS.RECEIVING_STREAM);
-    const result = await this.parseStream(response, onToken);
+    const result = await this.parseStream(response);
     log(`Consolidated content length: ${result.content.length}`);
     if (result.reasoning) {
       log(`Consolidated reasoning length: ${result.reasoning.length}`);
@@ -375,13 +379,11 @@ export class OpenAICompatibleProvider implements ILlmProvider {
    * Parses the Server-Sent Events (SSE) stream from the provider's response.
    * 
    * @param response - The IHttpResponse object containing the body stream.
-   * @param onToken - Callback function for each content token.
    * @returns A promise resolving to the complete assistant's message after the stream ends.
    * @throws Error if the response body is missing.
    */
   private async parseStream(
-    response: IHttpResponse,
-    onToken: (token: string) => void
+    response: IHttpResponse
   ): Promise<ChatMessage> {
     if (!response.body) {
       throw new Error(LLM_MESSAGES.RESPONSE_BODY_NULL);
@@ -402,14 +404,13 @@ export class OpenAICompatibleProvider implements ILlmProvider {
       for (const line of lines) {
         const deltaResult = this.processLine(
           line,
-          onToken,
           toolCalls,
           streamingDeanonymizer
         );
 
         if (deltaResult === null) {
           log(LLM_LOGS.STREAM_DONE);
-          fullContent += this.flushDeanonymizer(streamingDeanonymizer, onToken);
+          fullContent += this.flushDeanonymizer(streamingDeanonymizer);
           return this.createAssistantMessage(fullContent, fullReasoning, toolCalls);
         }
 
@@ -419,7 +420,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     }
 
     log(LLM_LOGS.STREAM_FINISHED);
-    fullContent += this.flushDeanonymizer(streamingDeanonymizer, onToken);
+    fullContent += this.flushDeanonymizer(streamingDeanonymizer);
     return this.createAssistantMessage(fullContent, fullReasoning, toolCalls);
   }
 
@@ -444,14 +445,12 @@ export class OpenAICompatibleProvider implements ILlmProvider {
    * Processes a single line from the SSE stream.
    * 
    * @param line - The line to process.
-   * @param onToken - Callback to invoke when a new token is found.
    * @param toolCalls - Array to accumulate tool calls.
    * @param streamingDeanonymizer - The streaming deanonymizer instance, if any.
-   * @returns The content delta string to append, or null if the stream has finished ([DONE]).
+   * @returns The content and reasoning deltas, or null if the stream has finished ([DONE]).
    */
   private processLine(
     line: string,
-    onToken: (token: string) => void,
     toolCalls: ToolCall[],
     streamingDeanonymizer: IStreamingDeanonymizer | undefined
   ): { content: string; reasoning: string } | null {
@@ -485,7 +484,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
       }
 
       this.handleToolCallsDelta(delta, toolCalls);
-      return this.handleContentDelta(delta, onToken, streamingDeanonymizer);
+      return this.handleContentDelta(delta, streamingDeanonymizer);
     } catch (e) {
       log(LLM_MESSAGES.PARSE_CHUNK_ERROR(data));
       return { content: "", reasoning: "" };
@@ -496,13 +495,11 @@ export class OpenAICompatibleProvider implements ILlmProvider {
    * Processes a content delta from the stream, applying deanonymization if necessary.
    * 
    * @param delta - The delta object from the API response chunk.
-   * @param onToken - Callback to invoke with the (potentially deanonymized) token.
    * @param streamingDeanonymizer - The active streaming deanonymizer instance, if any.
    * @returns The processed content and reasoning tokens.
    */
   private handleContentDelta(
     delta: OpenAIStreamDelta,
-    onToken: (token: string) => void,
     streamingDeanonymizer: IStreamingDeanonymizer | undefined
   ): { content: string; reasoning: string } {
     let content = "";
@@ -510,8 +507,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
 
     if (delta.reasoning || delta.reasoning_content) {
       const token = (delta.reasoning || delta.reasoning_content)!;
-      // For reasoning, we don't currently deanonymize, but we still want to show it.
-      onToken(token);
+      this.eventBus.emit('agent:token', { token, type: 'reasoning' });
       reasoning = token;
     }
 
@@ -520,11 +516,11 @@ export class OpenAICompatibleProvider implements ILlmProvider {
       if (streamingDeanonymizer) {
         const { processed } = streamingDeanonymizer.process(token);
         if (processed) {
-          onToken(processed);
+          this.eventBus.emit('agent:token', { token: processed, type: 'content' });
           content = processed;
         }
       } else {
-        onToken(token);
+        this.eventBus.emit('agent:token', { token, type: 'content' });
         content = token;
       }
     }
@@ -578,17 +574,15 @@ export class OpenAICompatibleProvider implements ILlmProvider {
    * Flushes any remaining content from the streaming deanonymizer.
    * 
    * @param streamingDeanonymizer - The active streaming deanonymizer instance.
-   * @param onToken - Callback to invoke with the flushed content.
    * @returns The flushed content string.
    */
   private flushDeanonymizer(
-    streamingDeanonymizer: IStreamingDeanonymizer | undefined,
-    onToken: (token: string) => void
+    streamingDeanonymizer: IStreamingDeanonymizer | undefined
   ): string {
     if (streamingDeanonymizer) {
       const remaining = streamingDeanonymizer.flush();
       if (remaining) {
-        onToken(remaining);
+        this.eventBus.emit('agent:token', { token: remaining, type: 'content' });
         return remaining;
       }
     }

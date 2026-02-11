@@ -71,11 +71,9 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const promptsSent: IPrompt[] = [];
     // `logicHandler` is a fake `IChatResponder` that simulates the AI's response logic.
     const logicHandler: IChatAgent = {
-      // `fetchStreamChatResponse` simulates getting a chat response in parts (tokens).
-      // It immediately calls `onToken` twice with fake tokens and records the prompt.
-      run: async (prompt: IPrompt, onToken: (t: string) => void) => {
-        onToken('tok1'); // First fake token.
-        onToken('tok2'); // Second fake token.
+      run: async (prompt: IPrompt) => {
+        eventBus.emit('agent:token', { token: 'tok1', type: 'content' });
+        eventBus.emit('agent:token', { token: 'tok2', type: 'content' });
         promptsSent.push(prompt); // Record the prompt that was processed.
         return Promise.resolve(); // Simulate successful completion.
       }
@@ -198,6 +196,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       getChatHistory: () => recorded.slice()
     };
 
+    const eventBus = new EventBus();
+
     // Minimal config with a fake llm provider that immediately completes.
     const config: import('../../src/types.js').Config = {
       activeProvider: 'p',
@@ -205,8 +205,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       anonymizer: { enabled: false, words: [] },
       llmProviderForChat: {
         query: async () => null,
-        queryStream: async (_prompt: IPrompt, onToken: (t: string) => void) => {
-          onToken('x');
+        queryStream: async () => {
+          eventBus.emit('agent:token', { token: 'x', type: 'content' });
           return Promise.resolve(null);
         }
       }
@@ -217,9 +217,9 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const responder = new Agent({
       config,
       log: () => { },
-      chatHistoryManager
+      chatHistoryManager,
+      eventBus
     });
-    const eventBus = new EventBus();
 
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
@@ -247,7 +247,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   // This test case verifies that the `ChatWebviewViewProvider` correctly handles:
   // 1. The 'modelChanged' command, emitting an event.
   // 2. The 'clearHistory' command, calling the logic handler's `clearHistory`.
-  // 3. Error reporting when `fetchStreamChatResponse` fails.
+  // 3. Error reporting when AI response fails.
   it('emits modelChanged and calls clearHistory and reports errors', async () => {
     // Define a fake extension URI.
     const extensionUri = createMockUri('/ext');
@@ -269,7 +269,6 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     // Fake `logicHandler` for this test.
     const logicHandler: IChatAgent = {
-      // For this test, `fetchStreamChatResponse` is made to throw an error immediately.
       run: async () => {
         throw new Error('boom'); // Simulate an error during AI response.
       }
@@ -367,8 +366,6 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const webviewView = createMockWebviewView(webview, 'X');
 
     // Fake `logicHandler` for this test.
-    // Its methods are marked with `/* not called */` because we expect
-    // them *not* to be invoked when an unknown command is received.
     const logicHandler: IChatAgent = {
       run: async () => {
         /* not called */ // This should not be called.
@@ -415,7 +412,6 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // ********************************************************************************
     // Expect that no messages were posted back to the webview, confirming the command was ignored.
     expect(responseMessagesFromTheExtensionToTheWebview.length).toBe(0);
-    // (Implicitly, the `logicHandler` methods were not called due to the `/* not called */` comments in the mock.)
   });
 
   it('anonymizes context if anonymizer is provided', async () => {
@@ -427,7 +423,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     const promptsSent: IPrompt[] = [];
     const logicHandler: IChatAgent = {
-      run: async (prompt: IPrompt, _onToken: (t: string) => void) => {
+      run: async (prompt: IPrompt) => {
         promptsSent.push(prompt);
         return Promise.resolve();
       }
@@ -484,18 +480,20 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const webview = createMockWebview(posted);
     const webviewView = createMockWebviewView(webview, 'X');
 
+    const eventBus = new EventBus();
+
     let signalAtFetch: AbortSignal | undefined;
     const logicHandler: IChatAgent = {
-      run: async (_prompt: IPrompt, onToken: (t: string) => void, signal?: AbortSignal) => {
+      run: async (_prompt: IPrompt, signal?: AbortSignal) => {
         signalAtFetch = signal;
-        onToken('tok1');
+        eventBus.emit('agent:token', { token: 'tok1', type: 'content' });
 
         // Simulate cancellation mid-stream
         if (webview.__handler) {
           await webview.__handler({ command: 'cancelRequest' });
         }
 
-        onToken('tok2'); // This should hit line 197 now because signal is aborted
+        eventBus.emit('agent:token', { token: 'tok2', type: 'content' });
 
         if (signal?.aborted) {
           throw new Error('AbortError');
@@ -520,7 +518,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       getChatWebviewContent: () => '',
       vscodeApi,
       fileReader: createMockFileContentReader(),
-      eventBus: new EventBus()
+      eventBus
     });
 
     provider.resolveWebviewView(webviewView);
@@ -646,6 +644,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const webview = createMockWebview();
     const webviewView = createMockWebviewView(webview, 'X');
 
+    const eventBus = new EventBus();
+
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       providerAccessor,
@@ -665,7 +665,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       getChatWebviewContent: () => '',
       vscodeApi,
       fileReader: createMockFileContentReader(),
-      eventBus: new EventBus()
+      eventBus
     });
 
     provider.resolveWebviewView(webviewView);

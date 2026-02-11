@@ -1,6 +1,7 @@
 import fetch from "node-fetch";
 import { log } from "../logger.js";
 import { ChatMessage , IPrompt, ILlmProvider } from "../types.js";
+import { IEventBus } from "../utils/eventBus.js";
 import { LLM_MESSAGES } from "../constants/messages.js";
 
 type GeminiResponse = {
@@ -14,9 +15,11 @@ type GeminiResponse = {
 export class GeminiProvider implements ILlmProvider {
   private apiKey: string;
   private model: string;
+  private eventBus: IEventBus;
 
-  constructor(apiKey: string, model = "gemini-1.5-flash-latest") {
+  constructor(apiKey: string, eventBus: IEventBus, model = "gemini-1.5-flash-latest") {
     this.apiKey = apiKey;
+    this.eventBus = eventBus;
     this.model = model;
   }
 
@@ -49,7 +52,7 @@ export class GeminiProvider implements ILlmProvider {
     return { role: "assistant", content };
   }
 
-  async queryStream(prompt: IPrompt, onToken: (token: string) => void, _tools?: any, signal?: AbortSignal): Promise<ChatMessage | null> {
+  async queryStream(prompt: IPrompt, _tools?: any, signal?: AbortSignal): Promise<ChatMessage | null> {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:streamGenerateContent?key=${this.apiKey}&alt=sse`;
 
     const body = {
@@ -91,7 +94,7 @@ export class GeminiProvider implements ILlmProvider {
                 const parts = text.split(/(\s+)/);
                 for (const part of parts) {
                   if (part) {
-                    onToken(part);
+                    this.eventBus.emit('agent:token', { token: part, type: 'content' });
                   }
                 }
               }
@@ -116,7 +119,7 @@ export class GeminiProvider implements ILlmProvider {
               const parts = text.split(/(\s+)/);
               for (const part of parts) {
                 if (part) {
-                  onToken(part);
+                  this.eventBus.emit('agent:token', { token: part, type: 'content' });
                 }
               }
             }

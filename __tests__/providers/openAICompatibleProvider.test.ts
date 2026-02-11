@@ -1,5 +1,5 @@
 import { OpenAICompatibleProvider } from "../../src/providers/openAICompatibleProvider.js";
-import { ChatHistory, ChatMessage, IAnonymizer, IPrompt, IHttpClient, IHttpResponse, ToolDefinition } from "../../src/types.js";
+import { ChatHistory, ChatMessage, IAnonymizer, IPrompt, IHttpClient, IHttpResponse, ToolDefinition, IEventBus } from "../../src/types.js";
 import { SimpleWordAnonymizer } from "../../src/anonymizer/simpleWordAnonymizer.js";
 import { ShannonEntropyCalculator } from "../../src/utils/shannonEntropyCalculator.js";
 import { jest } from "@jest/globals";
@@ -43,6 +43,7 @@ async function* createStream(chunks: string[]): AsyncIterable<any> {
 
 describe("OpenAICompatibleProvider (Mocked)", () => {
   let mockHttpClient: jest.Mocked<IHttpClient>;
+  let mockEventBus: jest.Mocked<IEventBus>;
   const endpoint = "http://example.com";
   const apiKey = "test-key";
   const model = "test-model";
@@ -51,6 +52,13 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
     mockHttpClient = {
       post: jest.fn<any>(),
     };
+    mockEventBus = {
+      on: jest.fn<any>(),
+      once: jest.fn<any>(),
+      off: jest.fn<any>(),
+      emit: jest.fn<any>(),
+      removeAllListeners: jest.fn<any>(),
+    };
   });
 
   it("should not get a trimmed response from the query method", async () => {
@@ -58,11 +66,11 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       json: { choices: [{ message: { content: "  Hello World  " } }] }
     }));
 
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
     const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
     const response = await provider.query(prompt);
 
-    expect(response).toEqual({ role: "assistant", content: "  Hello World  ", tool_calls: undefined });
+    expect(response).toEqual({ role: "assistant", content: "  Hello World  ", tool_calls: undefined, reasoning: undefined });
     expect(mockHttpClient.post).toHaveBeenCalledWith(endpoint, expect.objectContaining({
       headers: expect.objectContaining({ Authorization: `Bearer ${apiKey}` })
     }));
@@ -77,13 +85,13 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       ])
     }));
 
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
     const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
-    const tokens: string[] = [];
-    const response = await provider.queryStream(prompt, (token) => tokens.push(token));
+    const response = await provider.queryStream(prompt);
 
-    expect(tokens).toEqual(["Hello", " World"]);
-    expect(response).toEqual({ role: "assistant", content: "Hello World", tool_calls: undefined });
+    expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "Hello", type: "content" });
+    expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: " World", type: "content" });
+    expect(response).toEqual({ role: "assistant", content: "Hello World", tool_calls: undefined, reasoning: undefined });
   });
 
   it("should handle tools in query", async () => {
@@ -91,12 +99,13 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       json: { choices: [{ message: { content: "ok" } }] }
     }));
 
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
     const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
     const tools: ToolDefinition[] = [{ name: "test_tool", description: "test", parameters: { type: "object", properties: {} } }];
     await provider.query(prompt, tools);
 
-    const callArgs = mockHttpClient.post.mock.calls[0][1] as any;
+    const callArgs = mockHttpClient.post.mock.calls[0][1];
+    if (!callArgs) { throw new Error("post not called"); }
     const body = JSON.parse(callArgs.body);
     expect(body.tools).toHaveLength(1);
     expect(body.tools[0].function.name).toBe("test_tool");
@@ -114,13 +123,14 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
         json: { choices: [{ message: { content: "ok" } }] }
       }));
 
-      const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer });
+      const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer, eventBus: mockEventBus });
       const prompt = new TestPrompt([
         { role: "user", content: "this is a secret" },
       ]);
       await provider.query(prompt);
 
-      const callArgs = mockHttpClient.post.mock.calls[0][1] as any;
+      const callArgs = mockHttpClient.post.mock.calls[0][1];
+      if (!callArgs) { throw new Error("post not called"); }
       const body = JSON.parse(callArgs.body);
       expect(body.messages[0].content).not.toContain("secret");
       expect(body.messages[0].content).toContain("ANON_");
@@ -131,7 +141,7 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
         json: { choices: [{ message: { content: "ok, I will keep the ANON_0 safe" } }] }
       }));
 
-      const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer });
+      const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer, eventBus: mockEventBus });
       const prompt = new TestPrompt([{ role: "user", content: "this is a secret" }]);
       const response = await provider.query(prompt);
       expect(response?.content).toBe("ok, I will keep the secret safe");
@@ -146,11 +156,11 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
         ])
       }));
 
-      const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer });
+      const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer, eventBus: mockEventBus });
       const prompt = new TestPrompt([{ role: "user", content: "this is a secret" }]);
-      const tokens: string[] = [];
-      await provider.queryStream(prompt, (token) => tokens.push(token));
-      expect(tokens.join("")).toBe("ok, I will keep the secret safe");
+      await provider.queryStream(prompt);
+      expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "ok, I will keep the ", type: "content" });
+      expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "secret safe", type: "content" });
     });
   });
 
@@ -163,9 +173,9 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       ])
     }));
 
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
     const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
-    const response = await provider.queryStream(prompt, () => { });
+    const response = await provider.queryStream(prompt);
     expect(response?.tool_calls).toHaveLength(1);
     expect(response?.tool_calls?.[0].function.name).toBe("test_tool");
     expect(response?.tool_calls?.[0].function.arguments).toBe('{"arg":"val"}');
@@ -181,10 +191,10 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       ])
     }));
 
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
-    const tokens: string[] = [];
-    await provider.queryStream(new TestPrompt([]), (token) => tokens.push(token));
-    expect(tokens.join("")).toBe("ok!");
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
+    await provider.queryStream(new TestPrompt([]));
+    expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "ok", type: "content" });
+    expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "!", type: "content" });
   });
 
   it("should handle malformed stream chunks that fail zod validation (choices not an array)", async () => {
@@ -196,10 +206,9 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       ])
     }));
 
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
-    const tokens: string[] = [];
-    await provider.queryStream(new TestPrompt([]), (token) => tokens.push(token));
-    expect(tokens.join("")).toBe("ok");
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
+    await provider.queryStream(new TestPrompt([]));
+    expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "ok", type: "content" });
   });
 
   it("should handle chunks with missing delta", async () => {
@@ -211,16 +220,15 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       ])
     }));
 
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
-    const tokens: string[] = [];
-    await provider.queryStream(new TestPrompt([]), (token) => tokens.push(token));
-    expect(tokens.join("")).toBe("ok");
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
+    await provider.queryStream(new TestPrompt([]));
+    expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "ok", type: "content" });
   });
 
   it("should throw an error if response body is null in queryStream", async () => {
     mockHttpClient.post.mockResolvedValue(createMockResponse({ body: null }));
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
-    await expect(provider.queryStream(new TestPrompt([]), () => { }))
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
+    await expect(provider.queryStream(new TestPrompt([])))
       .rejects.toThrow("Response body is null");
   });
 
@@ -232,8 +240,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       ])
     }));
 
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
-    const response = await provider.queryStream(new TestPrompt([]), () => { });
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
+    const response = await provider.queryStream(new TestPrompt([]));
     expect(response?.tool_calls).toBeUndefined();
   });
 
@@ -246,8 +254,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       ])
     }));
 
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
-    const response = await provider.queryStream(new TestPrompt([]), () => { });
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
+    const response = await provider.queryStream(new TestPrompt([]));
     
     // It should have the content of the LAST tool call for that index, not merged
     expect(response?.tool_calls).toHaveLength(1);
@@ -257,7 +265,7 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
   });
 
   it("should handle streaming deanonymization with buffered tokens", async () => {
-    const anonymizer = {
+    const anonymizer: IAnonymizer = {
       anonymize: (text: string) => text.replace("secret", "ANON_0"),
       deanonymize: (text: string) => text.replace("ANON_0", "secret"),
       createStreamingDeanonymizer: () => ({
@@ -278,14 +286,15 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       ])
     }));
 
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer: anonymizer as any });
-    const tokens: string[] = [];
-    await provider.queryStream(new TestPrompt([]), (token) => tokens.push(token));
-    expect(tokens.join("")).toBe("secret");
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer, eventBus: mockEventBus });
+    await provider.queryStream(new TestPrompt([]));
+    expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "secret", type: "content" });
   });
 
   it("should flush deanonymizer on [DONE]", async () => {
-    const anonymizer = {
+    const anonymizer: IAnonymizer = {
+      anonymize: jest.fn<any>(),
+      deanonymize: jest.fn<any>(),
       createStreamingDeanonymizer: () => ({
         process: (chunk: string) => ({ processed: "", buffer: chunk }),
         flush: () => "flushed"
@@ -299,14 +308,15 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       ])
     }));
 
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer: anonymizer as any });
-    const tokens: string[] = [];
-    await provider.queryStream(new TestPrompt([]), (token) => tokens.push(token));
-    expect(tokens).toContain("flushed");
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer, eventBus: mockEventBus });
+    await provider.queryStream(new TestPrompt([]));
+    expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "flushed", type: "content" });
   });
 
   it("should handle deanonymizer flush returning empty", async () => {
-    const anonymizer = {
+    const anonymizer: IAnonymizer = {
+      anonymize: jest.fn<any>(),
+      deanonymize: jest.fn<any>(),
       createStreamingDeanonymizer: () => ({
         process: (chunk: string) => ({ processed: chunk, buffer: "" }),
         flush: () => ""
@@ -320,10 +330,9 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       ])
     }));
 
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer: anonymizer as any });
-    const tokens: string[] = [];
-    await provider.queryStream(new TestPrompt([]), (token) => tokens.push(token));
-    expect(tokens).toEqual(["ok"]);
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer, eventBus: mockEventBus });
+    await provider.queryStream(new TestPrompt([]));
+    expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "ok", type: "content" });
   });
 
   it("should throw an error for query on API error (object)", async () => {
@@ -331,7 +340,7 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       status: 500,
       json: { error: { message: "Internal Server Error", code: 500 } }
     }));
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
     await expect(provider.query(new TestPrompt([]))).rejects.toThrow("OpenAI API error: Internal Server Error");
   });
 
@@ -340,7 +349,7 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       status: 500,
       json: { error: "Internal Server Error" }
     }));
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
     await expect(provider.query(new TestPrompt([]))).rejects.toThrow("OpenAI API error: Internal Server Error");
   });
 
@@ -350,7 +359,7 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       status: 200,
       statusText: "OK"
     }));
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
     await expect(provider.query(new TestPrompt([]))).rejects.toThrow("Failed to parse response as JSON: 200 OK");
   });
 
@@ -358,7 +367,7 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
     mockHttpClient.post.mockResolvedValue(createMockResponse({
       json: { }
     }));
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
     await expect(provider.query(new TestPrompt([]))).rejects.toThrow("Unexpected OpenAI API response: Missing 'choices' field.");
   });
 
@@ -366,7 +375,7 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
     mockHttpClient.post.mockResolvedValue(createMockResponse({
       json: { choices: [{ message: { content: 123 } }] } // content should be string
     }));
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
     await expect(provider.query(new TestPrompt([]))).rejects.toThrow("Malformed OpenAI API response");
   });
 
@@ -374,7 +383,7 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
     mockHttpClient.post.mockResolvedValue(createMockResponse({
       json: { choices: [{ }] }
     }));
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
     const response = await provider.query(new TestPrompt([]));
     expect(response).toBeNull();
   });
@@ -389,8 +398,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       ])
     }));
 
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
-    const response = await provider.queryStream(new TestPrompt([]), () => { });
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
+    const response = await provider.queryStream(new TestPrompt([]));
     expect(response?.tool_calls?.[0].id).toBe("call_1_updated");
   });
 
@@ -404,8 +413,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       ])
     }));
 
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
-    const response = await provider.queryStream(new TestPrompt([]), () => { });
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
+    const response = await provider.queryStream(new TestPrompt([]));
     expect(response?.tool_calls?.[0].function.arguments).toBe('{"a":1,"b":2}');
   });
 
@@ -418,8 +427,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       ])
     }));
 
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
-    const response = await provider.queryStream(new TestPrompt([]), () => { });
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
+    const response = await provider.queryStream(new TestPrompt([]));
     expect(response?.content).toBe("");
   });
 
@@ -429,8 +438,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       status: 500,
       text: "Internal Server Error"
     }));
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
-    await expect(provider.queryStream(new TestPrompt([]), () => { })).rejects.toThrow("OpenAI API error: 500 - Internal Server Error");
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
+    await expect(provider.queryStream(new TestPrompt([]))).rejects.toThrow("OpenAI API error: 500 - Internal Server Error");
   });
 
   it("should finish parseStream even if [DONE] is missing", async () => {
@@ -440,8 +449,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       ])
     }));
 
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
-    const response = await provider.queryStream(new TestPrompt([]), () => { });
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
+    const response = await provider.queryStream(new TestPrompt([]));
     expect(response?.content).toBe("ok");
   });
 
@@ -449,14 +458,15 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
     mockHttpClient.post.mockResolvedValue(createMockResponse({
       json: { choices: [{ message: { content: "ok" } }] }
     }));
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
     const prompt = new TestPrompt([
       { role: "system", content: "You are a bot" },
       { role: "tool", content: "result", tool_call_id: "123" }
     ]);
     await provider.query(prompt);
     
-    const callArgs = mockHttpClient.post.mock.calls[0][1] as any;
+    const callArgs = mockHttpClient.post.mock.calls[0][1];
+    if (!callArgs) { throw new Error("post not called"); }
     const body = JSON.parse(callArgs.body);
     expect(body.messages).toHaveLength(2);
     expect(body.messages[1].tool_call_id).toBe("123");
@@ -471,8 +481,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       ])
     }));
 
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
-    const response = await provider.queryStream(new TestPrompt([]), () => { });
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
+    const response = await provider.queryStream(new TestPrompt([]));
     expect(response?.content).toBe("ok");
   });
   
@@ -485,8 +495,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       ])
     }));
 
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
-    const response = await provider.queryStream(new TestPrompt([]), () => { });
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
+    const response = await provider.queryStream(new TestPrompt([]));
     expect(response?.content).toBe("ok");
   });
 
@@ -495,7 +505,7 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       status: 500,
       json: { error: {} }
     }));
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
     await expect(provider.query(new TestPrompt([]))).rejects.toThrow('OpenAI API error: {}');
   });
 
@@ -507,15 +517,27 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       ])
     }));
 
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model });
-    const response = await provider.queryStream(new TestPrompt([]), () => { });
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
+    const response = await provider.queryStream(new TestPrompt([]));
     expect(response?.tool_calls?.[0].function.name).toBe("");
     expect(response?.tool_calls?.[0].function.arguments).toBe("");
   });
 
-  it("should return null if parseStream returns no content and no tool calls", async () => {
-    // This is hard to trigger with current logic because createAssistantMessage always returns a ChatMessage
-    // and parseStream always returns it. 
-    // But let's see if we can cover all paths in parseStream.
+  it("should handle reasoning tokens in queryStream", async () => {
+    mockHttpClient.post.mockResolvedValue(createMockResponse({
+      body: createStream([
+        'data: {"choices":[{"delta":{"reasoning":"I am thinking"}}]}\n\n',
+        'data: {"choices":[{"delta":{"content":"Hello"}}]}\n\n',
+        'data: [DONE]\n\n'
+      ])
+    }));
+
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
+    const response = await provider.queryStream(new TestPrompt([]));
+
+    expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "I am thinking", type: "reasoning" });
+    expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "Hello", type: "content" });
+    expect(response?.reasoning).toBe("I am thinking");
+    expect(response?.content).toBe("Hello");
   });
 });
