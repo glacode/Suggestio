@@ -57,7 +57,7 @@ export class ChatWebviewViewProvider {
     // `_view` holds a reference to the `IWebviewView` object provided by VS Code
     // when the view is resolved. This allows the provider to interact with the webview.
     public _view?: IWebviewView;
-    private readonly _logicHandler: IChatAgent; // Stores the handler for chat backend logic.
+    private readonly _chatAgent: IChatAgent; // Stores the handler for chat backend logic.
     private readonly _chatHistoryManager: IChatHistoryManager; // Stores the chat history manager.
     private readonly _buildContext: IContextBuilder; // Stores the context builder instance.
     private readonly _extensionContext: IExtensionContextMinimal; // Stores the extension context.
@@ -76,7 +76,7 @@ export class ChatWebviewViewProvider {
     constructor({ extensionContext, providerAccessor, logicHandler, chatHistoryManager, buildContext, getChatWebviewContent, vscodeApi, fileReader, eventBus, anonymizer }: IChatWebviewViewProviderArgs) {
         this._extensionContext = extensionContext;
         this._providerAccessor = providerAccessor;
-        this._logicHandler = logicHandler;
+        this._chatAgent = logicHandler;
         this._chatHistoryManager = chatHistoryManager;
         this._buildContext = buildContext;
         this._getChatWebviewContent = getChatWebviewContent;
@@ -198,7 +198,7 @@ export class ChatWebviewViewProvider {
                     const prompt = new ChatPrompt(this._chatHistoryManager.getChatHistory(), context);
                     // Call the `logicHandler` to fetch a streaming chat response.
                     // The `onToken` callback is invoked for each partial token received from the LLM.
-                    await this._logicHandler.run(prompt, (token: string) => {
+                    await this._chatAgent.run(prompt, (token: string) => {
                         // Check if request was cancelled
                         if (this._abortController?.signal.aborted) {
                             return;
