@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { log } from "../logger.js";
+import { ILogger } from "../logger.js";
 import { ChatMessage, IAnonymizer, IPrompt, ILlmProvider, ToolDefinition, ToolCall, IStreamingDeanonymizer, IHttpClient, IHttpResponse } from "../types.js";
 import { IEventBus } from "../utils/eventBus.js";
 import { ToolCallSchema } from "../schemas.js";
@@ -172,6 +172,8 @@ export interface IOpenAICompatibleProviderArgs {
   model: string;
   /** The event bus to emit token events. */
   eventBus: IEventBus;
+  /** The logger instance. */
+  logger: ILogger;
   /** Optional anonymizer to protect sensitive data in user messages. */
   anonymizer?: IAnonymizer;
 }
@@ -182,6 +184,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
   private apiKey: string;
   private model: string;
   private eventBus: IEventBus;
+  private logger: ILogger;
   private anonymizer?: IAnonymizer;
 
   /**
@@ -195,6 +198,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     apiKey,
     model,
     eventBus,
+    logger,
     anonymizer,
   }: IOpenAICompatibleProviderArgs) {
     this.httpClient = httpClient;
@@ -202,6 +206,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     this.apiKey = apiKey;
     this.model = model;
     this.eventBus = eventBus;
+    this.logger = logger;
     this.anonymizer = anonymizer;
   }
 
@@ -357,7 +362,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     signal?: AbortSignal
   ): Promise<ChatMessage | null> {
     const body = this.createRequestBody(prompt, tools, true);
-    log(`OpenAI Request Body: ${JSON.stringify(body, null, 2)}`);
+    this.logger.debug(`OpenAI Request Body: ${JSON.stringify(body, null, 2)}`);
 
     const response = await this.post(body, signal);
 
@@ -366,11 +371,11 @@ export class OpenAICompatibleProvider implements ILlmProvider {
       throw new Error(LLM_MESSAGES.OPENAI_ERROR(response.status, errText));
     }
 
-    log(LLM_LOGS.RECEIVING_STREAM);
+    this.logger.info(LLM_LOGS.RECEIVING_STREAM);
     const result = await this.parseStream(response);
-    log(`Consolidated content length: ${result.content.length}`);
+    this.logger.debug(`Consolidated content length: ${result.content.length}`);
     if (result.reasoning) {
-      log(`Consolidated reasoning length: ${result.reasoning.length}`);
+      this.logger.debug(`Consolidated reasoning length: ${result.reasoning.length}`);
     }
     return result;
   }
@@ -397,7 +402,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
 
     for await (const chunk of response.body) {
       const chunkStr = chunk.toString();
-      log(LLM_LOGS.STREAM_CHUNK_RECEIVED(chunkStr.length));
+      this.logger.debug(LLM_LOGS.STREAM_CHUNK_RECEIVED(chunkStr.length));
       const { lines, newBuffer } = this.processChunk(chunkStr, buffer);
       buffer = newBuffer;
 
@@ -409,7 +414,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
         );
 
         if (deltaResult === null) {
-          log(LLM_LOGS.STREAM_DONE);
+          this.logger.debug(LLM_LOGS.STREAM_DONE);
           fullContent += this.flushDeanonymizer(streamingDeanonymizer);
           return this.createAssistantMessage(fullContent, fullReasoning, toolCalls);
         }
@@ -419,7 +424,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
       }
     }
 
-    log(LLM_LOGS.STREAM_FINISHED);
+    this.logger.info(LLM_LOGS.STREAM_FINISHED);
     fullContent += this.flushDeanonymizer(streamingDeanonymizer);
     return this.createAssistantMessage(fullContent, fullReasoning, toolCalls);
   }
@@ -459,7 +464,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     }
 
     const data = line.substring(6).trim();
-    log(LLM_LOGS.STREAM_DATA_RECEIVED(data));
+    this.logger.debug(LLM_LOGS.STREAM_DATA_RECEIVED(data));
     if (data === "[DONE]") {
       return null;
     }
@@ -468,7 +473,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
       const rawJson = JSON.parse(data);
       const result = OpenAIStreamChunkSchema.safeParse(rawJson);
       if (!result.success) {
-        log(LLM_MESSAGES.MALFORMED_RESPONSE(`${result.error.message}. Chunk: ${data}`));
+        this.logger.error(LLM_MESSAGES.MALFORMED_RESPONSE(`${result.error.message}. Chunk: ${data}`));
         return { content: "", reasoning: "" };
       }
       const json = result.data;
@@ -476,7 +481,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
       const delta = choice?.delta;
 
       if (choice?.finish_reason) {
-        log(LLM_LOGS.STREAM_FINISH_REASON(choice.finish_reason));
+        this.logger.debug(LLM_LOGS.STREAM_FINISH_REASON(choice.finish_reason));
       }
 
       if (!delta) {
@@ -486,7 +491,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
       this.handleToolCallsDelta(delta, toolCalls);
       return this.handleContentDelta(delta, streamingDeanonymizer);
     } catch (e) {
-      log(LLM_MESSAGES.PARSE_CHUNK_ERROR(data));
+      this.logger.error(LLM_MESSAGES.PARSE_CHUNK_ERROR(data));
       return { content: "", reasoning: "" };
     }
   }

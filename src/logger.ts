@@ -90,6 +90,17 @@ export function setLogLevel(level: LogLevel) {
   defaultLogger.setLogLevel(level);
 }
 
+export function parseLogLevel(level: string | undefined): LogLevel {
+  switch (level?.toLowerCase()) {
+    case 'debug': return LogLevel.Debug;
+    case 'info': return LogLevel.Info;
+    case 'warn': return LogLevel.Warn;
+    case 'error': return LogLevel.Error;
+    case 'silent': return LogLevel.Silent;
+    default: return LogLevel.Info;
+  }
+}
+
 // 👇 Only used in tests to clear the singleton
 export function __resetLogger() {
   defaultLogger.__reset();

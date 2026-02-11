@@ -5,6 +5,7 @@ import { ShannonEntropyCalculator } from "../../src/utils/shannonEntropyCalculat
 import { EventBus } from "../../src/utils/eventBus.js";
 import * as http from "http";
 import { NodeFetchClient } from "../../src/utils/httpClient.js";
+import { defaultLogger } from "../../src/logger.js";
 
 const entropyCalculator = new ShannonEntropyCalculator();
 const httpClient = new NodeFetchClient();
@@ -50,6 +51,7 @@ describe("Inline Completion Anonymization", () => {
             apiKey: "key",
             model: "model",
             eventBus,
+            logger: defaultLogger,
             anonymizer,
         });
 
@@ -76,6 +78,7 @@ describe("Inline Completion Anonymization", () => {
             apiKey: "key",
             model: "model",
             eventBus,
+            logger: defaultLogger,
             anonymizer,
         });
 

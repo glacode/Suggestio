@@ -891,6 +891,7 @@ export interface Config {
   llmProviderForInlineCompletion?: ILlmProvider;
   llmProviderForChat?: ILlmProvider;
   maxAgentIterations?: number;
+  logLevel?: string;
 }
 
 export interface IConfigContainer {

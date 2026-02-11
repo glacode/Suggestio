@@ -1,5 +1,5 @@
 import fetch from "node-fetch";
-import { log } from "../logger.js";
+import { ILogger } from "../logger.js";
 import { ChatMessage , IPrompt, ILlmProvider } from "../types.js";
 import { IEventBus } from "../utils/eventBus.js";
 import { LLM_MESSAGES } from "../constants/messages.js";
@@ -16,10 +16,12 @@ export class GeminiProvider implements ILlmProvider {
   private apiKey: string;
   private model: string;
   private eventBus: IEventBus;
+  private logger: ILogger;
 
-  constructor(apiKey: string, eventBus: IEventBus, model = "gemini-1.5-flash-latest") {
+  constructor(apiKey: string, eventBus: IEventBus, logger: ILogger, model = "gemini-1.5-flash-latest") {
     this.apiKey = apiKey;
     this.eventBus = eventBus;
+    this.logger = logger;
     this.model = model;
   }
 
@@ -43,7 +45,7 @@ export class GeminiProvider implements ILlmProvider {
 
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     const data = (await res.json()) as GeminiResponse;
-    log("Response:" + JSON.stringify(data, null, 2));
+    this.logger.info("Response:" + JSON.stringify(data, null, 2));
 
     const content = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
     if (content === undefined) {
@@ -99,7 +101,7 @@ export class GeminiProvider implements ILlmProvider {
                 }
               }
             } catch (e) {
-              log(LLM_MESSAGES.PARSE_CHUNK_ERROR(jsonStr));
+              this.logger.error(LLM_MESSAGES.PARSE_CHUNK_ERROR(jsonStr));
             }
           }
         }
@@ -124,7 +126,7 @@ export class GeminiProvider implements ILlmProvider {
               }
             }
           } catch (e) {
-            log(LLM_MESSAGES.PARSE_CHUNK_ERROR(jsonStr));
+            this.logger.error(LLM_MESSAGES.PARSE_CHUNK_ERROR(jsonStr));
           }
         }
       }

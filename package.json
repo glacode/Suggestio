@@ -201,6 +201,18 @@
                     "type": "number",
                     "default": 5,
                     "description": "Maximum number of iterations the agent can perform for a single request."
+                },
+                "suggestio.logLevel": {
+                    "type": "string",
+                    "enum": [
+                        "Debug",
+                        "Info",
+                        "Warn",
+                        "Error",
+                        "Silent"
+                    ],
+                    "default": "Info",
+                    "description": "The level of detail for the logs."
                 }
             }
         }

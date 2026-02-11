@@ -2,7 +2,7 @@ import { getAnonymizer } from '../anonymizer/anonymizer.js';
 import { getActiveProvider } from '../providers/providerFactory.js';
 import { IConfigContainer, Config, IProviderConfig, IHttpClient } from '../types.js';
 import { IEventBus } from '../utils/eventBus.js';
-import { log } from '../logger.js';
+import { ILogger, defaultLogger } from '../logger.js';
 
 export interface SecretManager {
     getOrRequestAPIKey(providerKey: string): Promise<string>;
@@ -13,30 +13,32 @@ class ConfigProcessor {
     private _secretManager: SecretManager | undefined;
     private _eventBus: IEventBus | undefined;
     private _httpClient: IHttpClient | undefined;
+    private _logger: ILogger | undefined;
 
     constructor() {
     }
 
-    public init(config: Config, secretManager: SecretManager, eventBus: IEventBus, httpClient: IHttpClient) {
+    public init(config: Config, secretManager: SecretManager, eventBus: IEventBus, httpClient: IHttpClient, logger: ILogger = defaultLogger) {
         this._config = config;
         this._secretManager = secretManager;
         this._eventBus = eventBus;
         this._httpClient = httpClient;
+        this._logger = logger;
 
         // Remove existing listeners to avoid duplicates if init is called multiple times
         this._eventBus.removeAllListeners('modelChanged');
         this._eventBus.on('modelChanged', (modelName: string) => {
-            log('modelChanged event received for model: ' + modelName);
+            this._logger?.info('modelChanged event received for model: ' + modelName);
             this.updateActiveProvider(modelName);
         });
 
         // Listen for inline completion toggles and update the in-memory config accordingly
         this._eventBus.removeAllListeners('inlineCompletionToggled');
         this._eventBus.on('inlineCompletionToggled', (enabled: boolean) => {
-            log('inlineCompletionToggled event received: ' + enabled);
+            this._logger?.info('inlineCompletionToggled event received: ' + enabled);
             if (this._config) {
                 this._config.enableInlineCompletion = enabled;
-                log('config updated. enableInlineCompletion: ' + this._config.enableInlineCompletion);
+                this._logger?.info('config updated. enableInlineCompletion: ' + this._config.enableInlineCompletion);
             }
         });
     }
@@ -91,7 +93,7 @@ class ConfigProcessor {
     }
 
     private async updateProviders(config: Config) {
-        if (!this._eventBus || !this._httpClient) {
+        if (!this._eventBus || !this._httpClient || !this._logger) {
             throw new Error('ConfigProcessor is not initialized');
         }
 
@@ -108,12 +110,12 @@ class ConfigProcessor {
         // `getActiveProvider` can return null; `inlineCompletionProvider` expects
         // `llmProvider | undefined`, so normalize null -> undefined to satisfy
         // the TypeScript type.
-        config.llmProviderForInlineCompletion = getActiveProvider(config, this._httpClient, this._eventBus, config.anonymizerInstance) ?? undefined;
-        config.llmProviderForChat = getActiveProvider(config, this._httpClient, this._eventBus, config.anonymizerInstance) ?? undefined;
+        config.llmProviderForInlineCompletion = getActiveProvider(config, this._httpClient, this._eventBus, this._logger, config.anonymizerInstance) ?? undefined;
+        config.llmProviderForChat = getActiveProvider(config, this._httpClient, this._eventBus, this._logger, config.anonymizerInstance) ?? undefined;
     }
 
     private async updateActiveProvider(modelName: string) {
-        if (!this._config) {
+        if (!this._config || !this._logger) {
             return;
         }
 
@@ -124,7 +126,7 @@ class ConfigProcessor {
             const [providerId] = providerEntry;
             this._config.activeProvider = providerId;
             await this.updateProviders(this._config);
-            log('config updated. activeProvider: ' + this._config.activeProvider);
+            this._logger.info('config updated. activeProvider: ' + this._config.activeProvider);
         }
     }
 }

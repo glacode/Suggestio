@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import * as vscode from 'vscode';
-import { initLogger, log, __resetLogger, LogLevel, setLogLevel } from '../src/logger.js';
+import { initLogger, log, __resetLogger, LogLevel, setLogLevel, parseLogLevel } from '../src/logger.js';
 
 describe('logger', () => {
   let mockOutputChannel: vscode.LogOutputChannel;
@@ -82,5 +82,15 @@ describe('logger', () => {
     expect(consoleSpy).toHaveBeenCalledWith(
       expect.stringMatching(/\[Suggestio\] \[INFO\] this should be logged/)
     );
+  });
+
+  it('should parse log level strings correctly', () => {
+    expect(parseLogLevel('debug')).toBe(LogLevel.Debug);
+    expect(parseLogLevel('INFO')).toBe(LogLevel.Info);
+    expect(parseLogLevel('Warn')).toBe(LogLevel.Warn);
+    expect(parseLogLevel('error')).toBe(LogLevel.Error);
+    expect(parseLogLevel('silent')).toBe(LogLevel.Silent);
+    expect(parseLogLevel('unknown')).toBe(LogLevel.Info);
+    expect(parseLogLevel(undefined)).toBe(LogLevel.Info);
   });
 });

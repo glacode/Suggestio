@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { initLogger, log, defaultLogger } from './logger.js';
+import { initLogger, log, defaultLogger, parseLogLevel } from './logger.js';
 import { readConfig } from './config/config.js';
 import { registerCompletionProvider } from './registrations/completionRegistration.js';
 import { registerCommands } from './registrations/commandRegistration.js';
@@ -108,8 +108,13 @@ export async function activate(context: vscode.ExtensionContext) {
     pathResolver
   );
   const vsCodeConfig = vscode.workspace.getConfiguration('suggestio');
+  
+  const logLevel = vsCodeConfig.get<string>('logLevel');
+  defaultLogger.setLogLevel(parseLogLevel(logLevel));
+
   const overrides = {
-    maxAgentIterations: vsCodeConfig.get<number>('maxAgentIterations')
+    maxAgentIterations: vsCodeConfig.get<number>('maxAgentIterations'),
+    logLevel: logLevel
   };
   const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, secretManager, eventBus, new NodeFetchClient(), overrides);
   // Initialize UI context for inline completion toggle (default true in config)

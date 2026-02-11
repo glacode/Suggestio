@@ -27,6 +27,7 @@ import {
     IWorkspaceProviderFull,
     IEventBus
 } from "../src/types.js";
+import { ILogger } from "../src/logger.js";
 import { jest } from "@jest/globals";
 import * as path from 'path';
 
@@ -117,6 +118,14 @@ export const createMockEventBus = (): jest.Mocked<IEventBus> => ({
     off: jest.fn<any>(),
     emit: jest.fn<any>(),
     removeAllListeners: jest.fn<any>(),
+});
+
+export const createMockLogger = (): jest.Mocked<ILogger> => ({
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    setLogLevel: jest.fn(),
 });
 
 export const createMockIgnoreManager = (): jest.Mocked<IIgnoreManager> => ({
