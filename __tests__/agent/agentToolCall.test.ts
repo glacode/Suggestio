@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
 import { IChatHistoryManager, ChatMessage, IPrompt, ChatHistory, ToolImplementation, ToolCall, IEventBus } from "../../src/types.js";
-import { FakeProvider, createDefaultConfig, createMockProviderConfig } from "../testUtils.js";
+import { FakeProvider, createDefaultConfig, createMockProviderConfig, createMockEventBus } from "../testUtils.js";
 import { AGENT_MESSAGES } from "../../src/constants/messages.js";
 
 describe("ChatResponder Tool Calling Integration", () => {
@@ -28,13 +28,7 @@ describe("ChatResponder Tool Calling Integration", () => {
         mockPrompt = {
             generateChatHistory: () => [{ role: 'user', content: 'What time is it?' }],
         };
-        mockEventBus = {
-            on: jest.fn<any>(),
-            once: jest.fn<any>(),
-            off: jest.fn<any>(),
-            emit: jest.fn<any>(),
-            removeAllListeners: jest.fn<any>(),
-        };
+        mockEventBus = createMockEventBus();
     });
 
     it("processes tool calls and recurses (Integration Smoke Test)", async () => {

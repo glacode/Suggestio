@@ -111,6 +111,14 @@ export const createMockProvider = (): jest.Mocked<ILlmProvider> => ({
     queryStream: jest.fn<(prompt: any, tools?: any, signal?: any) => Promise<ChatMessage | null>>(),
 });
 
+export const createMockEventBus = (): jest.Mocked<IEventBus> => ({
+    on: jest.fn<any>(),
+    once: jest.fn<any>(),
+    off: jest.fn<any>(),
+    emit: jest.fn<any>(),
+    removeAllListeners: jest.fn<any>(),
+});
+
 export const createMockIgnoreManager = (): jest.Mocked<IIgnoreManager> => ({
     shouldIgnore: jest.fn<(filePath: string) => Promise<boolean>>().mockResolvedValue(false),
 });

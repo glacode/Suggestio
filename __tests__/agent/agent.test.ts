@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
 import { IChatHistoryManager, ChatMessage, IPrompt, ToolImplementation, ToolCall, IEventBus } from "../../src/types.js";
-import { FakeProvider, createMockHistoryManager, createDefaultConfig } from "../testUtils.js";
+import { FakeProvider, createMockHistoryManager, createDefaultConfig, createMockEventBus } from "../testUtils.js";
 import { AGENT_MESSAGES } from "../../src/constants/messages.js";
 
 describe("Agent", () => {
@@ -20,13 +20,7 @@ describe("Agent", () => {
         mockPrompt = {
             generateChatHistory: () => [{ role: 'user', content: 'Hi' }],
         };
-        mockEventBus = {
-            on: jest.fn<any>(),
-            once: jest.fn<any>(),
-            off: jest.fn<any>(),
-            emit: jest.fn<any>(),
-            removeAllListeners: jest.fn<any>(),
-        };
+        mockEventBus = createMockEventBus();
     });
 
     it("runs a simple chat without tools", async () => {

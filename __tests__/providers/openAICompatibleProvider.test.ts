@@ -3,6 +3,7 @@ import { ChatHistory, ChatMessage, IAnonymizer, IPrompt, IHttpClient, IHttpRespo
 import { SimpleWordAnonymizer } from "../../src/anonymizer/simpleWordAnonymizer.js";
 import { ShannonEntropyCalculator } from "../../src/utils/shannonEntropyCalculator.js";
 import { jest } from "@jest/globals";
+import { createMockEventBus } from "../testUtils.js";
 
 const entropyCalculator = new ShannonEntropyCalculator();
 
@@ -52,13 +53,7 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
     mockHttpClient = {
       post: jest.fn<any>(),
     };
-    mockEventBus = {
-      on: jest.fn<any>(),
-      once: jest.fn<any>(),
-      off: jest.fn<any>(),
-      emit: jest.fn<any>(),
-      removeAllListeners: jest.fn<any>(),
-    };
+    mockEventBus = createMockEventBus();
   });
 
   it("should not get a trimmed response from the query method", async () => {
