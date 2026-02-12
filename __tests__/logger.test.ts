@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import * as vscode from 'vscode';
-import { initLogger, log, __resetLogger, LogLevel, setLogLevel, parseLogLevel } from '../src/logger.js';
+import { initLogger, __resetLogger, LogLevel, setLogLevel, parseLogLevel, defaultLogger } from '../src/logger.js';
 
 describe('logger', () => {
   let mockOutputChannel: vscode.LogOutputChannel;
@@ -53,7 +53,7 @@ describe('logger', () => {
 
   it('should log messages to output channel and console if initialized', () => {
     initLogger();
-    log('test message');
+    defaultLogger.info('test message');
 
     expect(mockOutputChannel.appendLine).toHaveBeenCalledWith(
       expect.stringMatching(/\[.*\] \[INFO\] test message/)
@@ -64,7 +64,7 @@ describe('logger', () => {
   });
 
   it('should log only to console if logger not initialized', () => {
-    log('console only');
+    defaultLogger.info('console only');
 
     expect(consoleSpy).toHaveBeenCalledWith(
       expect.stringMatching(/\[Suggestio\] \[INFO\] console only/)
@@ -74,11 +74,11 @@ describe('logger', () => {
 
   it('should respect log level', () => {
     setLogLevel(LogLevel.Error);
-    log('this should not be logged');
+    defaultLogger.info('this should not be logged');
     expect(consoleSpy).not.toHaveBeenCalled();
 
     setLogLevel(LogLevel.Info);
-    log('this should be logged');
+    defaultLogger.info('this should be logged');
     expect(consoleSpy).toHaveBeenCalledWith(
       expect.stringMatching(/\[Suggestio\] \[INFO\] this should be logged/)
     );

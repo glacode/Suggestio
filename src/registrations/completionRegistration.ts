@@ -3,11 +3,13 @@ import * as vscode from 'vscode';
 import { provideInlineCompletionItems } from '../completion/completionProvider.js';
 import { Config } from '../types.js';
 import { IgnoreManager } from '../chat/ignoreManager.js';
+import { ILogger } from '../logger.js';
 
 export function registerCompletionProvider(
   context: vscode.ExtensionContext,
   config: Config,
   ignoreManager: IgnoreManager,
+  logger: ILogger
 ) {
   const provider: vscode.InlineCompletionItemProvider = {
     provideInlineCompletionItems: async (doc, pos, _ctx, token) => {
@@ -17,6 +19,7 @@ export function registerCompletionProvider(
         ignoreManager,
         doc,
         pos,
+        logger,
         _ctx,
         token
       );

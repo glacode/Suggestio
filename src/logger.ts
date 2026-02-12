@@ -82,10 +82,6 @@ export function initLogger() {
   defaultLogger.init();
 }
 
-export function log(message: string) {
-  defaultLogger.info(message);
-}
-
 export function setLogLevel(level: LogLevel) {
   defaultLogger.setLogLevel(level);
 }

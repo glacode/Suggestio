@@ -1,7 +1,7 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
 import { provideInlineCompletionItems } from '../../src/completion/completionProvider.js';
 import { IPosition, ICancellationToken } from '../../src/types.js';
-import { createMockIgnoreManager, createMockProvider, createMockDocument, createDefaultConfig } from '../testUtils.js';
+import { createMockIgnoreManager, createMockProvider, createMockDocument, createDefaultConfig, createMockLogger } from '../testUtils.js';
 
 // Mock DebounceManager
 jest.mock('../../src/completion/debounceManager.js', () => ({
@@ -28,6 +28,8 @@ const mockCancellationToken: ICancellationToken = {
     isCancellationRequested: false,
 };
 
+const mockLogger = createMockLogger();
+
 describe('provideInlineCompletionItems', () => {
     beforeEach(() => {
         jest.clearAllMocks();
@@ -44,6 +46,7 @@ describe('provideInlineCompletionItems', () => {
             mockIgnoreManager,
             mockDocument,
             mockPosition,
+            mockLogger,
             mockCancellationToken
         );
 
@@ -61,6 +64,7 @@ describe('provideInlineCompletionItems', () => {
             mockIgnoreManager,
             mockDocument,
             mockPosition,
+            mockLogger,
             mockCancellationToken
         );
         
@@ -87,6 +91,7 @@ describe('provideInlineCompletionItems', () => {
             mockIgnoreManager,
             mockDocument,
             mockPosition,
+            mockLogger,
             mockCancellationToken
         );
         

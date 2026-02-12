@@ -1,14 +1,15 @@
 // completion/cancellation.ts
 import { ICancellationToken, IInlineCompletionList } from '../types.js';
-import { log } from '../logger.js';
+import { ILogger } from '../logger.js';
 
 export function handleCancellation(
   token: ICancellationToken | undefined,
   resolve: (items: IInlineCompletionList) => void,
-  stage: 'before' | 'after'
+  stage: 'before' | 'after',
+  logger: ILogger
 ): boolean {
   if (token?.isCancellationRequested) {
-    log(`❌ Suggestio: Request cancelled ${stage} LLM call`);
+    logger.info(`❌ Suggestio: Request cancelled ${stage} LLM call`);
     resolve({ items: [] });
     return true;
   }

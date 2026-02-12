@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { initLogger, log, defaultLogger, parseLogLevel } from './logger.js';
+import { initLogger, defaultLogger, parseLogLevel } from './logger.js';
 import { readConfig } from './config/config.js';
 import { registerCompletionProvider } from './registrations/completionRegistration.js';
 import { registerCommands } from './registrations/commandRegistration.js';
@@ -34,13 +34,13 @@ import { EXTENSION_MESSAGES, EXTENSION_LOGS } from './constants/messages.js';
 
 export async function activate(context: vscode.ExtensionContext) {
   initLogger();
-  log(EXTENSION_LOGS.ACTIVATE);
+  defaultLogger.info(EXTENSION_LOGS.ACTIVATE);
   vscode.window.showInformationMessage(EXTENSION_MESSAGES.ACTIVATED);
 
   const eventBus = new EventBus();
 
   eventBus.on(ANONYMIZATION_EVENT, (payload: IAnonymizationEventPayload) => {
-    log(EXTENSION_LOGS.ANONYMIZED(payload.original, payload.placeholder, payload.type));
+    defaultLogger.info(EXTENSION_LOGS.ANONYMIZED(payload.original, payload.placeholder, payload.type));
   });
 
   const workspaceProvider: IWorkspaceProvider = {
@@ -59,7 +59,7 @@ export async function activate(context: vscode.ExtensionContext) {
             return fs.readdirSync(path);
         }
       } catch (e) {
-          log(EXTENSION_LOGS.DIRECTORY_READ_ERROR(path, e));
+          defaultLogger.info(EXTENSION_LOGS.DIRECTORY_READ_ERROR(path, e));
       }
       return undefined;
     },
@@ -160,7 +160,7 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  registerCompletionProvider(context, configContainer.config, ignoreManager);
+  registerCompletionProvider(context, configContainer.config, ignoreManager, defaultLogger);
   registerCommands(
     context,
     configContainer.config,

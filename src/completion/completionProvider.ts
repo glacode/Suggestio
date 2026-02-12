@@ -12,7 +12,7 @@ import {
 import { buildPromptForInlineCompletion } from "./promptBuilder/promptBuilder.js";
 import { debounce } from "./debounceManager.js";
 import { handleCancellation } from "./cancellation.js";
-import { log } from "../logger.js";
+import { ILogger } from "../logger.js";
 
 const DEBOUNCE_DELAY_MS = 1000;
 
@@ -22,20 +22,21 @@ function createDebounceCallback(
   document: ITextDocument,
   position: IPosition,
   token: ICancellationToken | undefined,
-  resolve: (items: IInlineCompletionList) => void
+  resolve: (items: IInlineCompletionList) => void,
+  logger: ILogger
 ): () => void {
   return async function performCompletion() {
     if (!provider) {
       resolve({ items: [] });
       return;
     }
-    if (handleCancellation(token, resolve, "before")) {
+    if (handleCancellation(token, resolve, "before", logger)) {
       return;
     }
 
     const promptText = buildPromptForInlineCompletion(document, position);
-    log(`Using provider: ${config.activeProvider}`);
-    log("Prompt: " + promptText);
+    logger.info(`Using provider: ${config.activeProvider}`);
+    logger.debug("Prompt: " + promptText);
 
     const prompt = new UserPrompt(promptText);
 
@@ -43,7 +44,7 @@ function createDebounceCallback(
     provider
       .query(prompt)
       .then(async (response) => {
-        if (handleCancellation(token, resolve, "after")) {
+        if (handleCancellation(token, resolve, "after", logger)) {
           return;
         }
 
@@ -57,11 +58,11 @@ function createDebounceCallback(
           insertText: response.content, 
           range: { start: position, end: position } 
         };
-        log("✅ Suggestio: Returning completion to VS Code");
+        logger.info("✅ Suggestio: Returning completion to VS Code");
         resolve({ items: [item] });
       })
       .catch((err) => {
-        log("Error fetching completion: " + err);
+        logger.error("Error fetching completion: " + err);
         resolve({ items: [] });
       });
   };
@@ -73,6 +74,7 @@ export async function provideInlineCompletionItems(
   ignoreManager: IIgnoreManager, // Changed to interface
   document: ITextDocument,
   position: IPosition,
+  logger: ILogger,
   _context: unknown, // Use unknown if we don't need it
   token?: ICancellationToken
 ): Promise<IInlineCompletionList> {
@@ -82,7 +84,7 @@ export async function provideInlineCompletionItems(
 
   // Check if the document should be ignored
   if (document.uri.fsPath && await ignoreManager.shouldIgnore(document.uri.fsPath)) {
-    log(`Document ${document.uri.fsPath} is ignored. Skipping inline completion.`);
+    logger.info(`Document ${document.uri.fsPath} is ignored. Skipping inline completion.`);
     return { items: [] };
   }
 
@@ -92,7 +94,7 @@ export async function provideInlineCompletionItems(
       return;
     }
     debounce(
-      createDebounceCallback(provider, config, document, position, token, resolve),
+      createDebounceCallback(provider, config, document, position, token, resolve, logger),
       DEBOUNCE_DELAY_MS
     );
   });
