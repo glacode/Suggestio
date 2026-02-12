@@ -1,11 +1,11 @@
-import { 
-    ChatMessage, 
-    ILlmProvider, 
-    IPrompt, 
-    ToolDefinition, 
-    IUriLike, 
-    IVscodeApiLocal, 
-    IWebview, 
+import {
+    ChatMessage,
+    ILlmProvider,
+    IPrompt,
+    ToolDefinition,
+    IUriLike,
+    IVscodeApiLocal,
+    IWebview,
     IWebviewView,
     IDisposable,
     MessageFromTheExtensionToTheWebview,
@@ -25,23 +25,23 @@ import {
     IFileContentProvider,
     IDirectoryProvider,
     IWorkspaceProviderFull,
-    IEventBus
-} from "../src/types.js";
-import { ILogger } from "../src/logger.js";
+    IEventBus,
+    IConfigProvider
+} from "../src/types.js"; import { ILogger } from "../src/logger.js";
 import { jest } from "@jest/globals";
 import * as path from 'path';
 
 export class FakeProvider implements ILlmProvider {
     private callCount = 0;
-    public get queryCount() { return this.callCount; } 
-    constructor(private responses: (ChatMessage | null)[], private eventBus?: IEventBus) { } 
+    public get queryCount() { return this.callCount; }
+    constructor(private responses: (ChatMessage | null)[], private eventBus?: IEventBus) { }
 
-    async query (_prompt: IPrompt, _tools?: ToolDefinition[], signal?: AbortSignal): Promise<ChatMessage | null> {
+    async query(_prompt: IPrompt, _tools?: ToolDefinition[], signal?: AbortSignal): Promise<ChatMessage | null> {
         if (signal?.aborted) { throw new Error("Aborted"); }
         return this.getNextResponse();
     }
 
-    async queryStream (_prompt: IPrompt, _tools?: ToolDefinition[], signal?: AbortSignal): Promise<ChatMessage | null> {
+    async queryStream(_prompt: IPrompt, _tools?: ToolDefinition[], signal?: AbortSignal): Promise<ChatMessage | null> {
         if (signal?.aborted) { throw new Error("Aborted"); }
         const response = this.getNextResponse();
         if (response && response.content && this.eventBus) {
@@ -67,7 +67,7 @@ export const createMockUri = (path: string): IUriLike => ({
 });
 
 export const createMockVscodeApi = (
-    joinPathImpl: (base: IUriLike, ...paths: string[]) => IUriLike = 
+    joinPathImpl: (base: IUriLike, ...paths: string[]) => IUriLike =
         (_b, ..._p) => ({ fsPath: 'joined', toString: () => 'joined' })
 ): IVscodeApiLocal => ({
     Uri: {
@@ -189,6 +189,12 @@ export const createMockPathResolver = (): jest.Mocked<IPathResolver> => ({
     basename: jest.fn((p: string) => path.basename(p)),
     resolve: jest.fn((...paths: string[]) => path.resolve(...paths)),
     dirname: jest.fn((p: string) => path.dirname(p)),
+});
+
+export const createMockConfigProvider = (): jest.Mocked<IConfigProvider> => ({
+    getLogLevel: jest.fn(),
+    getMaxAgentIterations: jest.fn(),
+    onDidChangeConfiguration: jest.fn(),
 });
 
 export const createMockProviderConfig = (overrides: Partial<IProviderConfig> = {}): IProviderConfig => ({

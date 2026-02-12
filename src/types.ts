@@ -564,6 +564,38 @@ export interface IQuickPickOptions {
 }
 
 /**
+ * Minimal representation of a configuration change event.
+ */
+export interface IConfigChangeEvent {
+  /**
+   * Check if a configuration section has changed.
+   */
+  affectsConfiguration(section: string): boolean;
+}
+
+/**
+ * Provides access to configuration settings and notifies of changes.
+ */
+export interface IConfigProvider {
+  /**
+   * Retrieves the log level.
+   */
+  getLogLevel(): string | undefined;
+
+  /**
+   * Retrieves the maximum number of agent iterations.
+   */
+  getMaxAgentIterations(): number | undefined;
+
+  /**
+   * Fired when the configuration changes.
+   * @param listener The function to call when the configuration changes.
+   * @returns A disposable to unsubscribe from the event.
+   */
+  onDidChangeConfiguration(listener: (event: IConfigChangeEvent) => void): IDisposable;
+}
+
+/**
  * `IWindowProvider` provides a way to show messages and interact with the user.
  * This is a minimal abstraction over `vscode.window`.
  */

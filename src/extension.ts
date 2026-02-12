@@ -3,6 +3,7 @@ import { initLogger, defaultLogger, parseLogLevel } from './logger.js';
 import { readConfig } from './config/config.js';
 import { registerCompletionProvider } from './registrations/completionRegistration.js';
 import { registerCommands } from './registrations/commandRegistration.js';
+import { registerConfigHandler } from './registrations/configRegistration.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import { 
@@ -15,7 +16,8 @@ import {
   IAnonymizationEventPayload, 
   IWindowProvider, 
   IPathResolver,
-  IDocumentOpener
+  IDocumentOpener,
+  IConfigProvider
 } from './types.js';
 import { ChatHistoryManager } from './chat/chatHistoryManager.js';
 import { SecretManager } from './config/secretManager.js';
@@ -93,6 +95,12 @@ export async function activate(context: vscode.ExtensionContext) {
 
   const pathResolver: IPathResolver = path;
 
+  const configProvider: IConfigProvider = {
+    getLogLevel: () => vscode.workspace.getConfiguration('suggestio').get<string>('logLevel'),
+    getMaxAgentIterations: () => vscode.workspace.getConfiguration('suggestio').get<number>('maxAgentIterations'),
+    onDidChangeConfiguration: (listener) => vscode.workspace.onDidChangeConfiguration(listener)
+  };
+
   const secretManager = new SecretManager({
     get: async (key: string) => await context.secrets.get(key),
     store: async (key: string, value: string) => await context.secrets.store(key, value),
@@ -119,6 +127,8 @@ export async function activate(context: vscode.ExtensionContext) {
   const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, secretManager, eventBus, new NodeFetchClient(), overrides);
   // Initialize UI context for inline completion toggle (default true in config)
   await vscode.commands.executeCommand('setContext', 'suggestio.inlineCompletionEnabled', configContainer.config.enableInlineCompletion !== false);
+
+  registerConfigHandler(context.subscriptions, configProvider, configContainer);
 
   const conversationHistory = new ChatHistoryManager();
   const chatHistoryManager = conversationHistory;
