@@ -151,6 +151,7 @@ export async function activate(context: vscode.ExtensionContext) {
     vscodeApi: vscode,
     fileReader: fileContentReader,
     eventBus,
+    logger: defaultLogger,
     anonymizer: configContainer.config.anonymizerInstance
   });
   context.subscriptions.push(

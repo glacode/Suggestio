@@ -23,7 +23,7 @@ import type {
 // to communicate by emitting and listening for events.
 import { IEventBus } from '../utils/eventBus.js';
 import { ChatPrompt } from './chatPrompt.js';
-import { log } from '../logger.js';
+import { ILogger } from '../logger.js';
 import { CHAT_MESSAGES, AGENT_LOGS } from '../constants/messages.js';
 
 // This interface defines the arguments required to construct a `ChatWebviewViewProvider`.
@@ -38,6 +38,7 @@ interface IChatWebviewViewProviderArgs {
     vscodeApi: IVscodeApiLocal; // The VS Code API instance, used here for `Uri` operations.
     fileReader: IFileContentReader;
     eventBus: IEventBus;
+    logger: ILogger;
     anonymizer?: IAnonymizer;
 }
 
@@ -67,6 +68,7 @@ export class ChatWebviewViewProvider {
     private readonly _vscodeApi: IVscodeApiLocal; // Stores the VS Code API for internal use.
     private readonly _fileReader: IFileContentReader;
     private readonly _eventBus: IEventBus;
+    private readonly _logger: ILogger;
     private readonly _anonymizer?: IAnonymizer;
     private _abortController?: AbortController; // For cancelling ongoing LLM requests
 
@@ -74,7 +76,7 @@ export class ChatWebviewViewProvider {
      * The constructor initializes the `ChatWebviewViewProvider` with its dependencies.
      * These dependencies are typically passed from `extension.ts` during activation.
      */
-    constructor({ extensionContext, providerAccessor, logicHandler, chatHistoryManager, buildContext, getChatWebviewContent, vscodeApi, fileReader, eventBus, anonymizer }: IChatWebviewViewProviderArgs) {
+    constructor({ extensionContext, providerAccessor, logicHandler, chatHistoryManager, buildContext, getChatWebviewContent, vscodeApi, fileReader, eventBus, logger, anonymizer }: IChatWebviewViewProviderArgs) {
         this._extensionContext = extensionContext;
         this._providerAccessor = providerAccessor;
         this._chatAgent = logicHandler;
@@ -84,10 +86,11 @@ export class ChatWebviewViewProvider {
         this._vscodeApi = vscodeApi;
         this._fileReader = fileReader;
         this._eventBus = eventBus;
+        this._logger = logger;
         this._anonymizer = anonymizer;
 
         this._eventBus.on('agent:maxIterationsReached', (payload: { maxIterations: number }) => {
-            log(AGENT_LOGS.MAX_ITERATIONS_REACHED(payload.maxIterations));
+            this._logger.info(AGENT_LOGS.MAX_ITERATIONS_REACHED(payload.maxIterations));
             if (this._view) {
                 this._view.webview.postMessage({
                     sender: 'assistant',
@@ -221,7 +224,7 @@ export class ChatWebviewViewProvider {
                 } catch (error) {
                     // If request was cancelled, don't show error
                     if (this._abortController?.signal.aborted) {
-                        log(AGENT_LOGS.REQUEST_CANCELLED);
+                        this._logger.info(AGENT_LOGS.REQUEST_CANCELLED);
                         this._sendCompletionMessage();
                         return;
                     }
@@ -234,7 +237,7 @@ export class ChatWebviewViewProvider {
             } else if (message.command === 'cancelRequest') {
                 // Handle cancel request from webview
                 if (this._abortController) {
-                    log(AGENT_LOGS.CANCEL_REQUEST);
+                    this._logger.info(AGENT_LOGS.CANCEL_REQUEST);
                     this._abortController.abort();
                 }
             } else if (message.command === 'modelChanged') {

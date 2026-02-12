@@ -20,7 +20,7 @@ import type {
 // Import the actual ChatWebviewViewProvider class that we are testing.
 import { ChatWebviewViewProvider } from '../../src/chat/chatWebviewViewProvider.js';
 import { EventBus } from '../../src/utils/eventBus.js';
-import { createMockVscodeApi, createMockWebview, createMockWebviewView, createMockHistoryManager, createMockUri, createMockFileContentReader } from '../testUtils.js';
+import { createMockVscodeApi, createMockWebview, createMockWebviewView, createMockHistoryManager, createMockUri, createMockFileContentReader, createMockLogger } from '../testUtils.js';
 
 // `describe` is used to group tests. Here, we're testing the `ChatWebviewViewProvider`.
 // The description "integration, no vscode mocks" indicates that while we're using
@@ -108,7 +108,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       getChatWebviewContent, // Function to generate webview HTML.
       vscodeApi, // Faked VS Code API.
       fileReader,
-      eventBus
+      eventBus,
+      logger: createMockLogger()
     });
 
     // ********************************************************************************
@@ -230,7 +231,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       getChatWebviewContent: () => '',
       vscodeApi,
       fileReader: createMockFileContentReader(),
-      eventBus
+      eventBus,
+      logger: createMockLogger()
     });
 
     provider.resolveWebviewView(webviewView);
@@ -297,7 +299,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       getChatWebviewContent: () => '', // Empty HTML content for this test.
       vscodeApi,
       fileReader: createMockFileContentReader(),
-      eventBus
+      eventBus,
+      logger: createMockLogger()
     });
 
     provider.resolveWebviewView(webviewView);
@@ -394,7 +397,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       getChatWebviewContent: () => '',
       vscodeApi,
       fileReader: createMockFileContentReader(),
-      eventBus
+      eventBus,
+      logger: createMockLogger()
     });
 
     provider.resolveWebviewView(webviewView);
@@ -456,6 +460,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       vscodeApi,
       fileReader: createMockFileContentReader(),
       eventBus,
+      logger: createMockLogger(),
       anonymizer
     });
 
@@ -518,7 +523,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       getChatWebviewContent: () => '',
       vscodeApi,
       fileReader: createMockFileContentReader(),
-      eventBus
+      eventBus,
+      logger: createMockLogger()
     });
 
     provider.resolveWebviewView(webviewView);
@@ -562,7 +568,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       getChatWebviewContent: () => '',
       vscodeApi,
       fileReader: createMockFileContentReader(),
-      eventBus: new EventBus()
+      eventBus: new EventBus(),
+      logger: createMockLogger()
     });
 
     // Test newChat before resolveWebviewView (view is undefined)
@@ -595,7 +602,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       getChatWebviewContent: () => '',
       vscodeApi,
       fileReader: createMockFileContentReader(),
-      eventBus
+      eventBus,
+      logger: createMockLogger()
     });
 
     // Event before resolveWebviewView
@@ -627,7 +635,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       getChatWebviewContent: () => '',
       vscodeApi,
       fileReader: createMockFileContentReader(),
-      eventBus: new EventBus()
+      eventBus: new EventBus(),
+      logger: createMockLogger()
     });
 
     provider.resolveWebviewView(webviewView);
@@ -665,7 +674,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       getChatWebviewContent: () => '',
       vscodeApi,
       fileReader: createMockFileContentReader(),
-      eventBus
+      eventBus,
+      logger: createMockLogger()
     });
 
     provider.resolveWebviewView(webviewView);
