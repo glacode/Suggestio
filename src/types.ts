@@ -721,12 +721,19 @@ export interface ITokenEventPayload {
   type: 'content' | 'reasoning';
 }
 
+export interface ILogEventPayload {
+  level: 'debug' | 'info' | 'warn' | 'error';
+  message: string;
+  metadata?: Record<string, any>;
+}
+
 export interface IAppEvents {
   'inlineCompletionToggled': boolean;
   'modelChanged': string;
   'agent:maxIterationsReached': { maxIterations: number };
   'anonymization': IAnonymizationEventPayload;
   'agent:token': ITokenEventPayload;
+  'log': ILogEventPayload;
 }
 
 // --------------------------------------------------------------------------------
