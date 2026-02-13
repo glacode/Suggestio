@@ -5,16 +5,12 @@ import { FakeProvider, createDefaultConfig, createMockProviderConfig, createMock
 import { AGENT_MESSAGES } from "../../src/constants/messages.js";
 
 describe("ChatResponder Tool Calling Integration", () => {
-    let logs: string[];
-    let logger: (msg: string) => void;
     let mockChatHistoryManager: IChatHistoryManager;
     let mockChatHistory: ChatHistory;
     let mockPrompt: IPrompt;
     let mockEventBus: jest.Mocked<IEventBus>;
 
     beforeEach(() => {
-        logs = [];
-        logger = (msg: string) => logs.push(msg);
         mockChatHistory = [];
         mockChatHistoryManager = {
             clearHistory: jest.fn(() => {
@@ -69,7 +65,6 @@ describe("ChatResponder Tool Calling Integration", () => {
                 llmProviderForChat: provider,
                 providers: { FAKE: createMockProviderConfig() },
             }),
-            logger,
             chatHistoryManager: mockChatHistoryManager,
             tools: [mockTool],
             eventBus: mockEventBus
@@ -89,8 +84,14 @@ describe("ChatResponder Tool Calling Integration", () => {
 
         // Verify tool execution
         expect(mockTool.execute).toHaveBeenCalled();
-        expect(logs).toContain("Executing tool: getTime");
-        expect(logs).toContain(AGENT_MESSAGES.REQUERYING_LLM);
+        expect(mockEventBus.emit).toHaveBeenCalledWith('log', expect.objectContaining({
+            level: 'info',
+            message: expect.stringContaining("Executing tool: getTime")
+        }));
+        expect(mockEventBus.emit).toHaveBeenCalledWith('log', expect.objectContaining({
+            level: 'info',
+            message: AGENT_MESSAGES.REQUERYING_LLM
+        }));
 
         // Verify history updates
         expect(mockChatHistoryManager.addMessage).toHaveBeenCalledTimes(3);

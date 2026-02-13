@@ -217,7 +217,6 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const { Agent } = await import('../../src/agent/agent.js');
     const responder = new Agent({
       config,
-      logger: () => { },
       chatHistoryManager,
       eventBus
     });

@@ -7,14 +7,10 @@ import { EventBus } from "../../src/utils/eventBus.js";
 import { FakeProvider, createDefaultConfig, createMockProviderConfig } from "../testUtils.js";
 
 describe("Chat History Management (Unit Test)", () => {
-    let logs: string[];
-    let logger: (msg: string) => void;
     let chatHistoryManager: IChatHistoryManager;
     let eventBus: EventBus;
 
     beforeEach(() => {
-        logs = [];
-        logger = (msg: string) => logs.push(msg);
         chatHistoryManager = new ChatHistoryManager();
         eventBus = new EventBus();
     });
@@ -32,7 +28,6 @@ describe("Chat History Management (Unit Test)", () => {
                 llmProviderForChat: fakeProvider,
                 providers: { FAKE: createMockProviderConfig() }
             }),
-            logger,
             chatHistoryManager: chatHistoryManager,
             eventBus
         });

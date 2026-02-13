@@ -1,23 +1,21 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
-import { IChatHistoryManager, IChatMessage, IPrompt, ToolImplementation, ToolCall, ILlmProvider } from "../../src/types.js";
-import { createMockHistoryManager, createDefaultConfig } from "../testUtils.js";
+import { IChatHistoryManager, IChatMessage, IPrompt, ToolImplementation, ToolCall, ILlmProvider, IEventBus } from "../../src/types.js";
+import { createMockHistoryManager, createDefaultConfig, createMockEventBus } from "../testUtils.js";
 
 describe("Agent Max Iterations", () => {
-    let logs: string[];
-    let logger: (msg: string) => void;
     let mockChatHistoryManager: IChatHistoryManager;
     let mockChatHistory: IChatMessage[];
     let mockPrompt: IPrompt;
+    let mockEventBus: jest.Mocked<IEventBus>;
 
     beforeEach(() => {
-        logs = [];
-        logger = (msg: string) => logs.push(msg);
         mockChatHistory = [];
         mockChatHistoryManager = createMockHistoryManager(mockChatHistory);
         mockPrompt = {
             generateChatHistory: () => [{ role: 'user', content: 'Hi' }],
         };
+        mockEventBus = createMockEventBus();
     });
 
     it("respects maxAgentIterations config", async () => {
@@ -53,9 +51,9 @@ describe("Agent Max Iterations", () => {
 
         const agent = new Agent({
             config,
-            logger,
             chatHistoryManager: mockChatHistoryManager,
-            tools: [mockTool]
+            tools: [mockTool],
+            eventBus: mockEventBus
         });
 
         await agent.run(mockPrompt);
@@ -97,9 +95,9 @@ describe("Agent Max Iterations", () => {
 
         const agent = new Agent({
             config,
-            logger,
             chatHistoryManager: mockChatHistoryManager,
-            tools: [mockTool]
+            tools: [mockTool],
+            eventBus: mockEventBus
         });
 
         await agent.run(mockPrompt);

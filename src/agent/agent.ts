@@ -3,7 +3,6 @@ import type { IChatHistoryManager, IPrompt, IChatMessage, ToolCall, IChatAgent }
 import { IEventBus } from "../utils/eventBus.js";
 import { AGENT_MESSAGES, AGENT_LOGS } from "../constants/messages.js";
 import { ChatPrompt } from "../chat/chatPrompt.js";
-import { ILogger } from "../logger.js";
 
 /**
  * Arguments for the Agent constructor.
@@ -11,26 +10,29 @@ import { ILogger } from "../logger.js";
 export interface IAgentArgs {
     /** The configuration for the agent. */
     config: Config;
-    /** The logger for the agent. Can be an ILogger instance or a legacy log function. */
-    logger: ILogger | ((message: string) => void);
     /** The chat history manager for the agent. */
     chatHistoryManager: IChatHistoryManager;
     /** The tools available to the agent. */
     tools?: ToolImplementation[];
     /** The event bus for the agent to emit events. */
-    eventBus?: IEventBus;
+    eventBus: IEventBus;
 }
 
 export class Agent implements IChatAgent {
     private config: Config;
-    private logger: ILogger;
     private chatHistoryManager: IChatHistoryManager;
     private tools: ToolImplementation[];
-    private eventBus?: IEventBus;
+    private eventBus: IEventBus;
+
+    private logger = {
+        debug: (message: string) => this.eventBus.emit('log', { level: 'debug', message }),
+        info: (message: string) => this.eventBus.emit('log', { level: 'info', message }),
+        warn: (message: string) => this.eventBus.emit('log', { level: 'warn', message }),
+        error: (message: string) => this.eventBus.emit('log', { level: 'error', message }),
+    };
 
     constructor({
         config,
-        logger,
         chatHistoryManager,
         tools = [],
         eventBus
@@ -39,19 +41,6 @@ export class Agent implements IChatAgent {
         this.chatHistoryManager = chatHistoryManager;
         this.tools = tools;
         this.eventBus = eventBus;
-
-        // Backward compatibility: if a function is passed, wrap it in an ILogger-like object
-        if (typeof logger === 'function') {
-            this.logger = {
-                debug: logger,
-                info: logger,
-                warn: logger,
-                error: logger,
-                setLogLevel: () => { }
-            };
-        } else {
-            this.logger = logger;
-        }
     }
 
     async run(prompt: IPrompt, signal?: AbortSignal): Promise<void> {

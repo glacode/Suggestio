@@ -3,19 +3,14 @@ import { Agent } from "../../src/agent/agent.js";
 import { IChatHistoryManager, IChatMessage, IPrompt, ToolImplementation, ToolCall, IEventBus, ILogEventPayload } from "../../src/types.js";
 import { FakeProvider, createMockHistoryManager, createDefaultConfig, createMockEventBus } from "../testUtils.js";
 import { AGENT_MESSAGES } from "../../src/constants/messages.js";
-import { EventLoggerAdapter } from "../../src/utils/eventLoggerAdapter.js";
 
 describe("Agent", () => {
-    let logs: string[];
-    let logger: (msg: string) => void;
     let mockChatHistoryManager: IChatHistoryManager;
     let mockChatHistory: IChatMessage[];
     let mockPrompt: IPrompt;
     let mockEventBus: jest.Mocked<IEventBus>;
 
     beforeEach(() => {
-        logs = [];
-        logger = (msg: string) => logs.push(msg);
         mockChatHistory = [];
         mockChatHistoryManager = createMockHistoryManager(mockChatHistory);
         mockPrompt = {
@@ -28,7 +23,6 @@ describe("Agent", () => {
         const provider = new FakeProvider([{ role: "assistant", content: "Hello!" }], mockEventBus);
         const agent = new Agent({
             config: createDefaultConfig({ llmProviderForChat: provider }),
-            logger,
             chatHistoryManager: mockChatHistoryManager,
             tools: [],
             eventBus: mockEventBus
@@ -73,7 +67,6 @@ describe("Agent", () => {
 
         const agent = new Agent({
             config: createDefaultConfig({ llmProviderForChat: provider }),
-            logger,
             chatHistoryManager: mockChatHistoryManager,
             tools: [tool],
             eventBus: mockEventBus
@@ -128,7 +121,6 @@ describe("Agent", () => {
 
         const agent = new Agent({
             config: createDefaultConfig({ llmProviderForChat: provider }),
-            logger,
             chatHistoryManager: mockChatHistoryManager,
             tools: [], // No tools
             eventBus: mockEventBus
@@ -136,7 +128,10 @@ describe("Agent", () => {
 
         await agent.run(mockPrompt);
 
-        expect(logs).toContain("Tool not found: unknownTool");
+        expect(mockEventBus.emit).toHaveBeenCalledWith('log', expect.objectContaining({
+            level: 'error',
+            message: expect.stringContaining("Tool not found: unknownTool")
+        }));
         expect(mockAddMessage).toHaveBeenCalledWith(expect.objectContaining({
             role: "tool",
             content: expect.stringContaining(AGENT_MESSAGES.ERROR_TOOL_NOT_FOUND("unknownTool")),
@@ -179,7 +174,6 @@ describe("Agent", () => {
 
         const agent = new Agent({
             config: createDefaultConfig({ llmProviderForChat: provider }),
-            logger,
             chatHistoryManager: mockChatHistoryManager,
             tools: [mockTool],
             eventBus: mockEventBus
@@ -187,7 +181,10 @@ describe("Agent", () => {
 
         await agent.run(mockPrompt);
 
-        expect(logs).toContain("Error executing tool: Tool failed");
+        expect(mockEventBus.emit).toHaveBeenCalledWith('log', expect.objectContaining({
+            level: 'error',
+            message: expect.stringContaining("Error executing tool: Tool failed")
+        }));
         expect(mockAddMessage).toHaveBeenCalledWith(expect.objectContaining({
             role: "tool",
             content: AGENT_MESSAGES.ERROR_TOOL_FAILED,
@@ -239,7 +236,6 @@ describe("Agent", () => {
 
         const agent = new Agent({
             config: createDefaultConfig({ llmProviderForChat: provider }),
-            logger,
             chatHistoryManager: mockChatHistoryManager,
             tools: [mockToolA, mockToolB],
             eventBus: mockEventBus
@@ -319,7 +315,6 @@ describe("Agent", () => {
 
         const agent = new Agent({
             config: createDefaultConfig({ llmProviderForChat: provider }),
-            logger,
             chatHistoryManager: mockChatHistoryManager,
             tools: [mockTool1, mockTool2],
             eventBus: mockEventBus
@@ -380,7 +375,6 @@ describe("Agent", () => {
 
         const agent = new Agent({
             config: createDefaultConfig({ llmProviderForChat: provider }),
-            logger,
             chatHistoryManager: mockChatHistoryManager,
             tools: [tool],
             eventBus: mockEventBus
@@ -429,7 +423,6 @@ describe("Agent", () => {
 
         const agent = new Agent({
             config: createDefaultConfig({ llmProviderForChat: provider }),
-            logger,
             chatHistoryManager: mockChatHistoryManager,
             tools: [tool],
             eventBus: mockEventBus
@@ -452,7 +445,6 @@ describe("Agent", () => {
 
         const agent = new Agent({
             config: createDefaultConfig({ llmProviderForChat: provider }),
-            logger: new EventLoggerAdapter(realBus),
             chatHistoryManager: mockChatHistoryManager,
             tools: [],
             eventBus: realBus

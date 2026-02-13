@@ -146,7 +146,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
   const logicHandler = new Agent({
     config: configContainer.config,
-    logger: new EventLoggerAdapter(eventBus),
     chatHistoryManager,
     tools: getTools(workspaceProvider, { ...directoryReader, ...directoryCreator }, pathResolver),
     eventBus

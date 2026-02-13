@@ -5,16 +5,12 @@ import { EventBus } from "../../src/utils/eventBus.js";
 import { createMockHistoryManager, createDefaultConfig } from "../testUtils.js";
 
 describe("Agent Max Iterations Event", () => {
-    let logs: string[];
-    let logger: (msg: string) => void;
     let mockChatHistoryManager: IChatHistoryManager;
     let mockChatHistory: IChatMessage[];
     let mockPrompt: IPrompt;
     let eventBus: EventBus;
 
     beforeEach(() => {
-        logs = [];
-        logger = (msg: string) => logs.push(msg);
         mockChatHistory = [];
         mockChatHistoryManager = createMockHistoryManager(mockChatHistory);
         mockPrompt = {
@@ -54,7 +50,6 @@ describe("Agent Max Iterations Event", () => {
 
         const agent = new Agent({
             config,
-            logger,
             chatHistoryManager: mockChatHistoryManager,
             tools: [mockTool],
             eventBus
@@ -85,7 +80,6 @@ describe("Agent Max Iterations Event", () => {
 
         const agent = new Agent({
             config,
-            logger,
             chatHistoryManager: mockChatHistoryManager,
             tools: [],
             eventBus

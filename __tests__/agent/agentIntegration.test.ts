@@ -4,16 +4,12 @@ import { IChatHistoryManager, IChatMessage, IPrompt, ChatHistory, IEventBus } fr
 import { createDefaultConfig, createMockProviderConfig, FakeProvider, createMockEventBus } from "../testUtils.js";
 
 describe("Agent (Integration) simple tests", () => {
-    let logs: string[];
-    let logger: (msg: string) => void;
     let mockChatHistoryManager: IChatHistoryManager;
     let mockChatHistory: ChatHistory;
     let mockPrompt: IPrompt;
     let mockEventBus: jest.Mocked<IEventBus>;
 
     beforeEach(() => {
-        logs = [];
-        logger = (msg: string) => logs.push(msg);
         mockChatHistory = [];
         mockChatHistoryManager = {
             clearHistory: jest.fn(() => {
@@ -37,7 +33,6 @@ describe("Agent (Integration) simple tests", () => {
                 llmProviderForChat: new FakeProvider([{ role: "assistant", content: "Hello world" }], mockEventBus),
                 providers: { FAKE: createMockProviderConfig() },
             }),
-            logger,
             chatHistoryManager: mockChatHistoryManager,
             eventBus: mockEventBus
         });
@@ -66,7 +61,6 @@ describe("Agent (Integration) simple tests", () => {
                 llmProviderForChat: fakeProvider,
                 providers: { FAKE: createMockProviderConfig() },
             }),
-            logger,
             chatHistoryManager: mockChatHistoryManager,
             eventBus: mockEventBus
         });
