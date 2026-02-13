@@ -1,8 +1,9 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
-import { IChatHistoryManager, IChatMessage, IPrompt, ToolImplementation, ToolCall, IEventBus } from "../../src/types.js";
+import { IChatHistoryManager, IChatMessage, IPrompt, ToolImplementation, ToolCall, IEventBus, ILogEventPayload } from "../../src/types.js";
 import { FakeProvider, createMockHistoryManager, createDefaultConfig, createMockEventBus } from "../testUtils.js";
 import { AGENT_MESSAGES } from "../../src/constants/messages.js";
+import { EventLoggerAdapter } from "../../src/utils/eventLoggerAdapter.js";
 
 describe("Agent", () => {
     let logs: string[];
@@ -401,7 +402,7 @@ describe("Agent", () => {
         expect(mockChatHistory.length).toBe(2); // Assistant call + Tool result, but no Final answer
     });
 
-    it("passes AbortSignal to tools", async () => {
+        it("passes AbortSignal to tools", async () => {
         const tool: ToolImplementation = {
             definition: {
                 name: "test_tool",
@@ -439,4 +440,29 @@ describe("Agent", () => {
 
         expect(tool.execute).toHaveBeenCalledWith(expect.anything(), controller.signal);
     });
+
+    it("emits log events when using EventLoggerAdapter", async () => {
+        const provider = new FakeProvider([{ role: "assistant", content: "Hello!" }], mockEventBus);
+        const capturedLogs: ILogEventPayload[] = [];
+        
+        // We need a real-ish bus for this test to capture emissions
+        const { EventBus } = await import("../../src/utils/eventBus.js");
+        const realBus = new EventBus();
+        realBus.on('log', (p) => capturedLogs.push(p));
+
+        const agent = new Agent({
+            config: createDefaultConfig({ llmProviderForChat: provider }),
+            logger: new EventLoggerAdapter(realBus),
+            chatHistoryManager: mockChatHistoryManager,
+            tools: [],
+            eventBus: realBus
+        });
+
+        await agent.run(mockPrompt);
+
+        expect(capturedLogs.length).toBeGreaterThan(0);
+        expect(capturedLogs.some(p => p.level === 'info' && p.message.includes("Agent finished"))).toBe(true);
+    });
 });
+
+    

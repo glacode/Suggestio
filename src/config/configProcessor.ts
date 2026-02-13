@@ -77,15 +77,16 @@ class ConfigProcessor {
      * @param overrides Optional partial configuration coming from standard VSCode extension settings.
      *                  These can override existing properties from the JSON config or provide
      *                  additional properties (e.g., maxAgentIterations) not present in the config file.
+     * @param logger Optional logger to use.
      */
-    public async processConfig(rawJson: string, secretManager: SecretManager, eventBus: IEventBus, httpClient: IHttpClient, overrides?: Partial<Config>): Promise<IConfigContainer> {
+    public async processConfig(rawJson: string, secretManager: SecretManager, eventBus: IEventBus, httpClient: IHttpClient, overrides?: Partial<Config>, logger: ILogger = defaultLogger): Promise<IConfigContainer> {
         const config: Config = JSON.parse(rawJson);
 
         if (overrides) {
             Object.assign(config, overrides);
         }
 
-        this.init(config, secretManager, eventBus, httpClient);
+        this.init(config, secretManager, eventBus, httpClient, logger);
 
         await this.updateProviders(config);
 
