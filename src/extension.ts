@@ -30,6 +30,7 @@ import { IgnoreManager } from './chat/ignoreManager.js';
 import { getChatWebviewContent } from './chat/chatWebviewContent.js';
 import './chat/activeEditorTracker.js';
 import { EventBus } from './utils/eventBus.js';
+import { EventLogHandler } from './utils/eventLogHandler.js';
 import { ANONYMIZATION_EVENT } from './anonymizer/anonymizationNotifier.js';
 import { NodeFetchClient } from './utils/httpClient.js';
 import { EXTENSION_MESSAGES, EXTENSION_LOGS } from './constants/messages.js';
@@ -40,9 +41,13 @@ export async function activate(context: vscode.ExtensionContext) {
   vscode.window.showInformationMessage(EXTENSION_MESSAGES.ACTIVATED);
 
   const eventBus = new EventBus();
+  new EventLogHandler(eventBus, defaultLogger);
 
   eventBus.on(ANONYMIZATION_EVENT, (payload: IAnonymizationEventPayload) => {
-    defaultLogger.info(EXTENSION_LOGS.ANONYMIZED(payload.original, payload.placeholder, payload.type));
+    eventBus.emit('log', { 
+      level: 'info', 
+      message: EXTENSION_LOGS.ANONYMIZED(payload.original, payload.placeholder, payload.type) 
+    });
   });
 
   const workspaceProvider: IWorkspaceProvider = {
