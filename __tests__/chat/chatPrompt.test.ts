@@ -1,9 +1,9 @@
 import { ChatPrompt } from '../../src/chat/chatPrompt.js';
-import { ChatHistory, ChatMessage } from '../../src/types.js';
+import { ChatHistory, IChatMessage } from '../../src/types.js';
 
 describe('ChatPrompt', () => {
   const SYSTEM_PROMPT_CONTENT = "You are a code assistant. You can use tools to interact with the workspace.";
-  const INITIAL_SYSTEM_MESSAGE: ChatMessage = { role: "system", content: SYSTEM_PROMPT_CONTENT };
+  const INITIAL_SYSTEM_MESSAGE: IChatMessage = { role: "system", content: SYSTEM_PROMPT_CONTENT };
 
   it('should create a system prompt if conversation is empty', () => {
     const chatHistory: ChatHistory = [];
@@ -30,7 +30,7 @@ describe('ChatPrompt', () => {
     const chatHistory: ChatHistory = [];
     const context = "some context";
     const chatPrompt = new ChatPrompt(chatHistory, context);
-    const expectedSystemMessage: ChatMessage = {
+    const expectedSystemMessage: IChatMessage = {
       role: "system",
       content: `${SYSTEM_PROMPT_CONTENT}\n${context}`
     };
@@ -42,7 +42,7 @@ describe('ChatPrompt', () => {
     const chatHistory: ChatHistory = [{ role: "system", content: oldContext }, { role: "user", content: "Hi" }];
     const newContext = "new context";
     const chatPrompt = new ChatPrompt(chatHistory, newContext);
-    const expectedSystemMessage: ChatMessage = {
+    const expectedSystemMessage: IChatMessage = {
       role: "system",
       content: `${SYSTEM_PROMPT_CONTENT}\n${newContext}`
     };
@@ -72,7 +72,7 @@ describe('ChatPrompt', () => {
     ];
     const context = "multi message context";
     const chatPrompt = new ChatPrompt(chatHistory, context);
-    const expectedSystemMessage: ChatMessage = {
+    const expectedSystemMessage: IChatMessage = {
       role: "system",
       content: `${SYSTEM_PROMPT_CONTENT}\n${context}`
     };

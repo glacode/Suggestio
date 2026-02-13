@@ -1,5 +1,5 @@
 import { OpenAICompatibleProvider } from "../../src/providers/openAICompatibleProvider.js";
-import { ChatHistory, ChatMessage, IAnonymizer, IPrompt, IHttpClient, IHttpResponse, ToolDefinition, IEventBus } from "../../src/types.js";
+import { ChatHistory, IChatMessage, IAnonymizer, IPrompt, IHttpClient, IHttpResponse, ToolDefinition, IEventBus } from "../../src/types.js";
 import { SimpleWordAnonymizer } from "../../src/anonymizer/simpleWordAnonymizer.js";
 import { ShannonEntropyCalculator } from "../../src/utils/shannonEntropyCalculator.js";
 import { jest } from "@jest/globals";
@@ -8,7 +8,7 @@ import { createMockEventBus, createMockLogger } from "../testUtils.js";
 const entropyCalculator = new ShannonEntropyCalculator();
 
 class TestPrompt implements IPrompt {
-  constructor(private messages: ChatMessage[]) { }
+  constructor(private messages: IChatMessage[]) { }
   generateChatHistory(): ChatHistory { return this.messages; }
 }
 

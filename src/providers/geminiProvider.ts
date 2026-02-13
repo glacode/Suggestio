@@ -1,6 +1,6 @@
 import fetch from "node-fetch";
 import { ILogger } from "../logger.js";
-import { ChatMessage , IPrompt, ILlmProvider } from "../types.js";
+import { IChatMessage , IPrompt, ILlmProvider } from "../types.js";
 import { IEventBus } from "../utils/eventBus.js";
 import { LLM_MESSAGES } from "../constants/messages.js";
 
@@ -25,7 +25,7 @@ export class GeminiProvider implements ILlmProvider {
     this.model = model;
   }
 
-  async query(prompt: IPrompt): Promise<ChatMessage | null> {
+  async query(prompt: IPrompt): Promise<IChatMessage | null> {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
 
     const body = {
@@ -54,7 +54,7 @@ export class GeminiProvider implements ILlmProvider {
     return { role: "assistant", content };
   }
 
-  async queryStream(prompt: IPrompt, _tools?: any, signal?: AbortSignal): Promise<ChatMessage | null> {
+  async queryStream(prompt: IPrompt, _tools?: any, signal?: AbortSignal): Promise<IChatMessage | null> {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:streamGenerateContent?key=${this.apiKey}&alt=sse`;
 
     const body = {
@@ -135,7 +135,7 @@ export class GeminiProvider implements ILlmProvider {
     return { role: "assistant", content: fullContent };
   }
 
-  private formatConversation(conversation: ChatMessage[]): { role: string; parts: { text: string }[] }[] {
+  private formatConversation(conversation: IChatMessage[]): { role: string; parts: { text: string }[] }[] {
     return conversation.map(message => ({
       role: message.role,
       parts: [{ text: message.content }],

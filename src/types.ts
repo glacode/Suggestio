@@ -203,7 +203,7 @@ export type ChatRole = "system" | "user" | "assistant" | "tool";
 /**
  * Represents a single message in the chat history.
  */
-export interface ChatMessage {
+export interface IChatMessage {
   /**
    * The role of the message sender.
    */
@@ -283,7 +283,7 @@ export interface IEntropyCalculator {
 /**
  * Represents the full history of a chat conversation.
  */
-export type ChatHistory = ChatMessage[];
+export type ChatHistory = IChatMessage[];
 
 /**
  * The `IPrompt` interface defines a contract for objects responsible for generating
@@ -337,7 +337,7 @@ export interface IChatHistoryManager {
    * Adds a new message to the chat history.
    * @param message The message to add.
    */
-  addMessage(message: ChatMessage): void;
+  addMessage(message: IChatMessage): void;
 
   /**
    * Retrieves the current chat history.
@@ -888,8 +888,8 @@ export interface IHttpClient {
 //  LLM Provider Types
 // --------------------------------------------------------------------------------
 export interface ILlmProvider {
-  query(prompt: IPrompt, tools?: ToolDefinition[], signal?: AbortSignal): Promise<ChatMessage | null>;
-  queryStream(prompt: IPrompt, tools?: ToolDefinition[], signal?: AbortSignal): Promise<ChatMessage | null>;
+  query(prompt: IPrompt, tools?: ToolDefinition[], signal?: AbortSignal): Promise<IChatMessage | null>;
+  queryStream(prompt: IPrompt, tools?: ToolDefinition[], signal?: AbortSignal): Promise<IChatMessage | null>;
 }
 
 // --------------------------------------------------------------------------------

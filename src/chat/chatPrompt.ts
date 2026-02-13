@@ -1,6 +1,6 @@
-import { ChatHistory, ChatMessage, IPrompt } from "../types.js";
+import { ChatHistory, IChatMessage, IPrompt } from "../types.js";
 
-const SYSTEM_PROMPT: ChatMessage = {
+const SYSTEM_PROMPT: IChatMessage = {
   role: "system",
   content: "You are a code assistant. You can use tools to interact with the workspace.",
 };
@@ -26,7 +26,7 @@ export class ChatPrompt implements IPrompt {
       ? `${SYSTEM_PROMPT.content}\n${context}`
       : SYSTEM_PROMPT.content;
 
-    const systemPrompt: ChatMessage = {
+    const systemPrompt: IChatMessage = {
       ...SYSTEM_PROMPT,
       content: systemPromptContent,
     };

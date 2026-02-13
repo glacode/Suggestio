@@ -1,13 +1,13 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
-import { IChatHistoryManager, ChatMessage, IPrompt, ToolImplementation, ToolCall, ILlmProvider } from "../../src/types.js";
+import { IChatHistoryManager, IChatMessage, IPrompt, ToolImplementation, ToolCall, ILlmProvider } from "../../src/types.js";
 import { createMockHistoryManager, createDefaultConfig } from "../testUtils.js";
 
 describe("Agent Max Iterations", () => {
     let logs: string[];
     let logger: (msg: string) => void;
     let mockChatHistoryManager: IChatHistoryManager;
-    let mockChatHistory: ChatMessage[];
+    let mockChatHistory: IChatMessage[];
     let mockPrompt: IPrompt;
 
     beforeEach(() => {
@@ -27,7 +27,7 @@ describe("Agent Max Iterations", () => {
             type: "function",
             function: { name: "loop_tool", arguments: "{}" }
         };
-        const response: ChatMessage = {
+        const response: IChatMessage = {
             role: "assistant",
             content: "Looping...",
             tool_calls: [toolCall]
@@ -71,7 +71,7 @@ describe("Agent Max Iterations", () => {
             type: "function",
             function: { name: "loop_tool", arguments: "{}" }
         };
-        const response: ChatMessage = {
+        const response: IChatMessage = {
             role: "assistant",
             content: "Looping...",
             tool_calls: [toolCall]

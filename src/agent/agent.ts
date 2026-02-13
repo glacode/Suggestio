@@ -1,5 +1,5 @@
 import { Config, ToolImplementation } from "../types.js";
-import type { IChatHistoryManager, IPrompt, ChatMessage, ToolCall, IChatAgent } from "../types.js";
+import type { IChatHistoryManager, IPrompt, IChatMessage, ToolCall, IChatAgent } from "../types.js";
 import { IEventBus } from "../utils/eventBus.js";
 import { AGENT_MESSAGES, AGENT_LOGS } from "../constants/messages.js";
 import { ChatPrompt } from "../chat/chatPrompt.js";
@@ -67,7 +67,7 @@ export class Agent implements IChatAgent {
             iterations++;
             this.logger.info(AGENT_LOGS.ITERATION_START(iterations, maxIterations));
 
-            const response: ChatMessage | null = await this.queryLLM(currentPrompt, toolDefinitions, signal);
+            const response: IChatMessage | null = await this.queryLLM(currentPrompt, toolDefinitions, signal);
 
             if (!response) {
                 this.logger.warn(AGENT_LOGS.NO_RESPONSE_RECEIVED);
@@ -102,7 +102,7 @@ export class Agent implements IChatAgent {
     /**
      * Queries the LLM provider for a response.
      */
-    private async queryLLM(prompt: IPrompt, toolDefinitions: any[], signal?: AbortSignal): Promise<ChatMessage | null> {
+    private async queryLLM(prompt: IPrompt, toolDefinitions: any[], signal?: AbortSignal): Promise<IChatMessage | null> {
         return await this.config.llmProviderForChat!.queryStream(
             prompt,
             toolDefinitions.length > 0 ? toolDefinitions : undefined,
@@ -113,7 +113,7 @@ export class Agent implements IChatAgent {
     /**
      * Checks if the response contains tool calls that need processing.
      */
-    private shouldProcessToolCalls(response: ChatMessage): boolean {
+    private shouldProcessToolCalls(response: IChatMessage): boolean {
         return !!(response.tool_calls && response.tool_calls.length > 0);
     }
 

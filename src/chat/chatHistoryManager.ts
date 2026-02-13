@@ -1,9 +1,9 @@
-import { ChatMessage, ChatHistory, IChatHistoryManager } from "../types.js";
+import { IChatMessage, ChatHistory, IChatHistoryManager } from "../types.js";
 
 export class ChatHistoryManager implements IChatHistoryManager {
   private history: ChatHistory = [];
 
-  addMessage(message: ChatMessage) {
+  addMessage(message: IChatMessage) {
     this.history.push(message);
   }
 

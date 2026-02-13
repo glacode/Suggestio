@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
-import { IChatHistoryManager, ChatMessage, IPrompt, ToolImplementation, ToolCall, IEventBus } from "../../src/types.js";
+import { IChatHistoryManager, IChatMessage, IPrompt, ToolImplementation, ToolCall, IEventBus } from "../../src/types.js";
 import { FakeProvider, createMockHistoryManager, createDefaultConfig, createMockEventBus } from "../testUtils.js";
 import { AGENT_MESSAGES } from "../../src/constants/messages.js";
 
@@ -8,7 +8,7 @@ describe("Agent", () => {
     let logs: string[];
     let logger: (msg: string) => void;
     let mockChatHistoryManager: IChatHistoryManager;
-    let mockChatHistory: ChatMessage[];
+    let mockChatHistory: IChatMessage[];
     let mockPrompt: IPrompt;
     let mockEventBus: jest.Mocked<IEventBus>;
 
@@ -111,13 +111,13 @@ describe("Agent", () => {
             }
         };
 
-        const toolResponse: ChatMessage = {
+        const toolResponse: IChatMessage = {
             role: "assistant",
             content: "",
             tool_calls: [toolCall]
         };
 
-        const finalResponse: ChatMessage = {
+        const finalResponse: IChatMessage = {
             role: "assistant",
             content: "I could not find the tool."
         };
@@ -153,13 +153,13 @@ describe("Agent", () => {
             }
         };
 
-        const toolResponse: ChatMessage = {
+        const toolResponse: IChatMessage = {
             role: "assistant",
             content: "",
             tool_calls: [toolCall]
         };
 
-        const finalResponse: ChatMessage = {
+        const finalResponse: IChatMessage = {
             role: "assistant",
             content: "Something went wrong."
         };
@@ -213,13 +213,13 @@ describe("Agent", () => {
             }
         };
 
-        const toolResponse: ChatMessage = {
+        const toolResponse: IChatMessage = {
             role: "assistant",
             content: "",
             tool_calls: [toolCall1, toolCall2]
         };
 
-        const finalResponse: ChatMessage = {
+        const finalResponse: IChatMessage = {
             role: "assistant",
             content: "Processed both."
         };
@@ -280,7 +280,7 @@ describe("Agent", () => {
             type: "function",
             function: { name: "tool1", arguments: "{}" }
         };
-        const response1: ChatMessage = {
+        const response1: IChatMessage = {
             role: "assistant",
             content: "Step 1",
             tool_calls: [toolCall1]
@@ -292,14 +292,14 @@ describe("Agent", () => {
             type: "function",
             function: { name: "tool2", arguments: "{}" }
         };
-        const response2: ChatMessage = {
+        const response2: IChatMessage = {
             role: "assistant",
             content: "Step 2",
             tool_calls: [toolCall2]
         };
 
         // Round 3: Final response
-        const finalResponse: ChatMessage = {
+        const finalResponse: IChatMessage = {
             role: "assistant",
             content: "Done."
         };

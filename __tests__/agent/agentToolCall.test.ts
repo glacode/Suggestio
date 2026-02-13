@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
-import { IChatHistoryManager, ChatMessage, IPrompt, ChatHistory, ToolImplementation, ToolCall, IEventBus } from "../../src/types.js";
+import { IChatHistoryManager, IChatMessage, IPrompt, ChatHistory, ToolImplementation, ToolCall, IEventBus } from "../../src/types.js";
 import { FakeProvider, createDefaultConfig, createMockProviderConfig, createMockEventBus } from "../testUtils.js";
 import { AGENT_MESSAGES } from "../../src/constants/messages.js";
 
@@ -20,7 +20,7 @@ describe("ChatResponder Tool Calling Integration", () => {
             clearHistory: jest.fn(() => {
                 mockChatHistory.length = 0;
             }),
-            addMessage: jest.fn((message: ChatMessage) => {
+            addMessage: jest.fn((message: IChatMessage) => {
                 mockChatHistory.push(message);
             }),
             getChatHistory: jest.fn(() => mockChatHistory),
@@ -41,13 +41,13 @@ describe("ChatResponder Tool Calling Integration", () => {
             }
         };
 
-        const toolResponse: ChatMessage = {
+        const toolResponse: IChatMessage = {
             role: "assistant",
             content: "",
             tool_calls: [toolCall]
         };
 
-        const finalResponse: ChatMessage = {
+        const finalResponse: IChatMessage = {
             role: "assistant",
             content: "It is 12:00 PM"
         };

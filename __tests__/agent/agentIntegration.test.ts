@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
-import { IChatHistoryManager, ChatMessage, IPrompt, ChatHistory, IEventBus } from "../../src/types.js";
+import { IChatHistoryManager, IChatMessage, IPrompt, ChatHistory, IEventBus } from "../../src/types.js";
 import { createDefaultConfig, createMockProviderConfig, FakeProvider, createMockEventBus } from "../testUtils.js";
 
 describe("Agent (Integration) simple tests", () => {
@@ -19,7 +19,7 @@ describe("Agent (Integration) simple tests", () => {
             clearHistory: jest.fn(() => {
                 mockChatHistory.length = 0; // Clear the array
             }),
-            addMessage: jest.fn((message: ChatMessage) => {
+            addMessage: jest.fn((message: IChatMessage) => {
                 mockChatHistory.push(message);
             }),
             getChatHistory: jest.fn(() => mockChatHistory),

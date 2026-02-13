@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ILogger } from "../logger.js";
-import { ChatMessage, IAnonymizer, IPrompt, ILlmProvider, ToolDefinition, ToolCall, IStreamingDeanonymizer, IHttpClient, IHttpResponse } from "../types.js";
+import { IChatMessage, IAnonymizer, IPrompt, ILlmProvider, ToolDefinition, ToolCall, IStreamingDeanonymizer, IHttpClient, IHttpResponse } from "../types.js";
 import { IEventBus } from "../utils/eventBus.js";
 import { ToolCallSchema } from "../schemas.js";
 import { LLM_MESSAGES, LLM_LOGS } from "../constants/messages.js";
@@ -134,7 +134,7 @@ type OpenAIRequestBody = {
   /**
    * The conversation history to send to the model.
    */
-  messages: ChatMessage[];
+  messages: IChatMessage[];
   /**
    * The maximum number of tokens to generate in the completion.
    */
@@ -217,8 +217,8 @@ export class OpenAICompatibleProvider implements ILlmProvider {
    * @returns An array of message objects formatted for the OpenAI-compatible API.
    */
   private prepareMessages(
-    conversation: ChatMessage[]
-  ): ChatMessage[] {
+    conversation: IChatMessage[]
+  ): IChatMessage[] {
     return conversation.map((message) => {
       const role = message.role;
 
@@ -227,7 +227,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
         content = this.anonymizer.anonymize(message.content);
       }
 
-      const msg: ChatMessage = {
+      const msg: IChatMessage = {
         role,
         content,
         reasoning: message.reasoning,
@@ -301,7 +301,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     prompt: IPrompt,
     tools?: ToolDefinition[],
     signal?: AbortSignal
-  ): Promise<ChatMessage | null> {
+  ): Promise<IChatMessage | null> {
     const body = this.createRequestBody(prompt, tools, false);
     const response = await this.post(body, signal);
 
@@ -360,7 +360,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     prompt: IPrompt,
     tools?: ToolDefinition[],
     signal?: AbortSignal
-  ): Promise<ChatMessage | null> {
+  ): Promise<IChatMessage | null> {
     const body = this.createRequestBody(prompt, tools, true);
     this.logger.debug(`OpenAI Request Body: ${JSON.stringify(body, null, 2)}`);
 
@@ -389,7 +389,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
    */
   private async parseStream(
     response: IHttpResponse
-  ): Promise<ChatMessage> {
+  ): Promise<IChatMessage> {
     if (!response.body) {
       throw new Error(LLM_MESSAGES.RESPONSE_BODY_NULL);
     }
@@ -606,7 +606,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     content: string,
     reasoning: string,
     toolCalls: ToolCall[]
-  ): ChatMessage {
+  ): IChatMessage {
     return {
       role: "assistant",
       content,
