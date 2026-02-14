@@ -2,6 +2,7 @@ import { getAnonymizer } from '../anonymizer/anonymizer.js';
 import { getActiveProvider } from '../providers/providerFactory.js';
 import { IConfigContainer, Config, IProviderConfig, IHttpClient } from '../types.js';
 import { IEventBus } from '../utils/eventBus.js';
+import { createEventLogger } from '../utils/eventLogger.js';
 
 export interface SecretManager {
     getOrRequestAPIKey(providerKey: string): Promise<string>;
@@ -13,12 +14,7 @@ class ConfigProcessor {
     private _eventBus: IEventBus | undefined;
     private _httpClient: IHttpClient | undefined;
 
-    private logger = {
-        debug: (message: string) => this._eventBus?.emit('log', { level: 'debug', message }),
-        info: (message: string) => this._eventBus?.emit('log', { level: 'info', message }),
-        warn: (message: string) => this._eventBus?.emit('log', { level: 'warn', message }),
-        error: (message: string) => this._eventBus?.emit('log', { level: 'error', message }),
-    };
+    private logger: ReturnType<typeof createEventLogger> | undefined;
 
     constructor() {
     }
@@ -28,21 +24,22 @@ class ConfigProcessor {
         this._secretManager = secretManager;
         this._eventBus = eventBus;
         this._httpClient = httpClient;
+        this.logger = createEventLogger(eventBus);
 
         // Remove existing listeners to avoid duplicates if init is called multiple times
         this._eventBus.removeAllListeners('modelChanged');
         this._eventBus.on('modelChanged', (modelName: string) => {
-            this.logger.info('modelChanged event received for model: ' + modelName);
+            this.logger?.info('modelChanged event received for model: ' + modelName);
             this.updateActiveProvider(modelName);
         });
 
         // Listen for inline completion toggles and update the in-memory config accordingly
         this._eventBus.removeAllListeners('inlineCompletionToggled');
         this._eventBus.on('inlineCompletionToggled', (enabled: boolean) => {
-            this.logger.info('inlineCompletionToggled event received: ' + enabled);
+            this.logger?.info('inlineCompletionToggled event received: ' + enabled);
             if (this._config) {
                 this._config.enableInlineCompletion = enabled;
-                this.logger.info('config updated. enableInlineCompletion: ' + this._config.enableInlineCompletion);
+                this.logger?.info('config updated. enableInlineCompletion: ' + this._config.enableInlineCompletion);
             }
         });
     }
@@ -130,7 +127,7 @@ class ConfigProcessor {
             const [providerId] = providerEntry;
             this._config.activeProvider = providerId;
             await this.updateProviders(this._config);
-            this.logger.info('config updated. activeProvider: ' + this._config.activeProvider);
+            this.logger?.info('config updated. activeProvider: ' + this._config.activeProvider);
         }
     }
 }

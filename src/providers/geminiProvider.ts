@@ -2,6 +2,7 @@ import fetch from "node-fetch";
 import { IChatMessage , IPrompt, ILlmProvider } from "../types.js";
 import { IEventBus } from "../utils/eventBus.js";
 import { LLM_MESSAGES } from "../constants/messages.js";
+import { createEventLogger } from "../utils/eventLogger.js";
 
 type GeminiResponse = {
   candidates?: {
@@ -16,17 +17,13 @@ export class GeminiProvider implements ILlmProvider {
   private model: string;
   private eventBus: IEventBus;
 
-  private logger = {
-    debug: (message: string) => this.eventBus.emit('log', { level: 'debug', message }),
-    info: (message: string) => this.eventBus.emit('log', { level: 'info', message }),
-    warn: (message: string) => this.eventBus.emit('log', { level: 'warn', message }),
-    error: (message: string) => this.eventBus.emit('log', { level: 'error', message }),
-  };
+  private logger: ReturnType<typeof createEventLogger>;
 
   constructor(apiKey: string, eventBus: IEventBus, model = "gemini-1.5-flash-latest") {
     this.apiKey = apiKey;
     this.eventBus = eventBus;
     this.model = model;
+    this.logger = createEventLogger(eventBus);
   }
 
   async query(prompt: IPrompt): Promise<IChatMessage | null> {

@@ -1,6 +1,7 @@
 import { Config, ToolImplementation } from "../types.js";
 import type { IChatHistoryManager, IPrompt, IChatMessage, ToolCall, IChatAgent } from "../types.js";
 import { IEventBus } from "../utils/eventBus.js";
+import { createEventLogger } from "../utils/eventLogger.js";
 import { AGENT_MESSAGES, AGENT_LOGS } from "../constants/messages.js";
 import { ChatPrompt } from "../chat/chatPrompt.js";
 
@@ -24,12 +25,7 @@ export class Agent implements IChatAgent {
     private tools: ToolImplementation[];
     private eventBus: IEventBus;
 
-    private logger = {
-        debug: (message: string) => this.eventBus.emit('log', { level: 'debug', message }),
-        info: (message: string) => this.eventBus.emit('log', { level: 'info', message }),
-        warn: (message: string) => this.eventBus.emit('log', { level: 'warn', message }),
-        error: (message: string) => this.eventBus.emit('log', { level: 'error', message }),
-    };
+    private logger: ReturnType<typeof createEventLogger>;
 
     constructor({
         config,
@@ -41,6 +37,7 @@ export class Agent implements IChatAgent {
         this.chatHistoryManager = chatHistoryManager;
         this.tools = tools;
         this.eventBus = eventBus;
+        this.logger = createEventLogger(eventBus);
     }
 
     async run(prompt: IPrompt, signal?: AbortSignal): Promise<void> {

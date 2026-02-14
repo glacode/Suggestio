@@ -3,6 +3,7 @@ import { IChatMessage, IAnonymizer, IPrompt, ILlmProvider, ToolDefinition, ToolC
 import { IEventBus } from "../utils/eventBus.js";
 import { ToolCallSchema } from "../schemas.js";
 import { LLM_MESSAGES, LLM_LOGS } from "../constants/messages.js";
+import { createEventLogger } from "../utils/eventLogger.js";
 
 /**
  * Represents the response from a non-streaming OpenAI-compatible completion request.
@@ -183,12 +184,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
   private eventBus: IEventBus;
   private anonymizer?: IAnonymizer;
 
-  private logger = {
-    debug: (message: string) => this.eventBus.emit('log', { level: 'debug', message }),
-    info: (message: string) => this.eventBus.emit('log', { level: 'info', message }),
-    warn: (message: string) => this.eventBus.emit('log', { level: 'warn', message }),
-    error: (message: string) => this.eventBus.emit('log', { level: 'error', message }),
-  };
+  private logger: ReturnType<typeof createEventLogger>;
 
   /**
    * Creates an instance of OpenAICompatibleProvider.
@@ -209,6 +205,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     this.model = model;
     this.eventBus = eventBus;
     this.anonymizer = anonymizer;
+    this.logger = createEventLogger(eventBus);
   }
 
   /**

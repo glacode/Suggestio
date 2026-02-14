@@ -22,6 +22,7 @@ import type {
 // Importing the `eventBus`, a custom mechanism for different parts of the extension
 // to communicate by emitting and listening for events.
 import { IEventBus } from '../utils/eventBus.js';
+import { createEventLogger } from '../utils/eventLogger.js';
 import { ChatPrompt } from './chatPrompt.js';
 import { CHAT_MESSAGES, AGENT_LOGS } from '../constants/messages.js';
 
@@ -69,12 +70,7 @@ export class ChatWebviewViewProvider {
     private readonly _anonymizer?: IAnonymizer;
     private _abortController?: AbortController; // For cancelling ongoing LLM requests
 
-    private logger = {
-        debug: (message: string) => this._eventBus.emit('log', { level: 'debug', message }),
-        info: (message: string) => this._eventBus.emit('log', { level: 'info', message }),
-        warn: (message: string) => this._eventBus.emit('log', { level: 'warn', message }),
-        error: (message: string) => this._eventBus.emit('log', { level: 'error', message }),
-    };
+    private logger: ReturnType<typeof createEventLogger>;
 
     /**
      * The constructor initializes the `ChatWebviewViewProvider` with its dependencies.
@@ -91,6 +87,7 @@ export class ChatWebviewViewProvider {
         this._fileReader = fileReader;
         this._eventBus = eventBus;
         this._anonymizer = anonymizer;
+        this.logger = createEventLogger(eventBus);
 
         this._eventBus.on('agent:maxIterationsReached', (payload: { maxIterations: number }) => {
             this.logger.info(AGENT_LOGS.MAX_ITERATIONS_REACHED(payload.maxIterations));
