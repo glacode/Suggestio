@@ -1,12 +1,13 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { registerConfigHandler } from '../../src/registrations/configRegistration.js';
-import { IConfigContainer, Config, IConfigChangeEvent, IConfigProvider } from '../../src/types.js';
+import { IConfigContainer, Config, IConfigChangeEvent, IConfigProvider, IEventBus } from '../../src/types.js';
 import { defaultLogger, LogLevel } from '../../src/logger.js';
-import { createDefaultConfig, createMockConfigProvider } from '../testUtils.js';
+import { createDefaultConfig, createMockConfigProvider, createMockEventBus } from '../testUtils.js';
 
 describe('registerConfigHandler', () => {
   let mockSubscriptions: { push: jest.Mock };
   let mockConfigProvider: jest.Mocked<IConfigProvider>;
+  let mockEventBus: jest.Mocked<IEventBus>;
   let configContainer: IConfigContainer;
   let onDidChangeConfigurationListener: (e: IConfigChangeEvent) => void;
 
@@ -17,6 +18,7 @@ describe('registerConfigHandler', () => {
     };
     
     mockConfigProvider = createMockConfigProvider();
+    mockEventBus = createMockEventBus();
     
     const config: Config = createDefaultConfig();
     config.logLevel = 'Info';
@@ -32,7 +34,7 @@ describe('registerConfigHandler', () => {
   });
 
   it('should register a configuration change listener', () => {
-    registerConfigHandler(mockSubscriptions, mockConfigProvider, configContainer);
+    registerConfigHandler(mockSubscriptions, mockConfigProvider, configContainer, mockEventBus);
     expect(mockConfigProvider.onDidChangeConfiguration).toHaveBeenCalled();
     expect(mockSubscriptions.push).toHaveBeenCalled();
   });
@@ -41,7 +43,7 @@ describe('registerConfigHandler', () => {
     mockConfigProvider.getLogLevel.mockReturnValue('Debug');
     mockConfigProvider.getMaxAgentIterations.mockReturnValue(10);
 
-    registerConfigHandler(mockSubscriptions, mockConfigProvider, configContainer);
+    registerConfigHandler(mockSubscriptions, mockConfigProvider, configContainer, mockEventBus);
 
     // Trigger the listener
     const mockEvent: IConfigChangeEvent = {
@@ -51,10 +53,14 @@ describe('registerConfigHandler', () => {
 
     expect(configContainer.config.logLevel).toBe('Debug');
     expect(configContainer.config.maxAgentIterations).toBe(10);
+    expect(mockEventBus.emit).toHaveBeenCalledWith('log', expect.objectContaining({
+      level: 'info',
+      message: expect.stringContaining('Configuration changed')
+    }));
   });
 
   it('should not update config when other configuration changes', () => {
-    registerConfigHandler(mockSubscriptions, mockConfigProvider, configContainer);
+    registerConfigHandler(mockSubscriptions, mockConfigProvider, configContainer, mockEventBus);
 
     // Trigger the listener for a different section
     const mockEvent: IConfigChangeEvent = {

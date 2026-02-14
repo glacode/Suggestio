@@ -133,7 +133,7 @@ export async function activate(context: vscode.ExtensionContext) {
   // Initialize UI context for inline completion toggle (default true in config)
   await vscode.commands.executeCommand('setContext', 'suggestio.inlineCompletionEnabled', configContainer.config.enableInlineCompletion !== false);
 
-  registerConfigHandler(context.subscriptions, configProvider, configContainer);
+  registerConfigHandler(context.subscriptions, configProvider, configContainer, eventBus);
 
   const conversationHistory = new ChatHistoryManager();
   const chatHistoryManager = conversationHistory;

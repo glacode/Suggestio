@@ -1,4 +1,4 @@
-import { IConfigContainer, IConfigProvider, IDisposable } from '../types.js';
+import { IConfigContainer, IConfigProvider, IDisposable, IEventBus } from '../types.js';
 import { defaultLogger, parseLogLevel } from '../logger.js';
 
 /**
@@ -9,13 +9,16 @@ import { defaultLogger, parseLogLevel } from '../logger.js';
 export function registerConfigHandler(
   subscriptions: { push(disposable: IDisposable): void },
   configProvider: IConfigProvider,
-  configContainer: IConfigContainer
+  configContainer: IConfigContainer,
+  eventBus: IEventBus
 ) {
   subscriptions.push(
     configProvider.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration('suggestio')) {
         const newLogLevel = configProvider.getLogLevel();
         const newMaxAgentIterations = configProvider.getMaxAgentIterations();
+
+        eventBus.emit('log', { level: 'info', message: `Configuration changed. New log level: ${newLogLevel}, Max iterations: ${newMaxAgentIterations}` });
 
         // Update logger live
         defaultLogger.setLogLevel(parseLogLevel(newLogLevel));
