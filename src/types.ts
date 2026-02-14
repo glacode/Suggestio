@@ -721,8 +721,10 @@ export interface ITokenEventPayload {
   type: 'content' | 'reasoning';
 }
 
+import { LogLevelString } from './logger.js';
+
 export interface ILogEventPayload {
-  level: 'debug' | 'info' | 'warn' | 'error';
+  level: LogLevelString;
   message: string;
   metadata?: Record<string, any>;
 }

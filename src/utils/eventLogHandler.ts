@@ -23,20 +23,6 @@ export class EventLogHandler {
 
   private handleLogEvent(payload: ILogEventPayload): void {
     const { level, message } = payload;
-    
-    switch (level) {
-      case 'debug':
-        this.logger.debug(message);
-        break;
-      case 'info':
-        this.logger.info(message);
-        break;
-      case 'warn':
-        this.logger.warn(message);
-        break;
-      case 'error':
-        this.logger.error(message);
-        break;
-    }
+    this.logger[level](message);
   }
 }

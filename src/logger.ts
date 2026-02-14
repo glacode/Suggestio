@@ -1,6 +1,9 @@
 // logger.ts
 import * as vscode from 'vscode';
 
+export const LOG_LEVELS = ['debug', 'info', 'warn', 'error'] as const;
+export type LogLevelString = typeof LOG_LEVELS[number];
+
 export enum LogLevel {
   Debug = 0,
   Info = 1,
@@ -8,6 +11,14 @@ export enum LogLevel {
   Error = 3,
   Silent = 4,
 }
+
+const LEVEL_MAP: Record<string, LogLevel> = {
+  debug: LogLevel.Debug,
+  info: LogLevel.Info,
+  warn: LogLevel.Warn,
+  error: LogLevel.Error,
+  silent: LogLevel.Silent,
+};
 
 export interface ILogger {
   debug(message: string): void;
@@ -87,14 +98,7 @@ export function setLogLevel(level: LogLevel) {
 }
 
 export function parseLogLevel(level: string | undefined): LogLevel {
-  switch (level?.toLowerCase()) {
-    case 'debug': return LogLevel.Debug;
-    case 'info': return LogLevel.Info;
-    case 'warn': return LogLevel.Warn;
-    case 'error': return LogLevel.Error;
-    case 'silent': return LogLevel.Silent;
-    default: return LogLevel.Info;
-  }
+  return LEVEL_MAP[level?.toLowerCase() || ''] ?? LogLevel.Info;
 }
 
 // 👇 Only used in tests to clear the singleton
