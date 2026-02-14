@@ -2,13 +2,11 @@ import { Config, IProviderConfig, ILlmProvider, IAnonymizer, IHttpClient, IEvent
 import { OpenAICompatibleProvider } from "./openAICompatibleProvider.js";
 import { GeminiProvider } from "./geminiProvider.js";
 import * as vscode from "vscode";
-import { ILogger } from "../logger.js";
 
 export function getActiveProvider(
   config: Config,
   httpClient: IHttpClient,
   eventBus: IEventBus,
-  logger: ILogger,
   anonymizer?: IAnonymizer
 ): ILlmProvider | null {
   const activeProviderName = config.activeProvider;
@@ -38,7 +36,6 @@ export function getActiveProvider(
       apiKey,
       model: providerConfig.model,
       eventBus,
-      logger,
       anonymizer,
     });
   }
@@ -48,7 +45,7 @@ export function getActiveProvider(
     //TODO remove this case after confirming Gemini usage via OpenAI compatible API works fine
     /** This case should be deprecated, because now even Gemini supports an OpenAi compatible API */
     case "gemini":
-      return new GeminiProvider(apiKey, eventBus, logger, providerConfig.model);
+      return new GeminiProvider(apiKey, eventBus, providerConfig.model);
 
     default:
       vscode.window.showErrorMessage(

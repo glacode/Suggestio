@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { ILogger } from "../logger.js";
 import { IChatMessage, IAnonymizer, IPrompt, ILlmProvider, ToolDefinition, ToolCall, IStreamingDeanonymizer, IHttpClient, IHttpResponse } from "../types.js";
 import { IEventBus } from "../utils/eventBus.js";
 import { ToolCallSchema } from "../schemas.js";
@@ -172,8 +171,6 @@ export interface IOpenAICompatibleProviderArgs {
   model: string;
   /** The event bus to emit token events. */
   eventBus: IEventBus;
-  /** The logger instance. */
-  logger: ILogger;
   /** Optional anonymizer to protect sensitive data in user messages. */
   anonymizer?: IAnonymizer;
 }
@@ -184,8 +181,14 @@ export class OpenAICompatibleProvider implements ILlmProvider {
   private apiKey: string;
   private model: string;
   private eventBus: IEventBus;
-  private logger: ILogger;
   private anonymizer?: IAnonymizer;
+
+  private logger = {
+    debug: (message: string) => this.eventBus.emit('log', { level: 'debug', message }),
+    info: (message: string) => this.eventBus.emit('log', { level: 'info', message }),
+    warn: (message: string) => this.eventBus.emit('log', { level: 'warn', message }),
+    error: (message: string) => this.eventBus.emit('log', { level: 'error', message }),
+  };
 
   /**
    * Creates an instance of OpenAICompatibleProvider.
@@ -198,7 +201,6 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     apiKey,
     model,
     eventBus,
-    logger,
     anonymizer,
   }: IOpenAICompatibleProviderArgs) {
     this.httpClient = httpClient;
@@ -206,7 +208,6 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     this.apiKey = apiKey;
     this.model = model;
     this.eventBus = eventBus;
-    this.logger = logger;
     this.anonymizer = anonymizer;
   }
 

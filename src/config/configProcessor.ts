@@ -2,7 +2,6 @@ import { getAnonymizer } from '../anonymizer/anonymizer.js';
 import { getActiveProvider } from '../providers/providerFactory.js';
 import { IConfigContainer, Config, IProviderConfig, IHttpClient } from '../types.js';
 import { IEventBus } from '../utils/eventBus.js';
-import { ILogger, defaultLogger } from '../logger.js';
 
 export interface SecretManager {
     getOrRequestAPIKey(providerKey: string): Promise<string>;
@@ -13,32 +12,37 @@ class ConfigProcessor {
     private _secretManager: SecretManager | undefined;
     private _eventBus: IEventBus | undefined;
     private _httpClient: IHttpClient | undefined;
-    private _logger: ILogger | undefined;
+
+    private logger = {
+        debug: (message: string) => this._eventBus?.emit('log', { level: 'debug', message }),
+        info: (message: string) => this._eventBus?.emit('log', { level: 'info', message }),
+        warn: (message: string) => this._eventBus?.emit('log', { level: 'warn', message }),
+        error: (message: string) => this._eventBus?.emit('log', { level: 'error', message }),
+    };
 
     constructor() {
     }
 
-    public init(config: Config, secretManager: SecretManager, eventBus: IEventBus, httpClient: IHttpClient, logger: ILogger = defaultLogger) {
+    public init(config: Config, secretManager: SecretManager, eventBus: IEventBus, httpClient: IHttpClient) {
         this._config = config;
         this._secretManager = secretManager;
         this._eventBus = eventBus;
         this._httpClient = httpClient;
-        this._logger = logger;
 
         // Remove existing listeners to avoid duplicates if init is called multiple times
         this._eventBus.removeAllListeners('modelChanged');
         this._eventBus.on('modelChanged', (modelName: string) => {
-            this._logger?.info('modelChanged event received for model: ' + modelName);
+            this.logger.info('modelChanged event received for model: ' + modelName);
             this.updateActiveProvider(modelName);
         });
 
         // Listen for inline completion toggles and update the in-memory config accordingly
         this._eventBus.removeAllListeners('inlineCompletionToggled');
         this._eventBus.on('inlineCompletionToggled', (enabled: boolean) => {
-            this._logger?.info('inlineCompletionToggled event received: ' + enabled);
+            this.logger.info('inlineCompletionToggled event received: ' + enabled);
             if (this._config) {
                 this._config.enableInlineCompletion = enabled;
-                this._logger?.info('config updated. enableInlineCompletion: ' + this._config.enableInlineCompletion);
+                this.logger.info('config updated. enableInlineCompletion: ' + this._config.enableInlineCompletion);
             }
         });
     }
@@ -77,16 +81,15 @@ class ConfigProcessor {
      * @param overrides Optional partial configuration coming from standard VSCode extension settings.
      *                  These can override existing properties from the JSON config or provide
      *                  additional properties (e.g., maxAgentIterations) not present in the config file.
-     * @param logger Optional logger to use.
      */
-    public async processConfig(rawJson: string, secretManager: SecretManager, eventBus: IEventBus, httpClient: IHttpClient, overrides?: Partial<Config>, logger: ILogger = defaultLogger): Promise<IConfigContainer> {
+    public async processConfig(rawJson: string, secretManager: SecretManager, eventBus: IEventBus, httpClient: IHttpClient, overrides?: Partial<Config>): Promise<IConfigContainer> {
         const config: Config = JSON.parse(rawJson);
 
         if (overrides) {
             Object.assign(config, overrides);
         }
 
-        this.init(config, secretManager, eventBus, httpClient, logger);
+        this.init(config, secretManager, eventBus, httpClient);
 
         await this.updateProviders(config);
 
@@ -94,7 +97,7 @@ class ConfigProcessor {
     }
 
     private async updateProviders(config: Config) {
-        if (!this._eventBus || !this._httpClient || !this._logger) {
+        if (!this._eventBus || !this._httpClient) {
             throw new Error('ConfigProcessor is not initialized');
         }
 
@@ -111,12 +114,12 @@ class ConfigProcessor {
         // `getActiveProvider` can return null; `inlineCompletionProvider` expects
         // `llmProvider | undefined`, so normalize null -> undefined to satisfy
         // the TypeScript type.
-        config.llmProviderForInlineCompletion = getActiveProvider(config, this._httpClient, this._eventBus, this._logger, config.anonymizerInstance) ?? undefined;
-        config.llmProviderForChat = getActiveProvider(config, this._httpClient, this._eventBus, this._logger, config.anonymizerInstance) ?? undefined;
+        config.llmProviderForInlineCompletion = getActiveProvider(config, this._httpClient, this._eventBus, config.anonymizerInstance) ?? undefined;
+        config.llmProviderForChat = getActiveProvider(config, this._httpClient, this._eventBus, config.anonymizerInstance) ?? undefined;
     }
 
     private async updateActiveProvider(modelName: string) {
-        if (!this._config || !this._logger) {
+        if (!this._config) {
             return;
         }
 
@@ -127,7 +130,7 @@ class ConfigProcessor {
             const [providerId] = providerEntry;
             this._config.activeProvider = providerId;
             await this.updateProviders(this._config);
-            this._logger.info('config updated. activeProvider: ' + this._config.activeProvider);
+            this.logger.info('config updated. activeProvider: ' + this._config.activeProvider);
         }
     }
 }

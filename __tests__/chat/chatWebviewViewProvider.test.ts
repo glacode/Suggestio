@@ -20,7 +20,7 @@ import type {
 // Import the actual ChatWebviewViewProvider class that we are testing.
 import { ChatWebviewViewProvider } from '../../src/chat/chatWebviewViewProvider.js';
 import { EventBus } from '../../src/utils/eventBus.js';
-import { createMockVscodeApi, createMockWebview, createMockWebviewView, createMockHistoryManager, createMockUri, createMockFileContentReader, createMockLogger } from '../testUtils.js';
+import { createMockVscodeApi, createMockWebview, createMockWebviewView, createMockHistoryManager, createMockUri, createMockFileContentReader } from '../testUtils.js';
 
 // `describe` is used to group tests. Here, we're testing the `ChatWebviewViewProvider`.
 // The description "integration, no vscode mocks" indicates that while we're using
@@ -109,7 +109,6 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       vscodeApi, // Faked VS Code API.
       fileReader,
       eventBus,
-      logger: createMockLogger()
     });
 
     // ********************************************************************************
@@ -231,7 +230,6 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       vscodeApi,
       fileReader: createMockFileContentReader(),
       eventBus,
-      logger: createMockLogger()
     });
 
     provider.resolveWebviewView(webviewView);
@@ -299,7 +297,6 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       vscodeApi,
       fileReader: createMockFileContentReader(),
       eventBus,
-      logger: createMockLogger()
     });
 
     provider.resolveWebviewView(webviewView);
@@ -397,7 +394,6 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       vscodeApi,
       fileReader: createMockFileContentReader(),
       eventBus,
-      logger: createMockLogger()
     });
 
     provider.resolveWebviewView(webviewView);
@@ -459,7 +455,6 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       vscodeApi,
       fileReader: createMockFileContentReader(),
       eventBus,
-      logger: createMockLogger(),
       anonymizer
     });
 
@@ -523,7 +518,6 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       vscodeApi,
       fileReader: createMockFileContentReader(),
       eventBus,
-      logger: createMockLogger()
     });
 
     provider.resolveWebviewView(webviewView);
@@ -568,7 +562,6 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       vscodeApi,
       fileReader: createMockFileContentReader(),
       eventBus: new EventBus(),
-      logger: createMockLogger()
     });
 
     // Test newChat before resolveWebviewView (view is undefined)
@@ -602,7 +595,6 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       vscodeApi,
       fileReader: createMockFileContentReader(),
       eventBus,
-      logger: createMockLogger()
     });
 
     // Event before resolveWebviewView
@@ -635,7 +627,6 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       vscodeApi,
       fileReader: createMockFileContentReader(),
       eventBus: new EventBus(),
-      logger: createMockLogger()
     });
 
     provider.resolveWebviewView(webviewView);
@@ -674,7 +665,6 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       vscodeApi,
       fileReader: createMockFileContentReader(),
       eventBus,
-      logger: createMockLogger()
     });
 
     provider.resolveWebviewView(webviewView);

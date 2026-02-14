@@ -1,16 +1,23 @@
 // registrations/completionRegistration.ts
 import * as vscode from 'vscode';
 import { provideInlineCompletionItems } from '../completion/completionProvider.js';
-import { Config } from '../types.js';
+import { Config, IEventBus } from '../types.js';
 import { IgnoreManager } from '../chat/ignoreManager.js';
-import { ILogger } from '../logger.js';
 
 export function registerCompletionProvider(
   context: vscode.ExtensionContext,
   config: Config,
   ignoreManager: IgnoreManager,
-  logger: ILogger
+  eventBus: IEventBus
 ) {
+  const logger = {
+    debug: (message: string) => eventBus.emit('log', { level: 'debug', message }),
+    info: (message: string) => eventBus.emit('log', { level: 'info', message }),
+    warn: (message: string) => eventBus.emit('log', { level: 'warn', message }),
+    error: (message: string) => eventBus.emit('log', { level: 'error', message }),
+    setLogLevel: () => { },
+  };
+
   const provider: vscode.InlineCompletionItemProvider = {
     provideInlineCompletionItems: async (doc, pos, _ctx, token) => {
       const result = await provideInlineCompletionItems(

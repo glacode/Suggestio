@@ -31,7 +31,6 @@ import { getChatWebviewContent } from './chat/chatWebviewContent.js';
 import './chat/activeEditorTracker.js';
 import { EventBus } from './utils/eventBus.js';
 import { EventLogHandler } from './utils/eventLogHandler.js';
-import { EventLoggerAdapter } from './utils/eventLoggerAdapter.js';
 import { ANONYMIZATION_EVENT } from './anonymizer/anonymizationNotifier.js';
 import { NodeFetchClient } from './utils/httpClient.js';
 import { EXTENSION_MESSAGES, EXTENSION_LOGS } from './constants/messages.js';
@@ -130,8 +129,7 @@ export async function activate(context: vscode.ExtensionContext) {
     maxAgentIterations: vsCodeConfig.get<number>('maxAgentIterations'),
     logLevel: logLevel
   };
-  const eventLogger = new EventLoggerAdapter(eventBus);
-  const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, secretManager, eventBus, new NodeFetchClient(), overrides, eventLogger);
+  const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, secretManager, eventBus, new NodeFetchClient(), overrides);
   // Initialize UI context for inline completion toggle (default true in config)
   await vscode.commands.executeCommand('setContext', 'suggestio.inlineCompletionEnabled', configContainer.config.enableInlineCompletion !== false);
 
@@ -167,7 +165,6 @@ export async function activate(context: vscode.ExtensionContext) {
     vscodeApi: vscode,
     fileReader: fileContentReader,
     eventBus,
-    logger: new EventLoggerAdapter(eventBus),
     anonymizer: configContainer.config.anonymizerInstance
   });
   context.subscriptions.push(
@@ -176,7 +173,7 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  registerCompletionProvider(context, configContainer.config, ignoreManager, new EventLoggerAdapter(eventBus));
+  registerCompletionProvider(context, configContainer.config, ignoreManager, eventBus);
   registerCommands(
     context,
     configContainer.config,

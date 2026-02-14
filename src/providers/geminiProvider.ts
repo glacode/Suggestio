@@ -1,5 +1,4 @@
 import fetch from "node-fetch";
-import { ILogger } from "../logger.js";
 import { IChatMessage , IPrompt, ILlmProvider } from "../types.js";
 import { IEventBus } from "../utils/eventBus.js";
 import { LLM_MESSAGES } from "../constants/messages.js";
@@ -16,12 +15,17 @@ export class GeminiProvider implements ILlmProvider {
   private apiKey: string;
   private model: string;
   private eventBus: IEventBus;
-  private logger: ILogger;
 
-  constructor(apiKey: string, eventBus: IEventBus, logger: ILogger, model = "gemini-1.5-flash-latest") {
+  private logger = {
+    debug: (message: string) => this.eventBus.emit('log', { level: 'debug', message }),
+    info: (message: string) => this.eventBus.emit('log', { level: 'info', message }),
+    warn: (message: string) => this.eventBus.emit('log', { level: 'warn', message }),
+    error: (message: string) => this.eventBus.emit('log', { level: 'error', message }),
+  };
+
+  constructor(apiKey: string, eventBus: IEventBus, model = "gemini-1.5-flash-latest") {
     this.apiKey = apiKey;
     this.eventBus = eventBus;
-    this.logger = logger;
     this.model = model;
   }
 
