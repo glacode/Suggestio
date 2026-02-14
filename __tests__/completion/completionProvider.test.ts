@@ -1,7 +1,8 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
 import { provideInlineCompletionItems } from '../../src/completion/completionProvider.js';
 import { IPosition, ICancellationToken } from '../../src/types.js';
-import { createMockIgnoreManager, createMockProvider, createMockDocument, createDefaultConfig, createMockLogger } from '../testUtils.js';
+import { createMockIgnoreManager, createMockProvider, createMockDocument, createDefaultConfig } from '../testUtils.js';
+import { EventBus } from '../../src/utils/eventBus.js';
 
 // Mock DebounceManager
 jest.mock('../../src/completion/debounceManager.js', () => ({
@@ -28,7 +29,7 @@ const mockCancellationToken: ICancellationToken = {
     isCancellationRequested: false,
 };
 
-const mockLogger = createMockLogger();
+const eventBus = new EventBus();
 
 describe('provideInlineCompletionItems', () => {
     beforeEach(() => {
@@ -46,7 +47,8 @@ describe('provideInlineCompletionItems', () => {
             mockIgnoreManager,
             mockDocument,
             mockPosition,
-            mockLogger,
+            eventBus,
+            {},
             mockCancellationToken
         );
 
@@ -64,7 +66,8 @@ describe('provideInlineCompletionItems', () => {
             mockIgnoreManager,
             mockDocument,
             mockPosition,
-            mockLogger,
+            eventBus,
+            {},
             mockCancellationToken
         );
         
@@ -91,7 +94,8 @@ describe('provideInlineCompletionItems', () => {
             mockIgnoreManager,
             mockDocument,
             mockPosition,
-            mockLogger,
+            eventBus,
+            {},
             mockCancellationToken
         );
         

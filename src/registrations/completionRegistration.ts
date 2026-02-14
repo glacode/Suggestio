@@ -10,14 +10,6 @@ export function registerCompletionProvider(
   ignoreManager: IgnoreManager,
   eventBus: IEventBus
 ) {
-  const logger = {
-    debug: (message: string) => eventBus.emit('log', { level: 'debug', message }),
-    info: (message: string) => eventBus.emit('log', { level: 'info', message }),
-    warn: (message: string) => eventBus.emit('log', { level: 'warn', message }),
-    error: (message: string) => eventBus.emit('log', { level: 'error', message }),
-    setLogLevel: () => { },
-  };
-
   const provider: vscode.InlineCompletionItemProvider = {
     provideInlineCompletionItems: async (doc, pos, _ctx, token) => {
       const result = await provideInlineCompletionItems(
@@ -26,7 +18,7 @@ export function registerCompletionProvider(
         ignoreManager,
         doc,
         pos,
-        logger,
+        eventBus,
         _ctx,
         token
       );
