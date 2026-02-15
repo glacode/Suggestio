@@ -3,6 +3,7 @@ import { getActiveProvider } from '../providers/providerFactory.js';
 import { IConfigContainer, Config, IProviderConfig, IHttpClient } from '../types.js';
 import { IEventBus } from '../utils/eventBus.js';
 import { createEventLogger } from '../log/eventLogger.js';
+import { CONFIG_LOGS } from '../constants/messages.js';
 
 export interface SecretManager {
     getOrRequestAPIKey(providerKey: string): Promise<string>;
@@ -29,17 +30,17 @@ class ConfigProcessor {
         // Remove existing listeners to avoid duplicates if init is called multiple times
         this._eventBus.removeAllListeners('modelChanged');
         this._eventBus.on('modelChanged', (modelName: string) => {
-            this.logger?.info('modelChanged event received for model: ' + modelName);
+            this.logger?.info(CONFIG_LOGS.MODEL_CHANGED(modelName));
             this.updateActiveProvider(modelName);
         });
 
         // Listen for inline completion toggles and update the in-memory config accordingly
         this._eventBus.removeAllListeners('inlineCompletionToggled');
         this._eventBus.on('inlineCompletionToggled', (enabled: boolean) => {
-            this.logger?.info('inlineCompletionToggled event received: ' + enabled);
+            this.logger?.info(CONFIG_LOGS.INLINE_COMPLETION_TOGGLED(enabled));
             if (this._config) {
                 this._config.enableInlineCompletion = enabled;
-                this.logger?.info('config updated. enableInlineCompletion: ' + this._config.enableInlineCompletion);
+                this.logger?.info(CONFIG_LOGS.CONFIG_UPDATED_INLINE(this._config.enableInlineCompletion));
             }
         });
     }
@@ -52,7 +53,7 @@ class ConfigProcessor {
         providerConfig: IProviderConfig,
     ) {
         if (!this._secretManager) {
-            throw new Error('SecretManager is not initialized');
+            throw new Error(CONFIG_LOGS.SECRET_MANAGER_NOT_INITIALIZED);
         }
         const apiKeyValue = providerConfig.apiKey;
 
@@ -95,7 +96,7 @@ class ConfigProcessor {
 
     private async updateProviders(config: Config) {
         if (!this._eventBus || !this._httpClient) {
-            throw new Error('ConfigProcessor is not initialized');
+            throw new Error(CONFIG_LOGS.CONFIG_PROCESSOR_NOT_INITIALIZED);
         }
 
         const { activeProvider, providers } = config;
@@ -127,7 +128,7 @@ class ConfigProcessor {
             const [providerId] = providerEntry;
             this._config.activeProvider = providerId;
             await this.updateProviders(this._config);
-            this.logger?.info('config updated. activeProvider: ' + this._config.activeProvider);
+            this.logger?.info(CONFIG_LOGS.CONFIG_UPDATED_ACTIVE_PROVIDER(this._config.activeProvider));
         }
     }
 }

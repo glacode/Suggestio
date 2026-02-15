@@ -1,5 +1,6 @@
 // completion/cancellation.ts
 import { ICancellationToken, IInlineCompletionList, IEventBus } from '../types.js';
+import { COMPLETION_LOGS } from '../constants/messages.js';
 
 export function handleCancellation(
   token: ICancellationToken | undefined,
@@ -8,7 +9,7 @@ export function handleCancellation(
   eventBus: IEventBus
 ): boolean {
   if (token?.isCancellationRequested) {
-    eventBus.emit('log', { level: 'info', message: `❌ Suggestio: Request cancelled ${stage} LLM call` });
+    eventBus.emit('log', { level: 'info', message: COMPLETION_LOGS.CANCELLED(stage) });
     resolve({ items: [] });
     return true;
   }

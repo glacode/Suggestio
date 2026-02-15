@@ -1,7 +1,7 @@
 import fetch from "node-fetch";
 import { IChatMessage , IPrompt, ILlmProvider } from "../types.js";
 import { IEventBus } from "../utils/eventBus.js";
-import { LLM_MESSAGES } from "../constants/messages.js";
+import { LLM_MESSAGES, LLM_LOGS } from "../constants/messages.js";
 import { createEventLogger } from "../log/eventLogger.js";
 
 type GeminiResponse = {
@@ -46,7 +46,7 @@ export class GeminiProvider implements ILlmProvider {
 
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     const data = (await res.json()) as GeminiResponse;
-    this.logger.info("Response:" + JSON.stringify(data, null, 2));
+    this.logger.info(LLM_LOGS.RESPONSE_RECEIVED(data));
 
     const content = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
     if (content === undefined) {

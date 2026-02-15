@@ -156,7 +156,7 @@ export class Agent implements IChatAgent {
      */
     private handleToolError(toolCallId: string, error: any): void {
         this.logger.error(AGENT_LOGS.TOOL_ERROR(error.message));
-        this.recordToolResult(toolCallId, `Error: ${error.message}`);
+        this.recordToolResult(toolCallId, AGENT_MESSAGES.ERROR_TOOL_EXECUTION(error.message));
     }
 
     /**

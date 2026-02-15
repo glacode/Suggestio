@@ -2,6 +2,7 @@ import { Config, IProviderConfig, ILlmProvider, IAnonymizer, IHttpClient, IEvent
 import { OpenAICompatibleProvider } from "./openAICompatibleProvider.js";
 import { GeminiProvider } from "./geminiProvider.js";
 import * as vscode from "vscode";
+import { PROVIDER_MESSAGES } from "../constants/messages.js";
 
 export function getActiveProvider(
   config: Config,
@@ -15,7 +16,7 @@ export function getActiveProvider(
 
   if (!providerConfig) {
     vscode.window.showErrorMessage(
-      `Provider "${activeProviderName}" not found in config.json`
+      PROVIDER_MESSAGES.NOT_FOUND(activeProviderName)
     );
     return null;
   }
@@ -26,7 +27,7 @@ export function getActiveProvider(
   if (!providerConfig.type) {
     if (!providerConfig.endpoint) {
       vscode.window.showErrorMessage(
-        `Provider "${activeProviderName}" missing endpoint`
+        PROVIDER_MESSAGES.MISSING_ENDPOINT(activeProviderName)
       );
       return null;
     }
@@ -49,7 +50,7 @@ export function getActiveProvider(
 
     default:
       vscode.window.showErrorMessage(
-        `Unknown provider type: ${providerConfig.type}`
+        PROVIDER_MESSAGES.UNKNOWN_TYPE(providerConfig.type)
       );
       return null;
   }

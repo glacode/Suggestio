@@ -2,12 +2,19 @@ export const AGENT_MESSAGES = {
     ERROR_NO_WORKSPACE: 'Error: No workspace open.',
     ERROR_TOOL_NOT_FOUND: (name: string) => `Error: Tool ${name} not found.`,
     ERROR_TOOL_FAILED: 'Error: Tool failed',
+    ERROR_TOOL_EXECUTION: (msg: string) => `Error: ${msg}`,
     REQUERYING_LLM: 'Re-querying LLM with tool results...',
 } as const;
 
 export const CHAT_MESSAGES = {
     MAX_ITERATIONS_REACHED: (max: number) => `⚠️ **Max iterations reached (${max}).** The agent stopped to prevent infinite loops. Please refine your prompt or increase the limit in settings.`,
     ERROR_PROCESSING_REQUEST: (error: any) => `Sorry, there was an error processing your request: ${error}`,
+} as const;
+
+export const PROVIDER_MESSAGES = {
+    NOT_FOUND: (name: string) => `Provider "${name}" not found in config.json`,
+    MISSING_ENDPOINT: (name: string) => `Provider "${name}" missing endpoint`,
+    UNKNOWN_TYPE: (type: string) => `Unknown provider type: ${type}`,
 } as const;
 
 export const AGENT_LOGS = {
@@ -51,6 +58,25 @@ export const CONFIG_MESSAGES = {
     API_KEY_DELETED: (placeholder: string) => `API key value for ${placeholder} deleted.`,
 } as const;
 
+export const CONFIG_LOGS = {
+    CONFIGURATION_CHANGED: (level: string, iterations: number) => `Configuration changed. New log level: ${level}, Max iterations: ${iterations}`,
+    MODEL_CHANGED: (model: string) => `modelChanged event received for model: ${model}`,
+    INLINE_COMPLETION_TOGGLED: (enabled: boolean) => `inlineCompletionToggled event received: ${enabled}`,
+    CONFIG_UPDATED_INLINE: (enabled: boolean) => `config updated. enableInlineCompletion: ${enabled}`,
+    CONFIG_UPDATED_ACTIVE_PROVIDER: (provider: string) => `config updated. activeProvider: ${provider}`,
+    SECRET_MANAGER_NOT_INITIALIZED: 'SecretManager is not initialized',
+    CONFIG_PROCESSOR_NOT_INITIALIZED: 'ConfigProcessor is not initialized',
+} as const;
+
+export const COMPLETION_LOGS = {
+    USING_PROVIDER: (provider: string) => `Using provider: ${provider}`,
+    PROMPT: (prompt: string) => `Prompt: ${prompt}`,
+    RETURNING_COMPLETION: '✅ Suggestio: Returning completion to VS Code',
+    FETCHING_ERROR: (error: any) => `Error fetching completion: ${error}`,
+    DOCUMENT_IGNORED: (path: string) => `Document ${path} is ignored. Skipping inline completion.`,
+    CANCELLED: (stage: string) => `❌ Suggestio: Request cancelled ${stage} LLM call`,
+} as const;
+
 export const LLM_MESSAGES = {
     GEMINI_ERROR: (status: number, text: string) => `Gemini API error: ${status} - ${text}`,
     OPENAI_ERROR: (status: number, text: string) => `OpenAI API error: ${status} - ${text}`,
@@ -69,4 +95,6 @@ export const LLM_LOGS = {
     STREAM_FINISHED: 'Stream finished.',
     STREAM_DONE: '[DONE] received.',
     STREAM_FINISH_REASON: (reason: string) => `Stream finish reason: ${reason}`,
+    RESPONSE_RECEIVED: (data: any) => `Response: ${JSON.stringify(data, null, 2)}`,
 } as const;
+
