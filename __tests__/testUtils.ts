@@ -2,7 +2,7 @@ import {
     IChatMessage,
     ILlmProvider,
     IPrompt,
-    ToolDefinition,
+    IToolDefinition,
     IUriLike,
     IVscodeApiLocal,
     IWebview,
@@ -36,12 +36,12 @@ export class FakeProvider implements ILlmProvider {
     public get queryCount() { return this.callCount; }
     constructor(private responses: (IChatMessage | null)[], private eventBus?: IEventBus) { }
 
-    async query(_prompt: IPrompt, _tools?: ToolDefinition[], signal?: AbortSignal): Promise<IChatMessage | null> {
+    async query(_prompt: IPrompt, _tools?: IToolDefinition[], signal?: AbortSignal): Promise<IChatMessage | null> {
         if (signal?.aborted) { throw new Error("Aborted"); }
         return this.getNextResponse();
     }
 
-    async queryStream(_prompt: IPrompt, _tools?: ToolDefinition[], signal?: AbortSignal): Promise<IChatMessage | null> {
+    async queryStream(_prompt: IPrompt, _tools?: IToolDefinition[], signal?: AbortSignal): Promise<IChatMessage | null> {
         if (signal?.aborted) { throw new Error("Aborted"); }
         const response = this.getNextResponse();
         if (response && response.content && this.eventBus) {

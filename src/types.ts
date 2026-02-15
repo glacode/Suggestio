@@ -845,7 +845,7 @@ export interface IInlineCompletionList {
 /**
  * Defines a tool that can be called by the LLM.
  */
-export interface ToolDefinition {
+export interface IToolDefinition {
   name: string;
   description: string;
   parameters: {
@@ -859,7 +859,7 @@ export interface ToolDefinition {
  * Interface for a tool implementation.
  */
 export interface ToolImplementation {
-  definition: ToolDefinition;
+  definition: IToolDefinition;
   execute(args: any, signal?: AbortSignal): Promise<string>;
 }
 
@@ -897,8 +897,8 @@ export interface IHttpClient {
 //  LLM Provider Types
 // --------------------------------------------------------------------------------
 export interface ILlmProvider {
-  query(prompt: IPrompt, tools?: ToolDefinition[], signal?: AbortSignal): Promise<IChatMessage | null>;
-  queryStream(prompt: IPrompt, tools?: ToolDefinition[], signal?: AbortSignal): Promise<IChatMessage | null>;
+  query(prompt: IPrompt, tools?: IToolDefinition[], signal?: AbortSignal): Promise<IChatMessage | null>;
+  queryStream(prompt: IPrompt, tools?: IToolDefinition[], signal?: AbortSignal): Promise<IChatMessage | null>;
 }
 
 // --------------------------------------------------------------------------------

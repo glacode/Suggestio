@@ -1,5 +1,5 @@
 import { OpenAICompatibleProvider } from "../../src/providers/openAICompatibleProvider.js";
-import { ChatHistory, IChatMessage, IAnonymizer, IPrompt, IHttpClient, IHttpResponse, ToolDefinition, IEventBus } from "../../src/types.js";
+import { ChatHistory, IChatMessage, IAnonymizer, IPrompt, IHttpClient, IHttpResponse, IToolDefinition, IEventBus } from "../../src/types.js";
 import { SimpleWordAnonymizer } from "../../src/anonymizer/simpleWordAnonymizer.js";
 import { ShannonEntropyCalculator } from "../../src/utils/shannonEntropyCalculator.js";
 import { jest } from "@jest/globals";
@@ -96,7 +96,7 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
 
     const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
     const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
-    const tools: ToolDefinition[] = [{ name: "test_tool", description: "test", parameters: { type: "object", properties: {} } }];
+    const tools: IToolDefinition[] = [{ name: "test_tool", description: "test", parameters: { type: "object", properties: {} } }];
     await provider.query(prompt, tools);
 
     const callArgs = mockHttpClient.post.mock.calls[0][1];

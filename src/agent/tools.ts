@@ -1,8 +1,8 @@
-import { IWorkspaceProvider, ToolDefinition, IDirectoryReader, IPathResolver, ToolImplementation } from '../types.js';
+import { IWorkspaceProvider, IToolDefinition, IDirectoryReader, IPathResolver, ToolImplementation } from '../types.js';
 import { AGENT_MESSAGES } from '../constants/messages.js';
 
 export class ListFilesTool implements ToolImplementation {
-    definition: ToolDefinition = {
+    definition: IToolDefinition = {
         name: 'list_files',
         description: 'List files in the workspace directory.',
         parameters: {

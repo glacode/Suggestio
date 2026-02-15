@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { IChatMessage, IAnonymizer, IPrompt, ILlmProvider, ToolDefinition, ToolCall, IStreamingDeanonymizer, IHttpClient, IHttpResponse } from "../types.js";
+import { IChatMessage, IAnonymizer, IPrompt, ILlmProvider, IToolDefinition, ToolCall, IStreamingDeanonymizer, IHttpClient, IHttpResponse } from "../types.js";
 import { IEventBus } from "../utils/eventBus.js";
 import { ToolCallSchema } from "../schemas.js";
 import { LLM_MESSAGES, LLM_LOGS } from "../constants/messages.js";
@@ -154,7 +154,7 @@ type OpenAIRequestBody = {
     /**
      * The definition of the function tool.
      */
-    function: ToolDefinition;
+    function: IToolDefinition;
   }[];
 };
 
@@ -246,7 +246,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
    */
   private createRequestBody(
     prompt: IPrompt,
-    tools: ToolDefinition[] | undefined,
+    tools: IToolDefinition[] | undefined,
     stream: boolean
   ): OpenAIRequestBody {
     const conversation = prompt.generateChatHistory();
@@ -297,7 +297,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
    */
   async query(
     prompt: IPrompt,
-    tools?: ToolDefinition[],
+    tools?: IToolDefinition[],
     signal?: AbortSignal
   ): Promise<IChatMessage | null> {
     const body = this.createRequestBody(prompt, tools, false);
@@ -356,7 +356,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
    */
   async queryStream(
     prompt: IPrompt,
-    tools?: ToolDefinition[],
+    tools?: IToolDefinition[],
     signal?: AbortSignal
   ): Promise<IChatMessage | null> {
     const body = this.createRequestBody(prompt, tools, true);
