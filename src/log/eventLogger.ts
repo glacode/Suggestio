@@ -1,5 +1,5 @@
 import { IEventBus } from '../types.js';
-import { LogLevelString } from '../logger.js';
+import { LogLevelString } from './logger.js';
 
 /**
  * Creates a logger-like object that emits 'log' events to the provided EventBus.

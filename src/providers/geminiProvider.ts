@@ -2,7 +2,7 @@ import fetch from "node-fetch";
 import { IChatMessage , IPrompt, ILlmProvider } from "../types.js";
 import { IEventBus } from "../utils/eventBus.js";
 import { LLM_MESSAGES } from "../constants/messages.js";
-import { createEventLogger } from "../utils/eventLogger.js";
+import { createEventLogger } from "../log/eventLogger.js";
 
 type GeminiResponse = {
   candidates?: {

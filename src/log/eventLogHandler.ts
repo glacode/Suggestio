@@ -1,5 +1,5 @@
 import { IEventBus, ILogEventPayload } from '../types.js';
-import { ILogger } from '../logger.js';
+import { ILogger } from './logger.js';
 
 /**
  * EventLogHandler listens for 'log' events on the EventBus and forwards them

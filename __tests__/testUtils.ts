@@ -27,7 +27,7 @@ import {
     IWorkspaceProviderFull,
     IEventBus,
     IConfigProvider
-} from "../src/types.js"; import { ILogger } from "../src/logger.js";
+} from "../src/types.js"; import { ILogger } from "../src/log/logger.js";
 import { jest } from "@jest/globals";
 import * as path from 'path';
 

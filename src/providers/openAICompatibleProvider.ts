@@ -3,7 +3,7 @@ import { IChatMessage, IAnonymizer, IPrompt, ILlmProvider, IToolDefinition, Tool
 import { IEventBus } from "../utils/eventBus.js";
 import { ToolCallSchema } from "../schemas.js";
 import { LLM_MESSAGES, LLM_LOGS } from "../constants/messages.js";
-import { createEventLogger } from "../utils/eventLogger.js";
+import { createEventLogger } from "../log/eventLogger.js";
 
 /**
  * Represents the response from a non-streaming OpenAI-compatible completion request.

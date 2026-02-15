@@ -1,7 +1,7 @@
 import { Config, ToolImplementation } from "../types.js";
 import type { IChatHistoryManager, IPrompt, IChatMessage, ToolCall, IChatAgent } from "../types.js";
 import { IEventBus } from "../utils/eventBus.js";
-import { createEventLogger } from "../utils/eventLogger.js";
+import { createEventLogger } from "../log/eventLogger.js";
 import { AGENT_MESSAGES, AGENT_LOGS } from "../constants/messages.js";
 import { ChatPrompt } from "../chat/chatPrompt.js";
 

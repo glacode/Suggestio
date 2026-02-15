@@ -22,7 +22,7 @@ import type {
 // Importing the `eventBus`, a custom mechanism for different parts of the extension
 // to communicate by emitting and listening for events.
 import { IEventBus } from '../utils/eventBus.js';
-import { createEventLogger } from '../utils/eventLogger.js';
+import { createEventLogger } from '../log/eventLogger.js';
 import { ChatPrompt } from './chatPrompt.js';
 import { CHAT_MESSAGES, AGENT_LOGS } from '../constants/messages.js';
 

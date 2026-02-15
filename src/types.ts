@@ -721,7 +721,7 @@ export interface ITokenEventPayload {
   type: 'content' | 'reasoning';
 }
 
-import { LogLevelString } from './logger.js';
+import { LogLevelString } from './log/logger.js';
 
 export interface ILogEventPayload {
   level: LogLevelString;

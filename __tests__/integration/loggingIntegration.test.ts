@@ -1,5 +1,5 @@
 import { EventBus } from '../../src/utils/eventBus.js';
-import { EventLogHandler } from '../../src/utils/eventLogHandler.js';
+import { EventLogHandler } from '../../src/log/eventLogHandler.js';
 import { EventBusAnonymizationNotifier, ANONYMIZATION_EVENT } from '../../src/anonymizer/anonymizationNotifier.js';
 import { createMockLogger } from '../testUtils.js';
 import { EXTENSION_LOGS } from '../../src/constants/messages.js';

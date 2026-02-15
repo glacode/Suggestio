@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import * as vscode from 'vscode';
-import { initLogger, __resetLogger, LogLevel, setLogLevel, parseLogLevel, defaultLogger } from '../src/logger.js';
+import { initLogger, __resetLogger, LogLevel, setLogLevel, parseLogLevel, defaultLogger } from '../src/log/logger.js';
 
 describe('logger', () => {
   let mockOutputChannel: vscode.LogOutputChannel;

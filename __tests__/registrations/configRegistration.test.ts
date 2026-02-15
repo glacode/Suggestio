@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { registerConfigHandler } from '../../src/registrations/configRegistration.js';
 import { IConfigContainer, Config, IConfigChangeEvent, IConfigProvider, IEventBus } from '../../src/types.js';
-import { defaultLogger, LogLevel } from '../../src/logger.js';
+import { defaultLogger, LogLevel } from '../../src/log/logger.js';
 import { createDefaultConfig, createMockConfigProvider, createMockEventBus } from '../testUtils.js';
 
 describe('registerConfigHandler', () => {

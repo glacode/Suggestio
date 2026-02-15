@@ -1,5 +1,5 @@
 import { IConfigContainer, IConfigProvider, IDisposable, IEventBus } from '../types.js';
-import { defaultLogger, parseLogLevel } from '../logger.js';
+import { defaultLogger, parseLogLevel } from '../log/logger.js';
 
 /**
  * Registers a listener for configuration changes.

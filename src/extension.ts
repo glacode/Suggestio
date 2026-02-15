@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { initLogger, defaultLogger, parseLogLevel } from './logger.js';
+import { initLogger, defaultLogger, parseLogLevel } from './log/logger.js';
 import { readConfig } from './config/config.js';
 import { registerCompletionProvider } from './registrations/completionRegistration.js';
 import { registerCommands } from './registrations/commandRegistration.js';
@@ -30,7 +30,7 @@ import { IgnoreManager } from './chat/ignoreManager.js';
 import { getChatWebviewContent } from './chat/chatWebviewContent.js';
 import './chat/activeEditorTracker.js';
 import { EventBus } from './utils/eventBus.js';
-import { EventLogHandler } from './utils/eventLogHandler.js';
+import { EventLogHandler } from './log/eventLogHandler.js';
 import { ANONYMIZATION_EVENT } from './anonymizer/anonymizationNotifier.js';
 import { NodeFetchClient } from './utils/httpClient.js';
 import { EXTENSION_MESSAGES, EXTENSION_LOGS } from './constants/messages.js';

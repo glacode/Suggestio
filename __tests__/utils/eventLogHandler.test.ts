@@ -1,4 +1,4 @@
-import { EventLogHandler } from '../../src/utils/eventLogHandler.js';
+import { EventLogHandler } from '../../src/log/eventLogHandler.js';
 import { EventBus } from '../../src/utils/eventBus.js';
 import { createMockLogger } from '../testUtils.js';
 

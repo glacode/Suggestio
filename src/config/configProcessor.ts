@@ -2,7 +2,7 @@ import { getAnonymizer } from '../anonymizer/anonymizer.js';
 import { getActiveProvider } from '../providers/providerFactory.js';
 import { IConfigContainer, Config, IProviderConfig, IHttpClient } from '../types.js';
 import { IEventBus } from '../utils/eventBus.js';
-import { createEventLogger } from '../utils/eventLogger.js';
+import { createEventLogger } from '../log/eventLogger.js';
 
 export interface SecretManager {
     getOrRequestAPIKey(providerKey: string): Promise<string>;
