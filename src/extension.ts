@@ -159,7 +159,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const chatWebviewViewProvider = new ChatWebviewViewProvider({
     extensionContext: context,
     providerAccessor,
-    logicHandler: agent,
+    chatAgent: agent,
     chatHistoryManager: chatHistoryManager,
     buildContext: new ContextBuilder(vscode.window, ignoreManager),
     getChatWebviewContent,

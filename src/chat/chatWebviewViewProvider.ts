@@ -31,7 +31,7 @@ import { CHAT_MESSAGES, AGENT_LOGS } from '../constants/messages.js';
 interface IChatWebviewViewProviderArgs {
     extensionContext: IExtensionContextMinimal; // The VS Code extension context, vital for managing extension resources.
     providerAccessor: ILlmProviderAccessor; // An accessor to retrieve available and active LLM models.
-    logicHandler: IChatAgent; // The core logic handler responsible for interacting with the LLM.
+    chatAgent: IChatAgent; // The agent responsible for interacting with the LLM.
     chatHistoryManager: IChatHistoryManager; // The manager responsible for chat history operations.
     buildContext: IContextBuilder; // A builder to create contextual information for the AI prompt.
     getChatWebviewContent: GetChatWebviewContent; // A function that provides the HTML content for the webview.
@@ -76,10 +76,10 @@ export class ChatWebviewViewProvider {
      * The constructor initializes the `ChatWebviewViewProvider` with its dependencies.
      * These dependencies are typically passed from `extension.ts` during activation.
      */
-    constructor({ extensionContext, providerAccessor, logicHandler, chatHistoryManager, buildContext, getChatWebviewContent, vscodeApi, fileReader, eventBus, anonymizer }: IChatWebviewViewProviderArgs) {
+    constructor({ extensionContext, providerAccessor, chatAgent, chatHistoryManager, buildContext, getChatWebviewContent, vscodeApi, fileReader, eventBus, anonymizer }: IChatWebviewViewProviderArgs) {
         this._extensionContext = extensionContext;
         this._providerAccessor = providerAccessor;
-        this._chatAgent = logicHandler;
+        this._chatAgent = chatAgent;
         this._chatHistoryManager = chatHistoryManager;
         this._buildContext = buildContext;
         this._getChatWebviewContent = getChatWebviewContent;
