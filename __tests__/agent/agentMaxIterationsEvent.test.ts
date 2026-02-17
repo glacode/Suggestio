@@ -2,6 +2,7 @@ import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
 import { IChatHistoryManager, IChatMessage, IPrompt, ToolImplementation, ToolCall, ILlmProvider } from "../../src/types.js";
 import { EventBus } from "../../src/utils/eventBus.js";
+import { CONFIG_DEFAULTS } from "../../src/constants/config.js";
 import { createMockHistoryManager, createDefaultConfig } from "../testUtils.js";
 
 describe("Agent Max Iterations Event", () => {
@@ -75,7 +76,7 @@ describe("Agent Max Iterations Event", () => {
 
         const config = createDefaultConfig({
             llmProviderForChat: provider,
-            maxAgentIterations: 5 
+            maxAgentIterations: CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS
         });
 
         const agent = new Agent({

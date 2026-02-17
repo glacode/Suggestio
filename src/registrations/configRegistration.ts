@@ -16,8 +16,8 @@ export function registerConfigHandler(
   subscriptions.push(
     configProvider.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration('suggestio')) {
-        const newLogLevel = configProvider.getLogLevel() ?? 'info';
-        const newMaxAgentIterations = configProvider.getMaxAgentIterations() ?? 5;
+        const newLogLevel = configProvider.getLogLevel();
+        const newMaxAgentIterations = configProvider.getMaxAgentIterations();
 
         eventBus.emit('log', { level: 'info', message: CONFIG_LOGS.CONFIGURATION_CHANGED(newLogLevel, newMaxAgentIterations) });
 

@@ -28,6 +28,7 @@ import {
     IEventBus,
     IConfigProvider
 } from "../src/types.js"; import { ILogger } from "../src/log/logger.js";
+import { CONFIG_DEFAULTS } from "../src/constants/config.js";
 import { jest } from "@jest/globals";
 import * as path from 'path';
 
@@ -208,5 +209,7 @@ export const createDefaultConfig = (overrides: Partial<Config> = {}): Config => 
     enableInlineCompletion: true,
     providers: {},
     anonymizer: { enabled: false, words: [] },
+    logLevel: CONFIG_DEFAULTS.LOG_LEVEL,
+    maxAgentIterations: CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS,
     ...overrides
 });

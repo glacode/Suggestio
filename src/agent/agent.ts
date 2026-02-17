@@ -44,7 +44,7 @@ export class Agent implements IChatAgent {
         const toolDefinitions = this.tools.map(t => t.definition);
         let currentPrompt = prompt;
         let iterations = 0;
-        const maxIterations = this.config.maxAgentIterations ?? 5;
+        const maxIterations = this.config.maxAgentIterations;
 
         while (iterations < maxIterations) {
             if (signal?.aborted) {

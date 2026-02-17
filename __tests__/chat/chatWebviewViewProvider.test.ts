@@ -20,7 +20,16 @@ import type {
 // Import the actual ChatWebviewViewProvider class that we are testing.
 import { ChatWebviewViewProvider } from '../../src/chat/chatWebviewViewProvider.js';
 import { EventBus } from '../../src/utils/eventBus.js';
-import { createMockVscodeApi, createMockWebview, createMockWebviewView, createMockHistoryManager, createMockUri, createMockFileContentReader } from '../testUtils.js';
+import {
+  createMockVscodeApi,
+  createMockWebview,
+  createMockWebviewView,
+  createMockHistoryManager,
+  createMockUri,
+  createMockFileContentReader,
+  createDefaultConfig
+} from '../testUtils.js';
+import { CONFIG_DEFAULTS } from '../../src/constants/config.js';
 
 // `describe` is used to group tests. Here, we're testing the `ChatWebviewViewProvider`.
 // The description "integration, no vscode mocks" indicates that while we're using
@@ -199,10 +208,9 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const eventBus = new EventBus();
 
     // Minimal config with a fake llm provider that immediately completes.
-    const config: import('../../src/types.js').Config = {
+    const config = createDefaultConfig({
       activeProvider: 'p',
       providers: {},
-      anonymizer: { enabled: false, words: [] },
       llmProviderForChat: {
         query: async () => null,
         queryStream: async () => {
@@ -210,7 +218,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
           return Promise.resolve(null);
         }
       }
-    };
+    });
 
     // Use the real Agent which currently adds the (context+message) to history.
     const { Agent } = await import('../../src/agent/agent.js');
@@ -598,7 +606,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     });
 
     // Event before resolveWebviewView
-    eventBus.emit('agent:maxIterationsReached', { maxIterations: 5 });
+    eventBus.emit('agent:maxIterationsReached', { maxIterations: CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS });
     expect(posted.length).toBe(0);
 
     provider.resolveWebviewView(webviewView);

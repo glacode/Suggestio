@@ -22,6 +22,7 @@ import {
 import { ChatHistoryManager } from './chat/chatHistoryManager.js';
 import { SecretManager } from './config/secretManager.js';
 import { configProcessor } from './config/configProcessor.js';
+import { CONFIG_DEFAULTS } from './constants/config.js';
 import { Agent } from './agent/agent.js';
 import { ChatWebviewViewProvider } from './chat/chatWebviewViewProvider.js';
 import { getTools } from './agent/tools.js';
@@ -101,8 +102,8 @@ export async function activate(context: vscode.ExtensionContext) {
   const pathResolver: IPathResolver = path;
 
   const configProvider: IConfigProvider = {
-    getLogLevel: () => vscode.workspace.getConfiguration('suggestio').get<string>('logLevel'),
-    getMaxAgentIterations: () => vscode.workspace.getConfiguration('suggestio').get<number>('maxAgentIterations'),
+    getLogLevel: () => vscode.workspace.getConfiguration('suggestio').get<string>('logLevel', CONFIG_DEFAULTS.LOG_LEVEL),
+    getMaxAgentIterations: () => vscode.workspace.getConfiguration('suggestio').get<number>('maxAgentIterations', CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS),
     onDidChangeConfiguration: (listener) => vscode.workspace.onDidChangeConfiguration(listener)
   };
 
@@ -122,11 +123,11 @@ export async function activate(context: vscode.ExtensionContext) {
   );
   const vsCodeConfig = vscode.workspace.getConfiguration('suggestio');
   
-  const logLevel = vsCodeConfig.get<string>('logLevel');
+  const logLevel = vsCodeConfig.get<string>('logLevel', CONFIG_DEFAULTS.LOG_LEVEL);
   defaultLogger.setLogLevel(parseLogLevel(logLevel));
 
   const overrides = {
-    maxAgentIterations: vsCodeConfig.get<number>('maxAgentIterations'),
+    maxAgentIterations: vsCodeConfig.get<number>('maxAgentIterations', CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS),
     logLevel: logLevel
   };
   const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, secretManager, eventBus, new NodeFetchClient(), overrides);

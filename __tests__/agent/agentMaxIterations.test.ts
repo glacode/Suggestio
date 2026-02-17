@@ -1,6 +1,7 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
 import { IChatHistoryManager, IChatMessage, IPrompt, ToolImplementation, ToolCall, ILlmProvider, IEventBus } from "../../src/types.js";
+import { CONFIG_DEFAULTS } from "../../src/constants/config.js";
 import { createMockHistoryManager, createDefaultConfig, createMockEventBus } from "../testUtils.js";
 
 describe("Agent Max Iterations", () => {
@@ -62,7 +63,7 @@ describe("Agent Max Iterations", () => {
         expect(provider.queryStream).toHaveBeenCalledTimes(3);
     });
 
-    it("defaults to 5 iterations if config is missing", async () => {
+    it("uses default iterations from CONFIG_DEFAULTS", async () => {
          // Create a provider that always returns tool calls
          const toolCall: ToolCall = {
             id: "call_loop",
@@ -89,9 +90,7 @@ describe("Agent Max Iterations", () => {
 
         const config = createDefaultConfig({
             llmProviderForChat: provider
-            // maxAgentIterations missing
         });
-        delete config.maxAgentIterations;
 
         const agent = new Agent({
             config,
@@ -102,7 +101,7 @@ describe("Agent Max Iterations", () => {
 
         await agent.run(mockPrompt);
 
-        // It should run exactly 5 times (default)
-        expect(provider.queryStream).toHaveBeenCalledTimes(5);
+        // It should run exactly CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS times
+        expect(provider.queryStream).toHaveBeenCalledTimes(CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS);
     });
 });

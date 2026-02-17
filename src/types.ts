@@ -580,12 +580,12 @@ export interface IConfigProvider {
   /**
    * Retrieves the log level.
    */
-  getLogLevel(): string | undefined;
+  getLogLevel(): string;
 
   /**
    * Retrieves the maximum number of agent iterations.
    */
-  getMaxAgentIterations(): number | undefined;
+  getMaxAgentIterations(): number;
 
   /**
    * Fired when the configuration changes.
@@ -931,8 +931,8 @@ export interface Config {
   anonymizerInstance?: IAnonymizer;
   llmProviderForInlineCompletion?: ILlmProvider;
   llmProviderForChat?: ILlmProvider;
-  maxAgentIterations?: number;
-  logLevel?: string;
+  maxAgentIterations: number;
+  logLevel: string;
 }
 
 export interface IConfigContainer {
