@@ -59,7 +59,7 @@ describe("ChatResponder Tool Calling Integration", () => {
             execute: jest.fn(async () => "12:00 PM")
         };
 
-        const handler = new Agent({
+        const agent = new Agent({
             config: createDefaultConfig({
                 activeProvider: "FAKE",
                 llmProviderForChat: provider,
@@ -77,7 +77,7 @@ describe("ChatResponder Tool Calling Integration", () => {
             }
         });
 
-        await handler.run(mockPrompt);
+        await agent.run(mockPrompt);
 
         // Verify final output
         expect(streamedContent).toBe("It is 12:00 PM");

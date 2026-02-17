@@ -143,7 +143,7 @@ export async function activate(context: vscode.ExtensionContext) {
     openTextDocument: async (path: string) => await vscode.workspace.openTextDocument(path)
   };
 
-  const logicHandler = new Agent({
+  const agent = new Agent({
     config: configContainer.config,
     chatHistoryManager,
     tools: getTools(workspaceProvider, { ...directoryReader, ...directoryCreator }, pathResolver),
@@ -159,7 +159,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const chatWebviewViewProvider = new ChatWebviewViewProvider({
     extensionContext: context,
     providerAccessor,
-    logicHandler,
+    logicHandler: agent,
     chatHistoryManager: chatHistoryManager,
     buildContext: new ContextBuilder(vscode.window, ignoreManager),
     getChatWebviewContent,

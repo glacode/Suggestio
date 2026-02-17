@@ -27,7 +27,7 @@ describe("Agent (Integration) simple tests", () => {
     });
 
     it("fetches stream chat response on success", async () => {
-        const handler = new Agent({
+        const agent = new Agent({
             config: createDefaultConfig({
                 activeProvider: "FAKE",
                 llmProviderForChat: new FakeProvider([{ role: "assistant", content: "Hello world" }], mockEventBus),
@@ -44,7 +44,7 @@ describe("Agent (Integration) simple tests", () => {
             }
         });
 
-        await handler.run(mockPrompt);
+        await agent.run(mockPrompt);
         expect(streamedContent).toBe("Hello world");
         expect(mockChatHistoryManager.addMessage).toHaveBeenCalledTimes(1);
         expect(mockChatHistoryManager.addMessage).toHaveBeenCalledWith(expect.objectContaining({ role: "assistant", content: "Hello world" }));
@@ -55,7 +55,7 @@ describe("Agent (Integration) simple tests", () => {
         const fakeProvider = new FakeProvider([], mockEventBus);
         jest.spyOn(fakeProvider, 'queryStream').mockRejectedValue(new Error("Simulated failure"));
 
-        const handler = new Agent({
+        const agent = new Agent({
             config: createDefaultConfig({
                 activeProvider: "FAKE",
                 llmProviderForChat: fakeProvider,
@@ -72,7 +72,7 @@ describe("Agent (Integration) simple tests", () => {
             }
         });
 
-        await expect(handler.run(mockPrompt)).rejects.toThrow("Simulated failure");
+        await expect(agent.run(mockPrompt)).rejects.toThrow("Simulated failure");
         expect(streamedContent).toBe("");
         expect(mockChatHistoryManager.addMessage).toHaveBeenCalledTimes(0);
         expect(mockChatHistory.length).toBe(0);

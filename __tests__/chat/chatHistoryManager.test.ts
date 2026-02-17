@@ -22,7 +22,7 @@ describe("Chat History Management (Unit Test)", () => {
             { role: "assistant", content: "Assistant Reply 2" }
         ], eventBus);
 
-        const handler = new Agent({
+        const agent = new Agent({
             config: createDefaultConfig({
                 activeProvider: "FAKE",
                 llmProviderForChat: fakeProvider,
@@ -36,13 +36,13 @@ describe("Chat History Management (Unit Test)", () => {
         const userMessage1 = "User message 1";
         chatHistoryManager.addMessage({ role: "user", content: userMessage1 });
         const prompt1 = new ChatPrompt(chatHistoryManager.getChatHistory());
-        await handler.run(prompt1);
+        await agent.run(prompt1);
 
         // --- Turn 2 ---
         const userMessage2 = "User message 2";
         chatHistoryManager.addMessage({ role: "user", content: userMessage2 });
         const prompt2 = new ChatPrompt(chatHistoryManager.getChatHistory());
-        await handler.run(prompt2);
+        await agent.run(prompt2);
 
         // --- Verification ---
         const finalHistory = chatHistoryManager.getChatHistory();

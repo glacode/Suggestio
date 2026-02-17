@@ -76,10 +76,10 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // It initially has a title, which we expect the `ChatWebviewViewProvider` to clear.
     const webviewView = createMockWebviewView(webview, 'SUGGESTIO: CHAT');
 
-    // `tokensEmitted` will store the full prompts sent to the `logicHandler`.
+    // `tokensEmitted` will store the full prompts sent to the `chatAgent`.
     const promptsSent: IPrompt[] = [];
-    // `logicHandler` is a fake `IChatResponder` that simulates the AI's response logic.
-    const logicHandler: IChatAgent = {
+    // `chatAgent` is a fake `IChatAgent` that simulates the AI's response logic.
+    const chatAgent: IChatAgent = {
       run: async (prompt: IPrompt) => {
         eventBus.emit('agent:token', { token: 'tok1', type: 'content' });
         eventBus.emit('agent:token', { token: 'tok2', type: 'content' });
@@ -111,7 +111,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const webViewViewProvider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') }, // Provides the extension's URI.
       providerAccessor, // Provides access to LLM models.
-      logicHandler, // Handles the actual chat response logic.
+      logicHandler: chatAgent, // Handles the actual chat response logic.
       chatHistoryManager, // No-op for this test
       buildContext, // Provides additional context for prompts.
       getChatWebviewContent, // Function to generate webview HTML.
@@ -222,7 +222,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     // Use the real Agent which currently adds the (context+message) to history.
     const { Agent } = await import('../../src/agent/agent.js');
-    const responder = new Agent({
+    const agent = new Agent({
       config,
       chatHistoryManager,
       eventBus
@@ -231,7 +231,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       providerAccessor,
-      logicHandler: responder,
+      logicHandler: agent,
       chatHistoryManager,
       buildContext: { buildContext: async () => 'CONTEXT' },
       getChatWebviewContent: () => '',
@@ -372,8 +372,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // Fake `webviewView` container.
     const webviewView = createMockWebviewView(webview, 'X');
 
-    // Fake `logicHandler` for this test.
-    const logicHandler: IChatAgent = {
+    // Fake `chatAgent` for this test.
+    const chatAgent: IChatAgent = {
       run: async () => {
         /* not called */ // This should not be called.
       }
@@ -395,7 +395,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       providerAccessor,
-      logicHandler,
+      logicHandler: chatAgent,
       chatHistoryManager,
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
