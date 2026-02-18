@@ -270,6 +270,52 @@
                 opacity: 0.8;
             }
 
+            .reasoning-container {
+                margin-bottom: 8px;
+                padding: 8px;
+                background: var(--vscode-textBlockQuote-background);
+                border-radius: 4px;
+                font-size: 12px;
+                border-left: 2px solid var(--vscode-textBlockQuote-border);
+            }
+
+            .reasoning-header {
+                display: flex;
+                align-items: center;
+                cursor: pointer;
+                color: var(--vscode-descriptionForeground);
+                margin-bottom: 4px;
+                user-select: none;
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            .reasoning-header:hover {
+                color: var(--vscode-foreground);
+            }
+
+            .reasoning-content {
+                display: block;
+                font-style: italic;
+                opacity: 0.9;
+            }
+
+            .reasoning-content.collapsed {
+                display: none;
+            }
+
+            .reasoning-toggle-icon {
+                margin-right: 6px;
+                transition: transform 0.2s;
+                display: flex;
+                align-items: center;
+            }
+
+            .reasoning-toggle-icon.collapsed {
+                transform: rotate(-90deg);
+            }
+
         </style>
     </head>
     <body>
@@ -416,14 +462,32 @@
                 input.value = '';
             }
 
-            function appendMessage(sender, text) {
+            function appendMessage(sender, text, reasoning) {
                 const chat = document.getElementById('chat');
                 const msg = document.createElement('div');
                 msg.className = 'message ' + sender;
 
-                // Render Markdown for assistant messages
-                if (sender === 'assistant' && window.renderMarkdown) {
-                    msg.innerHTML = window.renderMarkdown(text);
+                if (sender === 'assistant') {
+                    if (reasoning) {
+                        const reasoningContainer = document.createElement('div');
+                        reasoningContainer.className = 'reasoning-container';
+                        reasoningContainer.innerHTML = `
+                            <div class="reasoning-header" onclick="toggleReasoning(event)">
+                                <span class="reasoning-toggle-icon">
+                                    <svg width="10" height="10" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M8 11L3 6h10l-5 5z" fill="currentColor"/>
+                                    </svg>
+                                </span>
+                                <span>Thought Process</span>
+                            </div>
+                            <div class="reasoning-content">${window.renderMarkdown(reasoning)}</div>
+                        `;
+                        msg.appendChild(reasoningContainer);
+                    }
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'message-content';
+                    contentDiv.innerHTML = window.renderMarkdown(text);
+                    msg.appendChild(contentDiv);
                 } else {
                     msg.innerText = text;
                 }
@@ -462,7 +526,10 @@
                     
                     // Remove the entire bubble if no content was streamed (error case)
                     const contentDiv = lastMessage.querySelector('.message-content');
-                    if (contentDiv && !contentDiv.textContent.trim()) {
+                    const hasContent = contentDiv && contentDiv.textContent.trim().length > 0;
+                    const hasReasoning = lastMessage.dataset.reasoningText && lastMessage.dataset.reasoningText.trim().length > 0;
+                    
+                    if (!hasContent && !hasReasoning) {
                         lastMessage.remove();
                     }
                 }
@@ -470,9 +537,19 @@
                 enableInput();
             }
 
+            function toggleReasoning(event) {
+                const header = event.currentTarget;
+                const container = header.parentElement;
+                const content = container.querySelector('.reasoning-content');
+                const icon = header.querySelector('.reasoning-toggle-icon');
+                
+                const isCollapsed = content.classList.toggle('collapsed');
+                icon.classList.toggle('collapsed', isCollapsed);
+            }
+
             window.addEventListener('message', event => {
-                const { sender, type, text } = event.data;
-                console.log('Message received:', { sender, type, text: text?.substring(0, 50) });
+                const { sender, type, text, tokenType } = event.data;
+                console.log('Message received:', { sender, type, tokenType, text: text?.substring(0, 50) });
 
                 if (event.data.command === 'newChat') {
                     newChat();
@@ -481,7 +558,6 @@
 
                 if (sender === 'assistant') {
                     if (type === 'token') {
-                        console.log('Token received, creating/updating loading indicator');
                         const allAssistantMessages = document.querySelectorAll('.message.assistant');
                         let lastMessage = allAssistantMessages.length > 0 ? allAssistantMessages[allAssistantMessages.length - 1] : null;
 
@@ -490,28 +566,48 @@
                             const loadingMsg = document.createElement('div');
                             loadingMsg.className = 'message assistant loading';
                             loadingMsg.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div><div class="message-content"></div>';
-                            loadingMsg.dataset.fullText = text;
                             loadingMsg.dataset.streaming = 'true';
-                            
-                            // Add the first token to content
-                            const contentDiv = loadingMsg.querySelector('.message-content');
-                            contentDiv.innerHTML = window.renderMarkdown(text);
+                            loadingMsg.dataset.reasoningText = '';
+                            loadingMsg.dataset.contentText = '';
                             
                             chat.appendChild(loadingMsg);
                             lastMessage = loadingMsg;
+                        }
+
+                        if (tokenType === 'reasoning') {
+                            lastMessage.dataset.reasoningText = (lastMessage.dataset.reasoningText || '') + text;
+                            
+                            let reasoningContent = lastMessage.querySelector('.reasoning-content');
+                            if (!reasoningContent) {
+                                const reasoningContainer = document.createElement('div');
+                                reasoningContainer.className = 'reasoning-container';
+                                reasoningContainer.innerHTML = `
+                                    <div class="reasoning-header" onclick="toggleReasoning(event)">
+                                        <span class="reasoning-toggle-icon">
+                                            <svg width="10" height="10" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M8 11L3 6h10l-5 5z" fill="currentColor"/>
+                                            </svg>
+                                        </span>
+                                        <span>Thought Process</span>
+                                    </div>
+                                    <div class="reasoning-content"></div>
+                                `;
+                                lastMessage.insertBefore(reasoningContainer, lastMessage.firstChild);
+                                reasoningContent = reasoningContainer.querySelector('.reasoning-content');
+                            }
+                            reasoningContent.innerHTML = window.renderMarkdown(lastMessage.dataset.reasoningText);
                         } else {
-                            // Continuing a stream - keep indicator, update content
-                            lastMessage.dataset.fullText += text;
+                            lastMessage.dataset.contentText = (lastMessage.dataset.contentText || '') + text;
                             const contentDiv = lastMessage.querySelector('.message-content');
                             if (contentDiv) {
-                                contentDiv.innerHTML = window.renderMarkdown(lastMessage.dataset.fullText);
+                                contentDiv.innerHTML = window.renderMarkdown(lastMessage.dataset.contentText);
                             }
+                        }
 
-                            if (userMessageElement) {
-                                const userMessageRect = userMessageElement.getBoundingClientRect();
-                                if (userMessageRect.top > 25) {
-                                    chat.scrollTop += 20; // Adjust scroll speed as needed
-                                }
+                        if (userMessageElement) {
+                            const userMessageRect = userMessageElement.getBoundingClientRect();
+                            if (userMessageRect.top > 25) {
+                                chat.scrollTop += 20;
                             }
                         }
 

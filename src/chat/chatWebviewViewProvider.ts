@@ -104,11 +104,11 @@ export class ChatWebviewViewProvider {
                 return;
             }
             if (this._view) {
-                // For now, reasoning tokens are displayed as normal tokens
                 this._view.webview.postMessage({
                     sender: 'assistant',
                     type: 'token',
-                    text: payload.token
+                    text: payload.token,
+                    tokenType: payload.type
                 });
             }
         });

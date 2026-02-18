@@ -168,8 +168,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // Expect the `posted` array to contain the tokens emitted by our fake `logicHandler`,
     // followed by a 'completion' message indicating the end of the response.
     expect(posted).toEqual([
-      { sender: 'assistant', type: 'token', text: 'tok1' }, // First token.
-      { sender: 'assistant', type: 'token', text: 'tok2' }, // Second token.
+      { sender: 'assistant', type: 'token', text: 'tok1', tokenType: 'content' }, // First token.
+      { sender: 'assistant', type: 'token', text: 'tok2', tokenType: 'content' }, // Second token.
       { sender: 'assistant', type: 'completion', text: '' } // Completion message.
     ]);
 
@@ -540,7 +540,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     // Verify only the first token was posted, followed by a completion message
     expect(posted).toEqual([
-      { sender: 'assistant', type: 'token', text: 'tok1' },
+      { sender: 'assistant', type: 'token', text: 'tok1', tokenType: 'content' },
       { sender: 'assistant', type: 'completion', text: '' }
     ]);
   });
@@ -641,6 +641,49 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     if (webview.__handler) {
       await webview.__handler({ command: 'cancelRequest' });
     }
+  });
+
+  it('passes reasoning tokens with tokenType to webview', async () => {
+    const extensionUri = createMockUri('/ext');
+    const eventBus = new EventBus();
+    const vscodeApi = createMockVscodeApi();
+    const providerAccessor: ILlmProviderAccessor = { getModels: () => [], getActiveModel: () => '' };
+
+    const posted: MessageFromTheExtensionToTheWebview[] = [];
+    const webview = createMockWebview(posted);
+    const webviewView = createMockWebviewView(webview, 'X');
+
+    const chatAgent: IChatAgent = {
+      run: async () => {
+        eventBus.emit('agent:token', { token: 'thought', type: 'reasoning' });
+        eventBus.emit('agent:token', { token: 'result', type: 'content' });
+        return Promise.resolve();
+      }
+    };
+
+    const provider = new ChatWebviewViewProvider({
+      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
+      providerAccessor,
+      chatAgent,
+      chatHistoryManager: { clearHistory: () => { }, addMessage: () => { }, getChatHistory: () => [] },
+      buildContext: { buildContext: async () => '' },
+      getChatWebviewContent: () => '',
+      vscodeApi,
+      fileReader: createMockFileContentReader(),
+      eventBus,
+    });
+
+    provider.resolveWebviewView(webviewView);
+
+    if (webview.__handler) {
+      await webview.__handler({ command: 'sendMessage', text: 'hello' });
+    }
+
+    expect(posted).toEqual([
+      { sender: 'assistant', type: 'token', text: 'thought', tokenType: 'reasoning' },
+      { sender: 'assistant', type: 'token', text: 'result', tokenType: 'content' },
+      { sender: 'assistant', type: 'completion', text: '' }
+    ]);
   });
 
   it('_sendCompletionMessage does nothing if _view is undefined', async () => {

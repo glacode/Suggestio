@@ -246,6 +246,8 @@ export type MessageFromTheExtensionToTheWebview =
     type: 'token';
     /** The text content of the token. */
     text: string;
+    /** The type of token. */
+    tokenType?: 'content' | 'reasoning';
   }
   | {
     /** Indicates the message comes from the AI assistant. */
