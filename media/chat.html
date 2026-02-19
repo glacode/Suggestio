@@ -271,8 +271,8 @@
             }
 
             .reasoning-container {
-                margin-bottom: 8px;
-                padding: 8px;
+                margin-bottom: 4px;
+                padding: 6px 8px;
                 background: var(--vscode-textBlockQuote-background);
                 border-radius: 4px;
                 font-size: 12px;
@@ -284,11 +284,10 @@
                 align-items: center;
                 cursor: pointer;
                 color: var(--vscode-descriptionForeground);
-                margin-bottom: 4px;
                 user-select: none;
                 font-size: 12px;
                 letter-spacing: 0.5px;
-                padding: 4px 0;
+                padding: 2px 0;
             }
 
             .reasoning-header:hover {
@@ -299,6 +298,7 @@
                 display: block;
                 font-style: italic;
                 opacity: 0.9;
+                padding-top: 4px;
             }
 
             .reasoning-content.collapsed {
@@ -310,6 +310,7 @@
                 transition: transform 0.2s;
                 display: flex;
                 align-items: center;
+                margin-top: -2px; /* Pull up to align with text center */
             }
 
             .reasoning-toggle-icon.collapsed {
