@@ -463,6 +463,22 @@
                 input.value = '';
             }
 
+            function createReasoningHtml(reasoningText) {
+                return `
+                    <div class="reasoning-container">
+                        <div class="reasoning-header" onclick="toggleReasoning(event)">
+                            <span class="reasoning-toggle-icon">
+                                <svg width="14" height="14" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill="currentColor" d="M7.976 10.072l4.357-4.357.62.618L8.284 11h-.618L3 6.333l.619-.618 4.357 4.357z"/>
+                                </svg>
+                            </span>
+                            <span>Thought Process</span>
+                        </div>
+                        <div class="reasoning-content">${reasoningText ? window.renderMarkdown(reasoningText) : ''}</div>
+                    </div>
+                `;
+            }
+
             function appendMessage(sender, text, reasoning) {
                 const chat = document.getElementById('chat');
                 const msg = document.createElement('div');
@@ -470,20 +486,7 @@
 
                 if (sender === 'assistant') {
                     if (reasoning) {
-                        const reasoningContainer = document.createElement('div');
-                        reasoningContainer.className = 'reasoning-container';
-                        reasoningContainer.innerHTML = `
-                            <div class="reasoning-header" onclick="toggleReasoning(event)">
-                                <span class="reasoning-toggle-icon">
-                                    <svg width="14" height="14" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
-                                        <path fill="currentColor" d="M7.976 10.072l4.357-4.357.62.618L8.284 11h-.618L3 6.333l.619-.618 4.357 4.357z"/>
-                                    </svg>
-                                </span>
-                                <span>Thought Process</span>
-                            </div>
-                            <div class="reasoning-content">${window.renderMarkdown(reasoning)}</div>
-                        `;
-                        msg.appendChild(reasoningContainer);
+                        msg.innerHTML = createReasoningHtml(reasoning);
                     }
                     const contentDiv = document.createElement('div');
                     contentDiv.className = 'message-content';
@@ -580,21 +583,9 @@
                             
                             let reasoningContent = lastMessage.querySelector('.reasoning-content');
                             if (!reasoningContent) {
-                                const reasoningContainer = document.createElement('div');
-                                reasoningContainer.className = 'reasoning-container';
-                                reasoningContainer.innerHTML = `
-                                    <div class="reasoning-header" onclick="toggleReasoning(event)">
-                                        <span class="reasoning-toggle-icon">
-                                            <svg width="14" height="14" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
-                                                <path fill="currentColor" d="M7.976 10.072l4.357-4.357.62.618L8.284 11h-.618L3 6.333l.619-.618 4.357 4.357z"/>
-                                            </svg>
-                                        </span>
-                                        <span>Thought Process</span>
-                                    </div>
-                                    <div class="reasoning-content"></div>
-                                `;
-                                lastMessage.insertBefore(reasoningContainer, lastMessage.firstChild);
-                                reasoningContent = reasoningContainer.querySelector('.reasoning-content');
+                                // Insert the reasoning block at the start of the assistant message
+                                lastMessage.insertAdjacentHTML('afterbegin', createReasoningHtml(''));
+                                reasoningContent = lastMessage.querySelector('.reasoning-content');
                             }
                             reasoningContent.innerHTML = window.renderMarkdown(lastMessage.dataset.reasoningText);
                         } else {
