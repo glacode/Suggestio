@@ -66,8 +66,8 @@
       "model": "meta-llama/Llama-3-8B-Instruct",
       "apiKey": "${HF_API_KEY}"
     },
-    "gemini-flash": {
-      "type": "gemini",
+    "gemini-2.5-flash-lite": {
+      "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
       "model": "gemini-2.5-flash-lite",
       "apiKey": "${GEMINI_API_KEY}"
     }
