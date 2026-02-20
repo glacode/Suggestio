@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
-import { IChatHistoryManager, IChatMessage, IPrompt, ToolImplementation, ToolCall, IEventBus, ILogEventPayload } from "../../src/types.js";
+import { IChatHistoryManager, IChatMessage, IPrompt, IToolImplementation, ToolCall, IEventBus, ILogEventPayload } from "../../src/types.js";
 import { FakeProvider, createMockHistoryManager, createDefaultConfig, createMockEventBus } from "../testUtils.js";
 import { AGENT_MESSAGES } from "../../src/constants/messages.js";
 
@@ -43,7 +43,7 @@ describe("Agent", () => {
     });
 
     it("handles tool calls and continues the loop", async () => {
-        const tool: ToolImplementation = {
+        const tool: IToolImplementation = {
             definition: {
                 name: "test_tool",
                 description: "A test tool",
@@ -163,7 +163,7 @@ describe("Agent", () => {
         const provider = new FakeProvider([toolResponse, finalResponse], mockEventBus);
         const mockAddMessage = jest.spyOn(mockChatHistoryManager, 'addMessage');
 
-        const mockTool: ToolImplementation = {
+        const mockTool: IToolImplementation = {
             definition: {
                 name: "errorTool",
                 description: "Throws an error",
@@ -224,12 +224,12 @@ describe("Agent", () => {
 
         const provider = new FakeProvider([toolResponse, finalResponse], mockEventBus);
 
-        const mockToolA: ToolImplementation = {
+        const mockToolA: IToolImplementation = {
             definition: { name: "toolA", description: "Tool A", parameters: { type: "object", properties: {} } },
             execute: jest.fn(async () => "Result A")
         };
 
-        const mockToolB: ToolImplementation = {
+        const mockToolB: IToolImplementation = {
             definition: { name: "toolB", description: "Tool B", parameters: { type: "object", properties: {} } },
             execute: jest.fn(async () => "Result B")
         };
@@ -303,12 +303,12 @@ describe("Agent", () => {
 
         const provider = new FakeProvider([response1, response2, finalResponse], mockEventBus);
 
-        const mockTool1: ToolImplementation = {
+        const mockTool1: IToolImplementation = {
             definition: { name: "tool1", description: "Tool 1", parameters: { type: "object", properties: {} } },
             execute: jest.fn(async () => "Result 1")
         };
 
-        const mockTool2: ToolImplementation = {
+        const mockTool2: IToolImplementation = {
             definition: { name: "tool2", description: "Tool 2", parameters: { type: "object", properties: {} } },
             execute: jest.fn(async () => "Result 2")
         };
@@ -351,7 +351,7 @@ describe("Agent", () => {
     });
 
     it("STOPS the loop if AbortSignal is aborted between iterations", async () => {
-        const tool: ToolImplementation = {
+        const tool: IToolImplementation = {
             definition: {
                 name: "test_tool",
                 description: "A test tool",
@@ -397,7 +397,7 @@ describe("Agent", () => {
     });
 
         it("passes AbortSignal to tools", async () => {
-        const tool: ToolImplementation = {
+        const tool: IToolImplementation = {
             definition: {
                 name: "test_tool",
                 description: "A test tool",

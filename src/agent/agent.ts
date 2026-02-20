@@ -1,4 +1,4 @@
-import { Config, ToolImplementation } from "../types.js";
+import { Config, IToolImplementation } from "../types.js";
 import type { IChatHistoryManager, IPrompt, IChatMessage, ToolCall, IChatAgent } from "../types.js";
 import { IEventBus } from "../utils/eventBus.js";
 import { createEventLogger } from "../log/eventLogger.js";
@@ -14,7 +14,7 @@ export interface IAgentArgs {
     /** The chat history manager for the agent. */
     chatHistoryManager: IChatHistoryManager;
     /** The tools available to the agent. */
-    tools?: ToolImplementation[];
+    tools?: IToolImplementation[];
     /** The event bus for the agent to emit events. */
     eventBus: IEventBus;
 }
@@ -22,7 +22,7 @@ export interface IAgentArgs {
 export class Agent implements IChatAgent {
     private config: Config;
     private chatHistoryManager: IChatHistoryManager;
-    private tools: ToolImplementation[];
+    private tools: IToolImplementation[];
     private eventBus: IEventBus;
 
     private logger: ReturnType<typeof createEventLogger>;
@@ -132,7 +132,7 @@ export class Agent implements IChatAgent {
     /**
      * Runs the tool logic and handles execution errors.
      */
-    private async runTool(tool: ToolImplementation, toolCall: ToolCall, signal?: AbortSignal): Promise<void> {
+    private async runTool(tool: IToolImplementation, toolCall: ToolCall, signal?: AbortSignal): Promise<void> {
         this.logger.info(AGENT_LOGS.EXECUTING_TOOL(toolCall.function.name));
         try {
             const args = JSON.parse(toolCall.function.arguments);

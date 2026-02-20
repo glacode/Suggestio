@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
-import { IChatHistoryManager, IChatMessage, IPrompt, ChatHistory, ToolImplementation, ToolCall, IEventBus } from "../../src/types.js";
+import { IChatHistoryManager, IChatMessage, IPrompt, ChatHistory, IToolImplementation, ToolCall, IEventBus } from "../../src/types.js";
 import { FakeProvider, createDefaultConfig, createMockProviderConfig, createMockEventBus } from "../testUtils.js";
 import { AGENT_MESSAGES } from "../../src/constants/messages.js";
 
@@ -50,7 +50,7 @@ describe("ChatResponder Tool Calling Integration", () => {
 
         const provider = new FakeProvider([toolResponse, finalResponse], mockEventBus);
 
-        const mockTool: ToolImplementation = {
+        const mockTool: IToolImplementation = {
             definition: {
                 name: "getTime",
                 description: "Gets the current time",

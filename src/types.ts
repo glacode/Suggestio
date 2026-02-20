@@ -860,7 +860,7 @@ export interface IToolDefinition {
 /**
  * Interface for a tool implementation.
  */
-export interface ToolImplementation {
+export interface IToolImplementation {
   definition: IToolDefinition;
   execute(args: any, signal?: AbortSignal): Promise<string>;
 }

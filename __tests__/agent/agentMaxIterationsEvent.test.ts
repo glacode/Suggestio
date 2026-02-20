@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
-import { IChatHistoryManager, IChatMessage, IPrompt, ToolImplementation, ToolCall, ILlmProvider } from "../../src/types.js";
+import { IChatHistoryManager, IChatMessage, IPrompt, IToolImplementation, ToolCall, ILlmProvider } from "../../src/types.js";
 import { EventBus } from "../../src/utils/eventBus.js";
 import { CONFIG_DEFAULTS } from "../../src/constants/config.js";
 import { createMockHistoryManager, createDefaultConfig } from "../testUtils.js";
@@ -39,7 +39,7 @@ describe("Agent Max Iterations Event", () => {
              })
         };
 
-        const mockTool: ToolImplementation = {
+        const mockTool: IToolImplementation = {
             definition: { name: "loop_tool", description: "Loop", parameters: { type: "object", properties: {} } },
             execute: jest.fn(async () => "Loop Result")
         };
