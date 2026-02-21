@@ -11,7 +11,7 @@ import {
     MessageFromTheExtensionToTheWebview,
     ITextDocument,
     IIgnoreManager,
-    Config,
+    IConfig,
     IChatHistoryManager,
     ChatHistory,
     IProviderConfig,
@@ -204,7 +204,7 @@ export const createMockProviderConfig = (overrides: Partial<IProviderConfig> = {
     ...overrides
 });
 
-export const createDefaultConfig = (overrides: Partial<Config> = {}): Config => ({
+export const createDefaultConfig = (overrides: Partial<IConfig> = {}): IConfig => ({
     activeProvider: 'test',
     enableInlineCompletion: true,
     providers: {},

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { registerConfigHandler } from '../../src/registrations/configRegistration.js';
-import { IConfigContainer, Config, IConfigChangeEvent, IConfigProvider, IEventBus } from '../../src/types.js';
+import { IConfigContainer, IConfig, IConfigChangeEvent, IConfigProvider, IEventBus } from '../../src/types.js';
 import { defaultLogger, LogLevel } from '../../src/log/logger.js';
 import { CONFIG_DEFAULTS } from '../../src/constants/config.js';
 import { createDefaultConfig, createMockConfigProvider, createMockEventBus } from '../testUtils.js';
@@ -21,7 +21,7 @@ describe('registerConfigHandler', () => {
     mockConfigProvider = createMockConfigProvider();
     mockEventBus = createMockEventBus();
     
-    const config: Config = createDefaultConfig();
+    const config: IConfig = createDefaultConfig();
     config.logLevel = CONFIG_DEFAULTS.LOG_LEVEL;
     config.maxAgentIterations = CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS;
     

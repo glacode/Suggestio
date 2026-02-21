@@ -916,7 +916,7 @@ export interface IProviderConfig {
   type?: "openai-compatible" | "gemini"; // defaults to openai-compatible
 }
 
-export interface Config {
+export interface IConfig {
   activeProvider: string;
   enableInlineCompletion?: boolean;
   providers: {
@@ -938,7 +938,7 @@ export interface Config {
 }
 
 export interface IConfigContainer {
-  config: Config;
+  config: IConfig;
 }
 
 export interface ISecretStorage {

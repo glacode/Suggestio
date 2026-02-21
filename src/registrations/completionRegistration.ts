@@ -1,12 +1,12 @@
 // registrations/completionRegistration.ts
 import * as vscode from 'vscode';
 import { provideInlineCompletionItems } from '../completion/completionProvider.js';
-import { Config, IEventBus } from '../types.js';
+import { IConfig, IEventBus } from '../types.js';
 import { IgnoreManager } from '../chat/ignoreManager.js';
 
 export function registerCompletionProvider(
   context: vscode.ExtensionContext,
-  config: Config,
+  config: IConfig,
   ignoreManager: IgnoreManager,
   eventBus: IEventBus
 ) {

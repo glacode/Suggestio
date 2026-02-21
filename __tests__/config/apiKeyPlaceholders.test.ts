@@ -1,10 +1,10 @@
-import { Config } from "../../src/types.js";
+import { IConfig } from "../../src/types.js";
 import { extractApiKeyPlaceholders } from "../../src/config/apiKeyPlaceholders.js";
 import { createDefaultConfig } from "../testUtils.js";
 
 describe("extractApiKeyPlaceholders", () => {
   it("should extract placeholders from providers with ${VARNAME}", () => {
-    const config: Config = createDefaultConfig({
+    const config: IConfig = createDefaultConfig({
       activeProvider: "openrouter",
       providers: {
         openrouter: {
@@ -25,7 +25,7 @@ describe("extractApiKeyPlaceholders", () => {
   });
 
   it("should ignore hardcoded API keys", () => {
-    const config: Config = createDefaultConfig({
+    const config: IConfig = createDefaultConfig({
       activeProvider: "hardcoded",
       providers: {
         hardcoded: {
@@ -41,7 +41,7 @@ describe("extractApiKeyPlaceholders", () => {
   });
 
   it("should return empty array if no providers are present", () => {
-    const config: Config = createDefaultConfig({
+    const config: IConfig = createDefaultConfig({
       activeProvider: "",
       providers: {}
     });
@@ -51,7 +51,7 @@ describe("extractApiKeyPlaceholders", () => {
   });
 
   it("should handle duplicate placeholders gracefully", () => {
-    const config: Config = createDefaultConfig({
+    const config: IConfig = createDefaultConfig({
       activeProvider: "dup",
       providers: {
         a: {

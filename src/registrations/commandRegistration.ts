@@ -2,7 +2,7 @@
 import * as vscode from 'vscode';
 import { editGlobalConfig } from '../config/editGlobalConfig.js';
 import { 
-  Config, 
+  IConfig, 
   IPathResolver, 
   IDirectoryReader, 
   IDirectoryCreator, 
@@ -20,7 +20,7 @@ interface INewChatCapable {
 
 export function registerCommands(
   context: vscode.ExtensionContext,
-  config: Config,
+  config: IConfig,
   newChatCapable: INewChatCapable,
   eventBus: IEventBus,
   pathResolver: IPathResolver,

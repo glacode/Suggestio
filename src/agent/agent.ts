@@ -1,4 +1,4 @@
-import { Config, IToolImplementation } from "../types.js";
+import { IConfig, IToolImplementation } from "../types.js";
 import type { IChatHistoryManager, IPrompt, IChatMessage, ToolCall, IChatAgent } from "../types.js";
 import { IEventBus } from "../utils/eventBus.js";
 import { createEventLogger } from "../log/eventLogger.js";
@@ -10,7 +10,7 @@ import { ChatPrompt } from "../chat/chatPrompt.js";
  */
 export interface IAgentArgs {
     /** The configuration for the agent. */
-    config: Config;
+    config: IConfig;
     /** The chat history manager for the agent. */
     chatHistoryManager: IChatHistoryManager;
     /** The tools available to the agent. */
@@ -20,7 +20,7 @@ export interface IAgentArgs {
 }
 
 export class Agent implements IChatAgent {
-    private config: Config;
+    private config: IConfig;
     private chatHistoryManager: IChatHistoryManager;
     private tools: IToolImplementation[];
     private eventBus: IEventBus;

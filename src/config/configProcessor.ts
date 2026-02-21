@@ -1,6 +1,6 @@
 import { getAnonymizer } from '../anonymizer/anonymizer.js';
 import { getActiveProvider } from '../providers/providerFactory.js';
-import { IConfigContainer, Config, IProviderConfig, IHttpClient } from '../types.js';
+import { IConfigContainer, IConfig, IProviderConfig, IHttpClient } from '../types.js';
 import { IEventBus } from '../utils/eventBus.js';
 import { createEventLogger } from '../log/eventLogger.js';
 import { CONFIG_LOGS } from '../constants/messages.js';
@@ -10,7 +10,7 @@ export interface SecretManager {
 }
 
 class ConfigProcessor {
-    private _config: Config | undefined;
+    private _config: IConfig | undefined;
     private _secretManager: SecretManager | undefined;
     private _eventBus: IEventBus | undefined;
     private _httpClient: IHttpClient | undefined;
@@ -20,7 +20,7 @@ class ConfigProcessor {
     constructor() {
     }
 
-    public init(config: Config, secretManager: SecretManager, eventBus: IEventBus, httpClient: IHttpClient) {
+    public init(config: IConfig, secretManager: SecretManager, eventBus: IEventBus, httpClient: IHttpClient) {
         this._config = config;
         this._secretManager = secretManager;
         this._eventBus = eventBus;
@@ -80,8 +80,8 @@ class ConfigProcessor {
      *                  These can override existing properties from the JSON config or provide
      *                  additional properties (e.g., maxAgentIterations) not present in the config file.
      */
-    public async processConfig(rawJson: string, secretManager: SecretManager, eventBus: IEventBus, httpClient: IHttpClient, overrides?: Partial<Config>): Promise<IConfigContainer> {
-        const config: Config = JSON.parse(rawJson);
+    public async processConfig(rawJson: string, secretManager: SecretManager, eventBus: IEventBus, httpClient: IHttpClient, overrides?: Partial<IConfig>): Promise<IConfigContainer> {
+        const config: IConfig = JSON.parse(rawJson);
 
         if (overrides) {
             Object.assign(config, overrides);
@@ -94,7 +94,7 @@ class ConfigProcessor {
         return { config };
     }
 
-    private async updateProviders(config: Config) {
+    private async updateProviders(config: IConfig) {
         if (!this._eventBus || !this._httpClient) {
             throw new Error(CONFIG_LOGS.CONFIG_PROCESSOR_NOT_INITIALIZED);
         }

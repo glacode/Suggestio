@@ -1,4 +1,4 @@
-import { Config } from "../types.js";
+import { IConfig } from "../types.js";
 
 /**
  * Scans all providers in the config and collects API key placeholders.
@@ -9,7 +9,7 @@ import { Config } from "../types.js";
  *
  * Returns an array of unique placeholder names for use in secret management commands.
  */
-export function extractApiKeyPlaceholders(config: Config): string[] {
+export function extractApiKeyPlaceholders(config: IConfig): string[] {
   const placeholders = new Set<string>();
 
   for (const providerKey of Object.keys(config.providers)) {

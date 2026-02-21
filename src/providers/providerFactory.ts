@@ -1,11 +1,11 @@
-import { Config, IProviderConfig, ILlmProvider, IAnonymizer, IHttpClient, IEventBus } from "../types.js";
+import { IConfig, IProviderConfig, ILlmProvider, IAnonymizer, IHttpClient, IEventBus } from "../types.js";
 import { OpenAICompatibleProvider } from "./openAICompatibleProvider.js";
 import { GeminiProvider } from "./geminiProvider.js";
 import * as vscode from "vscode";
 import { PROVIDER_MESSAGES } from "../constants/messages.js";
 
 export function getActiveProvider(
-  config: Config,
+  config: IConfig,
   httpClient: IHttpClient,
   eventBus: IEventBus,
   anonymizer?: IAnonymizer

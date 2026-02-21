@@ -6,7 +6,7 @@ import {
   ICancellationToken, 
   IInlineCompletionList, 
   IIgnoreManager,
-  Config,
+  IConfig,
   ILlmProvider
 } from "../types.js";
 import { buildPromptForInlineCompletion } from "./promptBuilder/promptBuilder.js";
@@ -19,7 +19,7 @@ const DEBOUNCE_DELAY_MS = 1000;
 
 function createDebounceCallback(
   provider: ILlmProvider | undefined,
-  config: Config,
+  config: IConfig,
   document: ITextDocument,
   position: IPosition,
   token: ICancellationToken | undefined,
@@ -71,7 +71,7 @@ function createDebounceCallback(
 
 export async function provideInlineCompletionItems(
   provider: ILlmProvider | undefined,
-  config: Config,
+  config: IConfig,
   ignoreManager: IIgnoreManager, // Changed to interface
   document: ITextDocument,
   position: IPosition,
