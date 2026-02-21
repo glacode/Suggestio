@@ -238,7 +238,8 @@
         "build:webview": "esbuild src/webView/renderMarkDown.ts --bundle --outfile=builtResources/renderMarkDown.js --format=iife",
         "watch:webview": "esbuild src/webView/renderMarkDown.ts --bundle --outfile=builtResources/renderMarkDown.js --format=iife --watch",
         "copy-css": "node ./scripts/copyCss.js",
-        "serve:chat": "node scripts/serve-chat.js"
+        "serve:chat": "node scripts/serve-chat.js",
+        "test:providers": "node --env-file=.env scripts/tools/test-providers.js"
     },
     "dependencies": {
         "highlight.js": "^11.11.1",
