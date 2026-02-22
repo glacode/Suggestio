@@ -230,15 +230,15 @@
         "check-types": "tsc --noEmit",
         "lint": "eslint src __tests__ e2e-tests-playwright",
         "test": "node --experimental-vm-modules node_modules/.bin/jest --detectOpenHandles",
-        "build:e2e": "tsc -p ./tsconfig.e2e.json && node ./scripts/rename-e2e.js",
+        "build:e2e": "tsc -p ./tsconfig.e2e.json && node ./scripts/test/rename-e2e.js",
         "test:e2e": "npm run build:e2e && node ./dist-e2e/runTest.cjs",
         "test:e2e-playwright": "playwright test --config=e2e-tests-playwright/playwright.config.ts",
         "test:e2e-playwright-headless": "xvfb-run -a npm run test:e2e-playwright",
         "test:debug": "node --inspect --experimental-vm-modules node_modules/.bin/jest --runInBand --debug",
         "build:webview": "esbuild src/webView/renderMarkDown.ts --bundle --outfile=builtResources/renderMarkDown.js --format=iife",
         "watch:webview": "esbuild src/webView/renderMarkDown.ts --bundle --outfile=builtResources/renderMarkDown.js --format=iife --watch",
-        "copy-css": "node ./scripts/copyCss.js",
-        "serve:chat": "node scripts/serve-chat.js",
+        "copy-css": "node ./scripts/build/copyCss.js",
+        "serve:chat": "node scripts/tools/serve-chat.js",
         "test:providers": "node --env-file=.env scripts/tools/test-providers.js"
     },
     "dependencies": {

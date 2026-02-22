@@ -1,4 +1,4 @@
-// scripts/rename-e2e.js
+// scripts/test/rename-e2e.js
 // renames .js files to .cjs in dist-e2e , because they are CommonJS tests and need the .cjs extension,
 // because Node.js treats .js as ESM by default in package.json "type": "module" projects
 import fs from 'fs';
