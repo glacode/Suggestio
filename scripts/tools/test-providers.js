@@ -28,6 +28,7 @@ function resolveApiKey(placeholder) {
     return placeholder;
 }
 
+// This should match SYSTEM_PROMPTS.AGENT in src/constants/prompts.ts
 const EXTENSION_SYSTEM_PROMPT = "You are a code assistant. You can use tools to interact with the workspace. Always use the provided JSON tool-calling schema for function calls. NEVER use XML or custom tags like <function>.\n[Active editor is not a file (e.g., Output tab) and will not be included in context.]";
 
 async function testProvider(name, config, isHeavy = false) {
