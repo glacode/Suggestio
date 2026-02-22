@@ -2,7 +2,7 @@ import { ChatPrompt } from '../../src/chat/chatPrompt.js';
 import { ChatHistory, IChatMessage } from '../../src/types.js';
 
 describe('ChatPrompt', () => {
-  const SYSTEM_PROMPT_CONTENT = "You are a code assistant. You can use tools to interact with the workspace.";
+  const SYSTEM_PROMPT_CONTENT = "You are a code assistant. You can use tools to interact with the workspace. Always use the provided JSON tool-calling schema for function calls. NEVER use XML or custom tags like <function>.";
   const INITIAL_SYSTEM_MESSAGE: IChatMessage = { role: "system", content: SYSTEM_PROMPT_CONTENT };
 
   it('should create a system prompt if conversation is empty', () => {

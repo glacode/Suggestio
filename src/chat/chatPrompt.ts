@@ -2,7 +2,7 @@ import { ChatHistory, IChatMessage, IPrompt } from "../types.js";
 
 const SYSTEM_PROMPT: IChatMessage = {
   role: "system",
-  content: "You are a code assistant. You can use tools to interact with the workspace.",
+  content: "You are a code assistant. You can use tools to interact with the workspace. Always use the provided JSON tool-calling schema for function calls. NEVER use XML or custom tags like <function>.",
 };
 
 /**

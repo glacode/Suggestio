@@ -56,14 +56,14 @@
       "model": "groq/compound",
       "apiKey": "${GROQ_API_KEY}"
     },
-    "openrouter-deepseekv3": {
+    "openrouter-arcee-ai-trinity": {
       "endpoint": "https://openrouter.ai/api/v1/chat/completions",
-      "model": "deepseek/deepseek-chat-v3-0324:free",
+      "model": "arcee-ai/trinity-large-preview:free",
       "apiKey": "${OPENROUTER_API_KEY}"
     },
     "hf-lama38": {
-      "endpoint": "https://api-inference.huggingface.co/v1/chat/completions",
-      "model": "meta-llama/Llama-3-8B-Instruct",
+      "endpoint": "https://router.huggingface.co/v1/chat/completions",
+      "model": "meta-llama/Llama-3.1-8B-Instruct",
       "apiKey": "${HF_API_KEY}"
     },
     "gemini-2.5-flash-lite": {

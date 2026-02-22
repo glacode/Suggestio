@@ -28,7 +28,7 @@ function resolveApiKey(placeholder) {
     return placeholder;
 }
 
-const EXTENSION_SYSTEM_PROMPT = "You are a code assistant. You can use tools to interact with the workspace.\n[Active editor is not a file (e.g., Output tab) and will not be included in context.]";
+const EXTENSION_SYSTEM_PROMPT = "You are a code assistant. You can use tools to interact with the workspace. Always use the provided JSON tool-calling schema for function calls. NEVER use XML or custom tags like <function>.\n[Active editor is not a file (e.g., Output tab) and will not be included in context.]";
 
 async function testProvider(name, config, isHeavy = false) {
     const apiKey = resolveApiKey(config.apiKey);
@@ -123,7 +123,17 @@ async function main() {
     const providerNames = Object.keys(providers);
 
     console.log("\n=== Suggestio Provider Tester ===");
-    if (isHeavy) { console.log("[HEAVY MODE] Simulating extension prompt complexity."); }
+    if (isHeavy) {
+        console.log("--------------------------------------------------");
+        console.log("[!] HEAVY MODE: ON");
+        console.log("[i] Simulating extension prompt complexity and history.");
+        console.log("--------------------------------------------------");
+    } else {
+        console.log("[i] HEAVY MODE: OFF");
+        console.log("[i] To simulate extension complexity, run:");
+        console.log("    npm run test:providers -- --heavy");
+        console.log("--------------------------------------------------");
+    }
     console.log("Detected providers in config.json:\n");
 
     const candidates = providerNames.map((name, index) => {
