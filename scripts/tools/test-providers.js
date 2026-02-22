@@ -28,20 +28,29 @@ function resolveApiKey(placeholder) {
     return placeholder;
 }
 
-async function testProvider(name, config) {
+const EXTENSION_SYSTEM_PROMPT = "You are a code assistant. You can use tools to interact with the workspace.\n[Active editor is not a file (e.g., Output tab) and will not be included in context.]";
+
+async function testProvider(name, config, isHeavy = false) {
     const apiKey = resolveApiKey(config.apiKey);
 
     if (apiKey === null) {
         return { name, status: 'skipped', reason: `Missing ENV: ${config.apiKey.replace(/[${}]/g, '')}` };
     }
 
-    console.log(`[*] Testing ${name} (${config.model})...`);
+    console.log(`[*] Testing ${name} (${config.model})${isHeavy ? ' [HEAVY MODE]' : ''}...`);
+
+    const messages = isHeavy ? [
+        { role: 'system', content: EXTENSION_SYSTEM_PROMPT },
+        { role: 'user', content: 'I am working on a TypeScript project. I need to see the file structure.' },
+        { role: 'assistant', content: 'I can help you with that. I will list the files in your project root.' },
+        { role: 'user', content: 'Great, please write the complete tree of all the files in the current WORKSPACE ROOT DIRECTORY and in all the subfolders RECURSIVELY don\'t list the content of hidden subfolders' }
+    ] : [
+        { role: 'user', content: 'What files are in the root directory? Please use a tool if available.' }
+    ];
 
     const payload = {
         model: config.model,
-        messages: [
-            { role: 'user', content: 'What files are in the root directory? Please use a tool if available.' }
-        ],
+        messages: messages,
         tools: [
             {
                 type: 'function',
@@ -53,7 +62,7 @@ async function testProvider(name, config) {
                         properties: {
                             directory: {
                                 type: 'string',
-                                description: 'The directory to list files from.'
+                                description: 'The directory to list files from (relative to workspace root). Defaults to root if not provided.'
                             }
                         }
                     }
@@ -94,6 +103,9 @@ async function testProvider(name, config) {
 }
 
 async function main() {
+    const args = process.argv.slice(2);
+    const isHeavy = args.includes('--heavy');
+
     const DOTENV_PATH = path.join(PROJECT_ROOT, '.env');
     if (!fs.existsSync(DOTENV_PATH)) {
         console.warn("[!] Warning: .env file not found. Ensure you pass environment variables manually.");
@@ -111,6 +123,7 @@ async function main() {
     const providerNames = Object.keys(providers);
 
     console.log("\n=== Suggestio Provider Tester ===");
+    if (isHeavy) { console.log("[HEAVY MODE] Simulating extension prompt complexity."); }
     console.log("Detected providers in config.json:\n");
 
     const candidates = providerNames.map((name, index) => {
@@ -128,6 +141,7 @@ async function main() {
     console.log("\nOptions:");
     console.log("- Enter numbers separated by commas (e.g., 1,4,5)");
     console.log("- Enter 'all' to test all with keys");
+    console.log("- Use --heavy in the npm command for more complex prompts");
     console.log("- Press Enter to cancel");
 
     const answer = await question("\nWhich models to test? ");
@@ -152,7 +166,7 @@ async function main() {
     const results = [];
     for (let i = 0; i < toTest.length; i++) {
         const c = toTest[i];
-        const res = await testProvider(c.name, providers[c.name]);
+        const res = await testProvider(c.name, providers[c.name], isHeavy);
         res.name = c.name; // ensure name is attached
         results.push(res);
 
