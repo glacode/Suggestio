@@ -83,19 +83,39 @@ async function testProvider(name, config, isHeavy = false) {
             body: JSON.stringify(payload)
         });
 
+        const tokenHeaders = {};
+        for (const [key, value] of response.headers.entries()) {
+            const k = key.toLowerCase();
+            if (k.includes('ratelimit') || k.includes('token') || k.includes('usage')) {
+                tokenHeaders[k] = value;
+            }
+        }
+
         const data = await response.json();
 
         if (!response.ok) {
-            return { name, status: 'fail', error: data.error || data };
+            return {
+                name,
+                status: 'fail',
+                error: data.error || data,
+                features: { reasoning: false, tokenHeaders: Object.keys(tokenHeaders).length > 0 },
+                tokenHeaders
+            };
         }
 
         const choice = data.choices?.[0];
         const hasToolCall = !!choice?.message?.tool_calls;
+        const hasReasoning = !!(choice?.message?.reasoning_content || choice?.message?.reasoning);
+
+        const features = {
+            reasoning: hasReasoning,
+            tokenHeaders: Object.keys(tokenHeaders).length > 0
+        };
 
         if (hasToolCall) {
-            return { name, status: 'success', detail: 'Tool Call Generated' };
+            return { name, status: 'success', detail: 'Tool Call Generated', features, tokenHeaders };
         } else {
-            return { name, status: 'text-only', detail: choice?.message?.content?.substring(0, 50) + '...' };
+            return { name, status: 'text-only', detail: choice?.message?.content?.substring(0, 50) + '...', features, tokenHeaders };
         }
 
     } catch (error) {
@@ -181,7 +201,14 @@ async function main() {
         res.name = c.name; // ensure name is attached
         results.push(res);
 
-        if (res.status === 'success') { console.log(`[+] ${c.name}: Success`); }
+        if (res.status === 'success' || res.status === 'text-only') {
+            const statusLabel = res.status === 'success' ? '[+]' : '[-]';
+            console.log(`${statusLabel} ${c.name}: ${res.detail}`);
+            if (res.features?.reasoning) { console.log(`    [R] Reasoning detected!`); }
+            if (res.features?.tokenHeaders) {
+                console.log(`    [H] Token headers found: ${Object.keys(res.tokenHeaders).join(', ')}`);
+            }
+        }
         else if (res.status === 'fail' || res.status === 'error') { console.log(`[!] ${c.name}: Failed`); }
         else { console.log(`[-] ${c.name}: ${res.status} (${res.reason || res.detail})`); }
 
@@ -194,6 +221,8 @@ async function main() {
     console.table(results.map(r => ({
         Provider: r.name,
         Status: r.status,
+        Reasoning: r.features?.reasoning ? '✅' : '❌',
+        'Token Hdrs': r.features?.tokenHeaders ? '✅' : '❌',
         Detail: r.detail || (typeof r.error === 'string' ? r.error : JSON.stringify(r.error)) || r.reason
     })));
 
