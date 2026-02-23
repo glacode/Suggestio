@@ -91,33 +91,49 @@ async function testProvider(name, config, isHeavy = false) {
             }
         }
 
-        const data = await response.json();
-
-        if (!response.ok) {
-            return {
-                name,
-                status: 'fail',
-                error: data.error || data,
-                features: { reasoning: false, tokenHeaders: Object.keys(tokenHeaders).length > 0 },
-                tokenHeaders
-            };
-        }
-
-        const choice = data.choices?.[0];
-        const hasToolCall = !!choice?.message?.tool_calls;
-        const hasReasoning = !!(choice?.message?.reasoning_content || choice?.message?.reasoning);
-
-        const features = {
-            reasoning: hasReasoning,
-            tokenHeaders: Object.keys(tokenHeaders).length > 0
-        };
-
-        if (hasToolCall) {
-            return { name, status: 'success', detail: 'Tool Call Generated', features, tokenHeaders };
-        } else {
-            return { name, status: 'text-only', detail: choice?.message?.content?.substring(0, 50) + '...', features, tokenHeaders };
-        }
-
+                const data = await response.json();
+        
+                const KNOWN_ROOT_KEYS = ['id', 'object', 'created', 'model', 'choices', 'usage', 'system_fingerprint'];
+                const KNOWN_CHOICE_KEYS = ['index', 'message', 'logprobs', 'finish_reason'];
+                const KNOWN_MESSAGE_KEYS = ['role', 'content', 'tool_calls', 'function_call'];
+        
+                const extraFields = [];
+                Object.keys(data).forEach(k => { if (!KNOWN_ROOT_KEYS.includes(k)) extraFields.push(`root.${k}`); });
+                
+                const choice = data.choices?.[0];
+                if (choice) {
+                    Object.keys(choice).forEach(k => { if (!KNOWN_CHOICE_KEYS.includes(k)) extraFields.push(`choice.${k}`); });
+                    if (choice.message) {
+                        Object.keys(choice.message).forEach(k => { 
+                            if (!KNOWN_MESSAGE_KEYS.includes(k)) extraFields.push(`message.${k}`); 
+                        });
+                    }
+                }
+        
+                if (!response.ok) {
+                    return { 
+                        name, 
+                        status: 'fail', 
+                        error: data.error || data,
+                        features: { reasoning: false, tokenHeaders: Object.keys(tokenHeaders).length > 0 },
+                        tokenHeaders,
+                        extraFields
+                    };
+                }
+        
+                const hasToolCall = !!choice?.message?.tool_calls;
+                const hasReasoning = !!(choice?.message?.reasoning_content || choice?.message?.reasoning);
+        
+                const features = {
+                    reasoning: hasReasoning,
+                    tokenHeaders: Object.keys(tokenHeaders).length > 0
+                };
+        
+                if (hasToolCall) {
+                    return { name, status: 'success', detail: 'Tool Call Generated', features, tokenHeaders, extraFields };
+                } else {
+                    return { name, status: 'text-only', detail: choice?.message?.content?.substring(0, 50) + '...', features, tokenHeaders, extraFields };
+                }
     } catch (error) {
         return { name, status: 'error', error: error.message };
     }
@@ -204,13 +220,21 @@ async function main() {
         if (res.status === 'success' || res.status === 'text-only') {
             const statusLabel = res.status === 'success' ? '[+]' : '[-]';
             console.log(`${statusLabel} ${c.name}: ${res.detail}`);
-            if (res.features?.reasoning) { console.log(`    [R] Reasoning detected!`); }
-            if (res.features?.tokenHeaders) {
-                console.log(`    [H] Token headers found: ${Object.keys(res.tokenHeaders).join(', ')}`);
-            }
         }
-        else if (res.status === 'fail' || res.status === 'error') { console.log(`[!] ${c.name}: Failed`); }
-        else { console.log(`[-] ${c.name}: ${res.status} (${res.reason || res.detail})`); }
+        else if (res.status === 'fail' || res.status === 'error') { 
+            console.log(`[!] ${c.name}: Failed`); 
+        }
+        else { 
+            console.log(`[-] ${c.name}: ${res.status} (${res.reason || res.detail})`); 
+        }
+
+        if (res.features?.reasoning) { console.log(`    [R] Reasoning detected!`); }
+        if (res.features?.tokenHeaders) {
+            console.log(`    [H] Token headers found: ${Object.keys(res.tokenHeaders).join(', ')}`);
+        }
+        if (res.extraFields?.length > 0) {
+            console.log(`    [E] Extra fields: ${res.extraFields.join(', ')}`);
+        }
 
         if (i < toTest.length - 1 && res.status !== 'skipped') {
             await new Promise(r => setTimeout(r, DELAY_BETWEEN_REQUESTS_MS));
@@ -223,6 +247,7 @@ async function main() {
         Status: r.status,
         Reasoning: r.features?.reasoning ? '✅' : '❌',
         'Token Hdrs': r.features?.tokenHeaders ? '✅' : '❌',
+        'Extra Fields': r.extraFields?.length > 0 ? r.extraFields.join(', ') : '-',
         Detail: r.detail || (typeof r.error === 'string' ? r.error : JSON.stringify(r.error)) || r.reason
     })));
 
