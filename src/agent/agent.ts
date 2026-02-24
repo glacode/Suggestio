@@ -134,12 +134,17 @@ export class Agent implements IChatAgent {
      */
     private async runTool(tool: IToolImplementation, toolCall: ToolCall, signal?: AbortSignal): Promise<void> {
         this.logger.info(AGENT_LOGS.EXECUTING_TOOL(toolCall.function.name));
+        this.eventBus.emit('agent:toolStart', {
+            toolCallId: toolCall.id,
+            toolName: toolCall.function.name,
+            args: toolCall.function.arguments
+        });
         try {
             const args = JSON.parse(toolCall.function.arguments);
             const result = await tool.execute(args, signal);
-            this.recordToolResult(toolCall.id, result);
+            this.recordToolResult(toolCall.id, toolCall.function.name, result);
         } catch (e: any) {
-            this.handleToolError(toolCall.id, e);
+            this.handleToolError(toolCall.id, toolCall.function.name, e);
         }
     }
 
@@ -148,22 +153,32 @@ export class Agent implements IChatAgent {
      */
     private handleToolNotFound(toolCall: ToolCall): void {
         this.logger.error(AGENT_LOGS.TOOL_NOT_FOUND(toolCall.function.name));
-        this.recordToolResult(toolCall.id, AGENT_MESSAGES.ERROR_TOOL_NOT_FOUND(toolCall.function.name));
+        this.eventBus.emit('agent:toolStart', {
+            toolCallId: toolCall.id,
+            toolName: toolCall.function.name,
+            args: toolCall.function.arguments
+        });
+        this.recordToolResult(toolCall.id, toolCall.function.name, AGENT_MESSAGES.ERROR_TOOL_NOT_FOUND(toolCall.function.name));
     }
 
     /**
      * Handles errors that occur during tool execution.
      */
-    private handleToolError(toolCallId: string, error: any): void {
+    private handleToolError(toolCallId: string, toolName: string, error: any): void {
         this.logger.error(AGENT_LOGS.TOOL_ERROR(error.message));
-        this.recordToolResult(toolCallId, AGENT_MESSAGES.ERROR_TOOL_EXECUTION(error.message));
+        this.recordToolResult(toolCallId, toolName, AGENT_MESSAGES.ERROR_TOOL_EXECUTION(error.message));
     }
 
     /**
      * Adds the tool execution result (or error) to the chat history.
      */
-    private recordToolResult(toolCallId: string, content: string): void {
+    private recordToolResult(toolCallId: string, toolName: string, content: string): void {
         this.logger.debug(AGENT_LOGS.TOOL_RESULT_RECORDED(toolCallId));
+        this.eventBus.emit('agent:toolEnd', {
+            toolCallId: toolCallId,
+            toolName: toolName,
+            result: content
+        });
         this.chatHistoryManager.addMessage({
             role: 'tool',
             content: content,

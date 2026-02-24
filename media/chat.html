@@ -317,6 +317,59 @@
                 transform: rotate(-90deg);
             }
 
+            .tool-call-container {
+                margin-top: 8px;
+                margin-bottom: 8px;
+                border: 1px solid var(--vscode-textSeparator-foreground);
+                border-radius: 4px;
+                overflow: hidden;
+            }
+
+            .tool-call-container details {
+                padding: 4px 8px;
+                background: var(--vscode-textBlockQuote-background);
+            }
+
+            .tool-call-container summary {
+                cursor: pointer;
+                font-size: 12px;
+                user-select: none;
+                color: var(--vscode-descriptionForeground);
+                list-style: none; /* Hide default arrow */
+                display: flex;
+                align-items: center;
+            }
+
+            .tool-call-container summary::-webkit-details-marker {
+                display: none; /* Hide default arrow for Safari */
+            }
+
+            .tool-call-container summary:hover {
+                color: var(--vscode-foreground);
+            }
+
+            .tool-call-status-icon {
+                margin-right: 6px;
+                font-size: 14px;
+                display: flex;
+                align-items: center;
+            }
+
+            .tool-call-container pre {
+                margin: 6px 0 0 0;
+                padding: 6px;
+                background: var(--vscode-editor-background);
+                border-radius: 3px;
+                font-size: 11px;
+                overflow-x: auto;
+                font-family: var(--vscode-editor-font-family, monospace);
+                color: var(--vscode-editor-foreground);
+            }
+
+            .tool-name {
+                font-weight: bold;
+                color: var(--vscode-symbolIcon-functionForeground);
+            }
         </style>
     </head>
     <body>
@@ -446,9 +499,10 @@
                 // Show loading indicator immediately before sending
                 const loadingMsg = document.createElement('div');
                 loadingMsg.className = 'message assistant loading';
-                loadingMsg.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div><span class="loading-text">Working...</span></div><div class="message-content"></div>';
+                loadingMsg.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div><span class="loading-text">Working...</span></div><div class="message-content active-segment"></div>';
                 loadingMsg.dataset.fullText = '';
                 loadingMsg.dataset.streaming = 'true';
+                loadingMsg.dataset.lastTokenType = 'content';
                 chat.appendChild(loadingMsg);
                 
                 if (userMessageElement) {
@@ -508,7 +562,7 @@
 
             function newChat() {
                 const chat = document.getElementById('chat');
-                const messages = chat.querySelectorAll('.message');
+                const messages = chat.querySelectorAll('.message, .tool-call-container');
                 messages.forEach(m => m.remove());
                 const emptyChatContent = document.getElementById('emptyChatContent');
                 if(emptyChatContent) {
@@ -529,11 +583,11 @@
                     }
                     
                     // Remove the entire bubble if no content was streamed (error case)
-                    const contentDiv = lastMessage.querySelector('.message-content');
-                    const hasContent = contentDiv && contentDiv.textContent.trim().length > 0;
+                    const hasContent = lastMessage.dataset.contentText && lastMessage.dataset.contentText.trim().length > 0;
                     const hasReasoning = lastMessage.dataset.reasoningText && lastMessage.dataset.reasoningText.trim().length > 0;
+                    const hasTools = !!lastMessage.querySelector('.tool-call-container');
                     
-                    if (!hasContent && !hasReasoning) {
+                    if (!hasContent && !hasReasoning && !hasTools) {
                         lastMessage.remove();
                     }
                 }
@@ -561,6 +615,91 @@
                 }
 
                 if (sender === 'assistant') {
+                    if (type === 'tool_start') {
+                        const allAssistantMessages = document.querySelectorAll('.message.assistant');
+                        let lastMessage = allAssistantMessages.length > 0 ? allAssistantMessages[allAssistantMessages.length - 1] : null;
+
+                        const chat = document.getElementById('chat');
+
+                        // Ensure we have an active streaming assistant message
+                        if (!lastMessage || lastMessage.dataset.streaming === 'false') {
+                            const loadingMsg = document.createElement('div');
+                            loadingMsg.className = 'message assistant loading';
+                            loadingMsg.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div><div class="message-content active-segment"></div>';
+                            loadingMsg.dataset.streaming = 'true';
+                            loadingMsg.dataset.reasoningText = '';
+                            loadingMsg.dataset.contentText = '';
+                            loadingMsg.dataset.lastTokenType = 'content';
+                            chat.appendChild(loadingMsg);
+                            lastMessage = loadingMsg;
+                        }
+
+                        // Determine the target container for the tool call
+                        const isReasoning = lastMessage.dataset.lastTokenType === 'reasoning';
+                        let targetContainer = lastMessage;
+                        let segmentClassName = 'message-content active-segment';
+
+                        if (isReasoning) {
+                            const reasoningContent = lastMessage.querySelector('.reasoning-content');
+                            if (reasoningContent) {
+                                targetContainer = reasoningContent;
+                                segmentClassName = 'active-segment';
+                            }
+                        }
+
+                        // Deactivate current active segment in the target container
+                        const activeSegment = targetContainer.querySelector('.active-segment');
+                        if (activeSegment) {
+                            activeSegment.classList.remove('active-segment');
+                        }
+
+                        const container = document.createElement('div');
+                        container.className = 'tool-call-container';
+                        container.id = 'tool-' + event.data.toolCallId;
+                        
+                        let prettyArgs = event.data.args;
+                        try {
+                            prettyArgs = JSON.stringify(JSON.parse(event.data.args), null, 2);
+                        } catch (e) {}
+
+                        container.innerHTML = `
+                            <details open>
+                                <summary>
+                                    <span class="tool-call-status-icon">⚙️</span>
+                                    <span>Running <span class="tool-name">${event.data.toolName}</span>...</span>
+                                </summary>
+                                <pre>${prettyArgs}</pre>
+                            </details>
+                        `;
+                        
+                        // Append tool to the target container
+                        targetContainer.appendChild(container);
+                        
+                        // Create a NEW active segment for tokens arriving AFTER the tool
+                        const nextSegment = document.createElement('div');
+                        nextSegment.className = segmentClassName;
+                        targetContainer.appendChild(nextSegment);
+
+                        container.scrollIntoView();
+                        return;
+                    }
+
+                    if (type === 'tool_end') {
+                        const container = document.getElementById('tool-' + event.data.toolCallId);
+                        if (container) {
+                            const details = container.querySelector('details');
+                            const summary = container.querySelector('summary');
+                            if (details) details.removeAttribute('open');
+                            if (summary) {
+                                summary.innerHTML = `
+                                    <span class="tool-call-status-icon">✅</span>
+                                    <span>Used <span class="tool-name">${event.data.toolName}</span></span>
+                                `;
+                            }
+                        }
+                        return;
+                    }
+
                     if (type === 'token') {
                         const allAssistantMessages = document.querySelectorAll('.message.assistant');
                         let lastMessage = allAssistantMessages.length > 0 ? allAssistantMessages[allAssistantMessages.length - 1] : null;
@@ -580,14 +719,38 @@
 
                         if (tokenType === 'reasoning') {
                             lastMessage.dataset.reasoningText = (lastMessage.dataset.reasoningText || '') + text;
+                            lastMessage.dataset.lastTokenType = 'reasoning';
                             
                             let reasoningContent = lastMessage.querySelector('.reasoning-content');
                             if (!reasoningContent) {
-                                // Insert the reasoning block at the start of the assistant message
-                                lastMessage.insertAdjacentHTML('afterbegin', createReasoningHtml(''));
+                                // Insert the reasoning block at the start of the assistant message, 
+                                // but after the typing indicator if it exists
+                                const indicator = lastMessage.querySelector('.typing-indicator');
+                                if (indicator) {
+                                    indicator.insertAdjacentHTML('afterend', createReasoningHtml(''));
+                                } else {
+                                    lastMessage.insertAdjacentHTML('afterbegin', createReasoningHtml(''));
+                                }
                                 reasoningContent = lastMessage.querySelector('.reasoning-content');
+                                
+                                // Create the first active segment for reasoning
+                                const firstSegment = document.createElement('div');
+                                firstSegment.className = 'active-segment';
+                                reasoningContent.appendChild(firstSegment);
                             }
-                            reasoningContent.innerHTML = window.renderMarkdown(lastMessage.dataset.reasoningText);
+
+                            // Find the currently active reasoning segment
+                            let activeReasoningSegment = reasoningContent.querySelector('.active-segment');
+                            if (!activeReasoningSegment) {
+                                activeReasoningSegment = document.createElement('div');
+                                activeReasoningSegment.className = 'active-segment';
+                                reasoningContent.appendChild(activeReasoningSegment);
+                            }
+
+                            // Store and render text for THIS segment
+                            activeReasoningSegment.dataset.reasoningText = (activeReasoningSegment.dataset.reasoningText || '') + text;
+                            activeReasoningSegment.innerHTML = window.renderMarkdown(activeReasoningSegment.dataset.reasoningText);
+
                         } else {
                             // Automatically collapse reasoning if this is the first content token
                             if (!lastMessage.dataset.contentText && lastMessage.dataset.reasoningText) {
@@ -599,11 +762,22 @@
                                 }
                             }
 
+                            // Update the global full content for the message
                             lastMessage.dataset.contentText = (lastMessage.dataset.contentText || '') + text;
-                            const contentDiv = lastMessage.querySelector('.message-content');
-                            if (contentDiv) {
-                                contentDiv.innerHTML = window.renderMarkdown(lastMessage.dataset.contentText);
+                            lastMessage.dataset.lastTokenType = 'content';
+
+                            // Find the currently active content segment
+                            let activeContent = lastMessage.querySelector('.message-content.active-segment');
+                            if (!activeContent) {
+                                // Fallback: if no active content exists (e.g. after tool call), create one at the end
+                                activeContent = document.createElement('div');
+                                activeContent.className = 'message-content active-segment';
+                                lastMessage.appendChild(activeContent);
                             }
+
+                            // Store and render text for THIS segment only
+                            activeContent.dataset.contentText = (activeContent.dataset.contentText || '') + text;
+                            activeContent.innerHTML = window.renderMarkdown(activeContent.dataset.contentText);
                         }
 
                         if (userMessageElement) {

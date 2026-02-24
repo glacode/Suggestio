@@ -252,6 +252,30 @@ export type MessageFromTheExtensionToTheWebview =
   | {
     /** Indicates the message comes from the AI assistant. */
     sender: 'assistant';
+    /** Signals the start of a tool call. */
+    type: 'tool_start';
+    /** The ID of the tool call. */
+    toolCallId: string;
+    /** The name of the tool being called. */
+    toolName: string;
+    /** The arguments passed to the tool. */
+    args: string;
+  }
+  | {
+    /** Indicates the message comes from the AI assistant. */
+    sender: 'assistant';
+    /** Signals the end of a tool call. */
+    type: 'tool_end';
+    /** The ID of the tool call. */
+    toolCallId: string;
+    /** The name of the tool. */
+    toolName: string;
+    /** The result of the tool execution. */
+    result: string;
+  }
+  | {
+    /** Indicates the message comes from the AI assistant. */
+    sender: 'assistant';
     /** Signals that the AI's response stream has finished. */
     type: 'completion';
     /** The final text of the completion (or empty if tokens were fully streamed). */
@@ -731,12 +755,26 @@ export interface ILogEventPayload {
   metadata?: Record<string, any>;
 }
 
+export interface IToolCallEventPayload {
+  toolCallId: string;
+  toolName: string;
+  args: string;
+}
+
+export interface IToolResultEventPayload {
+  toolCallId: string;
+  toolName: string;
+  result: string;
+}
+
 export interface IAppEvents {
   'inlineCompletionToggled': boolean;
   'modelChanged': string;
   'agent:maxIterationsReached': { maxIterations: number };
   'anonymization': IAnonymizationEventPayload;
   'agent:token': ITokenEventPayload;
+  'agent:toolStart': IToolCallEventPayload;
+  'agent:toolEnd': IToolResultEventPayload;
   'log': ILogEventPayload;
 }
 

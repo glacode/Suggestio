@@ -17,7 +17,9 @@ import type {
     WebviewMessage, // Defines the structure of messages sent from the webview to the extension.
     IContextBuilder, // Defines the interface for building context strings to be used as additional information in prompts.
     IAnonymizer,
-    ITokenEventPayload
+    ITokenEventPayload,
+    IToolCallEventPayload,
+    IToolResultEventPayload
 } from '../types.js';
 // Importing the `eventBus`, a custom mechanism for different parts of the extension
 // to communicate by emitting and listening for events.
@@ -109,6 +111,30 @@ export class ChatWebviewViewProvider {
                     type: 'token',
                     text: payload.token,
                     tokenType: payload.type
+                });
+            }
+        });
+
+        this._eventBus.on('agent:toolStart', (payload: IToolCallEventPayload) => {
+            if (this._view) {
+                this._view.webview.postMessage({
+                    sender: 'assistant',
+                    type: 'tool_start',
+                    toolCallId: payload.toolCallId,
+                    toolName: payload.toolName,
+                    args: payload.args
+                });
+            }
+        });
+
+        this._eventBus.on('agent:toolEnd', (payload: IToolResultEventPayload) => {
+            if (this._view) {
+                this._view.webview.postMessage({
+                    sender: 'assistant',
+                    type: 'tool_end',
+                    toolCallId: payload.toolCallId,
+                    toolName: payload.toolName,
+                    result: payload.result
                 });
             }
         });
