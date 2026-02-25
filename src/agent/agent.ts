@@ -134,9 +134,21 @@ export class Agent implements IChatAgent {
      */
     private async runTool(tool: IToolImplementation, toolCall: ToolCall, signal?: AbortSignal): Promise<void> {
         this.logger.info(AGENT_LOGS.EXECUTING_TOOL(toolCall.function.name));
+        
+        let displayMessage: string | undefined;
+        try {
+            const args = JSON.parse(toolCall.function.arguments);
+            if (tool.formatMessage) {
+                displayMessage = tool.formatMessage(args);
+            }
+        } catch (e) {
+            // If parsing or formatting fails, we just don't provide a displayMessage
+        }
+
         this.eventBus.emit('agent:toolStart', {
             toolCallId: toolCall.id,
             toolName: toolCall.function.name,
+            displayMessage,
             args: toolCall.function.arguments
         });
         try {
@@ -156,6 +168,7 @@ export class Agent implements IChatAgent {
         this.eventBus.emit('agent:toolStart', {
             toolCallId: toolCall.id,
             toolName: toolCall.function.name,
+            displayMessage: undefined,
             args: toolCall.function.arguments
         });
         this.recordToolResult(toolCall.id, toolCall.function.name, AGENT_MESSAGES.ERROR_TOOL_NOT_FOUND(toolCall.function.name));

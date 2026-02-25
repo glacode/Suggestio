@@ -662,11 +662,16 @@
                             prettyArgs = JSON.stringify(JSON.parse(event.data.args), null, 2);
                         } catch (e) {}
 
+                        const displayMessage = event.data.displayMessage || `Running <span class="tool-name">${event.data.toolName}</span>...`;
+                        if (event.data.displayMessage) {
+                            container.dataset.customMessage = event.data.displayMessage;
+                        }
+
                         container.innerHTML = `
                             <details open>
                                 <summary>
                                     <span class="tool-call-status-icon">⚙️</span>
-                                    <span>Running <span class="tool-name">${event.data.toolName}</span>...</span>
+                                    <span class="tool-status-text">${displayMessage}</span>
                                 </summary>
                                 <pre>${prettyArgs}</pre>
                             </details>
@@ -691,10 +696,18 @@
                             const summary = container.querySelector('summary');
                             if (details) details.removeAttribute('open');
                             if (summary) {
-                                summary.innerHTML = `
-                                    <span class="tool-call-status-icon">✅</span>
-                                    <span>Used <span class="tool-name">${event.data.toolName}</span></span>
-                                `;
+                                const statusIcon = container.querySelector('.tool-call-status-icon');
+                                if (statusIcon) statusIcon.textContent = '✅';
+                                
+                                const statusText = container.querySelector('.tool-status-text');
+                                if (statusText) {
+                                    if (container.dataset.customMessage) {
+                                        // Keep custom message but remove trailing dots if any
+                                        statusText.textContent = container.dataset.customMessage.replace(/\.\.\.$/, '');
+                                    } else {
+                                        statusText.innerHTML = `Used <span class="tool-name">${event.data.toolName}</span>`;
+                                    }
+                                }
                             }
                         }
                         return;

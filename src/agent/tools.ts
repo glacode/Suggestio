@@ -22,6 +22,10 @@ export class ListFilesTool implements IToolImplementation {
         private pathResolver: IPathResolver
     ) { }
 
+    formatMessage(args: { directory?: string }): string {
+        return `Listing files in ${args.directory || 'the root directory'}`;
+    }
+
     async execute(args: { directory?: string }, _signal?: AbortSignal): Promise<string> {
         const rootPath = this.workspaceProvider.rootPath();
         if (!rootPath) {

@@ -122,6 +122,7 @@ export class ChatWebviewViewProvider {
                     type: 'tool_start',
                     toolCallId: payload.toolCallId,
                     toolName: payload.toolName,
+                    displayMessage: payload.displayMessage,
                     args: payload.args
                 });
             }

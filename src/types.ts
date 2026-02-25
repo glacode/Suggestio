@@ -258,6 +258,8 @@ export type MessageFromTheExtensionToTheWebview =
     toolCallId: string;
     /** The name of the tool being called. */
     toolName: string;
+    /** The human-readable description of the tool execution. */
+    displayMessage?: string;
     /** The arguments passed to the tool. */
     args: string;
   }
@@ -758,6 +760,7 @@ export interface ILogEventPayload {
 export interface IToolCallEventPayload {
   toolCallId: string;
   toolName: string;
+  displayMessage?: string;
   args: string;
 }
 
@@ -901,6 +904,12 @@ export interface IToolDefinition {
 export interface IToolImplementation {
   definition: IToolDefinition;
   execute(args: any, signal?: AbortSignal): Promise<string>;
+  /**
+   * Optional method to return a human-readable description of the tool execution.
+   * @param args The arguments passed to the tool.
+   * @returns A string describing what the tool is doing.
+   */
+  formatMessage?(args: any): string;
 }
 
 // --------------------------------------------------------------------------------

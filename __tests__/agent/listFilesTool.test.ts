@@ -35,9 +35,22 @@ describe("ListFilesTool Security", () => {
         expect(result).toContain("Error: Access denied");
     });
 
-    it("should allow accessing valid subdirectories", async () => {
-        const result = await tool.execute({ directory: "src" });
-        expect(result).not.toContain("Error: Access denied");
-        expect(result).toContain("file1.txt");
+        it("should allow accessing valid subdirectories", async () => {
+            const result = await tool.execute({ directory: "src" });
+            expect(result).not.toContain("Error: Access denied");
+            expect(result).toContain("file1.txt");
+        });
+    
+        describe("formatMessage", () => {
+            it("should return a human-readable message for the root directory", () => {
+                const message = tool.formatMessage({});
+                expect(message).toBe("Listing files in the root directory");
+            });
+    
+            it("should return a human-readable message for a specific directory", () => {
+                const message = tool.formatMessage({ directory: "src/utils" });
+                expect(message).toBe("Listing files in src/utils");
+            });
+        });
     });
-});
+    
