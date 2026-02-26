@@ -1,5 +1,5 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { ListFilesTool } from "../../src/agent/tools.js";
+import { ListFilesTool } from "../../src/tools/index.js";
 import { IWorkspaceProvider, IDirectoryReader, IPathResolver } from "../../src/types.js";
 import { createMockPathResolver } from "../testUtils.js";
 

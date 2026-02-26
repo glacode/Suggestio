@@ -25,7 +25,7 @@ import { configProcessor } from './config/configProcessor.js';
 import { CONFIG_DEFAULTS } from './constants/config.js';
 import { Agent } from './agent/agent.js';
 import { ChatWebviewViewProvider } from './chat/chatWebviewViewProvider.js';
-import { getTools } from './agent/tools.js';
+import { getTools } from './tools/index.js';
 import { ContextBuilder } from './chat/context.js';
 import { IgnoreManager } from './chat/ignoreManager.js';
 import { getChatWebviewContent } from './chat/chatWebviewContent.js';
