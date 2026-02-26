@@ -894,7 +894,6 @@ export interface IToolDefinition {
   parameters: {
     type: 'object';
     properties: Record<string, any>;
-    required?: string[];
   };
 }
 
