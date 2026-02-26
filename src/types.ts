@@ -900,15 +900,15 @@ export interface IToolDefinition {
 /**
  * Interface for a tool implementation.
  */
-export interface IToolImplementation {
+export interface IToolImplementation<T = any> {
   definition: IToolDefinition;
-  execute(args: any, signal?: AbortSignal): Promise<string>;
+  execute(args: T, signal?: AbortSignal): Promise<string>;
   /**
    * Optional method to return a human-readable description of the tool execution.
    * @param args The arguments passed to the tool.
    * @returns A string describing what the tool is doing.
    */
-  formatMessage?(args: any): string;
+  formatMessage?(args: T): string;
 }
 
 // --------------------------------------------------------------------------------
