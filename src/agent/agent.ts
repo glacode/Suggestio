@@ -14,7 +14,7 @@ export interface IAgentArgs {
     /** The chat history manager for the agent. */
     chatHistoryManager: IChatHistoryManager;
     /** The tools available to the agent. */
-    tools?: IToolImplementation[];
+    tools?: IToolImplementation<any>[];
     /** The event bus for the agent to emit events. */
     eventBus: IEventBus;
 }
@@ -22,7 +22,7 @@ export interface IAgentArgs {
 export class Agent implements IChatAgent {
     private config: IConfig;
     private chatHistoryManager: IChatHistoryManager;
-    private tools: IToolImplementation[];
+    private tools: IToolImplementation<any>[];
     private eventBus: IEventBus;
 
     private logger: ReturnType<typeof createEventLogger>;
@@ -136,10 +136,12 @@ export class Agent implements IChatAgent {
         this.logger.info(AGENT_LOGS.EXECUTING_TOOL(toolCall.function.name));
         
         let displayMessage: string | undefined;
+        let parsedArgs: any;
+
         try {
-            const args = JSON.parse(toolCall.function.arguments);
+            parsedArgs = JSON.parse(toolCall.function.arguments);
             if (tool.formatMessage) {
-                displayMessage = tool.formatMessage(args);
+                displayMessage = tool.formatMessage(parsedArgs);
             }
         } catch (e) {
             // If parsing or formatting fails, we just don't provide a displayMessage
@@ -151,9 +153,23 @@ export class Agent implements IChatAgent {
             displayMessage,
             args: toolCall.function.arguments
         });
+
         try {
-            const args = JSON.parse(toolCall.function.arguments);
-            const result = await tool.execute(args, signal);
+            if (!parsedArgs) {
+                parsedArgs = JSON.parse(toolCall.function.arguments);
+            }
+
+            const validationResult = tool.schema.safeParse(parsedArgs);
+            if (!validationResult.success) {
+                const errorDetails = validationResult.error.issues.map(issue => `${issue.path.join('.')}: ${issue.message}`).join(', ');
+                const errorMessage = `Invalid arguments for tool '${toolCall.function.name}': ${errorDetails}. Please correct the arguments and try again.`;
+                this.recordToolResult(toolCall.id, toolCall.function.name, errorMessage);
+                return;
+            }
+            // Use the validated/transformed data
+            parsedArgs = validationResult.data;
+
+            const result = await tool.execute(parsedArgs, signal);
             this.recordToolResult(toolCall.id, toolCall.function.name, result);
         } catch (e: any) {
             this.handleToolError(toolCall.id, toolCall.function.name, e);

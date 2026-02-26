@@ -4,6 +4,7 @@ import { IChatHistoryManager, IChatMessage, IPrompt, IToolImplementation, ToolCa
 import { EventBus } from "../../src/utils/eventBus.js";
 import { CONFIG_DEFAULTS } from "../../src/constants/config.js";
 import { createMockHistoryManager, createDefaultConfig } from "../testUtils.js";
+import { z } from "zod";
 
 describe("Agent Max Iterations Event", () => {
     let mockChatHistoryManager: IChatHistoryManager;
@@ -41,6 +42,7 @@ describe("Agent Max Iterations Event", () => {
 
         const mockTool: IToolImplementation = {
             definition: { name: "loop_tool", description: "Loop", parameters: { type: "object", properties: {} } },
+            schema: z.any(),
             execute: jest.fn(async () => "Loop Result")
         };
 

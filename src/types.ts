@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import type { ToolCall } from "./schemas.js";
 import type { IEventBus, EventMap } from "./utils/eventBus.js";
 
@@ -900,8 +901,12 @@ export interface IToolDefinition {
 /**
  * Interface for a tool implementation.
  */
-export interface IToolImplementation<T = any> {
+export interface IToolImplementation<T = unknown> {
   definition: IToolDefinition;
+  /**
+   * Zod type to validate the tool arguments at runtime.
+   */
+  schema: z.ZodType<T>;
   execute(args: T, signal?: AbortSignal): Promise<string>;
   /**
    * Optional method to return a human-readable description of the tool execution.

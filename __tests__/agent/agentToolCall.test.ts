@@ -3,6 +3,7 @@ import { Agent } from "../../src/agent/agent.js";
 import { IChatHistoryManager, IChatMessage, IPrompt, ChatHistory, IToolImplementation, ToolCall, IEventBus } from "../../src/types.js";
 import { FakeProvider, createDefaultConfig, createMockProviderConfig, createMockEventBus } from "../testUtils.js";
 import { AGENT_MESSAGES } from "../../src/constants/messages.js";
+import { z } from "zod";
 
 describe("ChatResponder Tool Calling Integration", () => {
     let mockChatHistoryManager: IChatHistoryManager;
@@ -56,6 +57,7 @@ describe("ChatResponder Tool Calling Integration", () => {
                 description: "Gets the current time",
                 parameters: { type: "object", properties: {} }
             },
+            schema: z.any(),
             execute: jest.fn(async () => "12:00 PM")
         };
 

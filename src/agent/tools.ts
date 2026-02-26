@@ -1,8 +1,16 @@
+import { z } from 'zod';
 import { IWorkspaceProvider, IToolDefinition, IDirectoryReader, IPathResolver, IToolImplementation } from '../types.js';
 import { AGENT_MESSAGES } from '../constants/messages.js';
+import { BaseTool } from './baseTool.js';
 
-export class ListFilesTool implements IToolImplementation<{ directory?: string }> {
-    definition: IToolDefinition = {
+const ListFilesSchema = z.object({
+    directory: z.string().optional(),
+});
+
+type ListFilesArgs = z.infer<typeof ListFilesSchema>;
+
+export class ListFilesTool extends BaseTool<ListFilesArgs> {
+    readonly definition: IToolDefinition = {
         name: 'list_files',
         description: 'List files in the workspace directory.',
         parameters: {
@@ -16,17 +24,21 @@ export class ListFilesTool implements IToolImplementation<{ directory?: string }
         },
     };
 
+    readonly schema = ListFilesSchema;
+
     constructor(
         private workspaceProvider: IWorkspaceProvider,
         private directoryProvider: IDirectoryReader,
         private pathResolver: IPathResolver
-    ) { }
+    ) {
+        super();
+    }
 
-    formatMessage(args: { directory?: string }): string {
+    formatMessage(args: ListFilesArgs): string {
         return `Listing files in ${args.directory || 'the root directory'}`;
     }
 
-    async execute(args: { directory?: string }, _signal?: AbortSignal): Promise<string> {
+    async execute(args: ListFilesArgs, _signal?: AbortSignal): Promise<string> {
         const rootPath = this.workspaceProvider.rootPath();
         if (!rootPath) {
             return AGENT_MESSAGES.ERROR_NO_WORKSPACE;

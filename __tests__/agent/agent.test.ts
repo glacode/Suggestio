@@ -3,6 +3,7 @@ import { Agent } from "../../src/agent/agent.js";
 import { IChatHistoryManager, IChatMessage, IPrompt, IToolImplementation, ToolCall, IEventBus, ILogEventPayload } from "../../src/types.js";
 import { FakeProvider, createMockHistoryManager, createDefaultConfig, createMockEventBus } from "../testUtils.js";
 import { AGENT_MESSAGES } from "../../src/constants/messages.js";
+import { z } from "zod";
 
 describe("Agent", () => {
     let mockChatHistoryManager: IChatHistoryManager;
@@ -49,6 +50,7 @@ describe("Agent", () => {
                 description: "A test tool",
                 parameters: { type: "object", properties: { arg: { type: "string" } } }
             },
+            schema: z.any(),
             execute: jest.fn(async (args: any) => `Result for ${args.arg}`)
         };
 
@@ -169,6 +171,7 @@ describe("Agent", () => {
                 description: "Throws an error",
                 parameters: { type: "object", properties: {} }
             },
+            schema: z.any(),
             execute: jest.fn(async () => { throw new Error("Tool failed"); })
         };
 
@@ -226,11 +229,13 @@ describe("Agent", () => {
 
         const mockToolA: IToolImplementation = {
             definition: { name: "toolA", description: "Tool A", parameters: { type: "object", properties: {} } },
+            schema: z.any(),
             execute: jest.fn(async () => "Result A")
         };
 
         const mockToolB: IToolImplementation = {
             definition: { name: "toolB", description: "Tool B", parameters: { type: "object", properties: {} } },
+            schema: z.any(),
             execute: jest.fn(async () => "Result B")
         };
 
@@ -305,11 +310,13 @@ describe("Agent", () => {
 
         const mockTool1: IToolImplementation = {
             definition: { name: "tool1", description: "Tool 1", parameters: { type: "object", properties: {} } },
+            schema: z.any(),
             execute: jest.fn(async () => "Result 1")
         };
 
         const mockTool2: IToolImplementation = {
             definition: { name: "tool2", description: "Tool 2", parameters: { type: "object", properties: {} } },
+            schema: z.any(),
             execute: jest.fn(async () => "Result 2")
         };
 
@@ -357,6 +364,7 @@ describe("Agent", () => {
                 description: "A test tool",
                 parameters: { type: "object", properties: { arg: { type: "string" } } }
             },
+            schema: z.any(),
             execute: jest.fn(async () => `Result`)
         };
 
@@ -403,6 +411,7 @@ describe("Agent", () => {
                 description: "A test tool",
                 parameters: { type: "object", properties: {} }
             },
+            schema: z.any(),
             execute: jest.fn(async (_args: any, signal?: AbortSignal) => {
                 if (!signal) { throw new Error("Signal not passed to tool"); }
                 return "OK";

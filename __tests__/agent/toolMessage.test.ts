@@ -2,6 +2,7 @@ import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
 import { IChatHistoryManager, IChatMessage, IPrompt, ChatHistory, IToolImplementation, ToolCall, IEventBus } from "../../src/types.js";
 import { FakeProvider, createDefaultConfig, createMockProviderConfig, createMockEventBus } from "../testUtils.js";
+import { z } from "zod";
 
 describe("Agent Tool Message Formatting", () => {
     let mockChatHistoryManager: IChatHistoryManager;
@@ -49,6 +50,7 @@ describe("Agent Tool Message Formatting", () => {
                 parameters: { type: "object", properties: { arg1: { type: "string" } } }
             },
             formatMessage: jest.fn((args: any) => `Custom message for ${args.arg1}`),
+            schema: z.any(),
             execute: jest.fn(async () => "result")
         };
 
@@ -96,6 +98,7 @@ describe("Agent Tool Message Formatting", () => {
                 description: "A tool without custom message",
                 parameters: { type: "object", properties: {} }
             },
+            schema: z.any(),
             execute: jest.fn(async () => "result")
         };
 
