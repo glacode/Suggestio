@@ -5,7 +5,7 @@ import { BaseTool } from './baseTool.js';
 
 const ListFilesSchema = z.object({
     directory: z.string().optional(),
-});
+}).strict();
 
 type ListFilesArgs = z.infer<typeof ListFilesSchema>;
 
