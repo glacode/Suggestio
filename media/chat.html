@@ -697,11 +697,14 @@
                             if (details) details.removeAttribute('open');
                             if (summary) {
                                 const statusIcon = container.querySelector('.tool-call-status-icon');
-                                if (statusIcon) statusIcon.textContent = '✅';
+                                if (statusIcon) statusIcon.textContent = event.data.success ? '✅' : '❌';
                                 
                                 const statusText = container.querySelector('.tool-status-text');
                                 if (statusText) {
-                                    if (container.dataset.customMessage) {
+                                    if (!event.data.success) {
+                                        statusText.textContent = event.data.result;
+                                        statusText.style.color = 'var(--vscode-errorForeground)';
+                                    } else if (container.dataset.customMessage) {
                                         // Keep custom message but remove trailing dots if any
                                         statusText.textContent = container.dataset.customMessage.replace(/\.\.\.$/, '');
                                     } else {

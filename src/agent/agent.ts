@@ -163,14 +163,14 @@ export class Agent implements IChatAgent {
             if (!validationResult.success) {
                 const errorDetails = validationResult.error.issues.map(issue => `${issue.path.join('.')}: ${issue.message}`).join(', ');
                 const errorMessage = `Invalid arguments for tool '${toolCall.function.name}': ${errorDetails}. Please correct the arguments and try again.`;
-                this.recordToolResult(toolCall.id, toolCall.function.name, errorMessage);
+                this.recordToolResult(toolCall.id, toolCall.function.name, errorMessage, false);
                 return;
             }
             // Use the validated/transformed data
             parsedArgs = validationResult.data;
 
             const result = await tool.execute(parsedArgs, signal);
-            this.recordToolResult(toolCall.id, toolCall.function.name, result);
+            this.recordToolResult(toolCall.id, toolCall.function.name, result, true);
         } catch (e: any) {
             this.handleToolError(toolCall.id, toolCall.function.name, e);
         }
@@ -187,7 +187,7 @@ export class Agent implements IChatAgent {
             displayMessage: undefined,
             args: toolCall.function.arguments
         });
-        this.recordToolResult(toolCall.id, toolCall.function.name, AGENT_MESSAGES.ERROR_TOOL_NOT_FOUND(toolCall.function.name));
+        this.recordToolResult(toolCall.id, toolCall.function.name, AGENT_MESSAGES.ERROR_TOOL_NOT_FOUND(toolCall.function.name), false);
     }
 
     /**
@@ -195,18 +195,19 @@ export class Agent implements IChatAgent {
      */
     private handleToolError(toolCallId: string, toolName: string, error: any): void {
         this.logger.error(AGENT_LOGS.TOOL_ERROR(error.message));
-        this.recordToolResult(toolCallId, toolName, AGENT_MESSAGES.ERROR_TOOL_EXECUTION(error.message));
+        this.recordToolResult(toolCallId, toolName, AGENT_MESSAGES.ERROR_TOOL_EXECUTION(error.message), false);
     }
 
     /**
      * Adds the tool execution result (or error) to the chat history.
      */
-    private recordToolResult(toolCallId: string, toolName: string, content: string): void {
+    private recordToolResult(toolCallId: string, toolName: string, content: string, success: boolean): void {
         this.logger.debug(AGENT_LOGS.TOOL_RESULT_RECORDED(toolCallId));
         this.eventBus.emit('agent:toolEnd', {
             toolCallId: toolCallId,
             toolName: toolName,
-            result: content
+            result: content,
+            success: success
         });
         this.chatHistoryManager.addMessage({
             role: 'tool',

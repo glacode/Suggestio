@@ -275,6 +275,8 @@ export type MessageFromTheExtensionToTheWebview =
     toolName: string;
     /** The result of the tool execution. */
     result: string;
+    /** Whether the tool execution was successful. */
+    success: boolean;
   }
   | {
     /** Indicates the message comes from the AI assistant. */
@@ -769,6 +771,7 @@ export interface IToolResultEventPayload {
   toolCallId: string;
   toolName: string;
   result: string;
+  success: boolean;
 }
 
 export interface IAppEvents {
