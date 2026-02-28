@@ -161,7 +161,7 @@ export async function activate(context: vscode.ExtensionContext) {
     providerAccessor,
     chatAgent: agent,
     chatHistoryManager: chatHistoryManager,
-    buildContext: new ContextBuilder(vscode.window, ignoreManager),
+    buildContext: new ContextBuilder(vscode.window, ignoreManager, workspaceProvider, pathResolver),
     getChatWebviewContent,
     vscodeApi: vscode,
     fileReader: fileContentReader,
