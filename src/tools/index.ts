@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { IWorkspaceProvider, IToolDefinition, IDirectoryReader, IPathResolver, IToolImplementation } from '../types.js';
+import { IWorkspaceProvider, IToolDefinition, IDirectoryReader, IPathResolver, IToolImplementation, IToolResult } from '../types.js';
 import { AGENT_MESSAGES } from '../constants/messages.js';
 import { BaseTool } from './baseTool.js';
 
@@ -38,10 +38,11 @@ export class ListFilesTool extends BaseTool<ListFilesArgs> {
         return `Listing files in ${args.directory || 'the root directory'}`;
     }
 
-    async execute(args: ListFilesArgs, _signal?: AbortSignal): Promise<string> {
+    async execute(args: ListFilesArgs, _signal?: AbortSignal): Promise<IToolResult> {
+        // await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds, uncomment to simulate delay
         const rootPath = this.workspaceProvider.rootPath();
         if (!rootPath) {
-            return AGENT_MESSAGES.ERROR_NO_WORKSPACE;
+            return { content: AGENT_MESSAGES.ERROR_NO_WORKSPACE, success: false };
         }
 
         const dirPath = args.directory ? this.pathResolver.join(rootPath, args.directory) : rootPath;
@@ -49,21 +50,21 @@ export class ListFilesTool extends BaseTool<ListFilesArgs> {
 
         // Security check: ensure resolved path is within workspace root
         if (!resolvedPath.startsWith(rootPath)) {
-            return `Error: Access denied. Path must be within the workspace.`;
+            return { content: `Error: Access denied. Path must be within the workspace.`, success: false };
         }
 
         try {
             if (!this.directoryProvider.exists(dirPath)) {
-                return `Error: Directory ${args.directory} does not exist.`;
+                return { content: `Error: Directory ${args.directory} does not exist.`, success: false };
             }
 
             const files = this.directoryProvider.readdir(dirPath);
             if (!files) {
-                return `Error: Failed to read directory ${args.directory}.`;
+                return { content: `Error: Failed to read directory ${args.directory}.`, success: false };
             }
-            return JSON.stringify(files, null, 2);
+            return { content: JSON.stringify(files, null, 2), success: true };
         } catch (error: any) {
-            return `Error listing files: ${error.message}`;
+            return { content: `Error listing files: ${error.message}`, success: false };
         }
     }
 }

@@ -902,6 +902,16 @@ export interface IToolDefinition {
 }
 
 /**
+ * The result of a tool execution.
+ */
+export interface IToolResult {
+  /** The text content to be returned to the LLM. */
+  content: string;
+  /** Whether the execution was logically successful. */
+  success: boolean;
+}
+
+/**
  * Interface for a tool implementation.
  */
 export interface IToolImplementation<T = unknown> {
@@ -910,7 +920,7 @@ export interface IToolImplementation<T = unknown> {
    * Zod type to validate the tool arguments at runtime.
    */
   schema: z.ZodType<T>;
-  execute(args: T, signal?: AbortSignal): Promise<string>;
+  execute(args: T, signal?: AbortSignal): Promise<IToolResult>;
   /**
    * Optional method to return a human-readable description of the tool execution.
    * @param args The arguments passed to the tool.

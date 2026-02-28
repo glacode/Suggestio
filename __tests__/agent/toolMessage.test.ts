@@ -51,7 +51,7 @@ describe("Agent Tool Message Formatting", () => {
             },
             formatMessage: jest.fn((args: any) => `Custom message for ${args.arg1}`),
             schema: z.any(),
-            execute: jest.fn(async () => "result")
+            execute: jest.fn(async () => ({ content: "result", success: true }))
         };
 
         const agent = new Agent({
@@ -99,7 +99,7 @@ describe("Agent Tool Message Formatting", () => {
                 parameters: { type: "object", properties: {} }
             },
             schema: z.any(),
-            execute: jest.fn(async () => "result")
+            execute: jest.fn(async () => ({ content: "result", success: true }))
         };
 
         const agent = new Agent({

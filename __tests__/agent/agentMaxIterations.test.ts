@@ -44,7 +44,7 @@ describe("Agent Max Iterations", () => {
         const mockTool: IToolImplementation = {
             definition: { name: "loop_tool", description: "Loop", parameters: { type: "object", properties: {} } },
             schema: z.any(),
-            execute: jest.fn(async () => "Loop Result")
+            execute: jest.fn(async () => ({ content: "Loop Result", success: true }))
         };
 
         const config = createDefaultConfig({
@@ -88,7 +88,7 @@ describe("Agent Max Iterations", () => {
         const mockTool: IToolImplementation = {
             definition: { name: "loop_tool", description: "Loop", parameters: { type: "object", properties: {} } },
             schema: z.any(),
-            execute: jest.fn(async () => "Loop Result")
+            execute: jest.fn(async () => ({ content: "Loop Result", success: true }))
         };
 
         const config = createDefaultConfig({

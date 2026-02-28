@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { IToolImplementation, IToolDefinition } from '../types.js';
+import { IToolImplementation, IToolDefinition, IToolResult } from '../types.js';
 
 /**
  * Abstract base class for all tool implementations.
@@ -23,7 +23,7 @@ export abstract class BaseTool<T> implements IToolImplementation<T> {
      * @param args Validated tool arguments.
      * @param signal Optional AbortSignal for cancellation.
      */
-    abstract execute(args: T, signal?: AbortSignal): Promise<string>;
+    abstract execute(args: T, signal?: AbortSignal): Promise<IToolResult>;
 
     /**
      * Optional method to return a human-readable description of the tool execution.

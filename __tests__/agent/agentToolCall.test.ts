@@ -58,7 +58,7 @@ describe("ChatResponder Tool Calling Integration", () => {
                 parameters: { type: "object", properties: {} }
             },
             schema: z.any(),
-            execute: jest.fn(async () => "12:00 PM")
+            execute: jest.fn(async () => ({ content: "12:00 PM", success: true }))
         };
 
         const agent = new Agent({

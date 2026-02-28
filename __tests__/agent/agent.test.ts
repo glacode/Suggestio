@@ -51,7 +51,7 @@ describe("Agent", () => {
                 parameters: { type: "object", properties: { arg: { type: "string" } } }
             },
             schema: z.any(),
-            execute: jest.fn(async (args: any) => `Result for ${args.arg}`)
+            execute: jest.fn(async (args: any) => ({ content: `Result for ${args.arg}`, success: true }))
         };
 
         const provider = new FakeProvider([
@@ -230,13 +230,13 @@ describe("Agent", () => {
         const mockToolA: IToolImplementation = {
             definition: { name: "toolA", description: "Tool A", parameters: { type: "object", properties: {} } },
             schema: z.any(),
-            execute: jest.fn(async () => "Result A")
+            execute: jest.fn(async () => ({ content: "Result A", success: true }))
         };
 
         const mockToolB: IToolImplementation = {
             definition: { name: "toolB", description: "Tool B", parameters: { type: "object", properties: {} } },
             schema: z.any(),
-            execute: jest.fn(async () => "Result B")
+            execute: jest.fn(async () => ({ content: "Result B", success: true }))
         };
 
         const agent = new Agent({
@@ -311,13 +311,13 @@ describe("Agent", () => {
         const mockTool1: IToolImplementation = {
             definition: { name: "tool1", description: "Tool 1", parameters: { type: "object", properties: {} } },
             schema: z.any(),
-            execute: jest.fn(async () => "Result 1")
+            execute: jest.fn(async () => ({ content: "Result 1", success: true }))
         };
 
         const mockTool2: IToolImplementation = {
             definition: { name: "tool2", description: "Tool 2", parameters: { type: "object", properties: {} } },
             schema: z.any(),
-            execute: jest.fn(async () => "Result 2")
+            execute: jest.fn(async () => ({ content: "Result 2", success: true }))
         };
 
         const agent = new Agent({
@@ -365,7 +365,7 @@ describe("Agent", () => {
                 parameters: { type: "object", properties: { arg: { type: "string" } } }
             },
             schema: z.any(),
-            execute: jest.fn(async () => `Result`)
+            execute: jest.fn(async () => ({ content: `Result`, success: true }))
         };
 
         const provider = new FakeProvider([
@@ -393,7 +393,7 @@ describe("Agent", () => {
         // Mock execute to abort the controller mid-run
         jest.spyOn(tool, 'execute').mockImplementation(async () => {
             controller.abort();
-            return "Tool result";
+            return { content: "Tool result", success: true };
         });
 
         await agent.run(mockPrompt, controller.signal);
@@ -414,7 +414,7 @@ describe("Agent", () => {
             schema: z.any(),
             execute: jest.fn(async (_args: any, signal?: AbortSignal) => {
                 if (!signal) { throw new Error("Signal not passed to tool"); }
-                return "OK";
+                return { content: "OK", success: true };
             })
         };
 

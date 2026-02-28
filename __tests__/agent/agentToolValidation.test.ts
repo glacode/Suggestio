@@ -19,7 +19,7 @@ describe("Agent Tool Argument Validation", () => {
         const mockTool: IToolImplementation<any> = {
             definition,
             schema,
-            execute: jest.fn<any>().mockResolvedValue("success"),
+            execute: jest.fn<any>().mockResolvedValue({ content: "success", success: true }),
         };
 
         const mockHistoryManager = createMockHistoryManager([]);
@@ -90,7 +90,7 @@ describe("Agent Tool Argument Validation", () => {
         const mockTool: IToolImplementation<any> = {
             definition,
             schema,
-            execute: jest.fn<any>().mockResolvedValue("Success result"),
+            execute: jest.fn<any>().mockResolvedValue({ content: "Success result", success: true }),
         };
 
         const mockHistoryManager = createMockHistoryManager([]);
@@ -155,7 +155,7 @@ describe("Agent Tool Argument Validation", () => {
         const mockTool: IToolImplementation<any> = {
             definition,
             schema,
-            execute: jest.fn<any>().mockResolvedValue("Success"),
+            execute: jest.fn<any>().mockResolvedValue({ content: "Success", success: true }),
         };
 
         const mockHistoryManager = createMockHistoryManager([]);
