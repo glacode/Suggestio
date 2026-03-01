@@ -898,6 +898,10 @@ export interface IToolDefinition {
   parameters: {
     type: 'object';
     properties: Record<string, any>;
+    /**
+     * An array of property names that are mandatory for the LLM to provide.
+     * This follows the JSON Schema standard for tool definitions.
+     */
     required?: string[];
   };
 }
