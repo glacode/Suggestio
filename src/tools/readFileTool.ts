@@ -53,7 +53,7 @@ export class ReadFileTool extends BaseTool<ReadFileArgs> {
 
         // Security check: ensure resolved path is within workspace root
         if (!resolvedPath.startsWith(rootPath)) {
-            return { content: `Error: Access denied. Path must be within the workspace.`, success: false };
+            return { content: AGENT_MESSAGES.ERROR_PATH_OUTSIDE_WORKSPACE, success: false };
         }
 
         try {

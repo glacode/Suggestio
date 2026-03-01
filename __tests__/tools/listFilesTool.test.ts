@@ -1,6 +1,7 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { ListFilesTool } from "../../src/tools/index.js";
 import { IWorkspaceProvider, IDirectoryReader, IPathResolver } from "../../src/types.js";
+import { AGENT_MESSAGES } from "../../src/constants/messages.js";
 import { createMockPathResolver, createMockDirectoryReader } from "../testUtils.js";
 
 describe("ListFilesTool Security", () => {
@@ -27,13 +28,13 @@ describe("ListFilesTool Security", () => {
     it("should prevent accessing parent directories", async () => {
         const result = await tool.execute({ directory: "../" });
         expect(result.success).toBe(false);
-        expect(result.content).toContain("Error: Access denied");
+        expect(result.content).toBe(AGENT_MESSAGES.ERROR_PATH_OUTSIDE_WORKSPACE);
     });
 
     it("should prevent accessing absolute paths outside workspace via traversal", async () => {
         const result = await tool.execute({ directory: "../../../../etc/passwd" });
         expect(result.success).toBe(false);
-        expect(result.content).toContain("Error: Access denied");
+        expect(result.content).toBe(AGENT_MESSAGES.ERROR_PATH_OUTSIDE_WORKSPACE);
     });
 
     it("should return success: false for non-existent directories", async () => {

@@ -1,6 +1,7 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { ReadFileTool } from "../../src/tools/readFileTool.js";
 import { IWorkspaceProvider, IFileContentReader, IPathResolver } from "../../src/types.js";
+import { AGENT_MESSAGES } from "../../src/constants/messages.js";
 import { createMockPathResolver, createMockFileContentReader, createMockWorkspaceProvider } from "../testUtils.js";
 
 describe("ReadFileTool", () => {
@@ -58,13 +59,13 @@ describe("ReadFileTool", () => {
         it("should prevent accessing parent directories", async () => {
             const result = await tool.execute({ path: "../outside.ts" });
             expect(result.success).toBe(false);
-            expect(result.content).toContain("Error: Access denied");
+            expect(result.content).toBe(AGENT_MESSAGES.ERROR_PATH_OUTSIDE_WORKSPACE);
         });
 
         it("should prevent accessing absolute paths outside workspace via traversal", async () => {
             const result = await tool.execute({ path: "../../../../etc/passwd" });
             expect(result.success).toBe(false);
-            expect(result.content).toContain("Error: Access denied");
+            expect(result.content).toBe(AGENT_MESSAGES.ERROR_PATH_OUTSIDE_WORKSPACE);
         });
 
         it("should allow accessing valid files in subdirectories", async () => {

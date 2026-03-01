@@ -1,5 +1,6 @@
 export const AGENT_MESSAGES = {
     ERROR_NO_WORKSPACE: 'Error: No workspace open.',
+    ERROR_PATH_OUTSIDE_WORKSPACE: 'Error: Access denied. Path must be within the workspace.',
     ERROR_TOOL_NOT_FOUND: (name: string) => `Error: Tool ${name} not found.`,
     ERROR_TOOL_FAILED: 'Error: Tool failed',
     ERROR_TOOL_EXECUTION: (msg: string) => `Error: ${msg}`,
