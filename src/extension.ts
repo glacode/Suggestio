@@ -146,7 +146,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const agent = new Agent({
     config: configContainer.config,
     chatHistoryManager,
-    tools: getTools(workspaceProvider, { ...directoryReader, ...directoryCreator }, pathResolver),
+    tools: getTools(workspaceProvider, { ...directoryReader, ...directoryCreator }, fileContentReader, pathResolver),
     eventBus
   });
   const providerAccessor = {
