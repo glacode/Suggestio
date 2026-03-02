@@ -169,7 +169,7 @@ export class Agent implements IChatAgent {
             // Use the validated/transformed data
             parsedArgs = validationResult.data;
 
-            const { content, success } = await tool.execute(parsedArgs, signal);
+            const { content, success } = await tool.execute(parsedArgs, signal, toolCall.id);
             this.recordToolResult(toolCall.id, toolCall.function.name, content, success);
         } catch (e: any) {
             this.handleToolError(toolCall.id, toolCall.function.name, e);

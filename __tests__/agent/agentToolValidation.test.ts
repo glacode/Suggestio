@@ -134,7 +134,7 @@ describe("Agent Tool Argument Validation", () => {
 
         await agent.run(mockPrompt);
 
-        expect(mockTool.execute).toHaveBeenCalledWith({ count: 42 }, undefined);
+        expect(mockTool.execute).toHaveBeenCalledWith({ count: 42 }, undefined, "call_123");
         
         const history = mockHistoryManager.getChatHistory();
         const toolResultMessage = history.find(m => m.role === "tool");

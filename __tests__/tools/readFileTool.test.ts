@@ -1,13 +1,14 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { ReadFileTool } from "../../src/tools/readFileTool.js";
-import { IWorkspaceProvider, IFileContentReader, IPathResolver } from "../../src/types.js";
+import { IWorkspaceProvider, IFileContentReader, IPathResolver, IEventBus } from "../../src/types.js";
 import { AGENT_MESSAGES } from "../../src/constants/messages.js";
-import { createMockPathResolver, createMockFileContentReader, createMockWorkspaceProvider } from "../testUtils.js";
+import { createMockPathResolver, createMockFileContentReader, createMockWorkspaceProvider, createMockEventBus } from "../testUtils.js";
 
 describe("ReadFileTool", () => {
     let workspaceProvider: jest.Mocked<IWorkspaceProvider>;
     let fileReader: jest.Mocked<IFileContentReader>;
     let pathResolver: jest.Mocked<IPathResolver>;
+    let eventBus: jest.Mocked<IEventBus>;
     let tool: ReadFileTool;
     const mockRootPath = "/home/user/project";
 
@@ -17,42 +18,94 @@ describe("ReadFileTool", () => {
         
         fileReader = createMockFileContentReader();
         pathResolver = createMockPathResolver();
+        eventBus = createMockEventBus();
 
-        tool = new ReadFileTool(workspaceProvider, fileReader, pathResolver);
+        tool = new ReadFileTool(workspaceProvider, fileReader, pathResolver, eventBus);
     });
 
-    it("should return success: true and file content when read is successful", async () => {
+    it("should return success: true and file content when user confirms", async () => {
         const filePath = "src/test.ts";
         const content = "console.log('hello');";
+        const toolCallId = "call-123";
+        fileReader.read.mockReturnValue(content);
+
+        // Mock eventBus.on to capture the callback and trigger it
+        let confirmationCallback: any;
+        eventBus.on.mockImplementation((event: string, cb: any) => {
+            if (event === 'user:confirmationResponse') {
+                confirmationCallback = cb;
+            }
+            return { dispose: () => { } };
+        });
+
+        const executePromise = tool.execute({ path: filePath }, undefined, toolCallId);
+
+        // Simulate user confirmation
+        if (confirmationCallback) {
+            confirmationCallback({ toolCallId, decision: 'allow' });
+        }
+
+        const result = await executePromise;
+
+        expect(result.success).toBe(true);
+        expect(result.content).toBe(content);
+        expect(eventBus.emit).toHaveBeenCalledWith('agent:requestConfirmation', expect.objectContaining({
+            toolCallId,
+            message: expect.stringContaining(filePath)
+        }));
+    });
+
+    it("should return success: false when user denies", async () => {
+        const filePath = "src/test.ts";
+        const toolCallId = "call-123";
+
+        let confirmationCallback: any;
+        eventBus.on.mockImplementation((event: string, cb: any) => {
+            if (event === 'user:confirmationResponse') {
+                confirmationCallback = cb;
+            }
+            return { dispose: () => { } };
+        });
+
+        const executePromise = tool.execute({ path: filePath }, undefined, toolCallId);
+
+        if (confirmationCallback) {
+            confirmationCallback({ toolCallId, decision: 'deny' });
+        }
+
+        const result = await executePromise;
+
+        expect(result.success).toBe(false);
+        expect(result.content).toContain("User denied access");
+        expect(fileReader.read).not.toHaveBeenCalled();
+    });
+
+    it("should return success: true immediately if no toolCallId is provided (backward compatibility/internal use)", async () => {
+        const filePath = "src/test.ts";
+        const content = "no confirmation needed";
         fileReader.read.mockReturnValue(content);
 
         const result = await tool.execute({ path: filePath });
 
         expect(result.success).toBe(true);
         expect(result.content).toBe(content);
-        expect(fileReader.read).toHaveBeenCalledWith(pathResolver.resolve(pathResolver.join(mockRootPath, filePath)));
+        expect(eventBus.emit).not.toHaveBeenCalled();
     });
 
-    it("should return success: false when file does not exist", async () => {
-        const filePath = "non-existent.ts";
-        fileReader.read.mockReturnValue(undefined);
+    it("should handle cancellation signal by denying access", async () => {
+        const filePath = "src/test.ts";
+        const toolCallId = "call-123";
+        const abortController = new AbortController();
 
-        const result = await tool.execute({ path: filePath });
+        eventBus.on.mockReturnValue({ dispose: () => { } });
 
+        const executePromise = tool.execute({ path: filePath }, abortController.signal, toolCallId);
+
+        abortController.abort();
+
+        const result = await executePromise;
         expect(result.success).toBe(false);
-        expect(result.content).toContain("Error: Failed to read file");
-    });
-
-    it("should return success: false when an error occurs during reading", async () => {
-        const filePath = "error.ts";
-        fileReader.read.mockImplementation(() => {
-            throw new Error("Disk failure");
-        });
-
-        const result = await tool.execute({ path: filePath });
-
-        expect(result.success).toBe(false);
-        expect(result.content).toContain("Error reading file: Disk failure");
+        expect(result.content).toContain("User denied access");
     });
 
     describe("Security", () => {

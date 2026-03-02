@@ -370,6 +370,66 @@
                 font-weight: bold;
                 color: var(--vscode-symbolIcon-functionForeground);
             }
+
+            .tool-confirmation-container {
+                margin: 8px 0;
+                padding: 10px;
+                background: var(--vscode-editorWidget-background);
+                border: 1px solid var(--vscode-editorWidget-border);
+                border-radius: 6px;
+                font-size: 13px;
+            }
+
+            .tool-confirmation-header {
+                display: flex;
+                align-items: center;
+                margin-bottom: 8px;
+                color: var(--vscode-foreground);
+                font-weight: 500;
+            }
+
+            .tool-confirmation-icon {
+                margin-right: 8px;
+                color: var(--vscode-notificationsInfoIcon-foreground);
+            }
+
+            .tool-confirmation-buttons {
+                display: flex;
+                gap: 8px;
+                margin-top: 10px;
+            }
+
+            .tool-button {
+                padding: 4px 12px;
+                border-radius: 2px;
+                cursor: pointer;
+                font-size: 12px;
+                border: none;
+                flex: 1;
+            }
+
+            .tool-button-primary {
+                background: var(--vscode-button-background);
+                color: var(--vscode-button-foreground);
+            }
+
+            .tool-button-primary:hover {
+                background: var(--vscode-button-hoverBackground);
+            }
+
+            .tool-button-secondary {
+                background: var(--vscode-button-secondaryBackground);
+                color: var(--vscode-button-secondaryForeground);
+            }
+
+            .tool-button-secondary:hover {
+                background: var(--vscode-button-secondaryHoverBackground);
+            }
+
+            .tool-button:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
         </style>
     </head>
     <body>
@@ -482,6 +542,18 @@
                 vscode.postMessage({ command: 'cancelRequest' });
             }
 
+            function confirmTool(toolCallId, decision) {
+                const container = document.getElementById('confirm-' + toolCallId);
+                if (container) {
+                    container.remove();
+                }
+                vscode.postMessage({ 
+                    command: 'confirmToolCall',
+                    toolCallId,
+                    decision
+                });
+            }
+
             function sendMessage() {
                 const input = document.getElementById('messageInput');
                 const text = input.value.trim();
@@ -562,7 +634,7 @@
 
             function newChat() {
                 const chat = document.getElementById('chat');
-                const messages = chat.querySelectorAll('.message, .tool-call-container');
+                const messages = chat.querySelectorAll('.message, .tool-call-container, .tool-confirmation-container');
                 messages.forEach(m => m.remove());
                 const emptyChatContent = document.getElementById('emptyChatContent');
                 if(emptyChatContent) {
@@ -713,6 +785,28 @@
                                 }
                             }
                         }
+                        return;
+                    }
+
+                    if (type === 'tool_confirmation') {
+                        const chat = document.getElementById('chat');
+                        const container = document.createElement('div');
+                        container.className = 'tool-confirmation-container';
+                        container.id = 'confirm-' + event.data.toolCallId;
+                        
+                        container.innerHTML = `
+                            <div class="tool-confirmation-header">
+                                <span class="tool-confirmation-icon">ℹ️</span>
+                                <span>Tool Request</span>
+                            </div>
+                            <div class="tool-confirmation-message">${event.data.message}</div>
+                            <div class="tool-confirmation-buttons">
+                                <button class="tool-button tool-button-primary" onclick="confirmTool('${event.data.toolCallId}', 'allow')">Allow</button>
+                                <button class="tool-button tool-button-secondary" onclick="confirmTool('${event.data.toolCallId}', 'deny')">Deny</button>
+                            </div>
+                        `;
+                        chat.appendChild(container);
+                        container.scrollIntoView();
                         return;
                     }
 

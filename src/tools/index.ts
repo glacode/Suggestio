@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { IWorkspaceProvider, IToolDefinition, IDirectoryReader, IPathResolver, IToolImplementation, IToolResult, IFileContentReader } from '../types.js';
+import { IWorkspaceProvider, IToolDefinition, IDirectoryReader, IPathResolver, IToolImplementation, IToolResult, IFileContentReader, IEventBus } from '../types.js';
 import { AGENT_MESSAGES } from '../constants/messages.js';
 import { BaseTool } from './baseTool.js';
 import { ReadFileTool } from './readFileTool.js';
@@ -39,7 +39,7 @@ export class ListFilesTool extends BaseTool<ListFilesArgs> {
         return `Listing files in ${args.directory || 'the root directory'}`;
     }
 
-    async execute(args: ListFilesArgs, _signal?: AbortSignal): Promise<IToolResult> {
+    async execute(args: ListFilesArgs, _signal?: AbortSignal, _toolCallId?: string): Promise<IToolResult> {
         // await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds, uncomment to simulate delay
         const rootPath = this.workspaceProvider.rootPath();
         if (!rootPath) {
@@ -74,11 +74,12 @@ export function getTools(
     workspaceProvider: IWorkspaceProvider,
     directoryProvider: IDirectoryReader,
     fileReader: IFileContentReader,
-    pathResolver: IPathResolver
+    pathResolver: IPathResolver,
+    eventBus: IEventBus
 ): IToolImplementation[] {
     return [
         new ListFilesTool(workspaceProvider, directoryProvider, pathResolver),
-        new ReadFileTool(workspaceProvider, fileReader, pathResolver)
+        new ReadFileTool(workspaceProvider, fileReader, pathResolver, eventBus)
     ];
 }
 

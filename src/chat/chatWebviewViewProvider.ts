@@ -19,7 +19,8 @@ import type {
     IAnonymizer,
     ITokenEventPayload,
     IToolCallEventPayload,
-    IToolResultEventPayload
+    IToolResultEventPayload,
+    IToolConfirmationPayload
 } from '../types.js';
 // Importing the `eventBus`, a custom mechanism for different parts of the extension
 // to communicate by emitting and listening for events.
@@ -137,6 +138,18 @@ export class ChatWebviewViewProvider {
                     toolName: payload.toolName,
                     result: payload.result,
                     success: payload.success
+                });
+            }
+        });
+
+        this._eventBus.on('agent:requestConfirmation', (payload: IToolConfirmationPayload) => {
+            if (this._view) {
+                this._view.webview.postMessage({
+                    sender: 'assistant',
+                    type: 'tool_confirmation',
+                    toolCallId: payload.toolCallId,
+                    toolName: payload.toolName,
+                    message: payload.message
                 });
             }
         });
@@ -268,6 +281,11 @@ export class ChatWebviewViewProvider {
                     this.logger.info(AGENT_LOGS.CANCEL_REQUEST);
                     this._abortController.abort();
                 }
+            } else if (message.command === 'confirmToolCall') {
+                this._eventBus.emit('user:confirmationResponse', {
+                    toolCallId: message.toolCallId,
+                    decision: message.decision
+                });
             } else if (message.command === 'modelChanged') {
                 // Handle a message indicating that the active model has changed in the webview.
                 // Emit a 'modelChanged' event on the global event bus, allowing other parts

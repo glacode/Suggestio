@@ -190,6 +190,14 @@ export type WebviewMessage =
   | {
     /** User wants to cancel the current LLM request. */
     command: 'cancelRequest';
+  }
+  | {
+    /** User responds to a tool confirmation request. */
+    command: 'confirmToolCall';
+    /** The ID of the tool call. */
+    toolCallId: string;
+    /** The user's decision ('allow' or 'deny'). */
+    decision: 'allow' | 'deny';
   };
 
 /**
@@ -277,6 +285,18 @@ export type MessageFromTheExtensionToTheWebview =
     result: string;
     /** Whether the tool execution was successful. */
     success: boolean;
+  }
+  | {
+    /** Indicates the message comes from the AI assistant. */
+    sender: 'assistant';
+    /** Signals a request for user confirmation before executing a tool. */
+    type: 'tool_confirmation';
+    /** The ID of the tool call. */
+    toolCallId: string;
+    /** The name of the tool. */
+    toolName: string;
+    /** The message to display to the user. */
+    message: string;
   }
   | {
     /** Indicates the message comes from the AI assistant. */
@@ -774,6 +794,21 @@ export interface IToolResultEventPayload {
   success: boolean;
 }
 
+export interface IToolConfirmationPayload {
+  toolCallId: string;
+  toolName: string;
+  message: string;
+}
+
+/**
+ * Payload for the user's response to a tool confirmation request.
+ * The 'decision' field is a string to allow for future options like 'allow_session'.
+ */
+export interface IUserConfirmationPayload {
+  toolCallId: string;
+  decision: 'allow' | 'deny' | string;
+}
+
 export interface IAppEvents {
   'inlineCompletionToggled': boolean;
   'modelChanged': string;
@@ -782,6 +817,14 @@ export interface IAppEvents {
   'agent:token': ITokenEventPayload;
   'agent:toolStart': IToolCallEventPayload;
   'agent:toolEnd': IToolResultEventPayload;
+  /**
+   * Fired when a tool requires explicit user confirmation before execution.
+   */
+  'agent:requestConfirmation': IToolConfirmationPayload;
+  /**
+   * Fired when the user responds (Allow/Deny) to a tool confirmation request.
+   */
+  'user:confirmationResponse': IUserConfirmationPayload;
   'log': ILogEventPayload;
 }
 
@@ -925,7 +968,13 @@ export interface IToolImplementation<T = unknown> {
    * Zod type to validate the tool arguments at runtime.
    */
   schema: z.ZodType<T>;
-  execute(args: T, signal?: AbortSignal): Promise<IToolResult>;
+  /**
+   * Executes the tool logic.
+   * @param args Validated tool arguments.
+   * @param signal Optional AbortSignal for cancellation.
+   * @param toolCallId The unique identifier of this tool call, used for confirmation handshakes.
+   */
+  execute(args: T, signal?: AbortSignal, toolCallId?: string): Promise<IToolResult>;
   /**
    * Optional method to return a human-readable description of the tool execution.
    * @param args The arguments passed to the tool.

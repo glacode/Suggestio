@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { IWorkspaceProvider, IToolDefinition, IPathResolver, IFileContentReader, IToolResult } from '../types.js';
+import { IWorkspaceProvider, IToolDefinition, IPathResolver, IFileContentReader, IToolResult, IEventBus, IUserConfirmationPayload } from '../types.js';
 import { AGENT_MESSAGES } from '../constants/messages.js';
 import { BaseTool } from './baseTool.js';
 
@@ -33,7 +33,8 @@ export class ReadFileTool extends BaseTool<ReadFileArgs> {
     constructor(
         private workspaceProvider: IWorkspaceProvider,
         private fileReader: IFileContentReader,
-        private pathResolver: IPathResolver
+        private pathResolver: IPathResolver,
+        private eventBus: IEventBus
     ) {
         super();
     }
@@ -42,7 +43,7 @@ export class ReadFileTool extends BaseTool<ReadFileArgs> {
         return `Reading file ${args.path}`;
     }
 
-    async execute(args: ReadFileArgs, _signal?: AbortSignal): Promise<IToolResult> {
+    async execute(args: ReadFileArgs, signal?: AbortSignal, toolCallId?: string): Promise<IToolResult> {
         const rootPath = this.workspaceProvider.rootPath();
         if (!rootPath) {
             return { content: AGENT_MESSAGES.ERROR_NO_WORKSPACE, success: false };
@@ -54,6 +55,36 @@ export class ReadFileTool extends BaseTool<ReadFileArgs> {
         // Security check: ensure resolved path is within workspace root
         if (!resolvedPath.startsWith(rootPath)) {
             return { content: AGENT_MESSAGES.ERROR_PATH_OUTSIDE_WORKSPACE, success: false };
+        }
+
+        // Confirmation handshake
+        if (toolCallId) {
+            this.eventBus.emit('agent:requestConfirmation', {
+                toolCallId,
+                toolName: this.definition.name,
+                message: `Allow Suggestio to read ${args.path}?`
+            });
+
+            const userDecision = await new Promise<string>((resolve) => {
+                const disposable = this.eventBus.on('user:confirmationResponse', (payload: IUserConfirmationPayload) => {
+                    if (payload.toolCallId === toolCallId) {
+                        disposable.dispose();
+                        resolve(payload.decision);
+                    }
+                });
+
+                // Handle cancellation
+                if (signal) {
+                    signal.addEventListener('abort', () => {
+                        disposable.dispose();
+                        resolve('deny');
+                    }, { once: true });
+                }
+            });
+
+            if (userDecision !== 'allow') {
+                return { content: `Error: User denied access to read file ${args.path}.`, success: false };
+            }
         }
 
         try {

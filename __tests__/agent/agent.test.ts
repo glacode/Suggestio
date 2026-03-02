@@ -84,7 +84,7 @@ describe("Agent", () => {
         await agent.run(mockPrompt);
 
         expect(streamedContent).toBe("Calling tool...Final answer");
-        expect(tool.execute).toHaveBeenCalledWith({ arg: "val" }, undefined);
+        expect(tool.execute).toHaveBeenCalledWith({ arg: "val" }, undefined, "call_1");
 
         // History should have: 
         // 1. Assistant tool call
@@ -256,8 +256,8 @@ describe("Agent", () => {
         await agent.run(mockPrompt);
 
         expect(streamedContent).toBe("Processed both.");
-        expect(mockToolA.execute).toHaveBeenCalledWith({ arg: "valA" }, undefined);
-        expect(mockToolB.execute).toHaveBeenCalledWith({ arg: "valB" }, undefined);
+        expect(mockToolA.execute).toHaveBeenCalledWith({ arg: "valA" }, undefined, "call_A");
+        expect(mockToolB.execute).toHaveBeenCalledWith({ arg: "valB" }, undefined, "call_B");
 
         // Verify history
         expect(mockChatHistory.length).toBe(4);
@@ -440,7 +440,7 @@ describe("Agent", () => {
         const controller = new AbortController();
         await agent.run(mockPrompt, controller.signal);
 
-        expect(tool.execute).toHaveBeenCalledWith(expect.anything(), controller.signal);
+        expect(tool.execute).toHaveBeenCalledWith(expect.anything(), controller.signal, "call_1");
     });
 
     it("emits log events when using EventLoggerAdapter", async () => {
