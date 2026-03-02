@@ -663,6 +663,11 @@
                         lastMessage.remove();
                     }
                 }
+
+                // Clear any pending tool confirmations
+                const confirmations = document.querySelectorAll('.tool-confirmation-container');
+                confirmations.forEach(c => c.remove());
+
                 // Re-enable input for next message
                 enableInput();
             }
