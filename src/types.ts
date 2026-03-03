@@ -67,6 +67,21 @@ export interface IVscodeApiLocal {
      * @returns A new URI representing the combined path.
      */
     joinPath(base: IUriLike, ...paths: string[]): IUriLike;
+
+    /**
+     * Parses a string into a URI.
+     */
+    parse(value: string, strict?: boolean): IUriLike;
+  };
+
+  /**
+   * Exposes VS Code commands.
+   */
+  commands: {
+    /**
+     * Executes a command.
+     */
+    executeCommand<T = any>(command: string, ...rest: any[]): Thenable<T>;
   };
 }
 
@@ -645,9 +660,22 @@ export interface IConfigProvider {
    */
   onDidChangeConfiguration(listener: (event: IConfigChangeEvent) => void): IDisposable;
 }
+/**
+ * Provides a way to show a side-by-side diff in the editor.
+ */
+export interface IDiffManager {
+  /**
+   * Opens the native VS Code diff editor for the given contents.
+   * @param filePath The path of the file being diffed (for the tab title).
+   * @param oldContent The original content.
+   * @param newContent The proposed content.
+   */
+  showDiff(filePath: string, oldContent: string, newContent: string): Promise<void>;
+}
 
 /**
  * `IWindowProvider` provides a way to show messages and interact with the user.
+...
  * This is a minimal abstraction over `vscode.window`.
  */
 export interface IWindowProvider {

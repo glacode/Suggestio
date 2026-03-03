@@ -26,7 +26,8 @@ import {
     IDirectoryProvider,
     IWorkspaceProviderFull,
     IEventBus,
-    IConfigProvider
+    IConfigProvider,
+    IDiffManager
 } from "../src/types.js"; import { ILogger } from "../src/log/logger.js";
 import { CONFIG_DEFAULTS } from "../src/constants/config.js";
 import { jest } from "@jest/globals";
@@ -72,7 +73,11 @@ export const createMockVscodeApi = (
         (_b, ..._p) => ({ fsPath: 'joined', toString: () => 'joined' })
 ): IVscodeApiLocal => ({
     Uri: {
-        joinPath: joinPathImpl
+        joinPath: joinPathImpl,
+        parse: jest.fn((s: string) => ({ fsPath: s, toString: () => s }))
+    },
+    commands: {
+        executeCommand: jest.fn<any>().mockResolvedValue(undefined)
     }
 });
 
@@ -137,6 +142,10 @@ export const createMockHistoryManager = (recorded: ChatHistory = []): IChatHisto
     clearHistory: () => { recorded.length = 0; },
     addMessage: (m) => { recorded.push(m); },
     getChatHistory: () => [...recorded]
+});
+
+export const createMockDiffManager = (): jest.Mocked<IDiffManager> => ({
+    showDiff: jest.fn<any>().mockResolvedValue(undefined),
 });
 
 export const createMockWindowProvider = (): jest.Mocked<IWindowProvider> => ({

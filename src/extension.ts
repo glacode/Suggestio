@@ -17,7 +17,8 @@ import {
   IWindowProvider, 
   IPathResolver,
   IDocumentOpener,
-  IConfigProvider
+  IConfigProvider,
+  IVscodeApiLocal
 } from './types.js';
 import { ChatHistoryManager } from './chat/chatHistoryManager.js';
 import { SecretManager } from './config/secretManager.js';
@@ -35,11 +36,24 @@ import { EventLogHandler } from './log/eventLogHandler.js';
 import { ANONYMIZATION_EVENT } from './anonymizer/anonymizationNotifier.js';
 import { NodeFetchClient } from './utils/httpClient.js';
 import { EXTENSION_MESSAGES, EXTENSION_LOGS } from './constants/messages.js';
+import { DiffManager } from './utils/diffManager.js';
 
 export async function activate(context: vscode.ExtensionContext) {
   initLogger();
   defaultLogger.info(EXTENSION_LOGS.ACTIVATE);
   vscode.window.showInformationMessage(EXTENSION_MESSAGES.ACTIVATED);
+
+  const vscodeApiLocal: IVscodeApiLocal = {
+    Uri: vscode.Uri,
+    commands: vscode.commands
+  };
+
+  const diffManager = new DiffManager(vscodeApiLocal);
+  context.subscriptions.push(
+    vscode.workspace.registerTextDocumentContentProvider(DiffManager.scheme, {
+      provideTextDocumentContent: (uri) => diffManager.getContent(uri.toString())
+    })
+  );
 
   const eventBus = new EventBus();
   new EventLogHandler(eventBus, defaultLogger);
