@@ -1,8 +1,9 @@
 import { z } from 'zod';
-import { IWorkspaceProvider, IToolDefinition, IDirectoryReader, IPathResolver, IToolImplementation, IToolResult, IFileContentReader, IEventBus } from '../types.js';
+import { IWorkspaceProvider, IToolDefinition, IDirectoryReader, IPathResolver, IToolImplementation, IToolResult, IFileContentReader, IFileContentWriter, IEventBus } from '../types.js';
 import { AGENT_MESSAGES } from '../constants/messages.js';
 import { BaseTool } from './baseTool.js';
 import { ReadFileTool } from './readFileTool.js';
+import { EditFileTool } from './editFileTool.js';
 
 const ListFilesSchema = z.object({
     directory: z.string().optional(),
@@ -74,13 +75,15 @@ export function getTools(
     workspaceProvider: IWorkspaceProvider,
     directoryProvider: IDirectoryReader,
     fileReader: IFileContentReader,
+    fileWriter: IFileContentWriter,
     pathResolver: IPathResolver,
     eventBus: IEventBus
 ): IToolImplementation[] {
     return [
         new ListFilesTool(workspaceProvider, directoryProvider, pathResolver),
-        new ReadFileTool(workspaceProvider, fileReader, pathResolver, eventBus)
+        new ReadFileTool(workspaceProvider, fileReader, pathResolver, eventBus),
+        new EditFileTool(workspaceProvider, fileReader, fileWriter, pathResolver, eventBus)
     ];
 }
 
-export { ReadFileTool };
+export { ReadFileTool, EditFileTool };

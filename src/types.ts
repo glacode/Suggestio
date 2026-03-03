@@ -826,6 +826,11 @@ export interface IToolConfirmationPayload {
   toolCallId: string;
   toolName: string;
   message: string;
+  diffData?: {
+    oldContent: string;
+    newContent: string;
+    filePath: string;
+  };
 }
 
 /**
