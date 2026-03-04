@@ -157,18 +157,18 @@ export async function activate(context: vscode.ExtensionContext) {
     openTextDocument: async (path: string) => await vscode.workspace.openTextDocument(path)
   };
 
+  const ignoreManager = new IgnoreManager(workspaceProvider, fileContentReader, pathResolver);
+
   const agent = new Agent({
     config: configContainer.config,
     chatHistoryManager,
-    tools: getTools(workspaceProvider, { ...directoryReader, ...directoryCreator }, fileContentReader, fileContentWriter, pathResolver, eventBus),
+    tools: getTools(workspaceProvider, { ...directoryReader, ...directoryCreator }, fileContentReader, fileContentWriter, pathResolver, eventBus, ignoreManager),
     eventBus
   });
   const providerAccessor = {
     getModels: () => Object.values(configContainer.config.providers).map(p => p.model),
     getActiveModel: () => configContainer.config.providers[configContainer.config.activeProvider].model,
   };
-
-  const ignoreManager = new IgnoreManager(workspaceProvider, fileContentReader, pathResolver);
 
   const chatWebviewViewProvider = new ChatWebviewViewProvider({
     extensionContext: context,

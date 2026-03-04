@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { IWorkspaceProvider, IToolDefinition, IDirectoryReader, IPathResolver, IToolResult } from '../types.js';
+import { IWorkspaceProvider, IToolDefinition, IDirectoryReader, IPathResolver, IToolResult, IIgnoreManager } from '../types.js';
 import { AGENT_MESSAGES } from '../constants/messages.js';
 import { BaseTool } from './baseTool.js';
 
@@ -29,7 +29,8 @@ export class ListFilesTool extends BaseTool<ListFilesArgs> {
     constructor(
         private workspaceProvider: IWorkspaceProvider,
         private directoryProvider: IDirectoryReader,
-        private pathResolver: IPathResolver
+        private pathResolver: IPathResolver,
+        private ignoreManager: IIgnoreManager
     ) {
         super();
     }
@@ -62,7 +63,16 @@ export class ListFilesTool extends BaseTool<ListFilesArgs> {
             if (!files) {
                 return { content: `Error: Failed to read directory ${args.directory}.`, success: false };
             }
-            return { content: JSON.stringify(files, null, 2), success: true };
+
+            const filteredFiles: string[] = [];
+            for (const file of files) {
+                const fullPath = this.pathResolver.join(dirPath, file);
+                if (!await this.ignoreManager.shouldIgnore(fullPath)) {
+                    filteredFiles.push(file);
+                }
+            }
+
+            return { content: JSON.stringify(filteredFiles, null, 2), success: true };
         } catch (error: any) {
             return { content: `Error listing files: ${error.message}`, success: false };
         }

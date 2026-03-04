@@ -1,13 +1,14 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { ListFilesTool } from "../../src/tools/index.js";
-import { IWorkspaceProvider, IDirectoryReader, IPathResolver } from "../../src/types.js";
+import { IWorkspaceProvider, IDirectoryReader, IPathResolver, IIgnoreManager } from "../../src/types.js";
 import { AGENT_MESSAGES } from "../../src/constants/messages.js";
-import { createMockPathResolver, createMockDirectoryReader } from "../testUtils.js";
+import { createMockPathResolver, createMockDirectoryReader, createMockIgnoreManager } from "../testUtils.js";
 
 describe("ListFilesTool Security", () => {
     let workspaceProvider: IWorkspaceProvider;
     let directoryProvider: jest.Mocked<IDirectoryReader>;
     let pathResolver: IPathResolver;
+    let ignoreManager: jest.Mocked<IIgnoreManager>;
     let tool: ListFilesTool;
     const mockRootPath = "/home/user/project";
 
@@ -17,12 +18,16 @@ describe("ListFilesTool Security", () => {
         };
         
         directoryProvider = createMockDirectoryReader();
-        directoryProvider.readdir.mockReturnValue(["file1.txt"]);
+        directoryProvider.readdir.mockReturnValue(["file1.txt", ".env", "node_modules"]);
         directoryProvider.exists.mockReturnValue(true);
 
         pathResolver = createMockPathResolver();
+        ignoreManager = createMockIgnoreManager();
+        ignoreManager.shouldIgnore.mockImplementation(async (path) => {
+            return path.endsWith(".env") || path.endsWith("node_modules");
+        });
 
-        tool = new ListFilesTool(workspaceProvider, directoryProvider, pathResolver);
+        tool = new ListFilesTool(workspaceProvider, directoryProvider, pathResolver, ignoreManager);
     });
 
     it("should prevent accessing parent directories", async () => {
@@ -42,6 +47,15 @@ describe("ListFilesTool Security", () => {
         const result = await tool.execute({ directory: "non-existent" });
         expect(result.success).toBe(false);
         expect(result.content).toContain("Error: Directory non-existent does not exist");
+    });
+
+    it("should filter out ignored files and directories", async () => {
+        const result = await tool.execute({ directory: "" });
+        expect(result.success).toBe(true);
+        const files = JSON.parse(result.content);
+        expect(files).toContain("file1.txt");
+        expect(files).not.toContain(".env");
+        expect(files).not.toContain("node_modules");
     });
 
     it("should allow accessing valid subdirectories", async () => {
