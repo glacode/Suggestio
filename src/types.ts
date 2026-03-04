@@ -213,6 +213,12 @@ export type WebviewMessage =
     toolCallId: string;
     /** The user's decision ('allow' or 'deny'). */
     decision: 'allow' | 'deny';
+  }
+  | {
+    /** User wants to view the diff for a proposed tool call. */
+    command: 'viewDiff';
+    /** The ID of the tool call. */
+    toolCallId: string;
   };
 
 /**
@@ -312,6 +318,12 @@ export type MessageFromTheExtensionToTheWebview =
     toolName: string;
     /** The message to display to the user. */
     message: string;
+    /** Optional diff data for visual review. */
+    diffData?: {
+      oldContent: string;
+      newContent: string;
+      filePath: string;
+    };
   }
   | {
     /** Indicates the message comes from the AI assistant. */

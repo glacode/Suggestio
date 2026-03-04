@@ -180,6 +180,7 @@ export async function activate(context: vscode.ExtensionContext) {
     vscodeApi: vscode,
     fileReader: fileContentReader,
     eventBus,
+    diffManager,
     anonymizer: configContainer.config.anonymizerInstance
   });
   context.subscriptions.push(

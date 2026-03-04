@@ -74,7 +74,11 @@ export const createMockVscodeApi = (
 ): IVscodeApiLocal => ({
     Uri: {
         joinPath: joinPathImpl,
-        parse: jest.fn((s: string) => ({ fsPath: s, toString: () => s }))
+        parse: jest.fn((s: string) => {
+            // Simulate normalization (e.g. ensuring it looks like a canonical URI string)
+            const normalized = s.startsWith('suggestio-diff:/') ? s : s.replace('suggestio-diff:', 'suggestio-diff:/');
+            return { fsPath: s, toString: () => normalized };
+        })
     },
     commands: {
         executeCommand: jest.fn<any>().mockResolvedValue(undefined)

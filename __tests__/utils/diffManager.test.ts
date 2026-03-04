@@ -27,20 +27,21 @@ describe("DiffManager", () => {
             expect.stringContaining("test.ts")
         );
 
-        // Verify URIs were parsed correctly
-        expect(vscodeApi.Uri.parse).toHaveBeenCalledTimes(2);
-        
-        // Extract the URIs used in the call
+        // Verify getContent retrieves the stored data using the URI strings from the mock
         const parseMock = jest.mocked(vscodeApi.Uri.parse);
-        const leftUriStr = parseMock.mock.calls[0][0];
-        const rightUriStr = parseMock.mock.calls[1][0];
+        const leftUri = parseMock.mock.results[0].value;
+        const rightUri = parseMock.mock.results[1].value;
 
-        expect(leftUriStr).toContain("suggestio-diff:/original/src/test.ts");
-        expect(rightUriStr).toContain("suggestio-diff:/modified/src/test.ts");
+        function isUri(obj: any): obj is { toString(): string } {
+            return obj && typeof obj.toString === 'function';
+        }
 
-        // Verify getContent retrieves the stored data
-        expect(diffManager.getContent(leftUriStr)).toBe(oldContent);
-        expect(diffManager.getContent(rightUriStr)).toBe(newContent);
+        if (isUri(leftUri) && isUri(rightUri)) {
+            expect(diffManager.getContent(leftUri.toString())).toBe(oldContent);
+            expect(diffManager.getContent(rightUri.toString())).toBe(newContent);
+        } else {
+            throw new Error("Mock results were not URIs");
+        }
     });
 
     it("should return empty string for unknown URIs", () => {

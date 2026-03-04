@@ -30,19 +30,19 @@ export class DiffManager implements IDiffManager {
         const timestamp = Date.now();
         const baseName = filePath.split('/').pop() || filePath;
         
-        // Construct URIs for the virtual documents
-        const leftUriStr = `${DiffManager.scheme}:/original/${filePath}?v=${timestamp}`;
-        const rightUriStr = `${DiffManager.scheme}:/modified/${filePath}?v=${timestamp}`;
+        // Construct the URIs using the injected API
+        const leftUri = this.vscodeApi.Uri.parse(`${DiffManager.scheme}:/original/${filePath}?v=${timestamp}`);
+        const rightUri = this.vscodeApi.Uri.parse(`${DiffManager.scheme}:/modified/${filePath}?v=${timestamp}`);
 
-        // Store the content for later retrieval
-        this._contentMap.set(leftUriStr, oldContent);
-        this._contentMap.set(rightUriStr, newContent);
+        // Store the content using the URI's canonical string representation as the key
+        this._contentMap.set(leftUri.toString(), oldContent);
+        this._contentMap.set(rightUri.toString(), newContent);
 
-        // Open the native VS Code diff editor using the injected API
+        // Open the native VS Code diff editor
         await this.vscodeApi.commands.executeCommand(
             'vscode.diff',
-            this.vscodeApi.Uri.parse(leftUriStr),
-            this.vscodeApi.Uri.parse(rightUriStr),
+            leftUri,
+            rightUri,
             `${baseName} (Original ↔ Suggestio)`
         );
     }

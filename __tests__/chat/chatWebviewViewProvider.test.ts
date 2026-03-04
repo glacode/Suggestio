@@ -28,6 +28,7 @@ import {
   createMockHistoryManager,
   createMockUri,
   createMockFileContentReader,
+  createMockDiffManager,
   createDefaultConfig
 } from '../testUtils.js';
 import { CONFIG_DEFAULTS } from '../../src/constants/config.js';
@@ -119,6 +120,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       vscodeApi, // Faked VS Code API.
       fileReader,
       eventBus,
+      diffManager: createMockDiffManager(),
     });
 
     // ********************************************************************************
@@ -239,6 +241,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       vscodeApi,
       fileReader: createMockFileContentReader(),
       eventBus,
+      diffManager: createMockDiffManager(),
     });
 
     provider.resolveWebviewView(webviewView);
@@ -306,6 +309,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       vscodeApi,
       fileReader: createMockFileContentReader(),
       eventBus,
+      diffManager: createMockDiffManager(),
     });
 
     provider.resolveWebviewView(webviewView);
@@ -403,6 +407,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       vscodeApi,
       fileReader: createMockFileContentReader(),
       eventBus,
+      diffManager: createMockDiffManager(),
     });
 
     provider.resolveWebviewView(webviewView);
@@ -464,6 +469,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       vscodeApi,
       fileReader: createMockFileContentReader(),
       eventBus,
+      diffManager: createMockDiffManager(),
       anonymizer
     });
 
@@ -527,6 +533,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       vscodeApi,
       fileReader: createMockFileContentReader(),
       eventBus,
+      diffManager: createMockDiffManager(),
     });
 
     provider.resolveWebviewView(webviewView);
@@ -571,6 +578,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       vscodeApi,
       fileReader: createMockFileContentReader(),
       eventBus: new EventBus(),
+      diffManager: createMockDiffManager(),
     });
 
     // Test newChat before resolveWebviewView (view is undefined)
@@ -583,6 +591,50 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     provider.newChat();
     expect(historyCleared).toBe(true);
     expect(posted).toContainEqual({ command: 'newChat' });
+  });
+
+  it('handles viewDiff command by calling diffManager.showDiff', async () => {
+    const extensionUri = createMockUri('/ext');
+    const vscodeApi = createMockVscodeApi();
+    const eventBus = new EventBus();
+    const diffManager = createMockDiffManager();
+    const providerAccessor: ILlmProviderAccessor = { getModels: () => [], getActiveModel: () => '' };
+
+    const webview = createMockWebview();
+    const webviewView = createMockWebviewView(webview, 'X');
+
+    const provider = new ChatWebviewViewProvider({
+      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
+      providerAccessor,
+      chatAgent: { run: async () => { } },
+      chatHistoryManager: { clearHistory: () => { }, addMessage: () => { }, getChatHistory: () => [] },
+      buildContext: { buildContext: async () => '' },
+      getChatWebviewContent: () => '',
+      vscodeApi,
+      fileReader: createMockFileContentReader(),
+      eventBus,
+      diffManager
+    });
+
+    provider.resolveWebviewView(webviewView);
+
+    // 1. First trigger a confirmation request to populate the active diffs map
+    const toolCallId = 'call-123';
+    const diffData = { oldContent: 'old', newContent: 'new', filePath: 'test.ts' };
+    
+    eventBus.emit('agent:requestConfirmation', {
+      toolCallId,
+      toolName: 'edit_file',
+      message: 'test',
+      diffData
+    });
+
+    // 2. Simulate the webview sending 'viewDiff'
+    if (webview.__handler) {
+      await webview.__handler({ command: 'viewDiff', toolCallId });
+    }
+
+    expect(diffManager.showDiff).toHaveBeenCalledWith(diffData.filePath, diffData.oldContent, diffData.newContent);
   });
 
   it('handles agent:maxIterationsReached event', async () => {
@@ -604,6 +656,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       vscodeApi,
       fileReader: createMockFileContentReader(),
       eventBus,
+      diffManager: createMockDiffManager(),
     });
 
     // Event before resolveWebviewView
@@ -636,6 +689,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       vscodeApi,
       fileReader: createMockFileContentReader(),
       eventBus: new EventBus(),
+      diffManager: createMockDiffManager(),
     });
 
     provider.resolveWebviewView(webviewView);
@@ -672,6 +726,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       vscodeApi,
       fileReader: createMockFileContentReader(),
       eventBus,
+      diffManager: createMockDiffManager(),
     });
 
     provider.resolveWebviewView(webviewView);
@@ -717,6 +772,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       vscodeApi,
       fileReader: createMockFileContentReader(),
       eventBus,
+      diffManager: createMockDiffManager(),
     });
 
     provider.resolveWebviewView(webviewView);

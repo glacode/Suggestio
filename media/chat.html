@@ -560,6 +560,13 @@
                 });
             }
 
+            function viewDiff(toolCallId) {
+                vscode.postMessage({ 
+                    command: 'viewDiff',
+                    toolCallId
+                });
+            }
+
             function sendMessage() {
                 const input = document.getElementById('messageInput');
                 const text = input.value.trim();
@@ -811,6 +818,11 @@
                                 <span>Tool Request</span>
                             </div>
                             <div class="tool-confirmation-message">${event.data.message}</div>
+                            ${event.data.diffData ? `
+                                <div style="margin-top: 8px;">
+                                    <button class="tool-button tool-button-secondary" style="width: 100%; max-width: none;" onclick="viewDiff('${event.data.toolCallId}')">🔍 View Diff</button>
+                                </div>
+                            ` : ''}
                             <div class="tool-confirmation-buttons">
                                 <button class="tool-button tool-button-primary" onclick="confirmTool('${event.data.toolCallId}', 'allow')">Allow</button>
                                 <button class="tool-button tool-button-secondary" onclick="confirmTool('${event.data.toolCallId}', 'deny')">Deny</button>

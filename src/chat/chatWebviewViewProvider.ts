@@ -20,7 +20,8 @@ import type {
     ITokenEventPayload,
     IToolCallEventPayload,
     IToolResultEventPayload,
-    IToolConfirmationPayload
+    IToolConfirmationPayload,
+    IDiffManager
 } from '../types.js';
 // Importing the `eventBus`, a custom mechanism for different parts of the extension
 // to communicate by emitting and listening for events.
@@ -41,6 +42,7 @@ interface IChatWebviewViewProviderArgs {
     vscodeApi: IVscodeApiLocal; // The VS Code API instance, used here for `Uri` operations.
     fileReader: IFileContentReader;
     eventBus: IEventBus;
+    diffManager: IDiffManager;
     anonymizer?: IAnonymizer;
 }
 
@@ -70,8 +72,12 @@ export class ChatWebviewViewProvider {
     private readonly _vscodeApi: IVscodeApiLocal; // Stores the VS Code API for internal use.
     private readonly _fileReader: IFileContentReader;
     private readonly _eventBus: IEventBus;
+    private readonly _diffManager: IDiffManager;
     private readonly _anonymizer?: IAnonymizer;
     private _abortController?: AbortController; // For cancelling ongoing LLM requests
+    
+    // Store active diff data keyed by toolCallId to handle 'viewDiff' commands
+    private _activeDiffs = new Map<string, IToolConfirmationPayload['diffData']>();
 
     private logger: ReturnType<typeof createEventLogger>;
 
@@ -79,7 +85,7 @@ export class ChatWebviewViewProvider {
      * The constructor initializes the `ChatWebviewViewProvider` with its dependencies.
      * These dependencies are typically passed from `extension.ts` during activation.
      */
-    constructor({ extensionContext, providerAccessor, chatAgent, chatHistoryManager, buildContext, getChatWebviewContent, vscodeApi, fileReader, eventBus, anonymizer }: IChatWebviewViewProviderArgs) {
+    constructor({ extensionContext, providerAccessor, chatAgent, chatHistoryManager, buildContext, getChatWebviewContent, vscodeApi, fileReader, eventBus, diffManager, anonymizer }: IChatWebviewViewProviderArgs) {
         this._extensionContext = extensionContext;
         this._providerAccessor = providerAccessor;
         this._chatAgent = chatAgent;
@@ -89,6 +95,7 @@ export class ChatWebviewViewProvider {
         this._vscodeApi = vscodeApi;
         this._fileReader = fileReader;
         this._eventBus = eventBus;
+        this._diffManager = diffManager;
         this._anonymizer = anonymizer;
         this.logger = createEventLogger(eventBus);
 
@@ -130,6 +137,9 @@ export class ChatWebviewViewProvider {
         });
 
         this._eventBus.on('agent:toolEnd', (payload: IToolResultEventPayload) => {
+            // Clean up diff data when tool finishes
+            this._activeDiffs.delete(payload.toolCallId);
+
             if (this._view) {
                 this._view.webview.postMessage({
                     sender: 'assistant',
@@ -143,13 +153,19 @@ export class ChatWebviewViewProvider {
         });
 
         this._eventBus.on('agent:requestConfirmation', (payload: IToolConfirmationPayload) => {
+            // Store diff data if present
+            if (payload.diffData) {
+                this._activeDiffs.set(payload.toolCallId, payload.diffData);
+            }
+
             if (this._view) {
                 this._view.webview.postMessage({
                     sender: 'assistant',
                     type: 'tool_confirmation',
                     toolCallId: payload.toolCallId,
                     toolName: payload.toolName,
-                    message: payload.message
+                    message: payload.message,
+                    diffData: payload.diffData
                 });
             }
         });
@@ -286,6 +302,11 @@ export class ChatWebviewViewProvider {
                     toolCallId: message.toolCallId,
                     decision: message.decision
                 });
+            } else if (message.command === 'viewDiff') {
+                const diffData = this._activeDiffs.get(message.toolCallId);
+                if (diffData) {
+                    await this._diffManager.showDiff(diffData.filePath, diffData.oldContent, diffData.newContent);
+                }
             } else if (message.command === 'modelChanged') {
                 // Handle a message indicating that the active model has changed in the webview.
                 // Emit a 'modelChanged' event on the global event bus, allowing other parts
