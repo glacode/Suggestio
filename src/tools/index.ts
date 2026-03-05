@@ -14,8 +14,8 @@ export function getTools(
 ): IToolImplementation[] {
     return [
         new ListFilesTool(workspaceProvider, directoryProvider, pathResolver, ignoreManager),
-        new ReadFileTool(workspaceProvider, fileReader, pathResolver, eventBus),
-        new EditFileTool(workspaceProvider, fileReader, fileWriter, pathResolver, eventBus)
+        new ReadFileTool(workspaceProvider, fileReader, pathResolver, eventBus, ignoreManager),
+        new EditFileTool(workspaceProvider, fileReader, fileWriter, pathResolver, eventBus, ignoreManager)
     ];
 }
 

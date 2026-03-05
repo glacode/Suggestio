@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { IWorkspaceProvider, IToolDefinition, IPathResolver, IFileContentReader, IFileContentWriter, IToolResult, IEventBus, IUserConfirmationPayload } from '../types.js';
+import { IWorkspaceProvider, IToolDefinition, IPathResolver, IFileContentReader, IFileContentWriter, IToolResult, IEventBus, IUserConfirmationPayload, IIgnoreManager } from '../types.js';
 import { AGENT_MESSAGES } from '../constants/messages.js';
 import { BaseTool } from './baseTool.js';
 
@@ -40,7 +40,8 @@ export class EditFileTool extends BaseTool<EditFileArgs> {
         private fileReader: IFileContentReader,
         private fileWriter: IFileContentWriter,
         private pathResolver: IPathResolver,
-        private eventBus: IEventBus
+        private eventBus: IEventBus,
+        private ignoreManager: IIgnoreManager
     ) {
         super();
     }
@@ -58,9 +59,14 @@ export class EditFileTool extends BaseTool<EditFileArgs> {
         const fullPath = this.pathResolver.join(rootPath, args.path);
         const resolvedPath = this.pathResolver.resolve(fullPath);
 
-        // Security check: ensure resolved path is within workspace root (Reuse existing safeguard)
+        // Security check: ensure resolved path is within workspace root
         if (!resolvedPath.startsWith(rootPath)) {
             return { content: AGENT_MESSAGES.ERROR_PATH_OUTSIDE_WORKSPACE, success: false };
+        }
+
+        // Security check: ensure path is not ignored
+        if (await this.ignoreManager.shouldIgnore(resolvedPath)) {
+            return { content: AGENT_MESSAGES.ERROR_PATH_IGNORED, success: false };
         }
 
         // 1. Read existing content for diffing
@@ -77,18 +83,7 @@ export class EditFileTool extends BaseTool<EditFileArgs> {
 
         // 2. Request confirmation with diff data
         if (toolCallId) {
-            this.eventBus.emit('agent:requestConfirmation', {
-                toolCallId,
-                toolName: this.definition.name,
-                message: `Allow Suggestio to apply changes to ${args.path}?`,
-                diffData: {
-                    oldContent,
-                    newContent: args.content,
-                    filePath: args.path
-                }
-            });
-
-            const userDecision = await new Promise<string>((resolve) => {
+            const userDecisionPromise = new Promise<string>((resolve) => {
                 const disposable = this.eventBus.on('user:confirmationResponse', (payload: IUserConfirmationPayload) => {
                     if (payload.toolCallId === toolCallId) {
                         disposable.dispose();
@@ -103,6 +98,19 @@ export class EditFileTool extends BaseTool<EditFileArgs> {
                     }, { once: true });
                 }
             });
+
+            this.eventBus.emit('agent:requestConfirmation', {
+                toolCallId,
+                toolName: this.definition.name,
+                message: `Allow Suggestio to apply changes to ${args.path}?`,
+                diffData: {
+                    oldContent,
+                    newContent: args.content,
+                    filePath: args.path
+                }
+            });
+
+            const userDecision = await userDecisionPromise;
 
             if (userDecision !== 'allow') {
                 return { content: `Error: User denied permission to edit file ${args.path}.`, success: false };

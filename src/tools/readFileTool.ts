@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { IWorkspaceProvider, IToolDefinition, IPathResolver, IFileContentReader, IToolResult, IEventBus, IUserConfirmationPayload } from '../types.js';
+import { IWorkspaceProvider, IToolDefinition, IPathResolver, IFileContentReader, IToolResult, IEventBus, IUserConfirmationPayload, IIgnoreManager } from '../types.js';
 import { AGENT_MESSAGES } from '../constants/messages.js';
 import { BaseTool } from './baseTool.js';
 
@@ -34,7 +34,8 @@ export class ReadFileTool extends BaseTool<ReadFileArgs> {
         private workspaceProvider: IWorkspaceProvider,
         private fileReader: IFileContentReader,
         private pathResolver: IPathResolver,
-        private eventBus: IEventBus
+        private eventBus: IEventBus,
+        private ignoreManager: IIgnoreManager
     ) {
         super();
     }
@@ -57,15 +58,14 @@ export class ReadFileTool extends BaseTool<ReadFileArgs> {
             return { content: AGENT_MESSAGES.ERROR_PATH_OUTSIDE_WORKSPACE, success: false };
         }
 
+        // Security check: ensure path is not ignored
+        if (await this.ignoreManager.shouldIgnore(resolvedPath)) {
+            return { content: AGENT_MESSAGES.ERROR_PATH_IGNORED, success: false };
+        }
+
         // Confirmation handshake
         if (toolCallId) {
-            this.eventBus.emit('agent:requestConfirmation', {
-                toolCallId,
-                toolName: this.definition.name,
-                message: `Allow Suggestio to read ${args.path}?`
-            });
-
-            const userDecision = await new Promise<string>((resolve) => {
+            const userDecisionPromise = new Promise<string>((resolve) => {
                 const disposable = this.eventBus.on('user:confirmationResponse', (payload: IUserConfirmationPayload) => {
                     if (payload.toolCallId === toolCallId) {
                         disposable.dispose();
@@ -81,6 +81,14 @@ export class ReadFileTool extends BaseTool<ReadFileArgs> {
                     }, { once: true });
                 }
             });
+
+            this.eventBus.emit('agent:requestConfirmation', {
+                toolCallId,
+                toolName: this.definition.name,
+                message: `Allow Suggestio to read ${args.path}?`
+            });
+
+            const userDecision = await userDecisionPromise;
 
             if (userDecision !== 'allow') {
                 return { content: `Error: User denied access to read file ${args.path}.`, success: false };

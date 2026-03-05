@@ -1,8 +1,8 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { EditFileTool } from "../../src/tools/editFileTool.js";
-import { IWorkspaceProvider, IFileContentReader, IFileContentWriter, IPathResolver, IEventBus } from "../../src/types.js";
+import { IWorkspaceProvider, IFileContentReader, IFileContentWriter, IPathResolver, IEventBus, IIgnoreManager, IUserConfirmationPayload } from "../../src/types.js";
 import { AGENT_MESSAGES } from "../../src/constants/messages.js";
-import { createMockPathResolver, createMockFileContentReader, createMockFileContentWriter, createMockWorkspaceProvider, createMockEventBus } from "../testUtils.js";
+import { createMockPathResolver, createMockFileContentReader, createMockFileContentWriter, createMockWorkspaceProvider, createMockEventBus, createMockIgnoreManager } from "../testUtils.js";
 
 describe("EditFileTool", () => {
     let workspaceProvider: jest.Mocked<IWorkspaceProvider>;
@@ -10,6 +10,7 @@ describe("EditFileTool", () => {
     let fileWriter: jest.Mocked<IFileContentWriter>;
     let pathResolver: jest.Mocked<IPathResolver>;
     let eventBus: jest.Mocked<IEventBus>;
+    let ignoreManager: jest.Mocked<IIgnoreManager>;
     let tool: EditFileTool;
     const mockRootPath = "/home/user/project";
 
@@ -21,8 +22,10 @@ describe("EditFileTool", () => {
         fileWriter = createMockFileContentWriter();
         pathResolver = createMockPathResolver();
         eventBus = createMockEventBus();
+        ignoreManager = createMockIgnoreManager();
+        ignoreManager.shouldIgnore.mockResolvedValue(false);
 
-        tool = new EditFileTool(workspaceProvider, fileReader, fileWriter, pathResolver, eventBus);
+        tool = new EditFileTool(workspaceProvider, fileReader, fileWriter, pathResolver, eventBus, ignoreManager);
     });
 
     it("should overwrite file and return success when user confirms", async () => {
@@ -33,15 +36,26 @@ describe("EditFileTool", () => {
         
         fileReader.read.mockReturnValue(oldContent);
 
-        let confirmationCallback: any;
+        let userResponseCallback: (payload: IUserConfirmationPayload) => void;
         eventBus.on.mockImplementation((event: string, cb: any) => {
             if (event === 'user:confirmationResponse') {
-                confirmationCallback = cb;
+                userResponseCallback = cb;
             }
             return { dispose: () => { } };
         });
 
-        const executePromise = tool.execute({ path: filePath, content: newContent }, undefined, toolCallId);
+        eventBus.emit.mockImplementation((event: string, payload: any) => {
+            if (event === 'agent:requestConfirmation' && payload.toolCallId === toolCallId) {
+                setImmediate(() => {
+                    if (userResponseCallback) {
+                        userResponseCallback({ toolCallId, decision: 'allow' });
+                    }
+                });
+            }
+            return true;
+        });
+
+        const result = await tool.execute({ path: filePath, content: newContent }, undefined, toolCallId);
 
         // Verify event was emitted with diff data
         expect(eventBus.emit).toHaveBeenCalledWith('agent:requestConfirmation', expect.objectContaining({
@@ -53,13 +67,6 @@ describe("EditFileTool", () => {
             }
         }));
 
-        // Simulate user confirmation
-        if (confirmationCallback) {
-            confirmationCallback({ toolCallId, decision: 'allow' });
-        }
-
-        const result = await executePromise;
-
         expect(result.success).toBe(true);
         expect(fileWriter.write).toHaveBeenCalledWith(expect.anything(), newContent);
     });
@@ -69,21 +76,26 @@ describe("EditFileTool", () => {
         const newContent = "should not be written";
         const toolCallId = "call-edit-456";
 
-        let confirmationCallback: any;
+        let userResponseCallback: (payload: IUserConfirmationPayload) => void;
         eventBus.on.mockImplementation((event: string, cb: any) => {
             if (event === 'user:confirmationResponse') {
-                confirmationCallback = cb;
+                userResponseCallback = cb;
             }
             return { dispose: () => { } };
         });
 
-        const executePromise = tool.execute({ path: filePath, content: newContent }, undefined, toolCallId);
+        eventBus.emit.mockImplementation((event: string, payload: any) => {
+            if (event === 'agent:requestConfirmation' && payload.toolCallId === toolCallId) {
+                setImmediate(() => {
+                    if (userResponseCallback) {
+                        userResponseCallback({ toolCallId, decision: 'deny' });
+                    }
+                });
+            }
+            return true;
+        });
 
-        if (confirmationCallback) {
-            confirmationCallback({ toolCallId, decision: 'deny' });
-        }
-
-        const result = await executePromise;
+        const result = await tool.execute({ path: filePath, content: newContent }, undefined, toolCallId);
 
         expect(result.success).toBe(false);
         expect(result.content).toContain("User denied permission");
@@ -97,24 +109,30 @@ describe("EditFileTool", () => {
         
         fileReader.read.mockReturnValue(undefined);
 
-        let confirmationCallback: any;
+        let userResponseCallback: (payload: IUserConfirmationPayload) => void;
         eventBus.on.mockImplementation((event: string, cb: any) => {
             if (event === 'user:confirmationResponse') {
-                confirmationCallback = cb;
+                userResponseCallback = cb;
             }
             return { dispose: () => { } };
         });
 
-        const executePromise = tool.execute({ path: filePath, content: newContent }, undefined, toolCallId);
+        eventBus.emit.mockImplementation((event: string, payload: any) => {
+            if (event === 'agent:requestConfirmation' && payload.toolCallId === toolCallId) {
+                setImmediate(() => {
+                    if (userResponseCallback) {
+                        userResponseCallback({ toolCallId, decision: 'allow' });
+                    }
+                });
+            }
+            return true;
+        });
+
+        await tool.execute({ path: filePath, content: newContent }, undefined, toolCallId);
 
         expect(eventBus.emit).toHaveBeenCalledWith('agent:requestConfirmation', expect.objectContaining({
             diffData: expect.objectContaining({ oldContent: '' })
         }));
-
-        if (confirmationCallback) {
-            confirmationCallback({ toolCallId, decision: 'allow' });
-        }
-        await executePromise;
     });
 
     describe("Security", () => {
@@ -129,6 +147,17 @@ describe("EditFileTool", () => {
             const result = await tool.execute({ path: "../../../../etc/passwd", content: "hacked" });
             expect(result.success).toBe(false);
             expect(result.content).toBe(AGENT_MESSAGES.ERROR_PATH_OUTSIDE_WORKSPACE);
+        });
+
+        it("should prevent accessing ignored files", async () => {
+            const filePath = ".env";
+            ignoreManager.shouldIgnore.mockResolvedValue(true);
+            
+            const result = await tool.execute({ path: filePath, content: "hacked" });
+            
+            expect(result.success).toBe(false);
+            expect(result.content).toBe(AGENT_MESSAGES.ERROR_PATH_IGNORED);
+            expect(fileWriter.write).not.toHaveBeenCalled();
         });
     });
 });

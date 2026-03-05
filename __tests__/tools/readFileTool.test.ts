@@ -1,14 +1,15 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { ReadFileTool } from "../../src/tools/readFileTool.js";
-import { IWorkspaceProvider, IFileContentReader, IPathResolver, IEventBus } from "../../src/types.js";
+import { IWorkspaceProvider, IFileContentReader, IPathResolver, IEventBus, IIgnoreManager, IUserConfirmationPayload } from "../../src/types.js";
 import { AGENT_MESSAGES } from "../../src/constants/messages.js";
-import { createMockPathResolver, createMockFileContentReader, createMockWorkspaceProvider, createMockEventBus } from "../testUtils.js";
+import { createMockPathResolver, createMockFileContentReader, createMockWorkspaceProvider, createMockEventBus, createMockIgnoreManager } from "../testUtils.js";
 
 describe("ReadFileTool", () => {
     let workspaceProvider: jest.Mocked<IWorkspaceProvider>;
     let fileReader: jest.Mocked<IFileContentReader>;
     let pathResolver: jest.Mocked<IPathResolver>;
     let eventBus: jest.Mocked<IEventBus>;
+    let ignoreManager: jest.Mocked<IIgnoreManager>;
     let tool: ReadFileTool;
     const mockRootPath = "/home/user/project";
 
@@ -19,8 +20,10 @@ describe("ReadFileTool", () => {
         fileReader = createMockFileContentReader();
         pathResolver = createMockPathResolver();
         eventBus = createMockEventBus();
+        ignoreManager = createMockIgnoreManager();
+        ignoreManager.shouldIgnore.mockResolvedValue(false);
 
-        tool = new ReadFileTool(workspaceProvider, fileReader, pathResolver, eventBus);
+        tool = new ReadFileTool(workspaceProvider, fileReader, pathResolver, eventBus, ignoreManager);
     });
 
     it("should return success: true and file content when user confirms", async () => {
@@ -29,23 +32,29 @@ describe("ReadFileTool", () => {
         const toolCallId = "call-123";
         fileReader.read.mockReturnValue(content);
 
-        // Mock eventBus.on to capture the callback and trigger it
-        let confirmationCallback: any;
+        // Capture the callback registered by the tool
+        let userResponseCallback: (payload: IUserConfirmationPayload) => void;
         eventBus.on.mockImplementation((event: string, cb: any) => {
             if (event === 'user:confirmationResponse') {
-                confirmationCallback = cb;
+                userResponseCallback = cb;
             }
             return { dispose: () => { } };
         });
 
-        const executePromise = tool.execute({ path: filePath }, undefined, toolCallId);
+        // Listen for the request to trigger the response
+        eventBus.emit.mockImplementation((event: string, payload: any) => {
+            if (event === 'agent:requestConfirmation' && payload.toolCallId === toolCallId) {
+                // Use setImmediate to ensure the tool has started awaiting the promise
+                setImmediate(() => {
+                    if (userResponseCallback) {
+                        userResponseCallback({ toolCallId, decision: 'allow' });
+                    }
+                });
+            }
+            return true;
+        });
 
-        // Simulate user confirmation
-        if (confirmationCallback) {
-            confirmationCallback({ toolCallId, decision: 'allow' });
-        }
-
-        const result = await executePromise;
+        const result = await tool.execute({ path: filePath }, undefined, toolCallId);
 
         expect(result.success).toBe(true);
         expect(result.content).toBe(content);
@@ -59,21 +68,26 @@ describe("ReadFileTool", () => {
         const filePath = "src/test.ts";
         const toolCallId = "call-123";
 
-        let confirmationCallback: any;
+        let userResponseCallback: (payload: IUserConfirmationPayload) => void;
         eventBus.on.mockImplementation((event: string, cb: any) => {
             if (event === 'user:confirmationResponse') {
-                confirmationCallback = cb;
+                userResponseCallback = cb;
             }
             return { dispose: () => { } };
         });
 
-        const executePromise = tool.execute({ path: filePath }, undefined, toolCallId);
+        eventBus.emit.mockImplementation((event: string, payload: any) => {
+            if (event === 'agent:requestConfirmation' && payload.toolCallId === toolCallId) {
+                setImmediate(() => {
+                    if (userResponseCallback) {
+                        userResponseCallback({ toolCallId, decision: 'deny' });
+                    }
+                });
+            }
+            return true;
+        });
 
-        if (confirmationCallback) {
-            confirmationCallback({ toolCallId, decision: 'deny' });
-        }
-
-        const result = await executePromise;
+        const result = await tool.execute({ path: filePath }, undefined, toolCallId);
 
         expect(result.success).toBe(false);
         expect(result.content).toContain("User denied access");
@@ -101,6 +115,8 @@ describe("ReadFileTool", () => {
 
         const executePromise = tool.execute({ path: filePath }, abortController.signal, toolCallId);
 
+        // Abort after a small tick to let the tool reach the promise
+        await new Promise(resolve => setImmediate(resolve));
         abortController.abort();
 
         const result = await executePromise;
@@ -119,6 +135,17 @@ describe("ReadFileTool", () => {
             const result = await tool.execute({ path: "../../../../etc/passwd" });
             expect(result.success).toBe(false);
             expect(result.content).toBe(AGENT_MESSAGES.ERROR_PATH_OUTSIDE_WORKSPACE);
+        });
+
+        it("should prevent accessing ignored files", async () => {
+            const filePath = ".env";
+            ignoreManager.shouldIgnore.mockResolvedValue(true);
+            
+            const result = await tool.execute({ path: filePath });
+            
+            expect(result.success).toBe(false);
+            expect(result.content).toBe(AGENT_MESSAGES.ERROR_PATH_IGNORED);
+            expect(fileReader.read).not.toHaveBeenCalled();
         });
 
         it("should allow accessing valid files in subdirectories", async () => {
