@@ -50,14 +50,20 @@ export abstract class BaseTool<T> implements IToolImplementation<T> {
         diffData?: IToolConfirmationPayload['diffData'],
         signal?: AbortSignal
     ): Promise<string> {
+        // We create the Promise FIRST to register the 'on' listener before emitting the request.
+        // This prevents a race condition where the response might arrive (e.g., in tests or 
+        // extremely fast UIs) before we've started listening for it.
         const userDecisionPromise = new Promise<string>((resolve) => {
             const disposable = eventBus.on('user:confirmationResponse', (payload: IUserConfirmationPayload) => {
+                // We only care about the response for THIS specific tool call.
                 if (payload.toolCallId === toolCallId) {
-                    disposable.dispose();
+                    disposable.dispose(); // Always clean up the listener once resolved.
                     resolve(payload.decision);
                 }
             });
 
+            // If the execution is cancelled (e.g., user stops the agent), we immediately 
+            // resolve with 'deny' and clean up.
             if (signal) {
                 signal.addEventListener('abort', () => {
                     disposable.dispose();
@@ -66,6 +72,7 @@ export abstract class BaseTool<T> implements IToolImplementation<T> {
             }
         });
 
+        // NOW that we are actively listening for the response, we emit the request to the UI.
         eventBus.emit('agent:requestConfirmation', {
             toolCallId,
             toolName: this.definition.name,
@@ -73,6 +80,7 @@ export abstract class BaseTool<T> implements IToolImplementation<T> {
             diffData
         });
 
+        // Finally, we wait for either the user's decision or a cancellation signal.
         return await userDecisionPromise;
     }
 }
