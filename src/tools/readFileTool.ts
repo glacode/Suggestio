@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { IWorkspaceProvider, IToolDefinition, IPathResolver, IFileContentReader, IToolResult, IEventBus, IUserConfirmationPayload, IIgnoreManager } from '../types.js';
+import { IWorkspaceProvider, IToolDefinition, IPathResolver, IFileContentReader, IToolResult, IEventBus, IIgnoreManager } from '../types.js';
 import { AGENT_MESSAGES } from '../constants/messages.js';
 import { BaseTool } from './baseTool.js';
 
@@ -65,30 +65,13 @@ export class ReadFileTool extends BaseTool<ReadFileArgs> {
 
         // Confirmation handshake
         if (toolCallId) {
-            const userDecisionPromise = new Promise<string>((resolve) => {
-                const disposable = this.eventBus.on('user:confirmationResponse', (payload: IUserConfirmationPayload) => {
-                    if (payload.toolCallId === toolCallId) {
-                        disposable.dispose();
-                        resolve(payload.decision);
-                    }
-                });
-
-                // Handle cancellation
-                if (signal) {
-                    signal.addEventListener('abort', () => {
-                        disposable.dispose();
-                        resolve('deny');
-                    }, { once: true });
-                }
-            });
-
-            this.eventBus.emit('agent:requestConfirmation', {
+            const userDecision = await this.requestUserConfirmation(
                 toolCallId,
-                toolName: this.definition.name,
-                message: `Allow Suggestio to read ${args.path}?`
-            });
-
-            const userDecision = await userDecisionPromise;
+                this.eventBus,
+                `Allow Suggestio to read ${args.path}?`,
+                undefined,
+                signal
+            );
 
             if (userDecision !== 'allow') {
                 return { content: `Error: User denied access to read file ${args.path}.`, success: false };

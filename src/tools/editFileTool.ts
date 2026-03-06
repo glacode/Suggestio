@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { IWorkspaceProvider, IToolDefinition, IPathResolver, IFileContentReader, IFileContentWriter, IToolResult, IEventBus, IUserConfirmationPayload, IIgnoreManager } from '../types.js';
+import { IWorkspaceProvider, IToolDefinition, IPathResolver, IFileContentReader, IFileContentWriter, IToolResult, IEventBus, IIgnoreManager } from '../types.js';
 import { AGENT_MESSAGES } from '../constants/messages.js';
 import { BaseTool } from './baseTool.js';
 
@@ -83,34 +83,17 @@ export class EditFileTool extends BaseTool<EditFileArgs> {
 
         // 2. Request confirmation with diff data
         if (toolCallId) {
-            const userDecisionPromise = new Promise<string>((resolve) => {
-                const disposable = this.eventBus.on('user:confirmationResponse', (payload: IUserConfirmationPayload) => {
-                    if (payload.toolCallId === toolCallId) {
-                        disposable.dispose();
-                        resolve(payload.decision);
-                    }
-                });
-
-                if (signal) {
-                    signal.addEventListener('abort', () => {
-                        disposable.dispose();
-                        resolve('deny');
-                    }, { once: true });
-                }
-            });
-
-            this.eventBus.emit('agent:requestConfirmation', {
+            const userDecision = await this.requestUserConfirmation(
                 toolCallId,
-                toolName: this.definition.name,
-                message: `Allow Suggestio to apply changes to ${args.path}?`,
-                diffData: {
+                this.eventBus,
+                `Allow Suggestio to apply changes to ${args.path}?`,
+                {
                     oldContent,
                     newContent: args.content,
                     filePath: args.path
-                }
-            });
-
-            const userDecision = await userDecisionPromise;
+                },
+                signal
+            );
 
             if (userDecision !== 'allow') {
                 return { content: `Error: User denied permission to edit file ${args.path}.`, success: false };
