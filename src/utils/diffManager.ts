@@ -46,4 +46,35 @@ export class DiffManager implements IDiffManager {
             `${baseName} (Original ↔ Suggestio)`
         );
     }
+
+    /**
+     * Closes any open diff editors associated with the given file path by targeting
+     * our custom URI scheme.
+     * @param filePath The file path to close diffs for.
+     */
+    async closeDiff(filePath: string): Promise<void> {
+        const tabsToClose: any[] = [];
+        
+        // Iterate through all tab groups and tabs to find Suggestio diff tabs
+        for (const group of this.vscodeApi.window.tabGroups.all) {
+            for (const tab of group.tabs) {
+                const input = tab.input;
+                // A diff tab has 'original' and 'modified' URIs
+                if (input && input.original && input.modified) {
+                    const originalUri = input.original.toString();
+                    const modifiedUri = input.modified.toString();
+
+                    // Check if these URIs belong to our scheme and target the specific file
+                    if (originalUri.includes(`${DiffManager.scheme}:/original/${filePath}`) ||
+                        modifiedUri.includes(`${DiffManager.scheme}:/modified/${filePath}`)) {
+                        tabsToClose.push(tab);
+                    }
+                }
+            }
+        }
+
+        if (tabsToClose.length > 0) {
+            await this.vscodeApi.window.tabGroups.close(tabsToClose);
+        }
+    }
 }

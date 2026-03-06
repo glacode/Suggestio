@@ -82,6 +82,12 @@ export const createMockVscodeApi = (
     },
     commands: {
         executeCommand: jest.fn<any>().mockResolvedValue(undefined)
+    },
+    window: {
+        tabGroups: {
+            all: [],
+            close: jest.fn<any>().mockResolvedValue(undefined)
+        }
     }
 });
 
@@ -150,6 +156,7 @@ export const createMockHistoryManager = (recorded: ChatHistory = []): IChatHisto
 
 export const createMockDiffManager = (): jest.Mocked<IDiffManager> => ({
     showDiff: jest.fn<any>().mockResolvedValue(undefined),
+    closeDiff: jest.fn<any>().mockResolvedValue(undefined),
 });
 
 export const createMockWindowProvider = (): jest.Mocked<IWindowProvider> => ({

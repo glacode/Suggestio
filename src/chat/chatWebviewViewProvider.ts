@@ -298,6 +298,12 @@ export class ChatWebviewViewProvider {
                     this._abortController.abort();
                 }
             } else if (message.command === 'confirmToolCall') {
+                if (message.decision === 'deny') {
+                    const diffData = this._activeDiffs.get(message.toolCallId);
+                    if (diffData) {
+                        await this._diffManager.closeDiff(diffData.filePath);
+                    }
+                }
                 this._eventBus.emit('user:confirmationResponse', {
                     toolCallId: message.toolCallId,
                     decision: message.decision

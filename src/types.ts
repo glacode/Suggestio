@@ -83,6 +83,23 @@ export interface IVscodeApiLocal {
      */
     executeCommand<T = any>(command: string, ...rest: any[]): Thenable<T>;
   };
+
+  /**
+   * Exposes VS Code window-related functionality.
+   */
+  window: {
+    /**
+     * Provides access to tab groups.
+     */
+    tabGroups: {
+      all: readonly {
+        tabs: readonly {
+          input: any;
+        }[];
+      }[];
+      close(tab: any | any[]): Thenable<boolean>;
+    };
+  };
 }
 
 /**
@@ -683,6 +700,12 @@ export interface IDiffManager {
    * @param newContent The proposed content.
    */
   showDiff(filePath: string, oldContent: string, newContent: string): Promise<void>;
+
+  /**
+   * Closes the diff editor for the given file path if it's currently open.
+   * @param filePath The path of the file to close the diff for.
+   */
+  closeDiff(filePath: string): Promise<void>;
 }
 
 /**

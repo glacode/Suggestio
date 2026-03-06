@@ -45,7 +45,10 @@ export async function activate(context: vscode.ExtensionContext) {
 
   const vscodeApiLocal: IVscodeApiLocal = {
     Uri: vscode.Uri,
-    commands: vscode.commands
+    commands: vscode.commands,
+    window: {
+      tabGroups: vscode.window.tabGroups
+    }
   };
 
   const diffManager = new DiffManager(vscodeApiLocal);
