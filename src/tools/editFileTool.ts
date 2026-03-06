@@ -66,7 +66,7 @@ export class EditFileTool extends BaseTool<EditFileArgs> {
 
         // Security check: ensure path is not ignored
         if (await this.ignoreManager.shouldIgnore(resolvedPath)) {
-            return { content: AGENT_MESSAGES.ERROR_PATH_IGNORED, success: false };
+            return { content: AGENT_MESSAGES.ERROR_PATH_IGNORED(args.path), success: false };
         }
 
         // 1. Read existing content for diffing

@@ -156,7 +156,7 @@ describe("EditFileTool", () => {
             const result = await tool.execute({ path: filePath, content: "hacked" });
             
             expect(result.success).toBe(false);
-            expect(result.content).toBe(AGENT_MESSAGES.ERROR_PATH_IGNORED);
+            expect(result.content).toBe(AGENT_MESSAGES.ERROR_PATH_IGNORED(filePath));
             expect(fileWriter.write).not.toHaveBeenCalled();
         });
     });

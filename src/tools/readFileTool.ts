@@ -60,7 +60,7 @@ export class ReadFileTool extends BaseTool<ReadFileArgs> {
 
         // Security check: ensure path is not ignored
         if (await this.ignoreManager.shouldIgnore(resolvedPath)) {
-            return { content: AGENT_MESSAGES.ERROR_PATH_IGNORED, success: false };
+            return { content: AGENT_MESSAGES.ERROR_PATH_IGNORED(args.path), success: false };
         }
 
         // Confirmation handshake

@@ -144,7 +144,7 @@ describe("ReadFileTool", () => {
             const result = await tool.execute({ path: filePath });
             
             expect(result.success).toBe(false);
-            expect(result.content).toBe(AGENT_MESSAGES.ERROR_PATH_IGNORED);
+            expect(result.content).toBe(AGENT_MESSAGES.ERROR_PATH_IGNORED(filePath));
             expect(fileReader.read).not.toHaveBeenCalled();
         });
 
