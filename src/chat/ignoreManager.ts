@@ -1,28 +1,6 @@
 import { IIgnoreManager, IWorkspaceProvider, IFileContentReader, IPathResolver } from '../types.js';
-
-// A very simple glob-to-regex converter
-function globToRegex(pattern: string): RegExp {
-    if (pattern.startsWith('**/')) {
-        pattern = pattern.substring(3);
-    }
-    
-    let regexString = pattern
-        .replace(/\./g, '\\.')
-        .replace(/\*\*/g, '.*') 
-        .replace(/\*/g, '[^/]*');
-
-    if (pattern.endsWith('/')) {
-        return new RegExp(`^${regexString.slice(0, -1)}/`);
-    } 
-    
-    if (!pattern.includes('/')) {
-        if (!pattern.startsWith('*')) {
-            return new RegExp(`^${regexString}(\\/.*)?$`);
-        }
-    }
-    
-    return new RegExp(`^${regexString}$`);
-}
+import { globToRegex } from '../utils/globMatcher.js';
+import { normalizePath } from '../utils/pathUtils.js';
 
 export class IgnoreManager implements IIgnoreManager {
     private ignorePatterns: RegExp[] = [];
@@ -69,7 +47,7 @@ export class IgnoreManager implements IIgnoreManager {
             return false;
         }
 
-        const relativePath = this.pathResolver.relative(workspaceRoot, filePath);
+        const relativePath = normalizePath(this.pathResolver.relative(workspaceRoot, filePath));
 
         for (const pattern of this.ignorePatterns) {
             if (pattern.test(relativePath) || pattern.test(this.pathResolver.basename(filePath))) {

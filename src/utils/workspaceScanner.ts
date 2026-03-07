@@ -1,4 +1,5 @@
 import { IWorkspaceScanner, IWorkspaceProvider, IDirectoryReader, IPathResolver, IIgnoreManager } from '../types.js';
+import { normalizePath } from './pathUtils.js';
 
 /**
  * WorkspaceScanner provides a reusable service for traversing the workspace file system.
@@ -65,11 +66,11 @@ export class WorkspaceScanner implements IWorkspaceScanner {
                 } else {
                     // If not recursive, we add the directory name with a trailing slash
                     // to indicate it is a directory in the shallow listing.
-                    results.push(this.pathResolver.relative(rootPath, fullPath) + '/');
+                    results.push(normalizePath(this.pathResolver.relative(rootPath, fullPath)) + '/');
                 }
             } else {
                 // Add the file path relative to the workspace root
-                results.push(this.pathResolver.relative(rootPath, fullPath));
+                results.push(normalizePath(this.pathResolver.relative(rootPath, fullPath)));
             }
         }
     }

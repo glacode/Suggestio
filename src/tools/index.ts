@@ -2,6 +2,7 @@ import { IWorkspaceProvider, IPathResolver, IToolImplementation, IFileContentRea
 import { ReadFileTool } from './readFileTool.js';
 import { EditFileTool } from './editFileTool.js';
 import { ListFilesTool } from './listFilesTool.js';
+import { GrepSearchTool } from './grepSearchTool.js';
 
 export function getTools(
     workspaceProvider: IWorkspaceProvider,
@@ -15,8 +16,9 @@ export function getTools(
     return [
         new ListFilesTool(workspaceProvider, pathResolver, workspaceScanner),
         new ReadFileTool(workspaceProvider, fileReader, pathResolver, eventBus, ignoreManager),
-        new EditFileTool(workspaceProvider, fileReader, fileWriter, pathResolver, eventBus, ignoreManager)
+        new EditFileTool(workspaceProvider, fileReader, fileWriter, pathResolver, eventBus, ignoreManager),
+        new GrepSearchTool(workspaceProvider, fileReader, pathResolver, eventBus, workspaceScanner)
     ];
 }
 
-export { ReadFileTool, EditFileTool, ListFilesTool };
+export { ReadFileTool, EditFileTool, ListFilesTool, GrepSearchTool };
