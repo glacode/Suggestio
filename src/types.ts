@@ -633,6 +633,13 @@ export interface IDirectoryReader {
    * @returns True if the path exists, false otherwise.
    */
   exists(path: string): boolean;
+
+  /**
+   * Checks if a path is a directory.
+   * @param path The path to check.
+   * @returns True if the path is a directory, false otherwise.
+   */
+  isDirectory(path: string): boolean;
 }
 
 /**

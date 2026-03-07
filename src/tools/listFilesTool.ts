@@ -5,6 +5,7 @@ import { BaseTool } from './baseTool.js';
 
 const ListFilesSchema = z.object({
     directory: z.string().optional(),
+    recursive: z.boolean().optional().default(false),
 }).strict();
 
 type ListFilesArgs = z.infer<typeof ListFilesSchema>;
@@ -19,6 +20,10 @@ export class ListFilesTool extends BaseTool<ListFilesArgs> {
                 directory: {
                     type: 'string',
                     description: 'The directory to list files from (relative to workspace root). Defaults to root if not provided.',
+                },
+                recursive: {
+                    type: 'boolean',
+                    description: 'Whether to list files recursively in subdirectories. Defaults to false.',
                 },
             },
         },
@@ -36,11 +41,12 @@ export class ListFilesTool extends BaseTool<ListFilesArgs> {
     }
 
     formatMessage(args: ListFilesArgs): string {
-        return `Listing files in ${args.directory || 'the root directory'}`;
+        const dirDesc = args.directory || 'the root directory';
+        const recDesc = args.recursive ? ' (recursively)' : '';
+        return `Listing files in ${dirDesc}${recDesc}`;
     }
 
     async execute(args: ListFilesArgs, _signal?: AbortSignal, _toolCallId?: string): Promise<IToolResult> {
-        // await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds, uncomment to simulate delay
         const rootPath = this.workspaceProvider.rootPath();
         if (!rootPath) {
             return { content: AGENT_MESSAGES.ERROR_NO_WORKSPACE, success: false };
@@ -59,22 +65,46 @@ export class ListFilesTool extends BaseTool<ListFilesArgs> {
                 return { content: `Error: Directory ${args.directory} does not exist.`, success: false };
             }
 
-            const files = this.directoryProvider.readdir(dirPath);
-            if (!files) {
-                return { content: `Error: Failed to read directory ${args.directory}.`, success: false };
-            }
+            const results: string[] = [];
+            await this.walk(dirPath, args.recursive || false, results);
 
-            const filteredFiles: string[] = [];
-            for (const file of files) {
-                const fullPath = this.pathResolver.join(dirPath, file);
-                if (!await this.ignoreManager.shouldIgnore(fullPath)) {
-                    filteredFiles.push(file);
-                }
-            }
+            // Sort results for consistency
+            results.sort();
 
-            return { content: JSON.stringify(filteredFiles, null, 2), success: true };
+            return { content: JSON.stringify(results, null, 2), success: true };
         } catch (error: any) {
             return { content: `Error listing files: ${error.message}`, success: false };
+        }
+    }
+
+    private async walk(currentPath: string, recursive: boolean, results: string[]): Promise<void> {
+        const files = this.directoryProvider.readdir(currentPath);
+        if (!files) {
+            return;
+        }
+
+        const rootPath = this.workspaceProvider.rootPath()!;
+
+        for (const file of files) {
+            const fullPath = this.pathResolver.join(currentPath, file);
+            
+            // Security check: ensure path is not ignored
+            if (await this.ignoreManager.shouldIgnore(fullPath)) {
+                continue;
+            }
+
+            if (this.directoryProvider.isDirectory(fullPath)) {
+                if (recursive) {
+                    await this.walk(fullPath, recursive, results);
+                } else {
+                    // For non-recursive, we might want to indicate it's a directory
+                    // but the original implementation just returned the names.
+                    // We'll stick to the original behavior of returning names in the current dir.
+                    results.push(this.pathResolver.relative(rootPath, fullPath) + '/');
+                }
+            } else {
+                results.push(this.pathResolver.relative(rootPath, fullPath));
+            }
         }
     }
 }

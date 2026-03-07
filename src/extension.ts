@@ -89,6 +89,13 @@ export async function activate(context: vscode.ExtensionContext) {
       return undefined;
     },
     exists: (path: string) => fs.existsSync(path),
+    isDirectory: (path: string) => {
+      try {
+        return fs.statSync(path).isDirectory();
+      } catch (e) {
+        return false;
+      }
+    },
   };
 
   const directoryCreator: IDirectoryCreator = {

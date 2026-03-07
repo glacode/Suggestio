@@ -192,6 +192,7 @@ export const createMockFileContentProvider = (): jest.Mocked<IFileContentProvide
 export const createMockDirectoryReader = (): jest.Mocked<IDirectoryReader> => ({
     readdir: jest.fn(),
     exists: jest.fn(),
+    isDirectory: jest.fn(),
 });
 
 export const createMockDirectoryCreator = (): jest.Mocked<IDirectoryCreator> => ({
@@ -201,6 +202,7 @@ export const createMockDirectoryCreator = (): jest.Mocked<IDirectoryCreator> => 
 export const createMockDirectoryProvider = (): jest.Mocked<IDirectoryProvider> => ({
     readdir: jest.fn(),
     exists: jest.fn(),
+    isDirectory: jest.fn(),
     mkdir: jest.fn(),
 });
 
