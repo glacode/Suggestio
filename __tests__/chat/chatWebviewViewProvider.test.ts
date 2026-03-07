@@ -637,6 +637,52 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     expect(diffManager.showDiff).toHaveBeenCalledWith(diffData.filePath, diffData.oldContent, diffData.newContent);
   });
 
+  it('closes the diff when confirmToolCall is received with a "deny" decision', async () => {
+    const extensionUri = createMockUri('/ext');
+    const vscodeApi = createMockVscodeApi();
+    const eventBus = new EventBus();
+    const diffManager = createMockDiffManager();
+    const providerAccessor: ILlmProviderAccessor = { getModels: () => [], getActiveModel: () => '' };
+
+    const webview = createMockWebview();
+    const webviewView = createMockWebviewView(webview, 'X');
+
+    const provider = new ChatWebviewViewProvider({
+      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
+      providerAccessor,
+      chatAgent: { run: async () => { } },
+      chatHistoryManager: { clearHistory: () => { }, addMessage: () => { }, getChatHistory: () => [] },
+      buildContext: { buildContext: async () => '' },
+      getChatWebviewContent: () => '',
+      vscodeApi,
+      fileReader: createMockFileContentReader(),
+      eventBus,
+      diffManager
+    });
+
+    provider.resolveWebviewView(webviewView);
+
+    // 1. First trigger a confirmation request to populate the active diffs map
+    const toolCallId = 'call-deny-test';
+    const filePath = 'sensitive-file.ts';
+    const diffData = { oldContent: 'old', newContent: 'new', filePath };
+    
+    eventBus.emit('agent:requestConfirmation', {
+      toolCallId,
+      toolName: 'edit_file',
+      message: 'test',
+      diffData
+    });
+
+    // 2. Simulate the webview sending 'confirmToolCall' with 'deny'
+    if (webview.__handler) {
+      await webview.__handler({ command: 'confirmToolCall', toolCallId, decision: 'deny' });
+    }
+
+    // 3. Verify that closeDiff was called with the correct file path
+    expect(diffManager.closeDiff).toHaveBeenCalledWith(filePath);
+  });
+
   it('handles agent:maxIterationsReached event', async () => {
     const extensionUri = createMockUri('/ext');
     const vscodeApi = createMockVscodeApi();
