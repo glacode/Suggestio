@@ -1,19 +1,19 @@
-import { IWorkspaceProvider, IDirectoryReader, IPathResolver, IToolImplementation, IFileContentReader, IFileContentWriter, IEventBus, IIgnoreManager } from '../types.js';
+import { IWorkspaceProvider, IPathResolver, IToolImplementation, IFileContentReader, IFileContentWriter, IEventBus, IIgnoreManager, IWorkspaceScanner } from '../types.js';
 import { ReadFileTool } from './readFileTool.js';
 import { EditFileTool } from './editFileTool.js';
 import { ListFilesTool } from './listFilesTool.js';
 
 export function getTools(
     workspaceProvider: IWorkspaceProvider,
-    directoryProvider: IDirectoryReader,
     fileReader: IFileContentReader,
     fileWriter: IFileContentWriter,
     pathResolver: IPathResolver,
     eventBus: IEventBus,
-    ignoreManager: IIgnoreManager
+    ignoreManager: IIgnoreManager,
+    workspaceScanner: IWorkspaceScanner
 ): IToolImplementation[] {
     return [
-        new ListFilesTool(workspaceProvider, directoryProvider, pathResolver, ignoreManager),
+        new ListFilesTool(workspaceProvider, pathResolver, workspaceScanner),
         new ReadFileTool(workspaceProvider, fileReader, pathResolver, eventBus, ignoreManager),
         new EditFileTool(workspaceProvider, fileReader, fileWriter, pathResolver, eventBus, ignoreManager)
     ];

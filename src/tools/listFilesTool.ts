@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { IWorkspaceProvider, IToolDefinition, IDirectoryReader, IPathResolver, IToolResult, IIgnoreManager } from '../types.js';
+import { IWorkspaceProvider, IToolDefinition, IPathResolver, IToolResult, IWorkspaceScanner } from '../types.js';
 import { AGENT_MESSAGES } from '../constants/messages.js';
 import { BaseTool } from './baseTool.js';
 
@@ -33,9 +33,8 @@ export class ListFilesTool extends BaseTool<ListFilesArgs> {
 
     constructor(
         private workspaceProvider: IWorkspaceProvider,
-        private directoryProvider: IDirectoryReader,
         private pathResolver: IPathResolver,
-        private ignoreManager: IIgnoreManager
+        private workspaceScanner: IWorkspaceScanner
     ) {
         super();
     }
@@ -61,50 +60,10 @@ export class ListFilesTool extends BaseTool<ListFilesArgs> {
         }
 
         try {
-            if (!this.directoryProvider.exists(dirPath)) {
-                return { content: `Error: Directory ${args.directory} does not exist.`, success: false };
-            }
-
-            const results: string[] = [];
-            await this.walk(dirPath, args.recursive || false, results);
-
-            // Sort results for consistency
-            results.sort();
-
+            const results = await this.workspaceScanner.scan(resolvedPath, { recursive: args.recursive || false });
             return { content: JSON.stringify(results, null, 2), success: true };
         } catch (error: any) {
             return { content: `Error listing files: ${error.message}`, success: false };
-        }
-    }
-
-    private async walk(currentPath: string, recursive: boolean, results: string[]): Promise<void> {
-        const files = this.directoryProvider.readdir(currentPath);
-        if (!files) {
-            return;
-        }
-
-        const rootPath = this.workspaceProvider.rootPath()!;
-
-        for (const file of files) {
-            const fullPath = this.pathResolver.join(currentPath, file);
-            
-            // Security check: ensure path is not ignored
-            if (await this.ignoreManager.shouldIgnore(fullPath)) {
-                continue;
-            }
-
-            if (this.directoryProvider.isDirectory(fullPath)) {
-                if (recursive) {
-                    await this.walk(fullPath, recursive, results);
-                } else {
-                    // For non-recursive, we might want to indicate it's a directory
-                    // but the original implementation just returned the names.
-                    // We'll stick to the original behavior of returning names in the current dir.
-                    results.push(this.pathResolver.relative(rootPath, fullPath) + '/');
-                }
-            } else {
-                results.push(this.pathResolver.relative(rootPath, fullPath));
-            }
         }
     }
 }

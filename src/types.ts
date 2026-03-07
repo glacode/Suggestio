@@ -696,6 +696,20 @@ export interface IConfigProvider {
    */
   onDidChangeConfiguration(listener: (event: IConfigChangeEvent) => void): IDisposable;
 }
+
+/**
+ * Interface for scanning the workspace for files.
+ */
+export interface IWorkspaceScanner {
+  /**
+   * Recursively scans a directory and returns all visible file paths relative to the workspace root.
+   * @param dirPath The absolute path of the directory to start scanning from.
+   * @param options Options for the scan.
+   * @returns A promise that resolves to an array of relative file paths.
+   */
+  scan(dirPath: string, options: { recursive: boolean }): Promise<string[]>;
+}
+
 /**
  * Provides a way to show a side-by-side diff in the editor.
  */

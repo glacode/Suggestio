@@ -27,6 +27,7 @@ import { CONFIG_DEFAULTS } from './constants/config.js';
 import { Agent } from './agent/agent.js';
 import { ChatWebviewViewProvider } from './chat/chatWebviewViewProvider.js';
 import { getTools } from './tools/index.js';
+import { WorkspaceScanner } from './utils/workspaceScanner.js';
 import { ContextBuilder } from './chat/context.js';
 import { IgnoreManager } from './chat/ignoreManager.js';
 import { getChatWebviewContent } from './chat/chatWebviewContent.js';
@@ -168,11 +169,12 @@ export async function activate(context: vscode.ExtensionContext) {
   };
 
   const ignoreManager = new IgnoreManager(workspaceProvider, fileContentReader, pathResolver);
+  const workspaceScanner = new WorkspaceScanner(workspaceProvider, directoryReader, pathResolver, ignoreManager);
 
   const agent = new Agent({
     config: configContainer.config,
     chatHistoryManager,
-    tools: getTools(workspaceProvider, { ...directoryReader, ...directoryCreator }, fileContentReader, fileContentWriter, pathResolver, eventBus, ignoreManager),
+    tools: getTools(workspaceProvider, fileContentReader, fileContentWriter, pathResolver, eventBus, ignoreManager, workspaceScanner),
     eventBus
   });
   const providerAccessor = {
