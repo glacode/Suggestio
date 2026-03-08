@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { IWorkspaceProvider, IToolDefinition, IToolResult, IEventBus, ICommandExecutor } from '../types.js';
+import { IWorkspaceProvider, IToolDefinition, IToolResult, IEventBus, ICommandExecutor, ICommandValidator } from '../types.js';
 import { AGENT_MESSAGES } from '../constants/messages.js';
 import { BaseTool } from './baseTool.js';
 
@@ -34,7 +34,8 @@ export class RunCommandTool extends BaseTool<RunCommandArgs> {
     constructor(
         private workspaceProvider: IWorkspaceProvider,
         private commandExecutor: ICommandExecutor,
-        private eventBus: IEventBus
+        private eventBus: IEventBus,
+        private validator: ICommandValidator
     ) {
         super();
     }
@@ -49,7 +50,16 @@ export class RunCommandTool extends BaseTool<RunCommandArgs> {
             return { content: AGENT_MESSAGES.ERROR_NO_WORKSPACE, success: false };
         }
 
-        // Mandatory user confirmation for security
+        // 1. Security validation (Blacklist)
+        const validation = this.validator.validate(args.command);
+        if (!validation.allowed) {
+            return { 
+                content: `Security Error: Command execution blocked. Reason: ${validation.reason || 'Prohibited pattern detected.'}`, 
+                success: false 
+            };
+        }
+
+        // 2. Mandatory user confirmation for security
         if (toolCallId) {
             const userDecision = await this.requestUserConfirmation(
                 toolCallId,

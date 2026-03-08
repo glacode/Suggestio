@@ -39,6 +39,7 @@ import { NodeFetchClient } from './utils/httpClient.js';
 import { EXTENSION_MESSAGES, EXTENSION_LOGS } from './constants/messages.js';
 import { DiffManager } from './utils/diffManager.js';
 import { NodeCommandExecutor } from './utils/commandExecutor.js';
+import { CommandBlacklistValidator } from './utils/commandValidator.js';
 
 export async function activate(context: vscode.ExtensionContext) {
   initLogger();
@@ -172,6 +173,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const ignoreManager = new IgnoreManager(workspaceProvider, fileContentReader, pathResolver);
   const workspaceScanner = new WorkspaceScanner(workspaceProvider, directoryReader, pathResolver, ignoreManager);
   const commandExecutor = new NodeCommandExecutor();
+  const commandValidator = new CommandBlacklistValidator();
 
   const agent = new Agent({
     config: configContainer.config,
@@ -184,7 +186,8 @@ export async function activate(context: vscode.ExtensionContext) {
       eventBus,
       ignoreManager,
       workspaceScanner,
-      commandExecutor
+      commandExecutor,
+      commandValidator
     ),
     eventBus
   });

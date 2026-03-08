@@ -1,6 +1,6 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { RunCommandTool } from '../../src/tools/runCommandTool.js';
-import { IWorkspaceProvider, ICommandExecutor, IEventBus, IUserConfirmationPayload } from '../../src/types.js';
+import { IWorkspaceProvider, ICommandExecutor, IEventBus, IUserConfirmationPayload, ICommandValidator } from '../../src/types.js';
 import { AGENT_MESSAGES } from '../../src/constants/messages.js';
 import { createMockWorkspaceProvider, createMockEventBus } from '../testUtils.js';
 
@@ -9,6 +9,7 @@ describe('RunCommandTool', () => {
     let mockWorkspaceProvider: jest.Mocked<IWorkspaceProvider>;
     let mockCommandExecutor: jest.Mocked<ICommandExecutor>;
     let mockEventBus: jest.Mocked<IEventBus>;
+    let mockValidator: jest.Mocked<ICommandValidator>;
 
     beforeEach(() => {
         mockWorkspaceProvider = createMockWorkspaceProvider();
@@ -20,7 +21,11 @@ describe('RunCommandTool', () => {
 
         mockEventBus = createMockEventBus();
 
-        tool = new RunCommandTool(mockWorkspaceProvider, mockCommandExecutor, mockEventBus);
+        mockValidator = {
+            validate: jest.fn<ICommandValidator['validate']>().mockReturnValue({ allowed: true })
+        };
+
+        tool = new RunCommandTool(mockWorkspaceProvider, mockCommandExecutor, mockEventBus, mockValidator);
     });
 
     it('should return error if no workspace root', async () => {
@@ -30,6 +35,19 @@ describe('RunCommandTool', () => {
             content: AGENT_MESSAGES.ERROR_NO_WORKSPACE,
             success: false
         });
+    });
+
+    it('should block execution if validator fails', async () => {
+        const command = 'rm -rf .git';
+        mockValidator.validate.mockReturnValue({ allowed: false, reason: 'Protected' });
+
+        const result = await tool.execute({ command });
+
+        expect(mockValidator.validate).toHaveBeenCalledWith(command);
+        expect(mockCommandExecutor.execute).not.toHaveBeenCalled();
+        expect(result.success).toBe(false);
+        expect(result.content).toContain('Security Error');
+        expect(result.content).toContain('Protected');
     });
 
     it('should request user confirmation and proceed if allowed', async () => {
@@ -63,6 +81,7 @@ describe('RunCommandTool', () => {
 
         const result = await tool.execute({ command }, undefined, toolCallId);
 
+        expect(mockValidator.validate).toHaveBeenCalledWith(command);
         expect(mockEventBus.emit).toHaveBeenCalledWith('agent:requestConfirmation', expect.objectContaining({
             toolCallId,
             message: expect.stringContaining(command)
@@ -76,7 +95,7 @@ describe('RunCommandTool', () => {
 
     it('should return error if user denies confirmation', async () => {
         const toolCallId = 'test-call-id';
-        const command = 'rm -rf .';
+        const command = 'npm test';
         
         let userResponseCallback: (payload: IUserConfirmationPayload) => void;
         mockEventBus.on.mockImplementation((event: string, callback: any) => {

@@ -710,6 +710,28 @@ export interface ICommandResult {
 }
 
 /**
+ * The result of a command validation.
+ */
+export interface IValidationResult {
+  /** Whether the command is allowed to execute. */
+  allowed: boolean;
+  /** The reason why the command was blocked, if any. */
+  reason?: string;
+}
+
+/**
+ * Provides a way to validate shell commands before execution.
+ */
+export interface ICommandValidator {
+  /**
+   * Validates a shell command.
+   * @param command The command to validate.
+   * @returns A result indicating if the command is allowed and why.
+   */
+  validate(command: string): IValidationResult;
+}
+
+/**
  * Provides a way to execute shell commands.
  */
 export interface ICommandExecutor {
