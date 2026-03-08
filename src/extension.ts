@@ -38,6 +38,7 @@ import { ANONYMIZATION_EVENT } from './anonymizer/anonymizationNotifier.js';
 import { NodeFetchClient } from './utils/httpClient.js';
 import { EXTENSION_MESSAGES, EXTENSION_LOGS } from './constants/messages.js';
 import { DiffManager } from './utils/diffManager.js';
+import { NodeCommandExecutor } from './utils/commandExecutor.js';
 
 export async function activate(context: vscode.ExtensionContext) {
   initLogger();
@@ -170,11 +171,21 @@ export async function activate(context: vscode.ExtensionContext) {
 
   const ignoreManager = new IgnoreManager(workspaceProvider, fileContentReader, pathResolver);
   const workspaceScanner = new WorkspaceScanner(workspaceProvider, directoryReader, pathResolver, ignoreManager);
+  const commandExecutor = new NodeCommandExecutor();
 
   const agent = new Agent({
     config: configContainer.config,
     chatHistoryManager,
-    tools: getTools(workspaceProvider, fileContentReader, fileContentWriter, pathResolver, eventBus, ignoreManager, workspaceScanner),
+    tools: getTools(
+      workspaceProvider,
+      fileContentReader,
+      fileContentWriter,
+      pathResolver,
+      eventBus,
+      ignoreManager,
+      workspaceScanner,
+      commandExecutor
+    ),
     eventBus
   });
   const providerAccessor = {

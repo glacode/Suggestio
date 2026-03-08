@@ -698,6 +698,31 @@ export interface IConfigProvider {
 }
 
 /**
+ * The result of a command execution.
+ */
+export interface ICommandResult {
+  /** The standard output of the command. */
+  stdout: string;
+  /** The standard error of the command. */
+  stderr: string;
+  /** The exit code of the command, or null if it was terminated by a signal. */
+  exitCode: number | null;
+}
+
+/**
+ * Provides a way to execute shell commands.
+ */
+export interface ICommandExecutor {
+  /**
+   * Executes a shell command.
+   * @param command The command to execute.
+   * @param options Execution options including working directory and cancellation signal.
+   * @returns A promise that resolves to the command execution result.
+   */
+  execute(command: string, options?: { cwd?: string; signal?: AbortSignal }): Promise<ICommandResult>;
+}
+
+/**
  * Interface for scanning the workspace for files.
  */
 export interface IWorkspaceScanner {
