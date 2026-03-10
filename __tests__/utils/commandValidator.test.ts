@@ -73,6 +73,18 @@ describe('CommandBlacklistValidator', () => {
 
     it('should block disk manipulation', () => {
         expect(validator.validate('mkfs.ext4 /dev/sdb1').allowed).toBe(false);
+        expect(validator.validate('format C:').allowed).toBe(false);
+    });
+
+    it('should block Windows-specific dangerous commands', () => {
+        expect(validator.validate('runas /user:admin cmd').allowed).toBe(false);
+        expect(validator.validate('taskkill /F /IM node.exe').allowed).toBe(false);
+        expect(validator.validate('icacls . /grant everyone:F').allowed).toBe(false);
+    });
+
+    it('should block Windows drive root deletion', () => {
+        expect(validator.validate('rd /s /q C:').allowed).toBe(false);
+        expect(validator.validate('del /f /s /q D:\\').allowed).toBe(false);
     });
 
     it('should block empty commands', () => {

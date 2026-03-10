@@ -9,6 +9,7 @@ export class CommandBlacklistValidator implements ICommandValidator {
      * Set of commands that are strictly prohibited at the start of a command or after a separator.
      */
     private readonly forbiddenCommands = new Map([
+        // Unix/Linux/macOS
         ['sudo', "Privilege escalation (sudo/su) is prohibited for security reasons."],
         ['su', "Privilege escalation (sudo/su) is prohibited for security reasons."],
         ['chmod', "Modifying file permissions or ownership is prohibited."],
@@ -18,13 +19,20 @@ export class CommandBlacklistValidator implements ICommandValidator {
         ['killall', "Terminating processes is prohibited."],
         ['mkfs', "Disk manipulation commands are prohibited."],
         ['fdisk', "Disk manipulation commands are prohibited."],
-        ['parted', "Disk manipulation commands are prohibited."]
+        ['parted', "Disk manipulation commands are prohibited."],
+        // Windows
+        ['runas', "Privilege escalation (runas) is prohibited for security reasons."],
+        ['icacls', "Modifying file permissions (icacls) is prohibited."],
+        ['takeown', "Modifying file ownership (takeown) is prohibited."],
+        ['taskkill', "Terminating processes (taskkill) is prohibited."],
+        ['format', "Disk manipulation commands (format) are prohibited."],
+        ['diskpart', "Disk manipulation commands (diskpart) are prohibited."]
     ]);
 
     /**
      * Shell interpreters that are prohibited to be piped into.
      */
-    private readonly shellInterpreters = ['bash', 'sh', 'zsh', 'powershell', 'pwsh'];
+    private readonly shellInterpreters = ['bash', 'sh', 'zsh', 'powershell', 'pwsh', 'cmd', 'cmd.exe'];
 
     /**
      * Command separators that indicate the start of a new command.
@@ -47,7 +55,7 @@ export class CommandBlacklistValidator implements ICommandValidator {
         const tokens = ShellTokenizer.tokenize(trimmedCommand);
 
         // Rule: .git manipulation anywhere is prohibited
-        if (tokens.some(token => token.includes('.git'))) {
+        if (tokens.some(token => token.toLowerCase().includes('.git'))) {
             return { 
                 allowed: false, 
                 reason: "Modifying or deleting the .git directory is prohibited to protect project history." 
@@ -74,12 +82,12 @@ export class CommandBlacklistValidator implements ICommandValidator {
                     return { allowed: false, reason };
                 }
 
-                // Rule: Dangerous 'rm' commands
-                if (lowerToken === 'rm') {
+                // Rule: Dangerous 'rm' or 'rd' (Windows) commands
+                if (lowerToken === 'rm' || lowerToken === 'rd' || lowerToken === 'del') {
                     for (let j = i + 1; j < tokens.length && !this.commandSeparators.includes(tokens[j]); j++) {
                         const arg = tokens[j];
-                        // Standalone / or . as arguments
-                        if (arg === '/' || arg === '.') {
+                        // Standalone / or . as arguments, or Windows drive root (e.g., C:\)
+                        if (arg === '/' || arg === '.' || /^[a-zA-Z]:\\?$/.test(arg)) {
                             return { 
                                 allowed: false, 
                                 reason: "Deleting the system root or workspace root directory is prohibited." 
