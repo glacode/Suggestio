@@ -17,7 +17,14 @@ export async function launchVscode(workspacePath?: string) {
         `--user-data-dir=${userDataDir}`,
         `--extensions-dir=${extensionsDir}`,
         '--disable-workspace-trust',
-        '--disable-extensions',
+        // I try to comment out the line below, because I read that
+        // When extensions are globally disabled, VSCode sometimes delays activation events and:
+        // workbench.action.openView
+        // (the command you trigger via palette)
+        // fires before the webview provider is registered.
+        // So your test “works” locally but becomes flaky or hangs in CI.
+        // Removing --disable-extensions actually stabilizes headless runs.
+        //'--disable-extensions',
         // Exposes port 9229 so the "Attach to Extension Host" launch config can connect and hit breakpoints within the extension.
         // Also add a couple of explicit inspect flags to make the debug port easier to find.
         // Try --inspect-brk to pause the main process and --inspect-brk-extensions to pause extension hosts.
