@@ -784,6 +784,7 @@
                         if (container) {
                             const details = container.querySelector('details');
                             const summary = container.querySelector('summary');
+                            const pre = container.querySelector('pre');
                             if (details) details.removeAttribute('open');
                             if (summary) {
                                 const statusIcon = container.querySelector('.tool-call-status-icon');
@@ -791,16 +792,19 @@
                                 
                                 const statusText = container.querySelector('.tool-status-text');
                                 if (statusText) {
+                                    let message = event.data.customMessage || container.dataset.customMessage;
+                                    if (!message) {
+                                        message = `Used <span class="tool-name">${event.data.toolName}</span>`;
+                                    }
+                                    statusText.innerHTML = message.replace(/\.+$/, '');
+                                    
                                     if (!event.data.success) {
-                                        statusText.textContent = event.data.result;
                                         statusText.style.color = 'var(--vscode-errorForeground)';
-                                    } else if (container.dataset.customMessage) {
-                                        // Keep custom message but remove trailing dots if any
-                                        statusText.textContent = container.dataset.customMessage.replace(/\.\.\.$/, '');
-                                    } else {
-                                        statusText.innerHTML = `Used <span class="tool-name">${event.data.toolName}</span>`;
                                     }
                                 }
+                            }
+                            if (pre && event.data.result) {
+                                pre.textContent = event.data.result;
                             }
                         }
                         return;

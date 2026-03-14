@@ -788,6 +788,96 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     ]);
   });
 
+  it('posts tool_end message to webview when agent:toolEnd is emitted', async () => {
+    const extensionUri = createMockUri('/ext');
+    const vscodeApi = createMockVscodeApi();
+    const eventBus = new EventBus();
+    const posted: MessageFromTheExtensionToTheWebview[] = [];
+    const webview = createMockWebview(posted);
+    const webviewView = createMockWebviewView(webview, 'X');
+
+    const provider = new ChatWebviewViewProvider({
+      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
+      providerAccessor: { getModels: () => [], getActiveModel: () => '' },
+      chatAgent: { run: async () => { } },
+      chatHistoryManager: { clearHistory: () => { }, addMessage: () => { }, getChatHistory: () => [] },
+      buildContext: { buildContext: async () => '' },
+      getChatWebviewContent: () => '',
+      vscodeApi,
+      fileReader: createMockFileContentReader(),
+      eventBus,
+      diffManager: createMockDiffManager(),
+    });
+
+    provider.resolveWebviewView(webviewView);
+
+    const toolCallId = 'call-123';
+    const toolName = 'testTool';
+    const result = 'execution result';
+    const success = true;
+
+    eventBus.emit('agent:toolEnd', {
+      toolCallId,
+      toolName,
+      result,
+      success
+    });
+
+    expect(posted).toContainEqual({
+      sender: 'assistant',
+      type: 'tool_end',
+      toolCallId,
+      toolName,
+      result,
+      success
+    });
+  });
+
+  it('posts tool_start message to webview when agent:toolStart is emitted', async () => {
+    const extensionUri = createMockUri('/ext');
+    const vscodeApi = createMockVscodeApi();
+    const eventBus = new EventBus();
+    const posted: MessageFromTheExtensionToTheWebview[] = [];
+    const webview = createMockWebview(posted);
+    const webviewView = createMockWebviewView(webview, 'X');
+
+    const provider = new ChatWebviewViewProvider({
+      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
+      providerAccessor: { getModels: () => [], getActiveModel: () => '' },
+      chatAgent: { run: async () => { } },
+      chatHistoryManager: { clearHistory: () => { }, addMessage: () => { }, getChatHistory: () => [] },
+      buildContext: { buildContext: async () => '' },
+      getChatWebviewContent: () => '',
+      vscodeApi,
+      fileReader: createMockFileContentReader(),
+      eventBus,
+      diffManager: createMockDiffManager(),
+    });
+
+    provider.resolveWebviewView(webviewView);
+
+    const toolCallId = 'call-123';
+    const toolName = 'testTool';
+    const displayMessage = 'Executing test tool...';
+    const args = '{"arg1": "val1"}';
+
+    eventBus.emit('agent:toolStart', {
+      toolCallId,
+      toolName,
+      displayMessage,
+      args
+    });
+
+    expect(posted).toContainEqual({
+      sender: 'assistant',
+      type: 'tool_start',
+      toolCallId,
+      toolName,
+      displayMessage,
+      args
+    });
+  });
+
   it('_sendCompletionMessage does nothing if _view is undefined', async () => {
     const extensionUri = createMockUri('/ext');
     const vscodeApi = createMockVscodeApi();
