@@ -28,6 +28,11 @@ function writeMockConfig(workspace: string) {
                 endpoint: "http://localhost:3001/v1/chat/completions",
                 model: "test-model",
                 apiKey: "unused"
+            },
+            reasoningProvider: {
+                endpoint: "http://localhost:3001/v1/chat/completions",
+                model: "reasoning-model",
+                apiKey: "unused"
             }
         }
     };
@@ -115,8 +120,8 @@ async function sendChatMessage(innerFrame: ReturnType<Page["frameLocator"]>, mes
 }
 
 async function expectChatMessages(inner: ReturnType<Page["frameLocator"]>, expected: string) {
-    const userMessage = inner.locator('.message.user');
-    const assistantMessage = inner.locator('.message.assistant');
+    const userMessage = inner.locator('.message.user').last();
+    const assistantMessage = inner.locator('.message.assistant').last();
 
     await expect(userMessage).toBeVisible();
     await expect(userMessage).toHaveText(expected);
@@ -144,6 +149,13 @@ async function expectChatHistory(
         await expect(assistantMessages.nth(i))
             .toHaveText(expectedAssistantMessages[i], { timeout: 5000 });
     }
+}
+
+async function clickNewChat(page: Page) {
+    // The "New Chat" button is a VS Code view title action, located in the workbench (outside the webview).
+    // We use a specific selector for the action button role and take the first one found.
+    const newChatBtn = page.locator('[role="button"][aria-label="Suggestio: New Chat"]').first();
+    await newChatBtn.click();
 }
 
 // -----------------------------------------------------------------------------
@@ -226,5 +238,28 @@ test.describe('Chat E2E', () => {
         
         // The word "secret" should be replaced by "ANON_" followed by a number
         expect(lastUserMessage.content).toMatch(/My ANON_\d+ is simple/);
+    });
+
+    test('should clear chat history when "New Chat" button is clicked', async () => {
+        // await openChatView(page);
+        const inner = await getChatFrames(page);
+
+        // Start with a clean slate
+        await clickNewChat(page);
+
+        // Send a message to have some history
+        await sendChatMessage(inner, 'Clear me');
+        await expectChatMessages(inner, 'Clear me');
+
+        // Click the "New Chat" button in the VS Code view title
+        await clickNewChat(page);
+
+        // Verify that the empty chat content is visible again
+        const emptyChatContent = inner.locator('#emptyChatContent');
+        await expect(emptyChatContent).toBeVisible();
+
+        // Verify that no messages are left
+        const messages = inner.locator('.message');
+        await expect(messages).toHaveCount(0);
     });
 });
