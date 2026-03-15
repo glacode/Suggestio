@@ -60,26 +60,64 @@ function createMockServer(capturedRequests: any[]): Promise<Server> {
             capturedRequests.push(req.body);
             const userMessages = req.body.messages.filter((m: any) => m.role === 'user');
             const concatenated = userMessages.map((m: any) => m.content).join(' ');
+            const model = req.body.model;
 
             res.setHeader('Content-Type', 'text/event-stream');
             res.setHeader('Cache-Control', 'no-cache');
             res.setHeader('Connection', 'keep-alive');
 
-            const chars = concatenated.split('');
-            let i = 0;
+            if (model === 'reasoning-model') {
+                const sequence = [
+                    { type: 'reasoning', content: 'Thinking step 1...' },
+                    { type: 'content', content: 'Intermediate result.' },
+                    { type: 'reasoning', content: 'Thinking step 2...' },
+                    { type: 'content', content: ' Final answer.' }
+                ];
 
-            const interval = setInterval(() => {
-                if (i < chars.length) {
-                    res.write(`data: ${JSON.stringify({
-                        choices: [{ delta: { content: chars[i] } }]
-                    })}\n\n`);
-                    i++;
-                } else {
-                    clearInterval(interval);
-                    res.write('data: [DONE]\n\n');
-                    res.end();
-                }
-            }, 50);
+                let seqIndex = 0;
+                let charIndex = 0;
+
+                const interval = setInterval(() => {
+                    const current = sequence[seqIndex];
+                    if (charIndex < current.content.length) {
+                        const delta: any = {};
+                        if (current.type === 'reasoning') {
+                            delta.reasoning_content = current.content[charIndex];
+                        } else {
+                            delta.content = current.content[charIndex];
+                        }
+
+                        res.write(`data: ${JSON.stringify({
+                            choices: [{ delta }]
+                        })}\n\n`);
+                        charIndex++;
+                    } else {
+                        seqIndex++;
+                        charIndex = 0;
+                        if (seqIndex >= sequence.length) {
+                            clearInterval(interval);
+                            res.write('data: [DONE]\n\n');
+                            res.end();
+                        }
+                    }
+                }, 20);
+            } else {
+                const chars = concatenated.split('');
+                let i = 0;
+
+                const interval = setInterval(() => {
+                    if (i < chars.length) {
+                        res.write(`data: ${JSON.stringify({
+                            choices: [{ delta: { content: chars[i] } }]
+                        })}\n\n`);
+                        i++;
+                    } else {
+                        clearInterval(interval);
+                        res.write('data: [DONE]\n\n');
+                        res.end();
+                    }
+                }, 50);
+            }
         });
 
         const server = app.listen(3001, () => resolve(server));
@@ -272,21 +310,39 @@ test.describe('Chat E2E', () => {
         await expect(messages).toHaveCount(0);
     });
 
-    test('should switch LLM model and use it for the next request', async () => {
+    test('should handle switching to a reasoning model and processing interleaved tokens correctly', async () => {
         const inner = await getChatFrames(page);
 
         // Switch to the reasoning model
         await switchModel(inner, 'reasoning-model');
+        await clickNewChat(page);
 
         // Send a message
         const currentRequestCount = capturedRequests.length;
-        await sendChatMessage(inner, 'Using reasoning model');
+        await sendChatMessage(inner, 'Reason for me');
         
-        // Wait for the request to be captured
+        // 1. Verify that the request used the correct model
         await expect.poll(() => capturedRequests.length).toBeGreaterThan(currentRequestCount);
-
-        // Verify that the request used the correct model
         const lastRequest = capturedRequests[capturedRequests.length - 1];
         expect(lastRequest.model).toBe('reasoning-model');
+
+        // 2. Verify rendering of interleaved segments
+        const assistantMessage = inner.locator('.message.assistant').last();
+
+        // We expect 2 reasoning blocks and 2 content segments in the top-level segments container
+        const segments = assistantMessage.locator('.segments');
+        const reasoningBlocks = segments.locator('> .reasoning-container');
+        const contentBlocks = segments.locator('> .message-content');
+
+        await expect(reasoningBlocks).toHaveCount(2);
+        await expect(contentBlocks).toHaveCount(2);
+
+        // Both reasoning blocks should be collapsed because content followed each of them
+        await expect(reasoningBlocks.first().locator('.reasoning-content')).toHaveClass(/collapsed/);
+        await expect(reasoningBlocks.nth(1).locator('.reasoning-content')).toHaveClass(/collapsed/);
+
+        // Verify final text content in the content blocks
+        await expect(contentBlocks.first()).toHaveText('Intermediate result.');
+        await expect(contentBlocks.nth(1)).toHaveText(' Final answer.');
     });
 });
