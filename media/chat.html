@@ -483,7 +483,7 @@
                             </div>
                             <div class="dropdown-content"></div>
                         </div>
-                        <div class="send-icon" onclick="sendMessage()">
+                        <div class="send-icon" onclick="ChatManager.sendMessage()">
                         </div>
                     </div>
                 </div>
@@ -501,111 +501,26 @@
             const SEND_ICON_HTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="12" x2="7" y2="12"></line><polygon points="22 12 2 2 7 12 2 22 22 12"></polygon></svg>';
             const STOP_ICON_HTML = '<span style="font-size: 28px; font-weight: bold; line-height: 1;">■</span>';
 
-            let userMessageElement;
-
-            function disableInput() {
-                const input = document.getElementById('messageInput');
-                const wrapper = document.querySelector('.input-wrapper');
-                const sendIcon = document.querySelector('.send-icon');
-                const indicator = document.getElementById('inputLoadingIndicator');
-                
-                input.disabled = true;
-                input.placeholder = '';
-                wrapper.classList.add('waiting');
-                sendIcon.style.opacity = '1';
-                sendIcon.style.cursor = 'pointer';
-                sendIcon.style.pointerEvents = 'auto';
-                sendIcon.onclick = cancelRequest;
-                
-                // Change to stop icon using a font-based square symbol
-                sendIcon.innerHTML = STOP_ICON_HTML;
-                
-                indicator.classList.add('visible');
-            }
-
-            function enableInput() {
-                const input = document.getElementById('messageInput');
-                const wrapper = document.querySelector('.input-wrapper');
-                const sendIcon = document.querySelector('.send-icon');
-                const indicator = document.getElementById('inputLoadingIndicator');
-                
-                input.disabled = false;
-                input.placeholder = 'Type a request...';
-                wrapper.classList.remove('waiting');
-                sendIcon.style.opacity = '1';
-                sendIcon.style.cursor = 'pointer';
-                sendIcon.style.pointerEvents = 'auto';
-                sendIcon.onclick = sendMessage;
-                
-                // Change back to send icon
-                sendIcon.innerHTML = SEND_ICON_HTML;
-                
-                indicator.classList.remove('visible');
-            }
-
-            function cancelRequest() {
-                // Send cancel command to extension
-                vscode.postMessage({ command: 'cancelRequest' });
-            }
-
-            function confirmTool(toolCallId, decision) {
-                const container = document.getElementById('confirm-' + toolCallId);
-                if (container) {
-                    container.remove();
+            /**
+             * Base class for a message segment (e.g., Reasoning, Content, ToolCall).
+             */
+            class MessageSegment {
+                constructor(container, type) {
+                    this.container = container;
+                    this.type = type;
+                    this.element = document.createElement('div');
+                    this.container.appendChild(this.element);
                 }
-                vscode.postMessage({ 
-                    command: 'confirmToolCall',
-                    toolCallId,
-                    decision
-                });
+                append(text) { /* override */ }
+                update(data) { /* override */ }
             }
 
-            function viewDiff(toolCallId) {
-                vscode.postMessage({ 
-                    command: 'viewDiff',
-                    toolCallId
-                });
-            }
-
-            function sendMessage() {
-                const input = document.getElementById('messageInput');
-                const text = input.value.trim();
-                if (!text) return;
-
-                const emptyChatContent = document.getElementById('emptyChatContent');
-                if (emptyChatContent) {
-                    emptyChatContent.style.display = 'none';
-                }
-
-                appendMessage('user', text);
-                const chat = document.getElementById('chat');
-                userMessageElement = chat.lastElementChild;
-                
-                // Show loading indicator immediately before sending
-                const loadingMsg = document.createElement('div');
-                loadingMsg.className = 'message assistant loading';
-                loadingMsg.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div><span class="loading-text">Working...</span></div><div class="message-content active-segment"></div>';
-                loadingMsg.dataset.fullText = '';
-                loadingMsg.dataset.streaming = 'true';
-                loadingMsg.dataset.lastTokenType = 'content';
-                chat.appendChild(loadingMsg);
-                
-                if (userMessageElement) {
-                    userMessageElement.scrollIntoView();
-                }
-                loadingMsg.scrollIntoView();
-                
-                // Disable input while processing
-                disableInput();
-                
-                vscode.postMessage({ command: 'sendMessage', text });
-                input.value = '';
-            }
-
-            function createReasoningHtml(reasoningText) {
-                return `
-                    <div class="reasoning-container">
-                        <div class="reasoning-header" onclick="toggleReasoning(event)">
+            class ReasoningSegment extends MessageSegment {
+                constructor(container) {
+                    super(container, 'reasoning');
+                    this.element.className = 'reasoning-container';
+                    this.element.innerHTML = `
+                        <div class="reasoning-header" onclick="ChatManager.toggleReasoning(event)">
                             <span class="reasoning-toggle-icon">
                                 <svg width="14" height="14" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
                                     <path fill="currentColor" d="M7.976 10.072l4.357-4.357.62.618L8.284 11h-.618L3 6.333l.619-.618 4.357 4.357z"/>
@@ -613,389 +528,446 @@
                             </span>
                             <span>Thought Process</span>
                         </div>
-                        <div class="reasoning-content">${reasoningText ? window.renderMarkdown(reasoningText) : ''}</div>
-                    </div>
-                `;
+                        <div class="reasoning-content"></div>
+                    `;
+                    this.contentElement = this.element.querySelector('.reasoning-content');
+                    this.toggleIcon = this.element.querySelector('.reasoning-toggle-icon');
+                    this.internalSegments = [];
+                    this.lastInternalTokenType = null;
+                }
+
+                append(text) {
+                    if (this.lastInternalTokenType !== 'content' || !this.internalSegments.length) {
+                        const seg = new ContentSegment(this.contentElement);
+                        this.internalSegments.push(seg);
+                    }
+                    this.internalSegments[this.internalSegments.length - 1].append(text);
+                    this.lastInternalTokenType = 'content';
+                }
+
+                addToolCall(payload) {
+                    const seg = new ToolCallSegment(this.contentElement, payload);
+                    this.internalSegments.push(seg);
+                    this.lastInternalTokenType = 'tool_call';
+                    return seg;
+                }
+
+                addConfirmation(payload) {
+                    const seg = new ConfirmationSegment(this.contentElement, payload);
+                    this.internalSegments.push(seg);
+                    this.lastInternalTokenType = 'confirmation';
+                    return seg;
+                }
+
+                collapse() {
+                    if (!this.contentElement.classList.contains('collapsed')) {
+                        this.contentElement.classList.add('collapsed');
+                        this.toggleIcon.classList.add('collapsed');
+                    }
+                }
             }
 
-            function appendMessage(sender, text, reasoning) {
-                const chat = document.getElementById('chat');
-                const msg = document.createElement('div');
-                msg.className = 'message ' + sender;
+            class ContentSegment extends MessageSegment {
+                constructor(container) {
+                    super(container, 'content');
+                    this.contentText = '';
+                    this.element.className = 'message-content';
+                }
 
-                if (sender === 'assistant') {
-                    if (reasoning) {
-                        msg.innerHTML = createReasoningHtml(reasoning);
+                append(text) {
+                    this.contentText += text;
+                    this.element.innerHTML = window.renderMarkdown(this.contentText);
+                }
+            }
+
+            class ToolCallSegment extends MessageSegment {
+                constructor(container, payload) {
+                    super(container, 'tool_call');
+                    this.toolCallId = payload.toolCallId;
+                    this.toolName = payload.toolName;
+                    this.displayMessage = payload.displayMessage || `Running <span class="tool-name">${payload.toolName}</span>...`;
+                    this.element.className = 'tool-call-container';
+                    this.element.id = 'tool-' + this.toolCallId;
+                    
+                    let prettyArgs = payload.args;
+                    try {
+                        prettyArgs = JSON.stringify(JSON.parse(payload.args), null, 2);
+                    } catch (e) {}
+
+                    this.element.innerHTML = `
+                        <details open>
+                            <summary>
+                                <span class="tool-call-status-icon">⚙️</span>
+                                <span class="tool-status-text">${this.displayMessage}</span>
+                            </summary>
+                            <pre>${prettyArgs}</pre>
+                        </details>
+                    `;
+                    this.statusIcon = this.element.querySelector('.tool-call-status-icon');
+                    this.statusText = this.element.querySelector('.tool-status-text');
+                    this.details = this.element.querySelector('details');
+                    this.pre = this.element.querySelector('pre');
+                }
+
+                update(payload) {
+                    if (this.details) this.details.removeAttribute('open');
+                    if (this.statusIcon) this.statusIcon.textContent = payload.success ? '✅' : '❌';
+                    if (this.statusText) {
+                        let message = payload.customMessage || this.displayMessage;
+                        if (!message || message.includes('Running')) {
+                            message = `Used <span class="tool-name">${payload.toolName}</span>`;
+                        }
+                        this.statusText.innerHTML = message.replace(/\.+$/, '');
+                        if (!payload.success) {
+                            this.statusText.style.color = 'var(--vscode-errorForeground)';
+                        }
                     }
-                    const contentDiv = document.createElement('div');
-                    contentDiv.className = 'message-content';
-                    contentDiv.innerHTML = window.renderMarkdown(text);
-                    msg.appendChild(contentDiv);
-                } else {
+                    if (this.pre && payload.result) {
+                        this.pre.textContent = payload.result;
+                    }
+                }
+            }
+
+            class ConfirmationSegment extends MessageSegment {
+                constructor(container, payload) {
+                    super(container, 'confirmation');
+                    this.toolCallId = payload.toolCallId;
+                    this.element.className = 'tool-confirmation-container';
+                    this.element.id = 'confirm-' + this.toolCallId;
+                    this.element.innerHTML = `
+                        <div class="tool-confirmation-header">
+                            <span class="tool-confirmation-icon">ℹ️</span>
+                            <span>Tool Request</span>
+                        </div>
+                        <div class="tool-confirmation-message">${payload.message}</div>
+                        ${payload.diffData ? `
+                            <div style="margin-top: 8px;">
+                                <button class="tool-button tool-button-secondary" style="width: 100%; max-width: none;" onclick="ChatManager.viewDiff('${payload.toolCallId}')">🔍 View Diff</button>
+                            </div>
+                        ` : ''}
+                        <div class="tool-confirmation-buttons">
+                            <button class="tool-button tool-button-primary" onclick="ChatManager.confirmTool('${payload.toolCallId}', 'allow')">Allow</button>
+                            <button class="tool-button tool-button-secondary" onclick="ChatManager.confirmTool('${payload.toolCallId}', 'deny')">Deny</button>
+                        </div>
+                    `;
+                }
+            }
+
+            /**
+             * Represents a single assistant response message.
+             */
+            class AssistantMessage {
+                constructor(container) {
+                    this.container = container;
+                    this.element = document.createElement('div');
+                    this.element.className = 'message assistant loading';
+                    this.element.innerHTML = `
+                        <div class="typing-indicator">
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            <span class="loading-text">Working...</span>
+                        </div>
+                        <div class="segments"></div>
+                    `;
+                    this.segmentsContainer = this.element.querySelector('.segments');
+                    this.indicator = this.element.querySelector('.typing-indicator');
+                    this.container.appendChild(this.element);
+                    this.segments = [];
+                    this.toolCalls = new Map();
+                    this.activeReasoningSegment = null;
+                    this.lastTokenType = null;
+                    this.isStreaming = true;
+                    this.element.scrollIntoView();
+                }
+
+                appendToken(text, tokenType) {
+                    if (tokenType === 'reasoning') {
+                        if (!this.activeReasoningSegment) {
+                            this.activeReasoningSegment = new ReasoningSegment(this.segmentsContainer);
+                            this.segments.push(this.activeReasoningSegment);
+                        }
+                        this.activeReasoningSegment.append(text);
+                    } else {
+                        // content
+                        if (this.activeReasoningSegment) {
+                            this.activeReasoningSegment.collapse();
+                            this.activeReasoningSegment = null;
+                        }
+                        if (this.lastTokenType !== 'content' || !this.segments.length) {
+                            const seg = new ContentSegment(this.segmentsContainer);
+                            this.segments.push(seg);
+                        }
+                        this.segments[this.segments.length - 1].append(text);
+                    }
+                    this.lastTokenType = tokenType;
+                }
+
+                addToolCall(payload) {
+                    let segment;
+                    if (this.activeReasoningSegment) {
+                        segment = this.activeReasoningSegment.addToolCall(payload);
+                    } else {
+                        segment = new ToolCallSegment(this.segmentsContainer, payload);
+                        this.segments.push(segment);
+                    }
+                    this.toolCalls.set(payload.toolCallId, segment);
+                    this.lastTokenType = 'tool_call';
+                    segment.element.scrollIntoView();
+                }
+
+                updateToolCall(payload) {
+                    const segment = this.toolCalls.get(payload.toolCallId);
+                    if (segment) {
+                        segment.update(payload);
+                    }
+                }
+
+                addConfirmation(payload) {
+                    let segment;
+                    if (this.activeReasoningSegment) {
+                        segment = this.activeReasoningSegment.addConfirmation(payload);
+                    } else {
+                        segment = new ConfirmationSegment(this.segmentsContainer, payload);
+                        this.segments.push(segment);
+                    }
+                    this.lastTokenType = 'confirmation';
+                    segment.element.scrollIntoView();
+                }
+
+                finish() {
+                    this.isStreaming = false;
+                    this.element.classList.remove('loading');
+                    this.element.style.opacity = '1';
+                    if (this.indicator) this.indicator.remove();
+                    
+                    // Cleanup if message is completely empty (can happen on errors)
+                    const hasContent = this.segments.some(s => {
+                        if (s.type === 'content') return s.contentText.trim().length > 0;
+                        if (s.type === 'reasoning') {
+                            return s.internalSegments.some(is => {
+                                if (is.type === 'content') return is.contentText.trim().length > 0;
+                                return true; // tools count as content
+                            });
+                        }
+                        return true; // tool calls, etc
+                    });
+                    if (!hasContent) {
+                        this.element.remove();
+                    }
+                }
+            }
+
+            /**
+             * Main Chat Manager to handle all interactions and state.
+             */
+            const ChatManager = {
+                chatContainer: null,
+                messageInput: null,
+                currentAssistantMessage: null,
+                lastUserMessageElement: null,
+
+                init() {
+                    this.chatContainer = document.getElementById('chat');
+                    this.messageInput = document.getElementById('messageInput');
+                    this.messageInput.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            this.sendMessage();
+                        }
+                    });
+                    this.messageInput.addEventListener('input', () => this.adjustTextareaHeight());
+                    this.adjustTextareaHeight();
+                    this.messageInput.focus();
+
+                    window.addEventListener('focus', () => {
+                        setTimeout(() => this.messageInput.focus(), 50);
+                    });
+
+                    this.setupModelSelector();
+                },
+
+                setupModelSelector() {
+                    const modelSelector = document.getElementById('modelSelector');
+                    const dropdownLabel = modelSelector.querySelector('.dropdown-label');
+                    const dropdownContent = modelSelector.querySelector('.dropdown-content');
+                    const chatModelLabel = modelSelector.querySelector('.chat-model-label');
+                    const sendIcon = document.querySelector('.send-icon');
+
+                    sendIcon.innerHTML = SEND_ICON_HTML;
+                    chatModelLabel.textContent = activeModel;
+
+                    models.forEach(model => {
+                        const option = document.createElement('a');
+                        option.href = '#';
+                        option.textContent = model;
+                        option.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            chatModelLabel.textContent = model;
+                            dropdownContent.style.display = 'none';
+                            vscode.postMessage({ command: 'modelChanged', model });
+                        });
+                        dropdownContent.appendChild(option);
+                    });
+
+                    dropdownLabel.addEventListener('click', () => {
+                        dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
+                    });
+
+                    document.addEventListener('click', (e) => {
+                        if (!modelSelector.contains(e.target)) {
+                            dropdownContent.style.display = 'none';
+                        }
+                    });
+                },
+
+                sendMessage() {
+                    const text = this.messageInput.value.trim();
+                    if (!text) return;
+
+                    const emptyChatContent = document.getElementById('emptyChatContent');
+                    if (emptyChatContent) emptyChatContent.style.display = 'none';
+
+                    this.appendUserMessage(text);
+                    this.messageInput.value = '';
+                    this.adjustTextareaHeight();
+                    
+                    this.currentAssistantMessage = new AssistantMessage(this.chatContainer);
+                    this.disableInput();
+                    
+                    vscode.postMessage({ command: 'sendMessage', text });
+                },
+
+                appendUserMessage(text) {
+                    const msg = document.createElement('div');
+                    msg.className = 'message user';
                     msg.innerText = text;
-                }
-                
-                chat.appendChild(msg);
-            }
+                    this.chatContainer.appendChild(msg);
+                    this.lastUserMessageElement = msg;
+                    msg.scrollIntoView();
+                },
 
-            document.getElementById('messageInput').addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault(); // Prevent new line
-                    sendMessage();
-                }
-            });
+                appendStaticAssistantMessage(text) {
+                    const msg = document.createElement('div');
+                    msg.className = 'message assistant';
+                    const content = document.createElement('div');
+                    content.className = 'message-content';
+                    content.innerHTML = window.renderMarkdown(text);
+                    msg.appendChild(content);
+                    this.chatContainer.appendChild(msg);
+                    msg.scrollIntoView();
+                },
 
-            function newChat() {
-                const chat = document.getElementById('chat');
-                const messages = chat.querySelectorAll('.message, .tool-call-container, .tool-confirmation-container');
-                messages.forEach(m => m.remove());
-                const emptyChatContent = document.getElementById('emptyChatContent');
-                if(emptyChatContent) {
-                    emptyChatContent.style.display = 'flex';
-                }
-            }
-
-            function clearLoadingIndicator() {
-                const allAssistantMessages = document.querySelectorAll('.message.assistant');
-                let lastMessage = allAssistantMessages.length > 0 ? allAssistantMessages[allAssistantMessages.length - 1] : null;
-                if (lastMessage && lastMessage.dataset.streaming === 'true') {
-                    lastMessage.dataset.streaming = 'false';
-                    lastMessage.classList.remove('loading');
-                    lastMessage.style.opacity = '1';
-                    const indicator = lastMessage.querySelector('.typing-indicator');
-                    if (indicator) {
-                        indicator.remove();
-                    }
+                disableInput() {
+                    this.messageInput.disabled = true;
+                    this.messageInput.placeholder = '';
+                    const wrapper = document.querySelector('.input-wrapper');
+                    const sendIcon = document.querySelector('.send-icon');
+                    const indicator = document.getElementById('inputLoadingIndicator');
                     
-                    // Remove the entire bubble if no content was streamed (error case)
-                    const hasContent = lastMessage.dataset.contentText && lastMessage.dataset.contentText.trim().length > 0;
-                    const hasReasoning = lastMessage.dataset.reasoningText && lastMessage.dataset.reasoningText.trim().length > 0;
-                    const hasTools = !!lastMessage.querySelector('.tool-call-container');
+                    wrapper.classList.add('waiting');
+                    sendIcon.onclick = () => vscode.postMessage({ command: 'cancelRequest' });
+                    sendIcon.innerHTML = STOP_ICON_HTML;
+                    indicator.classList.add('visible');
+                },
+
+                enableInput() {
+                    this.messageInput.disabled = false;
+                    this.messageInput.placeholder = 'Type a request...';
+                    const wrapper = document.querySelector('.input-wrapper');
+                    const sendIcon = document.querySelector('.send-icon');
+                    const indicator = document.getElementById('inputLoadingIndicator');
                     
-                    if (!hasContent && !hasReasoning && !hasTools) {
-                        lastMessage.remove();
-                    }
+                    wrapper.classList.remove('waiting');
+                    sendIcon.onclick = () => this.sendMessage();
+                    sendIcon.innerHTML = SEND_ICON_HTML;
+                    indicator.classList.remove('visible');
+                },
+
+                adjustTextareaHeight() {
+                    this.messageInput.style.height = 'auto';
+                    this.messageInput.style.height = this.messageInput.scrollHeight + 'px';
+                },
+
+                newChat() {
+                    const messages = this.chatContainer.querySelectorAll('.message, .tool-call-container, .tool-confirmation-container');
+                    messages.forEach(m => m.remove());
+                    const emptyChatContent = document.getElementById('emptyChatContent');
+                    if(emptyChatContent) emptyChatContent.style.display = 'flex';
+                    this.currentAssistantMessage = null;
+                },
+
+                confirmTool(toolCallId, decision) {
+                    const container = document.getElementById('confirm-' + toolCallId);
+                    if (container) container.remove();
+                    vscode.postMessage({ command: 'confirmToolCall', toolCallId, decision });
+                },
+
+                viewDiff(toolCallId) {
+                    vscode.postMessage({ command: 'viewDiff', toolCallId });
+                },
+
+                toggleReasoning(event) {
+                    const header = event.currentTarget;
+                    const container = header.parentElement;
+                    const content = container.querySelector('.reasoning-content');
+                    const icon = header.querySelector('.reasoning-toggle-icon');
+                    const isCollapsed = content.classList.toggle('collapsed');
+                    icon.classList.toggle('collapsed', isCollapsed);
                 }
+            };
 
-                // Clear any pending tool confirmations
-                const confirmations = document.querySelectorAll('.tool-confirmation-container');
-                confirmations.forEach(c => c.remove());
-
-                // Re-enable input for next message
-                enableInput();
-            }
-
-            function toggleReasoning(event) {
-                const header = event.currentTarget;
-                const container = header.parentElement;
-                const content = container.querySelector('.reasoning-content');
-                const icon = header.querySelector('.reasoning-toggle-icon');
-                
-                const isCollapsed = content.classList.toggle('collapsed');
-                icon.classList.toggle('collapsed', isCollapsed);
-            }
+            document.addEventListener('DOMContentLoaded', () => ChatManager.init());
 
             window.addEventListener('message', event => {
-                const { sender, type, text, tokenType } = event.data;
-                console.log('Message received:', { sender, type, tokenType, text: text?.substring(0, 50) });
+                const { sender, type, text, tokenType, command } = event.data;
+                console.log('Message received:', { sender, type, tokenType, command, textLength: text?.length });
 
-                if (event.data.command === 'newChat') {
-                    newChat();
+                if (command === 'newChat') {
+                    ChatManager.newChat();
                     return;
                 }
 
                 if (sender === 'assistant') {
-                    if (type === 'tool_start') {
-                        const allAssistantMessages = document.querySelectorAll('.message.assistant');
-                        let lastMessage = allAssistantMessages.length > 0 ? allAssistantMessages[allAssistantMessages.length - 1] : null;
-
-                        const chat = document.getElementById('chat');
-
-                        // Ensure we have an active streaming assistant message
-                        if (!lastMessage || lastMessage.dataset.streaming === 'false') {
-                            const loadingMsg = document.createElement('div');
-                            loadingMsg.className = 'message assistant loading';
-                            loadingMsg.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div><div class="message-content active-segment"></div>';
-                            loadingMsg.dataset.streaming = 'true';
-                            loadingMsg.dataset.reasoningText = '';
-                            loadingMsg.dataset.contentText = '';
-                            loadingMsg.dataset.lastTokenType = 'content';
-                            chat.appendChild(loadingMsg);
-                            lastMessage = loadingMsg;
-                        }
-
-                        // Determine the target container for the tool call
-                        const isReasoning = lastMessage.dataset.lastTokenType === 'reasoning';
-                        let targetContainer = lastMessage;
-                        let segmentClassName = 'message-content active-segment';
-
-                        if (isReasoning) {
-                            const reasoningContent = lastMessage.querySelector('.reasoning-content');
-                            if (reasoningContent) {
-                                targetContainer = reasoningContent;
-                                segmentClassName = 'active-segment';
-                            }
-                        }
-
-                        // Deactivate current active segment in the target container
-                        const activeSegment = targetContainer.querySelector('.active-segment');
-                        if (activeSegment) {
-                            activeSegment.classList.remove('active-segment');
-                        }
-
-                        const container = document.createElement('div');
-                        container.className = 'tool-call-container';
-                        container.id = 'tool-' + event.data.toolCallId;
-                        
-                        let prettyArgs = event.data.args;
-                        try {
-                            prettyArgs = JSON.stringify(JSON.parse(event.data.args), null, 2);
-                        } catch (e) {}
-
-                        const displayMessage = event.data.displayMessage || `Running <span class="tool-name">${event.data.toolName}</span>...`;
-                        if (event.data.displayMessage) {
-                            container.dataset.customMessage = event.data.displayMessage;
-                        }
-
-                        container.innerHTML = `
-                            <details open>
-                                <summary>
-                                    <span class="tool-call-status-icon">⚙️</span>
-                                    <span class="tool-status-text">${displayMessage}</span>
-                                </summary>
-                                <pre>${prettyArgs}</pre>
-                            </details>
-                        `;
-                        
-                        // Append tool to the target container
-                        targetContainer.appendChild(container);
-                        
-                        // Create a NEW active segment for tokens arriving AFTER the tool
-                        const nextSegment = document.createElement('div');
-                        nextSegment.className = segmentClassName;
-                        targetContainer.appendChild(nextSegment);
-
-                        container.scrollIntoView();
-                        return;
-                    }
-
-                    if (type === 'tool_end') {
-                        const container = document.getElementById('tool-' + event.data.toolCallId);
-                        if (container) {
-                            const details = container.querySelector('details');
-                            const summary = container.querySelector('summary');
-                            const pre = container.querySelector('pre');
-                            if (details) details.removeAttribute('open');
-                            if (summary) {
-                                const statusIcon = container.querySelector('.tool-call-status-icon');
-                                if (statusIcon) statusIcon.textContent = event.data.success ? '✅' : '❌';
-                                
-                                const statusText = container.querySelector('.tool-status-text');
-                                if (statusText) {
-                                    let message = event.data.customMessage || container.dataset.customMessage;
-                                    if (!message) {
-                                        message = `Used <span class="tool-name">${event.data.toolName}</span>`;
-                                    }
-                                    statusText.innerHTML = message.replace(/\.+$/, '');
-                                    
-                                    if (!event.data.success) {
-                                        statusText.style.color = 'var(--vscode-errorForeground)';
-                                    }
-                                }
-                            }
-                            if (pre && event.data.result) {
-                                pre.textContent = event.data.result;
-                            }
-                        }
-                        return;
-                    }
-
-                    if (type === 'tool_confirmation') {
-                        const chat = document.getElementById('chat');
-                        const container = document.createElement('div');
-                        container.className = 'tool-confirmation-container';
-                        container.id = 'confirm-' + event.data.toolCallId;
-                        
-                        container.innerHTML = `
-                            <div class="tool-confirmation-header">
-                                <span class="tool-confirmation-icon">ℹ️</span>
-                                <span>Tool Request</span>
-                            </div>
-                            <div class="tool-confirmation-message">${event.data.message}</div>
-                            ${event.data.diffData ? `
-                                <div style="margin-top: 8px;">
-                                    <button class="tool-button tool-button-secondary" style="width: 100%; max-width: none;" onclick="viewDiff('${event.data.toolCallId}')">🔍 View Diff</button>
-                                </div>
-                            ` : ''}
-                            <div class="tool-confirmation-buttons">
-                                <button class="tool-button tool-button-primary" onclick="confirmTool('${event.data.toolCallId}', 'allow')">Allow</button>
-                                <button class="tool-button tool-button-secondary" onclick="confirmTool('${event.data.toolCallId}', 'deny')">Deny</button>
-                            </div>
-                        `;
-                        chat.appendChild(container);
-                        container.scrollIntoView();
-                        return;
-                    }
-
                     if (type === 'token') {
-                        const allAssistantMessages = document.querySelectorAll('.message.assistant');
-                        let lastMessage = allAssistantMessages.length > 0 ? allAssistantMessages[allAssistantMessages.length - 1] : null;
-
-                        if (!lastMessage || lastMessage.dataset.streaming === 'false') {
-                            // Start of a new stream - show loading indicator with text container
-                            const loadingMsg = document.createElement('div');
-                            loadingMsg.className = 'message assistant loading';
-                            loadingMsg.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div><div class="message-content"></div>';
-                            loadingMsg.dataset.streaming = 'true';
-                            loadingMsg.dataset.reasoningText = '';
-                            loadingMsg.dataset.contentText = '';
-                            
-                            chat.appendChild(loadingMsg);
-                            lastMessage = loadingMsg;
+                        if (!ChatManager.currentAssistantMessage || !ChatManager.currentAssistantMessage.isStreaming) {
+                            ChatManager.currentAssistantMessage = new AssistantMessage(ChatManager.chatContainer);
                         }
-
-                        if (tokenType === 'reasoning') {
-                            lastMessage.dataset.reasoningText = (lastMessage.dataset.reasoningText || '') + text;
-                            lastMessage.dataset.lastTokenType = 'reasoning';
-                            
-                            let reasoningContent = lastMessage.querySelector('.reasoning-content');
-                            if (!reasoningContent) {
-                                // Insert the reasoning block at the start of the assistant message, 
-                                // but after the typing indicator if it exists
-                                const indicator = lastMessage.querySelector('.typing-indicator');
-                                if (indicator) {
-                                    indicator.insertAdjacentHTML('afterend', createReasoningHtml(''));
-                                } else {
-                                    lastMessage.insertAdjacentHTML('afterbegin', createReasoningHtml(''));
-                                }
-                                reasoningContent = lastMessage.querySelector('.reasoning-content');
-                                
-                                // Create the first active segment for reasoning
-                                const firstSegment = document.createElement('div');
-                                firstSegment.className = 'active-segment';
-                                reasoningContent.appendChild(firstSegment);
-                            }
-
-                            // Find the currently active reasoning segment
-                            let activeReasoningSegment = reasoningContent.querySelector('.active-segment');
-                            if (!activeReasoningSegment) {
-                                activeReasoningSegment = document.createElement('div');
-                                activeReasoningSegment.className = 'active-segment';
-                                reasoningContent.appendChild(activeReasoningSegment);
-                            }
-
-                            // Store and render text for THIS segment
-                            activeReasoningSegment.dataset.reasoningText = (activeReasoningSegment.dataset.reasoningText || '') + text;
-                            activeReasoningSegment.innerHTML = window.renderMarkdown(activeReasoningSegment.dataset.reasoningText);
-
-                        } else {
-                            // Automatically collapse reasoning if this is the first content token
-                            if (!lastMessage.dataset.contentText && lastMessage.dataset.reasoningText) {
-                                const reasoningContent = lastMessage.querySelector('.reasoning-content');
-                                const reasoningIcon = lastMessage.querySelector('.reasoning-toggle-icon');
-                                if (reasoningContent && !reasoningContent.classList.contains('collapsed')) {
-                                    reasoningContent.classList.add('collapsed');
-                                    if (reasoningIcon) reasoningIcon.classList.add('collapsed');
-                                }
-                            }
-
-                            // Update the global full content for the message
-                            lastMessage.dataset.contentText = (lastMessage.dataset.contentText || '') + text;
-                            lastMessage.dataset.lastTokenType = 'content';
-
-                            // Find the currently active content segment
-                            let activeContent = lastMessage.querySelector('.message-content.active-segment');
-                            if (!activeContent) {
-                                // Fallback: if no active content exists (e.g. after tool call), create one at the end
-                                activeContent = document.createElement('div');
-                                activeContent.className = 'message-content active-segment';
-                                lastMessage.appendChild(activeContent);
-                            }
-
-                            // Store and render text for THIS segment only
-                            activeContent.dataset.contentText = (activeContent.dataset.contentText || '') + text;
-                            activeContent.innerHTML = window.renderMarkdown(activeContent.dataset.contentText);
+                        ChatManager.currentAssistantMessage.appendToken(text, tokenType);
+                        
+                        // Smart scroll
+                        if (ChatManager.lastUserMessageElement) {
+                            const rect = ChatManager.lastUserMessageElement.getBoundingClientRect();
+                            if (rect.top > 25) ChatManager.chatContainer.scrollTop += 20;
                         }
-
-                        if (userMessageElement) {
-                            const userMessageRect = userMessageElement.getBoundingClientRect();
-                            if (userMessageRect.top > 25) {
-                                chat.scrollTop += 20;
-                            }
+                    } else if (type === 'tool_start') {
+                        if (!ChatManager.currentAssistantMessage || !ChatManager.currentAssistantMessage.isStreaming) {
+                            ChatManager.currentAssistantMessage = new AssistantMessage(ChatManager.chatContainer);
                         }
-
+                        ChatManager.currentAssistantMessage.addToolCall(event.data);
+                    } else if (type === 'tool_end') {
+                        if (ChatManager.currentAssistantMessage) {
+                            ChatManager.currentAssistantMessage.updateToolCall(event.data);
+                        }
+                    } else if (type === 'tool_confirmation') {
+                        if (!ChatManager.currentAssistantMessage || !ChatManager.currentAssistantMessage.isStreaming) {
+                            ChatManager.currentAssistantMessage = new AssistantMessage(ChatManager.chatContainer);
+                        }
+                        ChatManager.currentAssistantMessage.addConfirmation(event.data);
                     } else if (type === 'completion') {
-                        console.log('Completion received, removing indicator');
-                        clearLoadingIndicator();
+                        if (ChatManager.currentAssistantMessage) {
+                            ChatManager.currentAssistantMessage.finish();
+                        }
+                        ChatManager.enableInput();
                     } else {
-                        // Non-token, non-completion assistant message (could be an error).
-                        // Ensure any existing loading indicator is cleared so dots stop pulsing.
-                        clearLoadingIndicator();
-                        appendMessage(sender, text);
+                        // Error or static message
+                        ChatManager.enableInput();
+                        if (ChatManager.currentAssistantMessage) ChatManager.currentAssistantMessage.finish();
+                        ChatManager.appendStaticAssistantMessage(text);
                     }
-                } else {
-                    appendMessage(sender, text);
+                } else if (sender === 'user') {
+                    ChatManager.appendUserMessage(text);
                 }
-            });
-
-            const messageInput = document.getElementById('messageInput');
-
-            // Auto-focus the chat input field when the webview loads
-            messageInput.focus();
-
-            // Function to adjust textarea height
-            function adjustTextareaHeight() {
-                messageInput.style.height = 'auto'; // Reset height to recalculate
-                messageInput.style.height = messageInput.scrollHeight + 'px';
-            }
-
-            // Adjust height on input
-            messageInput.addEventListener('input', adjustTextareaHeight);
-
-            // Initial adjustment on load
-            adjustTextareaHeight();
-
-            // Refocus the chat input field when the window regains focus
-            window.addEventListener('focus', () => {
-                setTimeout(() => messageInput.focus(), 50);
-            });
-
-            document.addEventListener('DOMContentLoaded', function() {
-                const modelSelector = document.getElementById('modelSelector');
-                const dropdownLabel = modelSelector.querySelector('.dropdown-label');
-                const dropdownContent = modelSelector.querySelector('.dropdown-content');
-                const chatModelLabel = modelSelector.querySelector('.chat-model-label');
-                const sendIcon = document.querySelector('.send-icon');
-
-                sendIcon.innerHTML = SEND_ICON_HTML;
-                chatModelLabel.textContent = activeModel;
-
-                models.forEach(model => {
-                    const option = document.createElement('a');
-                    option.href = '#';
-                    option.textContent = model;
-                    option.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        chatModelLabel.textContent = model;
-                        dropdownContent.style.display = 'none';
-                        // Send model selection event to extension
-                        vscode.postMessage({ 
-                            command: 'modelChanged',
-                            model: model
-                        });
-                    });
-                    dropdownContent.appendChild(option);
-                });
-
-                dropdownLabel.addEventListener('click', () => {
-                    dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
-                });
-
-                document.addEventListener('click', (e) => {
-                    if (!modelSelector.contains(e.target)) {
-                        dropdownContent.style.display = 'none';
-                    }
-                });
             });
         </script>
     </body>
