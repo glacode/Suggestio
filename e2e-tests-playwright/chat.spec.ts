@@ -158,6 +158,15 @@ async function clickNewChat(page: Page) {
     await newChatBtn.click();
 }
 
+async function switchModel(inner: ReturnType<Page["frameLocator"]>, modelName: string) {
+    const selector = inner.locator('#modelSelector');
+    await selector.locator('.dropdown-label').click();
+    // Wait for dropdown to be visible
+    const dropdown = inner.locator('.dropdown-content');
+    await dropdown.waitFor({ state: 'visible' });
+    await dropdown.locator(`a:has-text("${modelName}")`).click();
+}
+
 // -----------------------------------------------------------------------------
 // Main Test
 // -----------------------------------------------------------------------------
@@ -261,5 +270,23 @@ test.describe('Chat E2E', () => {
         // Verify that no messages are left
         const messages = inner.locator('.message');
         await expect(messages).toHaveCount(0);
+    });
+
+    test('should switch LLM model and use it for the next request', async () => {
+        const inner = await getChatFrames(page);
+
+        // Switch to the reasoning model
+        await switchModel(inner, 'reasoning-model');
+
+        // Send a message
+        const currentRequestCount = capturedRequests.length;
+        await sendChatMessage(inner, 'Using reasoning model');
+        
+        // Wait for the request to be captured
+        await expect.poll(() => capturedRequests.length).toBeGreaterThan(currentRequestCount);
+
+        // Verify that the request used the correct model
+        const lastRequest = capturedRequests[capturedRequests.length - 1];
+        expect(lastRequest.model).toBe('reasoning-model');
     });
 });
