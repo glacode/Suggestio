@@ -67,12 +67,28 @@ function createMockServer(capturedRequests: any[]): Promise<Server> {
             res.setHeader('Connection', 'keep-alive');
 
             if (model === 'reasoning-model') {
-                const sequence = [
-                    { type: 'reasoning', content: 'Thinking step 1...' },
-                    { type: 'content', content: 'Intermediate result.' },
-                    { type: 'reasoning', content: 'Thinking step 2...' },
-                    { type: 'content', content: ' Final answer.' }
-                ];
+                const messages = req.body.messages;
+                const hasToolResult = messages.some((m: any) => m.role === 'tool');
+
+                let sequence: any[];
+                let toolCall: any = null;
+
+                if (!hasToolResult) {
+                    sequence = [
+                        { type: 'reasoning', content: 'Thinking step 1...' },
+                        { type: 'content', content: 'Prefix text.' }
+                    ];
+                    toolCall = {
+                        id: 'call_123',
+                        name: 'list_files',
+                        args: '{"directory":"."}'
+                    };
+                } else {
+                    sequence = [
+                        { type: 'reasoning', content: 'Thinking step 2...' },
+                        { type: 'content', content: 'Suffix text.' }
+                    ];
+                }
 
                 let seqIndex = 0;
                 let charIndex = 0;
@@ -96,6 +112,23 @@ function createMockServer(capturedRequests: any[]): Promise<Server> {
                         charIndex = 0;
                         if (seqIndex >= sequence.length) {
                             clearInterval(interval);
+                            if (toolCall) {
+                                res.write(`data: ${JSON.stringify({
+                                    choices: [{
+                                        delta: {
+                                            tool_calls: [{
+                                                index: 0,
+                                                id: toolCall.id,
+                                                type: 'function',
+                                                function: {
+                                                    name: toolCall.name,
+                                                    arguments: toolCall.args
+                                                }
+                                            }]
+                                        }
+                                    }]
+                                })}\n\n`);
+                            }
                             res.write('data: [DONE]\n\n');
                             res.end();
                         }
@@ -329,20 +362,33 @@ test.describe('Chat E2E', () => {
         // 2. Verify rendering of interleaved segments
         const assistantMessage = inner.locator('.message.assistant').last();
 
-        // We expect 2 reasoning blocks and 2 content segments in the top-level segments container
+        // We expect:
+        // - Reasoning Block 1
+        // - Content Segment 1 (Prefix)
+        // - Tool Call (list_files)
+        // - Reasoning Block 2
+        // - Content Segment 2 (Suffix)
         const segments = assistantMessage.locator('.segments');
         const reasoningBlocks = segments.locator('> .reasoning-container');
         const contentBlocks = segments.locator('> .message-content');
+        const toolCalls = segments.locator('> .tool-call-container');
 
         await expect(reasoningBlocks).toHaveCount(2);
         await expect(contentBlocks).toHaveCount(2);
+        await expect(toolCalls).toHaveCount(1);
+
+        // Verify order and text of segments
+        await expect(reasoningBlocks.first()).toContainText('Thinking step 1...');
+        await expect(contentBlocks.first()).toHaveText('Prefix text.');
+        await expect(toolCalls.first()).toContainText('Listing files');
+        await expect(reasoningBlocks.nth(1)).toContainText('Thinking step 2...');
+        await expect(contentBlocks.nth(1)).toHaveText('Suffix text.');
 
         // Both reasoning blocks should be collapsed because content followed each of them
         await expect(reasoningBlocks.first().locator('.reasoning-content')).toHaveClass(/collapsed/);
         await expect(reasoningBlocks.nth(1).locator('.reasoning-content')).toHaveClass(/collapsed/);
 
-        // Verify final text content in the content blocks
-        await expect(contentBlocks.first()).toHaveText('Intermediate result.');
-        await expect(contentBlocks.nth(1)).toHaveText(' Final answer.');
+        // uncomment this if you want to visually verify the test in the Electron window
+        // await page.waitForTimeout(10000);
     });
 });
