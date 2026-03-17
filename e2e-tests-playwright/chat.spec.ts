@@ -43,13 +43,121 @@ function writeMockConfig(workspace: string) {
 }
 
 /**
- * Creates and starts an Express server to mock a streaming Large Language Model (LLM) API endpoint.
- * This server is used for E2E tests to simulate real-time, character-by-character responses,
- * which is crucial for testing the frontend's ability to handle streamed content.
- * It listens for POST requests on '/v1/chat/completions' and streams back the user's input.
- * The mock server's response content is the concatenation of all content fields from the userMessages in the request body,
- * joined by a space. For example, it there are two user messages with contents "Hello" and "How are you", the response will be "Hello How are you".
- * @returns {Promise<Server>} A promise that resolves with the HTTP server instance once it's listening.
+ * Writes a single Server-Sent Events (SSE) data chunk to the response.
+ */
+function writeSSEChunk(res: any, data: any) {
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+}
+
+/**
+ * Sends the termination signal for an SSE stream.
+ */
+function sendDone(res: any) {
+    res.write('data: [DONE]\n\n');
+    res.end();
+}
+
+/**
+ * Streams a response for the 'reasoning-model'.
+ * This model simulates a multi-turn reasoning process, potentially interleaved with tool calls.
+ */
+function streamReasoningModel(res: any, messages: any[]) {
+    const hasToolResult = messages.some((m: any) => m.role === 'tool');
+    let sequence: { type: 'reasoning' | 'content', content: string }[];
+    let toolCall: { id: string, name: string, args: string } | null = null;
+
+    // Turn 1: Initial reasoning and a tool request
+    if (!hasToolResult) {
+        sequence = [
+            { type: 'reasoning', content: 'Thinking step 1...' },
+            { type: 'content', content: 'Prefix text.' }
+        ];
+        toolCall = { id: 'call_123', name: 'list_files', args: '{"directory":"."}' };
+    } 
+    // Turn 2: Follow-up reasoning after tool execution
+    else {
+        sequence = [
+            { type: 'reasoning', content: 'Thinking step 2...' },
+            { type: 'content', content: 'Suffix text.' }
+        ];
+    }
+
+    let seqIndex = 0;
+    let charIndex = 0;
+
+    const interval = setInterval(() => {
+        const current = sequence[seqIndex];
+        
+        // Stream the current text segment character by character
+        if (charIndex < current.content.length) {
+            const delta: any = {};
+            if (current.type === 'reasoning') {
+                delta.reasoning_content = current.content[charIndex];
+            } else {
+                delta.content = current.content[charIndex];
+            }
+
+            writeSSEChunk(res, { choices: [{ delta }] });
+            charIndex++;
+        } 
+        // Move to the next segment in the sequence
+        else {
+            seqIndex++;
+            charIndex = 0;
+
+            // When the text sequence is finished
+            if (seqIndex >= sequence.length) {
+                clearInterval(interval);
+                
+                // If there's a tool call to emit, send it as the final delta
+                if (toolCall) {
+                    writeSSEChunk(res, {
+                        choices: [{
+                            delta: {
+                                tool_calls: [{
+                                    index: 0,
+                                    id: toolCall.id,
+                                    type: 'function',
+                                    function: { name: toolCall.name, arguments: toolCall.args }
+                                }]
+                            }
+                        }]
+                    });
+                }
+                sendDone(res);
+            }
+        }
+    }, 20);
+}
+
+/**
+ * Streams a standard completion response by echoing the user's concatenated input.
+ */
+function streamDefaultModel(res: any, text: string) {
+    const chars = text.split('');
+    let i = 0;
+
+    const interval = setInterval(() => {
+        if (i < chars.length) {
+            writeSSEChunk(res, { choices: [{ delta: { content: chars[i] } }] });
+            i++;
+        } else {
+            clearInterval(interval);
+            sendDone(res);
+        }
+    }, 50);
+}
+
+/**
+ * Creates and starts an Express server to mock a streaming OpenAI-compatible API.
+ * 
+ * This server is used in E2E tests to:
+ * 1. Verify that the extension sends the correct messages and model identifiers to the backend.
+ * 2. Simulate the real-time, character-by-character "typing" experience of a streaming LLM.
+ * 3. Test complex UI logic like interleaved reasoning blocks and tool calls.
+ * 
+ * @param capturedRequests An array that will store all incoming request bodies for assertion in tests.
+ * @returns A promise that resolves with the HTTP server instance.
  */
 function createMockServer(capturedRequests: any[]): Promise<Server> {
     return new Promise(resolve => {
@@ -57,99 +165,24 @@ function createMockServer(capturedRequests: any[]): Promise<Server> {
         app.use(express.json());
 
         app.post('/v1/chat/completions', (req, res) => {
+            // 1. Capture the request for later inspection in tests
             capturedRequests.push(req.body);
+            
+            // 2. Extract context from the request
             const userMessages = req.body.messages.filter((m: any) => m.role === 'user');
-            const concatenated = userMessages.map((m: any) => m.content).join(' ');
+            const concatenatedInput = userMessages.map((m: any) => m.content).join(' ');
             const model = req.body.model;
 
+            // 3. Set SSE headers
             res.setHeader('Content-Type', 'text/event-stream');
             res.setHeader('Cache-Control', 'no-cache');
             res.setHeader('Connection', 'keep-alive');
 
+            // 4. Delegate streaming logic based on the requested model
             if (model === 'reasoning-model') {
-                const messages = req.body.messages;
-                const hasToolResult = messages.some((m: any) => m.role === 'tool');
-
-                let sequence: any[];
-                let toolCall: any = null;
-
-                if (!hasToolResult) {
-                    sequence = [
-                        { type: 'reasoning', content: 'Thinking step 1...' },
-                        { type: 'content', content: 'Prefix text.' }
-                    ];
-                    toolCall = {
-                        id: 'call_123',
-                        name: 'list_files',
-                        args: '{"directory":"."}'
-                    };
-                } else {
-                    sequence = [
-                        { type: 'reasoning', content: 'Thinking step 2...' },
-                        { type: 'content', content: 'Suffix text.' }
-                    ];
-                }
-
-                let seqIndex = 0;
-                let charIndex = 0;
-
-                const interval = setInterval(() => {
-                    const current = sequence[seqIndex];
-                    if (charIndex < current.content.length) {
-                        const delta: any = {};
-                        if (current.type === 'reasoning') {
-                            delta.reasoning_content = current.content[charIndex];
-                        } else {
-                            delta.content = current.content[charIndex];
-                        }
-
-                        res.write(`data: ${JSON.stringify({
-                            choices: [{ delta }]
-                        })}\n\n`);
-                        charIndex++;
-                    } else {
-                        seqIndex++;
-                        charIndex = 0;
-                        if (seqIndex >= sequence.length) {
-                            clearInterval(interval);
-                            if (toolCall) {
-                                res.write(`data: ${JSON.stringify({
-                                    choices: [{
-                                        delta: {
-                                            tool_calls: [{
-                                                index: 0,
-                                                id: toolCall.id,
-                                                type: 'function',
-                                                function: {
-                                                    name: toolCall.name,
-                                                    arguments: toolCall.args
-                                                }
-                                            }]
-                                        }
-                                    }]
-                                })}\n\n`);
-                            }
-                            res.write('data: [DONE]\n\n');
-                            res.end();
-                        }
-                    }
-                }, 20);
+                streamReasoningModel(res, req.body.messages);
             } else {
-                const chars = concatenated.split('');
-                let i = 0;
-
-                const interval = setInterval(() => {
-                    if (i < chars.length) {
-                        res.write(`data: ${JSON.stringify({
-                            choices: [{ delta: { content: chars[i] } }]
-                        })}\n\n`);
-                        i++;
-                    } else {
-                        clearInterval(interval);
-                        res.write('data: [DONE]\n\n');
-                        res.end();
-                    }
-                }, 50);
+                streamDefaultModel(res, concatenatedInput);
             }
         });
 
@@ -377,12 +410,26 @@ test.describe('Chat E2E', () => {
         await expect(contentBlocks).toHaveCount(2);
         await expect(toolCalls).toHaveCount(1);
 
-        // Verify order and text of segments
-        await expect(reasoningBlocks.first()).toContainText('Thinking step 1...');
-        await expect(contentBlocks.first()).toHaveText('Prefix text.');
-        await expect(toolCalls.first()).toContainText('Listing files');
-        await expect(reasoningBlocks.nth(1)).toContainText('Thinking step 2...');
-        await expect(contentBlocks.nth(1)).toHaveText('Suffix text.');
+        // 3. Verify the absolute interleaved order of all segments
+        const allSegments = segments.locator('> *');
+        await expect(allSegments).toHaveCount(5);
+
+        // Turn 1
+        await expect(allSegments.nth(0)).toHaveClass(/reasoning-container/);
+        await expect(allSegments.nth(0)).toContainText('Thinking step 1...');
+
+        await expect(allSegments.nth(1)).toHaveClass(/message-content/);
+        await expect(allSegments.nth(1)).toHaveText('Prefix text.');
+
+        await expect(allSegments.nth(2)).toHaveClass(/tool-call-container/);
+        await expect(allSegments.nth(2)).toContainText('Listing files');
+
+        // Turn 2
+        await expect(allSegments.nth(3)).toHaveClass(/reasoning-container/);
+        await expect(allSegments.nth(3)).toContainText('Thinking step 2...');
+
+        await expect(allSegments.nth(4)).toHaveClass(/message-content/);
+        await expect(allSegments.nth(4)).toHaveText('Suffix text.');
 
         // Both reasoning blocks should be collapsed because content followed each of them
         await expect(reasoningBlocks.first().locator('.reasoning-content')).toHaveClass(/collapsed/);
