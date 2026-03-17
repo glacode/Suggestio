@@ -59,72 +59,73 @@ function sendDone(res: any) {
 
 /**
  * Streams a response for the 'reasoning-model'.
- * This model simulates a multi-turn reasoning process, potentially interleaved with tool calls.
+ * This model simulates a multi-turn reasoning process, interleaved with tool calls.
  */
 function streamReasoningModel(res: any, messages: any[]) {
-    const hasToolResult = messages.some((m: any) => m.role === 'tool');
-    let sequence: { type: 'reasoning' | 'content', content: string }[];
-    let toolCall: { id: string, name: string, args: string } | null = null;
+    const toolResults = messages.filter((m: any) => m.role === 'tool');
+    let parts: any[];
 
-    // Turn 1: Initial reasoning and a tool request
-    if (!hasToolResult) {
-        sequence = [
+    // Turn 1: Initial reasoning and two tool requests
+    if (toolResults.length === 0) {
+        parts = [
             { type: 'reasoning', content: 'Thinking step 1...' },
-            { type: 'content', content: 'Prefix text.' }
+            { type: 'content', content: 'Prefix text.' },
+            { type: 'tool_calls', calls: [
+                { id: 'call_list', name: 'list_files', arguments: '{"directory":"."}' },
+                { id: 'call_edit', name: 'edit_file', arguments: '{"path":"test.txt","content":"new content"}' }
+            ]}
         ];
-        toolCall = { id: 'call_123', name: 'list_files', args: '{"directory":"."}' };
     } 
-    // Turn 2: Follow-up reasoning after tool execution
+    // Turn 2: Follow-up reasoning after tool executions (including user confirmation)
     else {
-        sequence = [
+        parts = [
             { type: 'reasoning', content: 'Thinking step 2...' },
             { type: 'content', content: 'Suffix text.' }
         ];
     }
 
-    let seqIndex = 0;
+    let partIndex = 0;
     let charIndex = 0;
 
     const interval = setInterval(() => {
-        const current = sequence[seqIndex];
-        
-        // Stream the current text segment character by character
-        if (charIndex < current.content.length) {
-            const delta: any = {};
-            if (current.type === 'reasoning') {
-                delta.reasoning_content = current.content[charIndex];
-            } else {
-                delta.content = current.content[charIndex];
-            }
+        if (partIndex >= parts.length) {
+            clearInterval(interval);
+            sendDone(res);
+            return;
+        }
 
-            writeSSEChunk(res, { choices: [{ delta }] });
-            charIndex++;
-        } 
-        // Move to the next segment in the sequence
-        else {
-            seqIndex++;
+        const current = parts[partIndex];
+
+        if (current.type === 'tool_calls') {
+            writeSSEChunk(res, {
+                choices: [{
+                    delta: {
+                        tool_calls: current.calls.map((c: any, i: number) => ({
+                            index: i,
+                            id: c.id,
+                            type: 'function',
+                            function: { name: c.name, arguments: c.arguments }
+                        }))
+                    }
+                }]
+            });
+            partIndex++;
             charIndex = 0;
-
-            // When the text sequence is finished
-            if (seqIndex >= sequence.length) {
-                clearInterval(interval);
-                
-                // If there's a tool call to emit, send it as the final delta
-                if (toolCall) {
-                    writeSSEChunk(res, {
-                        choices: [{
-                            delta: {
-                                tool_calls: [{
-                                    index: 0,
-                                    id: toolCall.id,
-                                    type: 'function',
-                                    function: { name: toolCall.name, arguments: toolCall.args }
-                                }]
-                            }
-                        }]
-                    });
+        } else {
+            // Stream reasoning or content character by character
+            if (charIndex < current.content.length) {
+                const delta: any = {};
+                if (current.type === 'reasoning') {
+                    delta.reasoning_content = current.content[charIndex];
+                } else {
+                    delta.content = current.content[charIndex];
                 }
-                sendDone(res);
+
+                writeSSEChunk(res, { choices: [{ delta }] });
+                charIndex++;
+            } else {
+                partIndex++;
+                charIndex = 0;
             }
         }
     }, 20);
@@ -392,29 +393,22 @@ test.describe('Chat E2E', () => {
         const lastRequest = capturedRequests[capturedRequests.length - 1];
         expect(lastRequest.model).toBe('reasoning-model');
 
-        // 2. Verify rendering of interleaved segments
+        // 2. Verify rendering of interleaved segments (Turn 1)
         const assistantMessage = inner.locator('.message.assistant').last();
 
-        // We expect:
+        // We expect initially:
         // - Reasoning Block 1
         // - Content Segment 1 (Prefix)
-        // - Tool Call (list_files)
-        // - Reasoning Block 2
-        // - Content Segment 2 (Suffix)
+        // - Tool Call (list_files - automated)
+        // - Tool Call (edit_file - status)
+        // - Tool Confirmation (edit_file - requires user action)
         const segments = assistantMessage.locator('.segments');
-        const reasoningBlocks = segments.locator('> .reasoning-container');
-        const contentBlocks = segments.locator('> .message-content');
-        const toolCalls = segments.locator('> .tool-call-container');
-
-        await expect(reasoningBlocks).toHaveCount(2);
-        await expect(contentBlocks).toHaveCount(2);
-        await expect(toolCalls).toHaveCount(1);
-
-        // 3. Verify the absolute interleaved order of all segments
         const allSegments = segments.locator('> *');
-        await expect(allSegments).toHaveCount(5);
+        
+        // Wait for segments to appear
+        await expect(allSegments).toHaveCount(5, { timeout: 10000 });
 
-        // Turn 1
+        // Turn 1 verification
         await expect(allSegments.nth(0)).toHaveClass(/reasoning-container/);
         await expect(allSegments.nth(0)).toContainText('Thinking step 1...');
 
@@ -424,18 +418,31 @@ test.describe('Chat E2E', () => {
         await expect(allSegments.nth(2)).toHaveClass(/tool-call-container/);
         await expect(allSegments.nth(2)).toContainText('Listing files');
 
-        // Turn 2
-        await expect(allSegments.nth(3)).toHaveClass(/reasoning-container/);
-        await expect(allSegments.nth(3)).toContainText('Thinking step 2...');
+        await expect(allSegments.nth(3)).toHaveClass(/tool-call-container/);
+        await expect(allSegments.nth(3)).toContainText('Editing file test.txt');
 
-        await expect(allSegments.nth(4)).toHaveClass(/message-content/);
-        await expect(allSegments.nth(4)).toHaveText('Suffix text.');
+        await expect(allSegments.nth(4)).toHaveClass(/tool-confirmation-container/);
+        await expect(allSegments.nth(4)).toContainText('Allow Suggestio to apply changes to test.txt?');
+
+        // 3. Confirm the tool call
+        const allowBtn = allSegments.nth(4).locator('button.tool-button-primary:has-text("Allow")');
+        await allowBtn.click();
+
+        // 4. Verify rendering of subsequent segments (Turn 2)
+        // After clicking Allow, the confirmation container is removed (-1) 
+        // and Turn 2 adds Reasoning 2 and Content 2 (+2). Total: 5 - 1 + 2 = 6.
+        await expect(allSegments).toHaveCount(6, { timeout: 10000 });
+
+        // Turn 2 verification
+        await expect(allSegments.nth(4)).toHaveClass(/reasoning-container/);
+        await expect(allSegments.nth(4)).toContainText('Thinking step 2...');
+
+        await expect(allSegments.nth(5)).toHaveClass(/message-content/);
+        await expect(allSegments.nth(5)).toHaveText('Suffix text.');
 
         // Both reasoning blocks should be collapsed because content followed each of them
+        const reasoningBlocks = segments.locator('> .reasoning-container');
         await expect(reasoningBlocks.first().locator('.reasoning-content')).toHaveClass(/collapsed/);
         await expect(reasoningBlocks.nth(1).locator('.reasoning-content')).toHaveClass(/collapsed/);
-
-        // uncomment this if you want to visually verify the test in the Electron window
-        // await page.waitForTimeout(10000);
     });
 });
