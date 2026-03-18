@@ -62,28 +62,27 @@ function sendDone(res: any) {
  * This model simulates a multi-turn reasoning process, interleaved with tool calls.
  */
 function streamReasoningModel(res: any, messages: any[]) {
-    const toolResults = messages.filter((m: any) => m.role === 'tool');
-    let parts: any[];
-
-    // Turn 1: Initial reasoning and two tool requests
-    if (toolResults.length === 0) {
-        parts = [
+    const turnIndex = messages.filter((m: any) => m.role === 'assistant').length;
+    const allParts = [
+        // Turn 1: Initial reasoning and two tool requests
+        [
             { type: 'reasoning', content: 'Thinking step 1...' },
             { type: 'content', content: 'Prefix text.' },
-            { type: 'tool_calls', calls: [
-                { id: 'call_list', name: 'list_files', arguments: '{"directory":"."}' },
-                { id: 'call_edit', name: 'edit_file', arguments: '{"path":"test.txt","content":"new content"}' }
-            ]}
-        ];
-    } 
-    // Turn 2: Follow-up reasoning after tool executions (including user confirmation)
-    else {
-        parts = [
+            {
+                type: 'tool_calls', calls: [
+                    { id: 'call_list', name: 'list_files', arguments: '{"directory":"."}' },
+                    { id: 'call_edit', name: 'edit_file', arguments: '{"path":"test.txt","content":"new content"}' }
+                ]
+            }
+        ],
+        // Turn 2: Follow-up reasoning after tool executions (including user confirmation)
+        [
             { type: 'reasoning', content: 'Thinking step 2...' },
             { type: 'content', content: 'Suffix text.' }
-        ];
-    }
+        ]
+    ];
 
+    const parts = allParts[turnIndex] || [];
     let partIndex = 0;
     let charIndex = 0;
 
@@ -96,7 +95,7 @@ function streamReasoningModel(res: any, messages: any[]) {
 
         const current = parts[partIndex];
 
-        if (current.type === 'tool_calls') {
+        if (current.type === 'tool_calls' && current.calls) {
             writeSSEChunk(res, {
                 choices: [{
                     delta: {
@@ -111,7 +110,7 @@ function streamReasoningModel(res: any, messages: any[]) {
             });
             partIndex++;
             charIndex = 0;
-        } else {
+        } else if (current.type !== 'tool_calls' && current.content) {
             // Stream reasoning or content character by character
             if (charIndex < current.content.length) {
                 const delta: any = {};
@@ -127,6 +126,10 @@ function streamReasoningModel(res: any, messages: any[]) {
                 partIndex++;
                 charIndex = 0;
             }
+        } else {
+            // Should not happen, but prevents infinite loop if current is invalid
+            partIndex++;
+            charIndex = 0;
         }
     }, 20);
 }
@@ -168,7 +171,7 @@ function createMockServer(capturedRequests: any[]): Promise<Server> {
         app.post('/v1/chat/completions', (req, res) => {
             // 1. Capture the request for later inspection in tests
             capturedRequests.push(req.body);
-            
+
             // 2. Extract context from the request
             const userMessages = req.body.messages.filter((m: any) => m.role === 'user');
             const concatenatedInput = userMessages.map((m: any) => m.content).join(' ');
@@ -349,7 +352,7 @@ test.describe('Chat E2E', () => {
         expect(capturedRequests.length).toBeGreaterThanOrEqual(3);
         const lastRequest = capturedRequests[capturedRequests.length - 1];
         const lastUserMessage = lastRequest.messages.findLast((m: any) => m.role === 'user');
-        
+
         // The word "secret" should be replaced by "ANON_" followed by a number
         expect(lastUserMessage.content).toMatch(/My ANON_\d+ is simple/);
     });
@@ -387,7 +390,7 @@ test.describe('Chat E2E', () => {
         // Send a message
         const currentRequestCount = capturedRequests.length;
         await sendChatMessage(inner, 'Reason for me');
-        
+
         // 1. Verify that the request used the correct model
         await expect.poll(() => capturedRequests.length).toBeGreaterThan(currentRequestCount);
         const lastRequest = capturedRequests[capturedRequests.length - 1];
@@ -404,7 +407,7 @@ test.describe('Chat E2E', () => {
         // - Tool Confirmation (edit_file - requires user action)
         const segments = assistantMessage.locator('.segments');
         const allSegments = segments.locator('> *');
-        
+
         // Wait for segments to appear
         await expect(allSegments).toHaveCount(5, { timeout: 10000 });
 
