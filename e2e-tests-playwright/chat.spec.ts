@@ -80,9 +80,15 @@ function streamReasoningModel(res: any, messages: any[]) {
                 { id: 'call_edit', name: 'edit_file', arguments: '{"path":"test.txt","content":"new content"}' }
             ]}
         ],
-        // Turn 2: Follow-up reasoning after tool executions (including user confirmation)
+        // Turn 2: Follow-up reasoning and nested tool request (run_command)
         [
             { type: 'reasoning', content: 'Thinking step 2...' },
+            { type: 'tool_calls', calls: [
+                { id: 'call_run', name: 'run_command', arguments: '{"command":"echo test"}' }
+            ]}
+        ],
+        // Turn 3: Final content
+        [
             { type: 'content', content: 'Suffix text.' }
         ]
     ];
@@ -468,24 +474,62 @@ test.describe('Chat E2E', () => {
 
         // 4. Verify rendering of subsequent segments (Turn 2)
         // After clicking Allow, the confirmation container is removed (-1) 
-        // and Turn 2 adds Reasoning 2 and Content 2 (+2). Total: 5 - 1 + 2 = 6.
+        // and Turn 2 adds Reasoning 2 (which contains nested Tool Call/Confirmation) (+1). 
+        // Total: 5 - 1 + 1 = 5.
+        await expect(allSegments).toHaveCount(5, { timeout: 10000 });
+
+        // Turn 2 verification (Reasoning Block 2)
+        const reasoningBlock2 = allSegments.nth(4);
+        await expect(reasoningBlock2).toHaveClass(/reasoning-container/);
+        await expect(reasoningBlock2).toContainText('Thinking step 2...');
+
+        // Verify nested tool call and confirmation in Reasoning Block 2
+        // Since no content followed immediately, the block should be expanded (not collapsed)
+        await expect(reasoningBlock2.locator('.reasoning-content')).not.toHaveClass(/collapsed/);
+        
+        const reasoningChildren2 = reasoningBlock2.locator('.reasoning-content > *');
+        await expect(reasoningChildren2).toHaveCount(3); // Content, Tool Call, Confirmation
+
+        // 1. Reasoning Text
+        await expect(reasoningChildren2.nth(0)).toHaveClass(/message-content/);
+        await expect(reasoningChildren2.nth(0)).toHaveText('Thinking step 2...');
+
+        // 2. Tool Call
+        const toolCall2 = reasoningChildren2.nth(1);
+        await expect(toolCall2).toHaveClass(/tool-call-container/);
+        await expect(toolCall2).toContainText('Executing command: echo test');
+
+        // 3. Confirmation
+        const confirmation2 = reasoningChildren2.nth(2);
+        await expect(confirmation2).toHaveClass(/tool-confirmation-container/);
+        await expect(confirmation2).toContainText('Allow Suggestio to run command: "echo test"?');
+
+        // 5. Confirm the run_command tool call
+        const allowBtn2 = confirmation2.locator('button.tool-button-primary:has-text("Allow")');
+        await allowBtn2.click();
+
+        // 6. Verify rendering of Turn 3 (Final Content)
+        // After clicking Allow, confirmation is removed (-1).
+        // Turn 3 adds "Suffix text" (Content) (+1).
+        // Total: 6 - 1 + 1 = 6.
         await expect(allSegments).toHaveCount(6, { timeout: 10000 });
 
-        // Turn 2 verification
-        await expect(allSegments.nth(4)).toHaveClass(/reasoning-container/);
-        await expect(allSegments.nth(4)).toContainText('Thinking step 2...');
-
+        // Verify Reasoning Block 2 is now followed by Suffix Text
+        // Note: Reasoning Block 2 might collapse now because content follows?
+        // Wait, "Suffix text" is in Turn 3.
+        // When Turn 3 arrives (Content token), it collapses the active reasoning segment (Block 2).
+        
         await expect(allSegments.nth(5)).toHaveClass(/message-content/);
         await expect(allSegments.nth(5)).toHaveText('Suffix text.');
 
         // Both reasoning blocks should be collapsed because content followed each of them
+        // Block 1: Expanded manually earlier -> stays expanded?
+        // Block 2: Collapsed automatically by "Suffix text".
         const reasoningBlocks = segments.locator('> .reasoning-container');
-        // The first one was manually expanded to check for the nested tool call
         await expect(reasoningBlocks.first().locator('.reasoning-content')).not.toHaveClass(/collapsed/);
-        // The second one should still be collapsed
         await expect(reasoningBlocks.nth(1).locator('.reasoning-content')).toHaveClass(/collapsed/);
 
         // uncomment this if you want to visually verify the test in the Electron window
-        // await page.waitForTimeout(10000);
+        await page.waitForTimeout(30000);
     });
 });
