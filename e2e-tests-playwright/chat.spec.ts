@@ -19,7 +19,7 @@ function createTempWorkspace(): string {
 function writeMockConfig(workspace: string) {
     const mockConfig = {
         activeProvider: "testProvider",
-        maxAgentIterations: 10,
+        maxAgentIterations: 10,  // TODO it seems to have no effect in the E2E test, investigate why and fix if possible
         anonymizer: {
             enabled: true,
             words: ["secret"]
