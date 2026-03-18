@@ -64,16 +64,20 @@ function sendDone(res: any) {
 function streamReasoningModel(res: any, messages: any[]) {
     const turnIndex = messages.filter((m: any) => m.role === 'assistant').length;
     const allParts = [
-        // Turn 1: Initial reasoning and two tool requests
+        // Turn 1a: Initial reasoning and nested tool request (list_files)
         [
             { type: 'reasoning', content: 'Thinking step 1...' },
+            { type: 'tool_calls', calls: [
+                { id: 'call_list_nested', name: 'list_files', arguments: '{}' }
+            ]}
+        ],
+        // Turn 1b: Content and other tool requests
+        [
             { type: 'content', content: 'Prefix text.' },
-            {
-                type: 'tool_calls', calls: [
-                    { id: 'call_list', name: 'list_files', arguments: '{"directory":"."}' },
-                    { id: 'call_edit', name: 'edit_file', arguments: '{"path":"test.txt","content":"new content"}' }
-                ]
-            }
+            { type: 'tool_calls', calls: [
+                { id: 'call_list', name: 'list_files', arguments: '{"directory":"."}' },
+                { id: 'call_edit', name: 'edit_file', arguments: '{"path":"test.txt","content":"new content"}' }
+            ]}
         ],
         // Turn 2: Follow-up reasoning after tool executions (including user confirmation)
         [
@@ -83,6 +87,7 @@ function streamReasoningModel(res: any, messages: any[]) {
     ];
 
     const parts = allParts[turnIndex] || [];
+
     let partIndex = 0;
     let charIndex = 0;
 
@@ -400,7 +405,7 @@ test.describe('Chat E2E', () => {
         const assistantMessage = inner.locator('.message.assistant').last();
 
         // We expect initially:
-        // - Reasoning Block 1
+        // - Reasoning Block 1 (Contains Tool Call: read_file)
         // - Content Segment 1 (Prefix)
         // - Tool Call (list_files - automated)
         // - Tool Call (edit_file - status)
@@ -415,6 +420,18 @@ test.describe('Chat E2E', () => {
         await expect(allSegments.nth(0)).toHaveClass(/reasoning-container/);
         await expect(allSegments.nth(0)).toContainText('Thinking step 1...');
 
+        // Verify that it is initially collapsed
+        await expect(allSegments.nth(0).locator('.reasoning-content')).toHaveClass(/collapsed/);
+
+        // Expand reasoning block to check for nested tool call
+        const reasoningHeader = allSegments.nth(0).locator('.reasoning-header');
+        await reasoningHeader.click();
+
+        // Verify nested tool call in reasoning block
+        const nestedToolCall = allSegments.nth(0).locator('.tool-call-container');
+        await expect(nestedToolCall).toBeVisible();
+        await expect(nestedToolCall).toContainText('Listing files in'); 
+
         await expect(allSegments.nth(1)).toHaveClass(/message-content/);
         await expect(allSegments.nth(1)).toHaveText('Prefix text.');
 
@@ -428,6 +445,7 @@ test.describe('Chat E2E', () => {
         await expect(allSegments.nth(4)).toContainText('Allow Suggestio to apply changes to test.txt?');
 
         // 3. Confirm the tool call
+
         const allowBtn = allSegments.nth(4).locator('button.tool-button-primary:has-text("Allow")');
         await allowBtn.click();
 
@@ -445,7 +463,12 @@ test.describe('Chat E2E', () => {
 
         // Both reasoning blocks should be collapsed because content followed each of them
         const reasoningBlocks = segments.locator('> .reasoning-container');
-        await expect(reasoningBlocks.first().locator('.reasoning-content')).toHaveClass(/collapsed/);
+        // The first one was manually expanded to check for the nested tool call
+        await expect(reasoningBlocks.first().locator('.reasoning-content')).not.toHaveClass(/collapsed/);
+        // The second one should still be collapsed
         await expect(reasoningBlocks.nth(1).locator('.reasoning-content')).toHaveClass(/collapsed/);
+
+        // uncomment this if you want to visually verify the test in the Electron window
+        // await page.waitForTimeout(10000);
     });
 });
