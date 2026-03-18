@@ -199,7 +199,7 @@
             "properties": {
                 "suggestio.maxAgentIterations": {
                     "type": "number",
-                    "default": 5,
+                    "default": 30,
                     "description": "Maximum number of iterations the agent can perform for a single request."
                 },
                 "suggestio.logLevel": {

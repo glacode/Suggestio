@@ -19,6 +19,7 @@ function createTempWorkspace(): string {
 function writeMockConfig(workspace: string) {
     const mockConfig = {
         activeProvider: "testProvider",
+        maxAgentIterations: 10,
         anonymizer: {
             enabled: true,
             words: ["secret"]
@@ -71,9 +72,15 @@ function streamReasoningModel(res: any, messages: any[]) {
                 { id: 'call_list_nested', name: 'list_files', arguments: '{}' }
             ]}
         ],
-        // Turn 1b: Content and other tool requests
+        // Turn 1b: more thinking and nested tool request (edit_file - requires confirmation)
         [
             { type: 'reasoning', content: ' more thinking...' },
+            { type: 'tool_calls', calls: [
+                { id: 'call_edit_nested', name: 'edit_file', arguments: '{"path":"nested.txt","content":"nested content"}' }
+            ]}
+        ],
+        // Turn 1c: Content and other tool requests
+        [
             { type: 'content', content: 'Prefix text.' },
             { type: 'tool_calls', calls: [
                 { id: 'call_list', name: 'list_files', arguments: '{"directory":"."}' },
@@ -411,35 +418,27 @@ test.describe('Chat E2E', () => {
         // 2. Verify rendering of interleaved segments (Turn 1)
         const assistantMessage = inner.locator('.message.assistant').last();
 
-        // We expect initially:
-        // - Reasoning Block 1 (Contains Tool Call: read_file)
-        // - Content Segment 1 (Prefix)
-        // - Tool Call (list_files - automated)
-        // - Tool Call (edit_file - status)
-        // - Tool Confirmation (edit_file - requires user action)
+        // Initially we expect:
+        // - Reasoning Block 1 (Contains multiple nested tool calls)
         const segments = assistantMessage.locator('.segments');
         const allSegments = segments.locator('> *');
 
-        // Wait for segments to appear
-        await expect(allSegments).toHaveCount(5, { timeout: 10000 });
+        // Wait for segments to appear (initially only the reasoning container)
+        await expect(allSegments).toHaveCount(1, { timeout: 10000 });
 
-        // Turn 1 verification
+        // Turn 1 verification (Reasoning Block 1)
         await expect(allSegments.nth(0)).toHaveClass(/reasoning-container/);
         await expect(allSegments.nth(0)).toContainText('Thinking step 1...');
 
-        // Verify that it is initially collapsed
-        await expect(allSegments.nth(0).locator('.reasoning-content')).toHaveClass(/collapsed/);
-
-        // Expand reasoning block to check for nested tool call
-        const reasoningHeader = allSegments.nth(0).locator('.reasoning-header');
-        await reasoningHeader.click();
+        // Verify that it is NOT initially collapsed (since no content has followed yet)
+        await expect(allSegments.nth(0).locator('.reasoning-content')).not.toHaveClass(/collapsed/);
 
         // Verify the structure of the reasoning block content
         const reasoningContent = allSegments.nth(0).locator('.reasoning-content');
         const reasoningChildren = reasoningContent.locator('> *');
         
-        // Check for 3 children: Content -> Tool Call -> Content
-        await expect(reasoningChildren).toHaveCount(3);
+        // Check for 5 children: Content -> Tool Call -> Content -> Tool Call -> Tool Confirmation
+        await expect(reasoningChildren).toHaveCount(5);
         
         // 1. Initial reasoning text
         await expect(reasoningChildren.nth(0)).toHaveClass(/message-content/);
@@ -455,6 +454,23 @@ test.describe('Chat E2E', () => {
         await expect(reasoningChildren.nth(2)).toHaveClass(/message-content/);
         await expect(reasoningChildren.nth(2)).toHaveText(' more thinking...');
 
+        // 4. Nested tool call with confirmation
+        const nestedToolCall2 = reasoningChildren.nth(3);
+        await expect(nestedToolCall2).toHaveClass(/tool-call-container/);
+        await expect(nestedToolCall2).toContainText('Editing file nested.txt');
+
+        const nestedConfirmation = reasoningChildren.nth(4);
+        await expect(nestedConfirmation).toHaveClass(/tool-confirmation-container/);
+        await expect(nestedConfirmation).toContainText('Allow Suggestio to apply changes to nested.txt?');
+
+        // 3. Confirm the first nested tool call (triggers Turn 1c)
+        const allowBtnNested = reasoningChildren.nth(4).locator('button.tool-button-primary:has-text("Allow")');
+        await allowBtnNested.click();
+
+        // Wait for subsequent segments (Turn 1c) to appear
+        // Total segments: Reasoning 1, Prefix text, list_files, edit_file status, edit_file confirmation
+        await expect(allSegments).toHaveCount(5, { timeout: 10000 });
+
         await expect(allSegments.nth(1)).toHaveClass(/message-content/);
         await expect(allSegments.nth(1)).toHaveText('Prefix text.');
 
@@ -467,12 +483,14 @@ test.describe('Chat E2E', () => {
         await expect(allSegments.nth(4)).toHaveClass(/tool-confirmation-container/);
         await expect(allSegments.nth(4)).toContainText('Allow Suggestio to apply changes to test.txt?');
 
-        // 3. Confirm the tool call
+        // Manually expand Reasoning 1 again (it was collapsed by "Prefix text")
+        await allSegments.nth(0).locator('.reasoning-header').click();
 
+        // 4. Confirm the second tool call (triggers Turn 2)
         const allowBtn = allSegments.nth(4).locator('button.tool-button-primary:has-text("Allow")');
         await allowBtn.click();
 
-        // 4. Verify rendering of subsequent segments (Turn 2)
+        // 5. Verify rendering of subsequent segments (Turn 2)
         // After clicking Allow, the confirmation container is removed (-1) 
         // and Turn 2 adds Reasoning 2 (which contains nested Tool Call/Confirmation) (+1). 
         // Total: 5 - 1 + 1 = 5.
@@ -519,15 +537,15 @@ test.describe('Chat E2E', () => {
         // Wait, "Suffix text" is in Turn 3.
         // When Turn 3 arrives (Content token), it collapses the active reasoning segment (Block 2).
         
-        await expect(allSegments.nth(5)).toHaveClass(/message-content/);
-        await expect(allSegments.nth(5)).toHaveText('Suffix text.');
+        const suffixText = assistantMessage.locator('.message-content').last();
+        await expect(suffixText).toContainText('Suffix text.', { timeout: 15000 });
 
         // Both reasoning blocks should be collapsed because content followed each of them
         // Block 1: Expanded manually earlier -> stays expanded?
         // Block 2: Collapsed automatically by "Suffix text".
-        const reasoningBlocks = segments.locator('> .reasoning-container');
-        await expect(reasoningBlocks.first().locator('.reasoning-content')).not.toHaveClass(/collapsed/);
-        await expect(reasoningBlocks.nth(1).locator('.reasoning-content')).toHaveClass(/collapsed/);
+        const finalReasoningBlocks = assistantMessage.locator('.segments > .reasoning-container');
+        await expect(finalReasoningBlocks.first().locator('.reasoning-content')).not.toHaveClass(/collapsed/);
+        await expect(finalReasoningBlocks.nth(1).locator('.reasoning-content')).toHaveClass(/collapsed/);
 
         // uncomment this if you want to visually verify the test in the Electron window
         // await page.waitForTimeout(30000);

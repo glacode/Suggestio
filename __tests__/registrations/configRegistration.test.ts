@@ -70,6 +70,6 @@ describe('registerConfigHandler', () => {
     onDidChangeConfigurationListener(mockEvent);
 
     expect(configContainer.config.logLevel).toBe('Info');
-    expect(configContainer.config.maxAgentIterations).toBe(5);
+    expect(configContainer.config.maxAgentIterations).toBe(30);
   });
 });
