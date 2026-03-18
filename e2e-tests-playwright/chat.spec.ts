@@ -73,6 +73,7 @@ function streamReasoningModel(res: any, messages: any[]) {
         ],
         // Turn 1b: Content and other tool requests
         [
+            { type: 'reasoning', content: ' more thinking...' },
             { type: 'content', content: 'Prefix text.' },
             { type: 'tool_calls', calls: [
                 { id: 'call_list', name: 'list_files', arguments: '{"directory":"."}' },
@@ -427,10 +428,26 @@ test.describe('Chat E2E', () => {
         const reasoningHeader = allSegments.nth(0).locator('.reasoning-header');
         await reasoningHeader.click();
 
-        // Verify nested tool call in reasoning block
-        const nestedToolCall = allSegments.nth(0).locator('.tool-call-container');
+        // Verify the structure of the reasoning block content
+        const reasoningContent = allSegments.nth(0).locator('.reasoning-content');
+        const reasoningChildren = reasoningContent.locator('> *');
+        
+        // Check for 3 children: Content -> Tool Call -> Content
+        await expect(reasoningChildren).toHaveCount(3);
+        
+        // 1. Initial reasoning text
+        await expect(reasoningChildren.nth(0)).toHaveClass(/message-content/);
+        await expect(reasoningChildren.nth(0)).toHaveText('Thinking step 1...');
+
+        // 2. Nested tool call
+        const nestedToolCall = reasoningChildren.nth(1);
+        await expect(nestedToolCall).toHaveClass(/tool-call-container/);
         await expect(nestedToolCall).toBeVisible();
         await expect(nestedToolCall).toContainText('Listing files in'); 
+
+        // 3. Subsequent reasoning text
+        await expect(reasoningChildren.nth(2)).toHaveClass(/message-content/);
+        await expect(reasoningChildren.nth(2)).toHaveText(' more thinking...');
 
         await expect(allSegments.nth(1)).toHaveClass(/message-content/);
         await expect(allSegments.nth(1)).toHaveText('Prefix text.');
