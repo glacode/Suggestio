@@ -81,6 +81,7 @@ function streamReasoningModel(res: any, messages: any[]) {
         ],
         // Turn 1c: Content and other tool requests
         [
+            { type: 'reasoning', content: ' thinking after edit...' },
             { type: 'content', content: 'Prefix text.' },
             { type: 'tool_calls', calls: [
                 { id: 'call_list', name: 'list_files', arguments: '{"directory":"."}' },
@@ -467,6 +468,14 @@ test.describe('Chat E2E', () => {
         const allowBtnNested = reasoningChildren.nth(4).locator('button.tool-button-primary:has-text("Allow")');
         await allowBtnNested.click();
 
+        // After clicking:
+        // - The confirmation container (index 4) is removed from the DOM.
+        // - Turn 1c adds ' thinking after edit...' as a new ContentSegment.
+        // So the count should remain 5.
+        await expect(reasoningChildren).toHaveCount(5);
+        await expect(reasoningChildren.nth(4)).toHaveClass(/message-content/);
+        await expect(reasoningChildren.nth(4)).toHaveText(' thinking after edit...');
+
         // Wait for subsequent segments (Turn 1c) to appear
         // Total segments: Reasoning 1, Prefix text, list_files, edit_file status, edit_file confirmation
         await expect(allSegments).toHaveCount(5, { timeout: 10000 });
@@ -548,6 +557,6 @@ test.describe('Chat E2E', () => {
         await expect(finalReasoningBlocks.nth(1).locator('.reasoning-content')).toHaveClass(/collapsed/);
 
         // uncomment this if you want to visually verify the test in the Electron window
-        // await page.waitForTimeout(30000);
+        await page.waitForTimeout(30000);
     });
 });
