@@ -46,9 +46,11 @@ class ConfigProcessor {
 
         this._eventBus.removeAllListeners('completionProviderChanged');
         this._eventBus.on('completionProviderChanged', (providerId: string) => {
+            this.logger?.info(CONFIG_LOGS.COMPLETION_PROVIDER_CHANGED(providerId));
             if (this._config) {
                 this._config.activeInlineCompletionProvider = providerId;
                 this.updateProviders(this._config);
+                this.logger?.info(CONFIG_LOGS.CONFIG_UPDATED_ACTIVE_INLINE_PROVIDER(this._config.activeInlineCompletionProvider));
             }
         });
     }

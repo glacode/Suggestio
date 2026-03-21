@@ -63,9 +63,11 @@ export const CONFIG_MESSAGES = {
 export const CONFIG_LOGS = {
     CONFIGURATION_CHANGED: (level: string, iterations: number) => `Configuration changed. New log level: ${level}, Max iterations: ${iterations}`,
     MODEL_CHANGED: (model: string) => `modelChanged event received for model: ${model}`,
+    COMPLETION_PROVIDER_CHANGED: (provider: string) => `completionProviderChanged event received for provider: ${provider}`,
     INLINE_COMPLETION_TOGGLED: (enabled: boolean) => `inlineCompletionToggled event received: ${enabled}`,
     CONFIG_UPDATED_INLINE: (enabled: boolean) => `config updated. enableInlineCompletion: ${enabled}`,
     CONFIG_UPDATED_ACTIVE_PROVIDER: (provider: string) => `config updated. activeProvider: ${provider}`,
+    CONFIG_UPDATED_ACTIVE_INLINE_PROVIDER: (provider: string) => `config updated. activeInlineCompletionProvider: ${provider}`,
     SECRET_MANAGER_NOT_INITIALIZED: 'SecretManager is not initialized',
     CONFIG_PROCESSOR_NOT_INITIALIZED: 'ConfigProcessor is not initialized',
 } as const;
