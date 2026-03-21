@@ -36,7 +36,13 @@ function createDebounceCallback(
     }
 
     const promptText = buildPromptForInlineCompletion(document, position);
-    eventBus.emit('log', { level: 'info', message: COMPLETION_LOGS.USING_PROVIDER(config.activeProvider) });
+    const providerName = config.activeInlineCompletionProvider || config.activeProvider;
+    const modelName = config.providers[providerName]?.model || "unknown";
+    
+    eventBus.emit('log', { 
+      level: 'info', 
+      message: COMPLETION_LOGS.USING_PROVIDER(`${providerName} (${modelName})`) 
+    });
     eventBus.emit('log', { level: 'debug', message: COMPLETION_LOGS.PROMPT(promptText) });
 
     const prompt = new UserPrompt(promptText);

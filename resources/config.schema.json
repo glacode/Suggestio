@@ -8,6 +8,10 @@
       "type": "string",
       "description": "The ID of the provider to use (must match a key in the 'providers' object)."
     },
+    "activeInlineCompletionProvider": {
+      "type": "string",
+      "description": "The ID of the provider to use for inline completions (optional, defaults to activeProvider)."
+    },
     "enableInlineCompletion": {
       "type": "boolean",
       "default": true,

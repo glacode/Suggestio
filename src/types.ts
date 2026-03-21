@@ -944,10 +944,10 @@ export interface IUserConfirmationPayload {
   toolCallId: string;
   decision: 'allow' | 'deny' | string;
 }
-
 export interface IAppEvents {
   'inlineCompletionToggled': boolean;
   'modelChanged': string;
+  'completionProviderChanged': string;
   'agent:maxIterationsReached': { maxIterations: number };
   'anonymization': IAnonymizationEventPayload;
   'agent:token': ITokenEventPayload;
@@ -1172,6 +1172,7 @@ export interface IProviderConfig {
 
 export interface IConfig {
   activeProvider: string;
+  activeInlineCompletionProvider?: string;
   enableInlineCompletion?: boolean;
   providers: {
     [key: string]: IProviderConfig;

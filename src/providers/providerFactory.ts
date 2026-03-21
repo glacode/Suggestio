@@ -4,19 +4,20 @@ import { GeminiProvider } from "./geminiProvider.js";
 import * as vscode from "vscode";
 import { PROVIDER_MESSAGES } from "../constants/messages.js";
 
-export function getActiveProvider(
+export function getLlmProvider(
   config: IConfig,
   httpClient: IHttpClient,
   eventBus: IEventBus,
-  anonymizer?: IAnonymizer
+  anonymizer?: IAnonymizer,
+  providerId?: string
 ): ILlmProvider | null {
-  const activeProviderName = config.activeProvider;
+  const targetProviderId = providerId ?? config.activeProvider;
   const providerConfig: IProviderConfig | undefined =
-    config.providers?.[activeProviderName];
+    config.providers?.[targetProviderId];
 
   if (!providerConfig) {
     vscode.window.showErrorMessage(
-      PROVIDER_MESSAGES.NOT_FOUND(activeProviderName)
+      PROVIDER_MESSAGES.NOT_FOUND(targetProviderId)
     );
     return null;
   }
@@ -27,7 +28,7 @@ export function getActiveProvider(
   if (!providerConfig.type) {
     if (!providerConfig.endpoint) {
       vscode.window.showErrorMessage(
-        PROVIDER_MESSAGES.MISSING_ENDPOINT(activeProviderName)
+        PROVIDER_MESSAGES.MISSING_ENDPOINT(targetProviderId)
       );
       return null;
     }

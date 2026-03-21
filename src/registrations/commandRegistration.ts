@@ -88,4 +88,31 @@ export function registerCommands(
       eventBus.emit('inlineCompletionToggled', false);
     })
   );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('suggestio.selectInlineCompletionProvider', async () => {
+      const providers = Object.keys(config.providers);
+      if (providers.length === 0) {
+        windowProvider.showErrorMessage("No providers found in configuration.");
+        return;
+      }
+
+      const current = config.activeInlineCompletionProvider || config.activeProvider;
+      const items = providers.map(id => ({
+        label: id,
+        description: config.providers[id].model,
+        detail: config.providers[id].endpoint,
+        picked: id === current
+      }));
+
+      const selected = await vscode.window.showQuickPick(items, {
+        placeHolder: `Select provider for inline completion (Current: ${current})`,
+      });
+
+      if (selected) {
+        eventBus.emit('completionProviderChanged', selected.label);
+        windowProvider.showInformationMessage(`Inline completion provider set to: ${selected.label}`);
+      }
+    })
+  );
 }

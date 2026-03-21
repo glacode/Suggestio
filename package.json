@@ -163,6 +163,11 @@
                 "command": "suggestio.enableInlineCompletion",
                 "title": "Suggestio: Enable Inline Completion",
                 "icon": "$(eye-closed)"
+            },
+            {
+                "command": "suggestio.selectInlineCompletionProvider",
+                "title": "Suggestio: Select Inline Completion Provider",
+                "icon": "$(gear)"
             }
         ],
         "menus": {
@@ -173,14 +178,19 @@
                     "group": "navigation@1"
                 },
                 {
+                    "command": "suggestio.selectInlineCompletionProvider",
+                    "when": "view == suggestio.chat.view",
+                    "group": "navigation@2"
+                },
+                {
                     "command": "suggestio.disableInlineCompletion",
                     "when": "view == suggestio.chat.view && suggestio.inlineCompletionEnabled",
-                    "group": "navigation@2"
+                    "group": "navigation@3"
                 },
                 {
                     "command": "suggestio.enableInlineCompletion",
                     "when": "view == suggestio.chat.view && !suggestio.inlineCompletionEnabled",
-                    "group": "navigation@2"
+                    "group": "navigation@3"
                 }
             ]
         },

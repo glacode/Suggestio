@@ -3,7 +3,7 @@ import * as vscode from "vscode";
 import { PROVIDER_MESSAGES } from "../../src/constants/messages.js";
 import { createMockEventBus, createDefaultConfig } from "../testUtils.js";
 
-// Mock providers BEFORE importing getActiveProvider
+// Mock providers BEFORE importing getLlmProvider
 const mockOpenAICompatibleProvider = jest.fn();
 const mockGeminiProvider = jest.fn();
 
@@ -16,7 +16,7 @@ jest.unstable_mockModule("../../src/providers/geminiProvider.js", () => ({
 }));
 
 // Now import the module under test
-const { getActiveProvider } = await import("../../src/providers/providerFactory.js");
+const { getLlmProvider } = await import("../../src/providers/providerFactory.js");
 const { OpenAICompatibleProvider } = await import("../../src/providers/openAICompatibleProvider.js");
 const { GeminiProvider } = await import("../../src/providers/geminiProvider.js");
 
@@ -43,7 +43,7 @@ describe("providerFactory", () => {
     });
     const showErrorMessageSpy = jest.spyOn(vscode.window, "showErrorMessage");
 
-    const provider = getActiveProvider(config, mockHttpClient, mockEventBus);
+    const provider = getLlmProvider(config, mockHttpClient, mockEventBus);
 
     expect(provider).toBeNull();
     expect(showErrorMessageSpy).toHaveBeenCalledWith(PROVIDER_MESSAGES.NOT_FOUND("non-existent"));
@@ -61,7 +61,7 @@ describe("providerFactory", () => {
         }
     });
 
-    const provider = getActiveProvider(config, mockHttpClient, mockEventBus);
+    const provider = getLlmProvider(config, mockHttpClient, mockEventBus);
 
     expect(provider).toBeDefined();
     expect(OpenAICompatibleProvider).toHaveBeenCalledWith(expect.objectContaining({
@@ -84,7 +84,7 @@ describe("providerFactory", () => {
           }
       });
 
-      getActiveProvider(config, mockHttpClient, mockEventBus);
+      getLlmProvider(config, mockHttpClient, mockEventBus);
 
       expect(OpenAICompatibleProvider).toHaveBeenCalledWith(expect.objectContaining({
           apiKey: "resolved-key",
@@ -103,7 +103,7 @@ describe("providerFactory", () => {
     });
     const showErrorMessageSpy = jest.spyOn(vscode.window, "showErrorMessage");
 
-    const provider = getActiveProvider(config, mockHttpClient, mockEventBus);
+    const provider = getLlmProvider(config, mockHttpClient, mockEventBus);
 
     expect(provider).toBeNull();
     expect(showErrorMessageSpy).toHaveBeenCalledWith(PROVIDER_MESSAGES.MISSING_ENDPOINT("openai"));
@@ -121,7 +121,7 @@ describe("providerFactory", () => {
         }
     });
 
-    getActiveProvider(config, mockHttpClient, mockEventBus, mockAnonymizer);
+    getLlmProvider(config, mockHttpClient, mockEventBus, mockAnonymizer);
 
     expect(OpenAICompatibleProvider).toHaveBeenCalledWith(expect.objectContaining({
         anonymizer: mockAnonymizer,
@@ -140,7 +140,7 @@ describe("providerFactory", () => {
         }
     });
 
-    const provider = getActiveProvider(config, mockHttpClient, mockEventBus);
+    const provider = getLlmProvider(config, mockHttpClient, mockEventBus);
 
     expect(provider).toBeDefined();
     expect(GeminiProvider).toHaveBeenCalledWith("gemini-key", mockEventBus, "gemini-pro");
@@ -165,7 +165,7 @@ describe("providerFactory", () => {
 
     const showErrorMessageSpy = jest.spyOn(vscode.window, "showErrorMessage");
 
-    const provider = getActiveProvider(config, mockHttpClient, mockEventBus);
+    const provider = getLlmProvider(config, mockHttpClient, mockEventBus);
 
     expect(provider).toBeNull();
     expect(showErrorMessageSpy).toHaveBeenCalledWith(PROVIDER_MESSAGES.UNKNOWN_TYPE("invalid"));

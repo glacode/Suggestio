@@ -1,6 +1,6 @@
 import { getAnonymizer } from '../anonymizer/anonymizer.js';
-import { getActiveProvider } from '../providers/providerFactory.js';
-import { IConfigContainer, IConfig, IProviderConfig, IHttpClient } from '../types.js';
+import { getLlmProvider } from '../providers/providerFactory.js';
+import { IConfig, IConfigContainer, IProviderConfig, IHttpClient } from '../types.js';
 import { IEventBus } from '../utils/eventBus.js';
 import { createEventLogger } from '../log/eventLogger.js';
 import { CONFIG_LOGS } from '../constants/messages.js';
@@ -41,6 +41,14 @@ class ConfigProcessor {
             if (this._config) {
                 this._config.enableInlineCompletion = enabled;
                 this.logger?.info(CONFIG_LOGS.CONFIG_UPDATED_INLINE(this._config.enableInlineCompletion));
+            }
+        });
+
+        this._eventBus.removeAllListeners('completionProviderChanged');
+        this._eventBus.on('completionProviderChanged', (providerId: string) => {
+            if (this._config) {
+                this._config.activeInlineCompletionProvider = providerId;
+                this.updateProviders(this._config);
             }
         });
     }
@@ -99,21 +107,26 @@ class ConfigProcessor {
             throw new Error(CONFIG_LOGS.CONFIG_PROCESSOR_NOT_INITIALIZED);
         }
 
-        const { activeProvider, providers } = config;
+        const { activeProvider, activeInlineCompletionProvider, providers } = config;
 
+        // Resolve API key for active (Chat) provider
         if (activeProvider && providers?.[activeProvider]) {
             await this.resolveAPIKeyInMemory(providers[activeProvider]);
+        }
+
+        // Resolve API key for Completion provider if it's different
+        const targetInlineProviderId = activeInlineCompletionProvider || activeProvider;
+        if (targetInlineProviderId && targetInlineProviderId !== activeProvider && providers?.[targetInlineProviderId]) {
+            await this.resolveAPIKeyInMemory(providers[targetInlineProviderId]);
         }
 
         if (!config.anonymizerInstance) {
             config.anonymizerInstance = getAnonymizer(config, this._eventBus);
         }
 
-        // `getActiveProvider` can return null; `inlineCompletionProvider` expects
-        // `llmProvider | undefined`, so normalize null -> undefined to satisfy
-        // the TypeScript type.
-        config.llmProviderForInlineCompletion = getActiveProvider(config, this._httpClient, this._eventBus, config.anonymizerInstance) ?? undefined;
-        config.llmProviderForChat = getActiveProvider(config, this._httpClient, this._eventBus, config.anonymizerInstance) ?? undefined;
+        // Initialize providers
+        config.llmProviderForChat = getLlmProvider(config, this._httpClient, this._eventBus, config.anonymizerInstance, activeProvider) ?? undefined;
+        config.llmProviderForInlineCompletion = getLlmProvider(config, this._httpClient, this._eventBus, config.anonymizerInstance, targetInlineProviderId) ?? undefined;
     }
 
     private async updateActiveProvider(modelName: string) {

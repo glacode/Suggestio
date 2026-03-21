@@ -557,6 +557,6 @@ test.describe('Chat E2E', () => {
         await expect(finalReasoningBlocks.nth(1).locator('.reasoning-content')).toHaveClass(/collapsed/);
 
         // uncomment this if you want to visually verify the test in the Electron window
-        await page.waitForTimeout(30000);
+        // await page.waitForTimeout(30000);
     });
 });
