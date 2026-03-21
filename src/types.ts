@@ -447,16 +447,16 @@ export interface IChatHistoryManager {
  */
 export interface ILlmProviderAccessor {
   /**
-   * Returns a list of available model identifiers.
-   * @returns Array of model ID strings.
+   * Returns a list of available profile identifiers.
+   * @returns Array of profile ID strings.
    */
-  getModels(): string[];
+  getProfiles(): string[];
 
   /**
-   * Returns the identifier of the currently active/selected model.
-   * @returns The active model ID string.
+   * Returns the identifier of the currently active/selected profile.
+   * @returns The active profile ID string.
    */
-  getActiveModel(): string;
+  getActiveProfile(): string;
 }
 
 /**
@@ -946,8 +946,8 @@ export interface IUserConfirmationPayload {
 }
 export interface IAppEvents {
   'inlineCompletionToggled': boolean;
-  'modelChanged': string;
-  'completionProviderChanged': string;
+  'chatProfileChanged': string;
+  'completionProfileChanged': string;
   'agent:maxIterationsReached': { maxIterations: number };
   'anonymization': IAnonymizationEventPayload;
   'agent:token': ITokenEventPayload;
@@ -1158,10 +1158,10 @@ export interface ILlmProvider {
 }
 
 // --------------------------------------------------------------------------------
-//  Config Types
+//  LLM Profile Types
 // --------------------------------------------------------------------------------
 
-export interface IProviderConfig {
+export interface IProfileConfig {
   endpoint?: string; // optional because Gemini doesn’t use it
   model: string;
   apiKey: string;             // raw value from config.json
@@ -1171,11 +1171,11 @@ export interface IProviderConfig {
 }
 
 export interface IConfig {
-  activeProvider: string;
-  activeInlineCompletionProvider?: string;
+  activeChatProfile: string;
+  activeCompletionProfile?: string;
   enableInlineCompletion?: boolean;
-  providers: {
-    [key: string]: IProviderConfig;
+  profiles: {
+    [key: string]: IProfileConfig;
   };
   anonymizer: {
     enabled: boolean;

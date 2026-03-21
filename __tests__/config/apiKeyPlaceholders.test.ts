@@ -3,10 +3,10 @@ import { extractApiKeyPlaceholders } from "../../src/config/apiKeyPlaceholders.j
 import { createDefaultConfig } from "../testUtils.js";
 
 describe("extractApiKeyPlaceholders", () => {
-  it("should extract placeholders from providers with ${VARNAME}", () => {
+  it("should extract placeholders from profiles with ${VARNAME}", () => {
     const config: IConfig = createDefaultConfig({
-      activeProvider: "openrouter",
-      providers: {
+      activeChatProfile: "openrouter",
+      profiles: {
         openrouter: {
           endpoint: "https://api.openrouter.ai",
           model: "gpt-4",
@@ -26,8 +26,8 @@ describe("extractApiKeyPlaceholders", () => {
 
   it("should ignore hardcoded API keys", () => {
     const config: IConfig = createDefaultConfig({
-      activeProvider: "hardcoded",
-      providers: {
+      activeChatProfile: "hardcoded",
+      profiles: {
         hardcoded: {
           endpoint: "https://local",
           model: "test",
@@ -40,10 +40,10 @@ describe("extractApiKeyPlaceholders", () => {
     expect(result).toEqual([]);
   });
 
-  it("should return empty array if no providers are present", () => {
+  it("should return empty array if no profiles are present", () => {
     const config: IConfig = createDefaultConfig({
-      activeProvider: "",
-      providers: {}
+      activeChatProfile: "",
+      profiles: {}
     });
 
     const result = extractApiKeyPlaceholders(config);
@@ -52,8 +52,8 @@ describe("extractApiKeyPlaceholders", () => {
 
   it("should handle duplicate placeholders gracefully", () => {
     const config: IConfig = createDefaultConfig({
-      activeProvider: "dup",
-      providers: {
+      activeChatProfile: "dup",
+      profiles: {
         a: {
           endpoint: "x",
           model: "y",

@@ -1,4 +1,4 @@
-import { IConfig, IProviderConfig, ILlmProvider, IAnonymizer, IHttpClient, IEventBus } from "../types.js";
+import { IConfig, IProfileConfig, ILlmProvider, IAnonymizer, IHttpClient, IEventBus } from "../types.js";
 import { OpenAICompatibleProvider } from "./openAICompatibleProvider.js";
 import { GeminiProvider } from "./geminiProvider.js";
 import * as vscode from "vscode";
@@ -9,49 +9,49 @@ export function getLlmProvider(
   httpClient: IHttpClient,
   eventBus: IEventBus,
   anonymizer?: IAnonymizer,
-  providerId?: string
+  profileId?: string
 ): ILlmProvider | null {
-  const targetProviderId = providerId ?? config.activeProvider;
-  const providerConfig: IProviderConfig | undefined =
-    config.providers?.[targetProviderId];
+  const targetProfileId = profileId ?? config.activeChatProfile;
+  const profileConfig: IProfileConfig | undefined =
+    config.profiles?.[targetProfileId];
 
-  if (!providerConfig) {
+  if (!profileConfig) {
     vscode.window.showErrorMessage(
-      PROVIDER_MESSAGES.NOT_FOUND(targetProviderId)
+      PROVIDER_MESSAGES.NOT_FOUND(targetProfileId)
     );
     return null;
   }
 
-  const apiKey = providerConfig.resolvedApiKey ?? providerConfig.apiKey;
+  const apiKey = profileConfig.resolvedApiKey ?? profileConfig.apiKey;
 
   // If type is undefined, treat it as OpenAI-compatible
-  if (!providerConfig.type) {
-    if (!providerConfig.endpoint) {
+  if (!profileConfig.type) {
+    if (!profileConfig.endpoint) {
       vscode.window.showErrorMessage(
-        PROVIDER_MESSAGES.MISSING_ENDPOINT(targetProviderId)
+        PROVIDER_MESSAGES.MISSING_ENDPOINT(targetProfileId)
       );
       return null;
     }
     return new OpenAICompatibleProvider({
       httpClient,
-      endpoint: providerConfig.endpoint,
+      endpoint: profileConfig.endpoint,
       apiKey,
-      model: providerConfig.model,
+      model: profileConfig.model,
       eventBus,
       anonymizer,
     });
   }
 
   // Otherwise switch on type
-  switch (providerConfig.type) {
+  switch (profileConfig.type) {
     //TODO remove this case after confirming Gemini usage via OpenAI compatible API works fine
     /** This case should be deprecated, because now even Gemini supports an OpenAi compatible API */
     case "gemini":
-      return new GeminiProvider(apiKey, eventBus, providerConfig.model);
+      return new GeminiProvider(apiKey, eventBus, profileConfig.model);
 
     default:
       vscode.window.showErrorMessage(
-        PROVIDER_MESSAGES.UNKNOWN_TYPE(providerConfig.type)
+        PROVIDER_MESSAGES.UNKNOWN_TYPE(profileConfig.type)
       );
       return null;
   }

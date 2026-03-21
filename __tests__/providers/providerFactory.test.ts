@@ -3,7 +3,7 @@ import * as vscode from "vscode";
 import { PROVIDER_MESSAGES } from "../../src/constants/messages.js";
 import { createMockEventBus, createDefaultConfig } from "../testUtils.js";
 
-// Mock providers BEFORE importing getLlmProvider
+// Mock profiles BEFORE importing getLlmProvider
 const mockOpenAICompatibleProvider = jest.fn();
 const mockGeminiProvider = jest.fn();
 
@@ -38,8 +38,8 @@ describe("providerFactory", () => {
 
   it("should return null and show error if provider config is missing", () => {
     const config = createDefaultConfig({
-        activeProvider: "non-existent",
-        providers: {}
+        activeChatProfile: "non-existent",
+        profiles: {}
     });
     const showErrorMessageSpy = jest.spyOn(vscode.window, "showErrorMessage");
 
@@ -51,8 +51,8 @@ describe("providerFactory", () => {
 
   it("should return OpenAICompatibleProvider if type is undefined and endpoint is present", () => {
     const config = createDefaultConfig({
-        activeProvider: "openai",
-        providers: {
+        activeChatProfile: "openai",
+        profiles: {
             openai: {
                 endpoint: "http://api.openai.com",
                 apiKey: "test-key",
@@ -73,8 +73,8 @@ describe("providerFactory", () => {
 
   it("should prefer resolvedApiKey over apiKey", () => {
       const config = createDefaultConfig({
-          activeProvider: "openai",
-          providers: {
+          activeChatProfile: "openai",
+          profiles: {
               openai: {
                   endpoint: "http://api.openai.com",
                   apiKey: "old-key",
@@ -93,8 +93,8 @@ describe("providerFactory", () => {
 
   it("should return null and show error if OpenAI provider is missing endpoint", () => {
     const config = createDefaultConfig({
-        activeProvider: "openai",
-        providers: {
+        activeChatProfile: "openai",
+        profiles: {
             openai: {
                 apiKey: "test-key",
                 model: "gpt-4"
@@ -111,8 +111,8 @@ describe("providerFactory", () => {
 
   it("should pass anonymizer to OpenAICompatibleProvider", () => {
     const config = createDefaultConfig({
-        activeProvider: "openai",
-        providers: {
+        activeChatProfile: "openai",
+        profiles: {
             openai: {
                 endpoint: "http://api.openai.com",
                 apiKey: "test-key",
@@ -130,8 +130,8 @@ describe("providerFactory", () => {
 
   it("should return GeminiProvider if type is 'gemini'", () => {
     const config = createDefaultConfig({
-        activeProvider: "gemini",
-        providers: {
+        activeChatProfile: "gemini",
+        profiles: {
             gemini: {
                 type: "gemini",
                 apiKey: "gemini-key",
@@ -149,8 +149,8 @@ describe("providerFactory", () => {
   it("should return null and show error if type is unknown", () => {
     // Force an unknown type by manipulating the config object without type assertion
     const config = createDefaultConfig({
-        activeProvider: "unknown",
-        providers: {
+        activeChatProfile: "unknown",
+        profiles: {
             unknown: {
                 endpoint: "http://endpoint.com",
                 apiKey: "test-key",
@@ -159,7 +159,7 @@ describe("providerFactory", () => {
         }
     });
     
-    const providerConfig = config.providers!["unknown"];
+    const providerConfig = config.profiles!["unknown"];
     // Set type to something invalid
     Object.defineProperty(providerConfig, 'type', { value: 'invalid' });
 

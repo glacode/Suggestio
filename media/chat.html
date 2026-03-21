@@ -161,7 +161,7 @@
                 color: var(--vscode-list-hoverForeground);
             }
 
-            .chat-model-label {
+            .chat-profile-label {
                 margin-right: 2px;
                 white-space: nowrap;
             }
@@ -475,7 +475,7 @@
                         <div id="modelSelector">
                             <div class="dropdown-label">
                                 <a class="action-label" role="button" aria-haspopup="true" aria-expanded="false">
-                                    <span class="chat-model-label"></span>
+                                    <span class="chat-profile-label"></span>
                                     <svg class="chevron-down" width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
                                         <path fill="currentColor" d="M7.976 10.072l4.357-4.357.62.618L8.284 11h-.618L3 6.333l.619-.618 4.357 4.357z"/>
                                     </svg>
@@ -491,8 +491,8 @@
         </div>
         
         <script>
-            const models = {{models}};
-            const activeModel = '{{activeModel}}';
+            const profiles = {{profiles}};
+            const activeProfile = '{{activeProfile}}';
         </script>
         <script src="{{scriptUri}}"></script>
         <script>
@@ -791,21 +791,21 @@
                     const modelSelector = document.getElementById('modelSelector');
                     const dropdownLabel = modelSelector.querySelector('.dropdown-label');
                     const dropdownContent = modelSelector.querySelector('.dropdown-content');
-                    const chatModelLabel = modelSelector.querySelector('.chat-model-label');
+                    const chatProfileLabel = modelSelector.querySelector('.chat-profile-label');
                     const sendIcon = document.querySelector('.send-icon');
 
                     sendIcon.innerHTML = SEND_ICON_HTML;
-                    chatModelLabel.textContent = activeModel;
+                    chatProfileLabel.textContent = activeProfile;
 
-                    models.forEach(model => {
+                    profiles.forEach(profileId => {
                         const option = document.createElement('a');
                         option.href = '#';
-                        option.textContent = model;
+                        option.textContent = profileId;
                         option.addEventListener('click', (e) => {
                             e.preventDefault();
-                            chatModelLabel.textContent = model;
+                            chatProfileLabel.textContent = profileId;
                             dropdownContent.style.display = 'none';
-                            vscode.postMessage({ command: 'modelChanged', model });
+                            vscode.postMessage({ command: 'modelChanged', model: profileId });
                         });
                         dropdownContent.appendChild(option);
                     });

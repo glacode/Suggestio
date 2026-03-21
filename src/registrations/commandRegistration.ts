@@ -90,28 +90,28 @@ export function registerCommands(
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('suggestio.selectInlineCompletionProvider', async () => {
-      const providers = Object.keys(config.providers);
-      if (providers.length === 0) {
-        windowProvider.showErrorMessage("No providers found in configuration.");
+    vscode.commands.registerCommand('suggestio.selectCompletionProfile', async () => {
+      const profiles = Object.keys(config.profiles);
+      if (profiles.length === 0) {
+        windowProvider.showErrorMessage("No profiles found in configuration.");
         return;
       }
 
-      const current = config.activeInlineCompletionProvider || config.activeProvider;
-      const items = providers.map(id => ({
+      const current = config.activeCompletionProfile || config.activeChatProfile;
+      const items = profiles.map(id => ({
         label: id,
-        description: config.providers[id].model,
-        detail: config.providers[id].endpoint,
+        description: config.profiles[id].model,
+        detail: config.profiles[id].endpoint,
         picked: id === current
       }));
 
       const selected = await vscode.window.showQuickPick(items, {
-        placeHolder: `Select provider for inline completion (Current: ${current})`,
+        placeHolder: `Select profile for inline completion (Current: ${current})`,
       });
 
       if (selected) {
-        eventBus.emit('completionProviderChanged', selected.label);
-        windowProvider.showInformationMessage(`Inline completion provider set to: ${selected.label}`);
+        eventBus.emit('completionProfileChanged', selected.label);
+        windowProvider.showInformationMessage(`Inline completion profile set to: ${selected.label}`);
       }
     })
   );

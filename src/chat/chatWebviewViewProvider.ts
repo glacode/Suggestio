@@ -34,7 +34,7 @@ import { CHAT_MESSAGES, AGENT_LOGS } from '../constants/messages.js';
 // It uses dependency injection to provide all necessary components.
 interface IChatWebviewViewProviderArgs {
     extensionContext: IExtensionContextMinimal; // The VS Code extension context, vital for managing extension resources.
-    providerAccessor: ILlmProviderAccessor; // An accessor to retrieve available and active LLM models.
+    profileAccessor: ILlmProviderAccessor; // An accessor to retrieve available and active LLM profiles.
     chatAgent: IChatAgent; // The agent responsible for interacting with the LLM.
     chatHistoryManager: IChatHistoryManager; // The manager responsible for chat history operations.
     buildContext: IContextBuilder; // A builder to create contextual information for the AI prompt.
@@ -67,7 +67,7 @@ export class ChatWebviewViewProvider {
     private readonly _chatHistoryManager: IChatHistoryManager; // Stores the chat history manager.
     private readonly _buildContext: IContextBuilder; // Stores the context builder instance.
     private readonly _extensionContext: IExtensionContextMinimal; // Stores the extension context.
-    private readonly _providerAccessor: ILlmProviderAccessor; // Stores the model provider accessor.
+    private readonly _profileAccessor: ILlmProviderAccessor; // Stores the profile accessor.
     private readonly _getChatWebviewContent: GetChatWebviewContent; // Stores the webview content generator.
     private readonly _vscodeApi: IVscodeApiLocal; // Stores the VS Code API for internal use.
     private readonly _fileReader: IFileContentReader;
@@ -85,9 +85,9 @@ export class ChatWebviewViewProvider {
      * The constructor initializes the `ChatWebviewViewProvider` with its dependencies.
      * These dependencies are typically passed from `extension.ts` during activation.
      */
-    constructor({ extensionContext, providerAccessor, chatAgent, chatHistoryManager, buildContext, getChatWebviewContent, vscodeApi, fileReader, eventBus, diffManager, anonymizer }: IChatWebviewViewProviderArgs) {
+    constructor({ extensionContext, profileAccessor, chatAgent, chatHistoryManager, buildContext, getChatWebviewContent, vscodeApi, fileReader, eventBus, diffManager, anonymizer }: IChatWebviewViewProviderArgs) {
         this._extensionContext = extensionContext;
-        this._providerAccessor = providerAccessor;
+        this._profileAccessor = profileAccessor;
         this._chatAgent = chatAgent;
         this._chatHistoryManager = chatHistoryManager;
         this._buildContext = buildContext;
@@ -207,9 +207,9 @@ export class ChatWebviewViewProvider {
             this._vscodeApi.Uri.joinPath(this._extensionContext.extensionUri, 'media', 'highlight.css')
         );
 
-        // Retrieve the list of available models and the currently active model from the provider accessor.
-        const models = this._providerAccessor.getModels();
-        const activeModel = this._providerAccessor.getActiveModel();
+        // Retrieve the list of available profiles and the currently active profile from the accessor.
+        const profiles = this._profileAccessor.getProfiles();
+        const activeProfile = this._profileAccessor.getActiveProfile();
 
         // Generate the full HTML content for the webview using the `_getChatWebviewContent` function.
         // This HTML will include references to the `scriptUri` and `highlightCssUri` generated above.
@@ -219,8 +219,8 @@ export class ChatWebviewViewProvider {
             extensionUri: this._extensionContext.extensionUri,
             scriptUri,
             highlightCssUri,
-            models,
-            activeModel,
+            models: profiles,
+            activeModel: activeProfile,
             vscodeApi: this._vscodeApi,
             fileReader: this._fileReader
         });
@@ -314,10 +314,10 @@ export class ChatWebviewViewProvider {
                     await this._diffManager.showDiff(diffData.filePath, diffData.oldContent, diffData.newContent);
                 }
             } else if (message.command === 'modelChanged') {
-                // Handle a message indicating that the active model has changed in the webview.
-                // Emit a 'modelChanged' event on the global event bus, allowing other parts
+                // Handle a message indicating that the active profile has changed in the webview.
+                // Emit a 'chatProfileChanged' event on the global event bus, allowing other parts
                 // of the extension to react to this change.
-                this._eventBus.emit('modelChanged', message.model);
+                this._eventBus.emit('chatProfileChanged', message.model);
             } else if (message.command === 'clearHistory') {
                 // Handle a message requesting to clear the chat history.
                 // Call the `clearHistory` method on the `chatHistoryManager`.

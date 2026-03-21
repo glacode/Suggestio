@@ -21,8 +21,8 @@ export const getChatWebviewContent: GetChatWebviewContent = (args: IChatWebviewC
     htmlContent = htmlContent
         .replace('{{scriptUri}}', args.scriptUri.toString())
         .replace('{{highlightCssUri}}', args.highlightCssUri.toString())
-        .replace('{{models}}', JSON.stringify(args.models))
-        .replace('{{activeModel}}', args.activeModel);
+        .replace('{{profiles}}', JSON.stringify(args.models))
+        .replace('{{activeProfile}}', args.activeModel);
 
     return htmlContent;
 };

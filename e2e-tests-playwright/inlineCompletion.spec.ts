@@ -25,11 +25,13 @@ function createTempWorkspace(): string {
 
 function writeMockConfig(workspace: string) {
     const mockConfig = {
-        activeProvider: "testProvider",
-        providers: {
+        activeChatProfile: "testProvider",
+        activeCompletionProfile: "testProvider",
+        profiles: {
             testProvider: {
                 endpoint: "http://localhost:3000/v1/completions",
                 model: "test-model",
+                apiKey: "unused"
             }
         },
         anonymizer: {

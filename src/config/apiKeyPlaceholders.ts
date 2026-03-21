@@ -1,7 +1,7 @@
 import { IConfig } from "../types.js";
 
 /**
- * Scans all providers in the config and collects API key placeholders.
+ * Scans all profiles in the config and collects API key placeholders.
  * A placeholder is defined as a string in the form "${VARNAME}".
  * 
  * Example:
@@ -12,8 +12,8 @@ import { IConfig } from "../types.js";
 export function extractApiKeyPlaceholders(config: IConfig): string[] {
   const placeholders = new Set<string>();
 
-  for (const providerKey of Object.keys(config.providers)) {
-    const apiKeyValue = config.providers[providerKey].apiKey;
+  for (const profileKey of Object.keys(config.profiles)) {
+    const apiKeyValue = config.profiles[profileKey].apiKey;
 
     const match = typeof apiKeyValue === "string"
       ? apiKeyValue.match(/^\$\{(\w+)\}$/)

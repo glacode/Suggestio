@@ -20,8 +20,8 @@ describe('processConfig', () => {
 
   it('resolves a plain string API key', async () => {
     const rawJson = JSON.stringify({
-      activeProvider: 'provider1',
-      providers: {
+      activeChatProfile: 'provider1',
+      profiles: {
         provider1: { endpoint: 'https://api.example.com', model: 'gpt-4', apiKey: 'my-key' }
       },
       anonymizer: { enabled: false, words: [] }
@@ -30,7 +30,7 @@ describe('processConfig', () => {
 
     const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, mockSecretManager, eventBus, httpClient);
 
-    const provider = configContainer.config.providers.provider1;
+    const provider = configContainer.config.profiles.provider1;
     expect(provider.resolvedApiKey).toBe('my-key');
     expect(provider.apiKeyPlaceholder).toBeUndefined();
   });
@@ -38,8 +38,8 @@ describe('processConfig', () => {
   it('resolves a placeholder from environment variable', async () => {
     process.env.TEST_KEY = 'env-secret';
     const rawJson = JSON.stringify({
-      activeProvider: 'provider1',
-      providers: {
+      activeChatProfile: 'provider1',
+      profiles: {
         provider1: { endpoint: 'https://api.example.com', model: 'gpt-4', apiKey: '${TEST_KEY}' }
       },
       anonymizer: { enabled: false, words: [] }
@@ -48,15 +48,15 @@ describe('processConfig', () => {
 
     const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, mockSecretManager, eventBus, httpClient);
 
-    const provider = configContainer.config.providers.provider1;
+    const provider = configContainer.config.profiles.provider1;
     expect(provider.resolvedApiKey).toBe('env-secret');
     expect(provider.apiKeyPlaceholder).toBe('TEST_KEY');
   });
 
   it('resolves a placeholder using secret manager if env var not set', async () => {
     const rawJson = JSON.stringify({
-      activeProvider: 'provider1',
-      providers: {
+      activeChatProfile: 'provider1',
+      profiles: {
         provider1: { endpoint: 'https://api.example.com', model: 'gpt-4', apiKey: '${TEST_KEY}' }
       },
       anonymizer: { enabled: false, words: [] }
@@ -65,7 +65,7 @@ describe('processConfig', () => {
 
     const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, mockSecretManager, eventBus, httpClient);
 
-    const provider = configContainer.config.providers.provider1;
+    const provider = configContainer.config.profiles.provider1;
     expect(provider.resolvedApiKey).toBe('secret-for-TEST_KEY');
     expect(provider.apiKeyPlaceholder).toBe('TEST_KEY');
     expect(mockSecretManager.getOrRequestAPIKey).toHaveBeenCalledWith('TEST_KEY');
@@ -73,8 +73,8 @@ describe('processConfig', () => {
 
   it('resolves an empty apiKey using secret manager', async () => {
     const rawJson = JSON.stringify({
-      activeProvider: 'provider1',
-      providers: {
+      activeChatProfile: 'provider1',
+      profiles: {
         provider1: { endpoint: 'https://api.example.com', model: 'gpt-4', apiKey: '' }
       },
       anonymizer: { enabled: false, words: [] }
@@ -83,7 +83,7 @@ describe('processConfig', () => {
 
     const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, mockSecretManager, eventBus, httpClient);
 
-    const provider = configContainer.config.providers.provider1;
+    const provider = configContainer.config.profiles.provider1;
     expect(provider.resolvedApiKey).toBe('');
     expect(provider.apiKeyPlaceholder).toBeUndefined();
     expect(mockSecretManager.getOrRequestAPIKey).not.toHaveBeenCalled();

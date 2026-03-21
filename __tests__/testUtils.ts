@@ -14,7 +14,7 @@ import {
     IConfig,
     IChatHistoryManager,
     ChatHistory,
-    IProviderConfig,
+    IProfileConfig,
     IWindowProvider,
     IWorkspaceProvider,
     IFileContentReader,
@@ -220,16 +220,16 @@ export const createMockConfigProvider = (): jest.Mocked<IConfigProvider> => ({
     onDidChangeConfiguration: jest.fn(),
 });
 
-export const createMockProviderConfig = (overrides: Partial<IProviderConfig> = {}): IProviderConfig => ({
+export const createMockProfileConfig = (overrides: Partial<IProfileConfig> = {}): IProfileConfig => ({
     model: "fake-model",
     apiKey: "fake-key",
     ...overrides
 });
 
 export const createDefaultConfig = (overrides: Partial<IConfig> = {}): IConfig => ({
-    activeProvider: 'test',
+    activeChatProfile: 'test',
     enableInlineCompletion: true,
-    providers: {},
+    profiles: {},
     anonymizer: { enabled: false, words: [] },
     logLevel: CONFIG_DEFAULTS.LOG_LEVEL,
     maxAgentIterations: CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS,

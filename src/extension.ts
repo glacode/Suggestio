@@ -192,13 +192,13 @@ export async function activate(context: vscode.ExtensionContext) {
     eventBus
   });
   const providerAccessor = {
-    getModels: () => Object.values(configContainer.config.providers).map(p => p.model),
-    getActiveModel: () => configContainer.config.providers[configContainer.config.activeProvider].model,
+    getProfiles: () => Object.keys(configContainer.config.profiles),
+    getActiveProfile: () => configContainer.config.activeChatProfile,
   };
 
   const chatWebviewViewProvider = new ChatWebviewViewProvider({
     extensionContext: context,
-    providerAccessor,
+    profileAccessor: providerAccessor,
     chatAgent: agent,
     chatHistoryManager: chatHistoryManager,
     buildContext: new ContextBuilder(vscode.window, ignoreManager, workspaceProvider, pathResolver),

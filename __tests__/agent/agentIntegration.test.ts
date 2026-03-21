@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
 import { IChatHistoryManager, IChatMessage, IPrompt, ChatHistory, IEventBus } from "../../src/types.js";
-import { createDefaultConfig, createMockProviderConfig, FakeProvider, createMockEventBus } from "../testUtils.js";
+import { createDefaultConfig, createMockProfileConfig, FakeProvider, createMockEventBus } from "../testUtils.js";
 
 describe("Agent (Integration) simple tests", () => {
     let mockChatHistoryManager: IChatHistoryManager;
@@ -29,9 +29,9 @@ describe("Agent (Integration) simple tests", () => {
     it("fetches stream chat response on success", async () => {
         const agent = new Agent({
             config: createDefaultConfig({
-                activeProvider: "FAKE",
+                activeChatProfile: "FAKE",
                 llmProviderForChat: new FakeProvider([{ role: "assistant", content: "Hello world" }], mockEventBus),
-                providers: { FAKE: createMockProviderConfig() },
+                profiles: { FAKE: createMockProfileConfig() },
             }),
             chatHistoryManager: mockChatHistoryManager,
             eventBus: mockEventBus
@@ -57,9 +57,9 @@ describe("Agent (Integration) simple tests", () => {
 
         const agent = new Agent({
             config: createDefaultConfig({
-                activeProvider: "FAKE",
+                activeChatProfile: "FAKE",
                 llmProviderForChat: fakeProvider,
-                providers: { FAKE: createMockProviderConfig() },
+                profiles: { FAKE: createMockProfileConfig() },
             }),
             chatHistoryManager: mockChatHistoryManager,
             eventBus: mockEventBus

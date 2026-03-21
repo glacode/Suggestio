@@ -18,13 +18,14 @@ function createTempWorkspace(): string {
 
 function writeMockConfig(workspace: string) {
     const mockConfig = {
-        activeProvider: "testProvider",
+        activeChatProfile: "testProvider",
+        activeCompletionProfile: "testProvider",
         maxAgentIterations: 10,  // TODO it seems to have no effect in the E2E test, investigate why and fix if possible
         anonymizer: {
             enabled: true,
             words: ["secret"]
         },
-        providers: {
+        profiles: {
             testProvider: {
                 endpoint: "http://localhost:3001/v1/chat/completions",
                 model: "test-model",
@@ -403,8 +404,8 @@ test.describe('Chat E2E', () => {
     test('should handle switching to a reasoning model and processing interleaved tokens correctly', async () => {
         const inner = await getChatFrames(page);
 
-        // Switch to the reasoning model
-        await switchModel(inner, 'reasoning-model');
+        // Switch to the reasoning profile
+        await switchModel(inner, 'reasoningProvider');
         await clickNewChat(page);
 
         // Send a message

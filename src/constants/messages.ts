@@ -14,9 +14,9 @@ export const CHAT_MESSAGES = {
 } as const;
 
 export const PROVIDER_MESSAGES = {
-    NOT_FOUND: (name: string) => `Provider "${name}" not found in config.json`,
-    MISSING_ENDPOINT: (name: string) => `Provider "${name}" missing endpoint`,
-    UNKNOWN_TYPE: (type: string) => `Unknown provider type: ${type}`,
+    NOT_FOUND: (name: string) => `Profile "${name}" not found in config.json`,
+    MISSING_ENDPOINT: (name: string) => `Profile "${name}" missing endpoint`,
+    UNKNOWN_TYPE: (type: string) => `Unknown profile type: ${type}`,
 } as const;
 
 export const AGENT_LOGS = {
@@ -62,12 +62,12 @@ export const CONFIG_MESSAGES = {
 
 export const CONFIG_LOGS = {
     CONFIGURATION_CHANGED: (level: string, iterations: number) => `Configuration changed. New log level: ${level}, Max iterations: ${iterations}`,
-    MODEL_CHANGED: (model: string) => `modelChanged event received for model: ${model}`,
-    COMPLETION_PROVIDER_CHANGED: (provider: string) => `completionProviderChanged event received for provider: ${provider}`,
+    CHAT_PROFILE_CHANGED: (profileId: string) => `chatProfileChanged event received for profile: ${profileId}`,
+    COMPLETION_PROFILE_CHANGED: (profileId: string) => `completionProfileChanged event received for profile: ${profileId}`,
     INLINE_COMPLETION_TOGGLED: (enabled: boolean) => `inlineCompletionToggled event received: ${enabled}`,
     CONFIG_UPDATED_INLINE: (enabled: boolean) => `config updated. enableInlineCompletion: ${enabled}`,
-    CONFIG_UPDATED_ACTIVE_PROVIDER: (provider: string) => `config updated. activeProvider: ${provider}`,
-    CONFIG_UPDATED_ACTIVE_INLINE_PROVIDER: (provider: string) => `config updated. activeInlineCompletionProvider: ${provider}`,
+    CONFIG_UPDATED_ACTIVE_CHAT_PROFILE: (profileId: string) => `config updated. activeChatProfile: ${profileId}`,
+    CONFIG_UPDATED_ACTIVE_COMPLETION_PROFILE: (profileId: string) => `config updated. activeCompletionProfile: ${profileId}`,
     SECRET_MANAGER_NOT_INITIALIZED: 'SecretManager is not initialized',
     CONFIG_PROCESSOR_NOT_INITIALIZED: 'ConfigProcessor is not initialized',
 } as const;

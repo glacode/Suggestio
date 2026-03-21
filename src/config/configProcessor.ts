@@ -1,6 +1,6 @@
 import { getAnonymizer } from '../anonymizer/anonymizer.js';
 import { getLlmProvider } from '../providers/providerFactory.js';
-import { IConfig, IConfigContainer, IProviderConfig, IHttpClient } from '../types.js';
+import { IConfig, IConfigContainer, IProfileConfig, IHttpClient } from '../types.js';
 import { IEventBus } from '../utils/eventBus.js';
 import { createEventLogger } from '../log/eventLogger.js';
 import { CONFIG_LOGS } from '../constants/messages.js';
@@ -28,10 +28,10 @@ class ConfigProcessor {
         this.logger = createEventLogger(eventBus);
 
         // Remove existing listeners to avoid duplicates if init is called multiple times
-        this._eventBus.removeAllListeners('modelChanged');
-        this._eventBus.on('modelChanged', (modelName: string) => {
-            this.logger?.info(CONFIG_LOGS.MODEL_CHANGED(modelName));
-            this.updateActiveProvider(modelName);
+        this._eventBus.removeAllListeners('chatProfileChanged');
+        this._eventBus.on('chatProfileChanged', (profileId: string) => {
+            this.logger?.info(CONFIG_LOGS.CHAT_PROFILE_CHANGED(profileId));
+            this.updateActiveProfile(profileId);
         });
 
         // Listen for inline completion toggles and update the in-memory config accordingly
@@ -44,40 +44,40 @@ class ConfigProcessor {
             }
         });
 
-        this._eventBus.removeAllListeners('completionProviderChanged');
-        this._eventBus.on('completionProviderChanged', (providerId: string) => {
-            this.logger?.info(CONFIG_LOGS.COMPLETION_PROVIDER_CHANGED(providerId));
+        this._eventBus.removeAllListeners('completionProfileChanged');
+        this._eventBus.on('completionProfileChanged', (profileId: string) => {
+            this.logger?.info(CONFIG_LOGS.COMPLETION_PROFILE_CHANGED(profileId));
             if (this._config) {
-                this._config.activeInlineCompletionProvider = providerId;
+                this._config.activeCompletionProfile = profileId;
                 this.updateProviders(this._config);
-                this.logger?.info(CONFIG_LOGS.CONFIG_UPDATED_ACTIVE_INLINE_PROVIDER(this._config.activeInlineCompletionProvider));
+                this.logger?.info(CONFIG_LOGS.CONFIG_UPDATED_ACTIVE_COMPLETION_PROFILE(this._config.activeCompletionProfile));
             }
         });
     }
 
     /**
-     * Resolve the API key for a single provider in memory.
+     * Resolve the API key for a single profile in memory.
      * Populates `apiKeyPlaceholder` and `resolvedApiKey`.
      */
     private async resolveAPIKeyInMemory(
-        providerConfig: IProviderConfig,
+        profileConfig: IProfileConfig,
     ) {
         if (!this._secretManager) {
             throw new Error(CONFIG_LOGS.SECRET_MANAGER_NOT_INITIALIZED);
         }
-        const apiKeyValue = providerConfig.apiKey;
+        const apiKeyValue = profileConfig.apiKey;
 
         if (typeof apiKeyValue !== 'string') { return; }
 
         const match = apiKeyValue.match(/^\$\{(\w+)\}$/);
         const placeholder = match ? match[1] : undefined;
-        providerConfig.apiKeyPlaceholder = placeholder;
+        profileConfig.apiKeyPlaceholder = placeholder;
 
         if (placeholder) {
             const envValue = process.env[placeholder];
-            providerConfig.resolvedApiKey = envValue?.trim() || await this._secretManager.getOrRequestAPIKey(placeholder);
+            profileConfig.resolvedApiKey = envValue?.trim() || await this._secretManager.getOrRequestAPIKey(placeholder);
         } else {
-            providerConfig.resolvedApiKey = apiKeyValue;
+            profileConfig.resolvedApiKey = apiKeyValue;
         }
     }
 
@@ -109,17 +109,17 @@ class ConfigProcessor {
             throw new Error(CONFIG_LOGS.CONFIG_PROCESSOR_NOT_INITIALIZED);
         }
 
-        const { activeProvider, activeInlineCompletionProvider, providers } = config;
+        const { activeChatProfile, activeCompletionProfile, profiles } = config;
 
-        // Resolve API key for active (Chat) provider
-        if (activeProvider && providers?.[activeProvider]) {
-            await this.resolveAPIKeyInMemory(providers[activeProvider]);
+        // Resolve API key for active (Chat) profile
+        if (activeChatProfile && profiles?.[activeChatProfile]) {
+            await this.resolveAPIKeyInMemory(profiles[activeChatProfile]);
         }
 
-        // Resolve API key for Completion provider if it's different
-        const targetInlineProviderId = activeInlineCompletionProvider || activeProvider;
-        if (targetInlineProviderId && targetInlineProviderId !== activeProvider && providers?.[targetInlineProviderId]) {
-            await this.resolveAPIKeyInMemory(providers[targetInlineProviderId]);
+        // Resolve API key for Completion profile if it's different
+        const targetCompletionProfileId = activeCompletionProfile || activeChatProfile;
+        if (targetCompletionProfileId && targetCompletionProfileId !== activeChatProfile && profiles?.[targetCompletionProfileId]) {
+            await this.resolveAPIKeyInMemory(profiles[targetCompletionProfileId]);
         }
 
         if (!config.anonymizerInstance) {
@@ -127,23 +127,19 @@ class ConfigProcessor {
         }
 
         // Initialize providers
-        config.llmProviderForChat = getLlmProvider(config, this._httpClient, this._eventBus, config.anonymizerInstance, activeProvider) ?? undefined;
-        config.llmProviderForInlineCompletion = getLlmProvider(config, this._httpClient, this._eventBus, config.anonymizerInstance, targetInlineProviderId) ?? undefined;
+        config.llmProviderForChat = getLlmProvider(config, this._httpClient, this._eventBus, config.anonymizerInstance, activeChatProfile) ?? undefined;
+        config.llmProviderForInlineCompletion = getLlmProvider(config, this._httpClient, this._eventBus, config.anonymizerInstance, targetCompletionProfileId) ?? undefined;
     }
 
-    private async updateActiveProvider(modelName: string) {
+    private async updateActiveProfile(profileId: string) {
         if (!this._config) {
             return;
         }
 
-        const providerEntry = Object.entries(this._config.providers)
-            .find(([_, config]) => config.model === modelName);
-
-        if (providerEntry) {
-            const [providerId] = providerEntry;
-            this._config.activeProvider = providerId;
+        if (this._config.profiles[profileId]) {
+            this._config.activeChatProfile = profileId;
             await this.updateProviders(this._config);
-            this.logger?.info(CONFIG_LOGS.CONFIG_UPDATED_ACTIVE_PROVIDER(this._config.activeProvider));
+            this.logger?.info(CONFIG_LOGS.CONFIG_UPDATED_ACTIVE_CHAT_PROFILE(this._config.activeChatProfile));
         }
     }
 }

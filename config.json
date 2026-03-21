@@ -1,7 +1,7 @@
 {
-  "activeProvider": "mistral-devstral-small-2512",
-  "activeInlineCompletionProvider": "llm7-qwen32",
-  "providers": {
+  "activeChatProfile": "mistral-devstral-small-2512",
+  "activeCompletionProfile": "llm7-qwen32",
+  "profiles": {
     "llm7-qwen32": {
       "endpoint": "https://api.llm7.io/v1/chat/completions",
       "model": "qwen2.5-coder-32b-instruct",

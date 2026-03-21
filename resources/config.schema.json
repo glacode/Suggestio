@@ -4,22 +4,22 @@
   "description": "Configuration for the Suggestio VS Code extension",
   "type": "object",
   "properties": {
-    "activeProvider": {
+    "activeChatProfile": {
       "type": "string",
-      "description": "The ID of the provider to use (must match a key in the 'providers' object)."
+      "description": "The ID of the profile to use for Chat (must match a key in the 'profiles' object)."
     },
-    "activeInlineCompletionProvider": {
+    "activeCompletionProfile": {
       "type": "string",
-      "description": "The ID of the provider to use for inline completions (optional, defaults to activeProvider)."
+      "description": "The ID of the profile to use for inline completions (optional, defaults to activeChatProfile)."
     },
     "enableInlineCompletion": {
       "type": "boolean",
       "default": true,
       "description": "Whether to enable inline code completion. Defaults to true."
     },
-    "providers": {
+    "profiles": {
       "type": "object",
-      "description": "Configuration for different LLM providers.",
+      "description": "Configuration for different LLM profiles.",
       "additionalProperties": {
         "type": "object",
         "properties": {
@@ -27,7 +27,7 @@
             "type": "string",
             "enum": ["openai-compatible", "gemini"],
             "default": "openai-compatible",
-            "description": "The type of the provider."
+            "description": "The type of the profile."
           },
           "model": {
             "type": "string",
@@ -35,11 +35,11 @@
           },
           "apiKey": {
             "type": "string",
-            "description": "The API key for the provider. Can be a literal string or a placeholder like '${MY_ENV_VAR}'."
+            "description": "The API key for the profile. Can be a literal string or a placeholder like '${MY_ENV_VAR}'."
           },
           "endpoint": {
             "type": "string",
-            "description": "The API endpoint URL (required for OpenAI-compatible providers, usually ignored for Gemini)."
+            "description": "The API endpoint URL (required for OpenAI-compatible profiles, usually ignored for Gemini)."
           }
         },
         "required": ["model", "apiKey"]
@@ -79,5 +79,5 @@
       "required": ["enabled", "words"]
     }
   },
-  "required": ["activeProvider", "providers", "anonymizer"]
+  "required": ["activeChatProfile", "profiles", "anonymizer"]
 }
