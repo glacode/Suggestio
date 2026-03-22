@@ -165,8 +165,8 @@
                 "icon": "$(eye-closed)"
             },
             {
-                "command": "suggestio.selectInlineCompletionProvider",
-                "title": "Suggestio: Select Inline Completion Provider",
+                "command": "suggestio.selectCompletionProfile",
+                "title": "Suggestio: Select Completion Profile",
                 "icon": "$(gear)"
             }
         ],
@@ -178,7 +178,7 @@
                     "group": "navigation@1"
                 },
                 {
-                    "command": "suggestio.selectInlineCompletionProvider",
+                    "command": "suggestio.selectCompletionProfile",
                     "when": "view == suggestio.chat.view",
                     "group": "navigation@2"
                 },
