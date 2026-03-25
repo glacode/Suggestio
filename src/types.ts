@@ -210,9 +210,9 @@ export type WebviewMessage =
     text: string;
   }
   | {
-    /** User has selected a different language model. */
-    command: 'modelChanged';
-    /** The ID of the selected model. */
+    /** User has selected a different language model profile. */
+    command: 'chatProfileChanged';
+    /** The ID of the selected profile. */
     model: string;
   }
   | {
@@ -224,18 +224,18 @@ export type WebviewMessage =
     command: 'cancelRequest';
   }
   | {
-    /** User responds to a tool confirmation request. */
+    /** User wants to view a diff for a tool call. */
+    command: 'viewDiff';
+    /** The ID of the tool call. */
+    toolCallId: string;
+  }
+  | {
+    /** User has responded to a tool confirmation request. */
     command: 'confirmToolCall';
     /** The ID of the tool call. */
     toolCallId: string;
     /** The user's decision ('allow' or 'deny'). */
     decision: 'allow' | 'deny';
-  }
-  | {
-    /** User wants to view the diff for a proposed tool call. */
-    command: 'viewDiff';
-    /** The ID of the tool call. */
-    toolCallId: string;
   };
 
 /**
@@ -290,7 +290,7 @@ export type MessageFromTheExtensionToTheWebview =
     /** Indicates the message comes from the AI assistant. */
     sender: 'assistant';
     /** Represents a partial piece of the AI's response (for streaming). */
-    type: 'token';
+    type: 'tokens';
     /** The text content of the token. */
     text: string;
     /** The type of token. */
@@ -300,7 +300,7 @@ export type MessageFromTheExtensionToTheWebview =
     /** Indicates the message comes from the AI assistant. */
     sender: 'assistant';
     /** Signals the start of a tool call. */
-    type: 'tool_start';
+    type: 'agent:toolStart';
     /** The ID of the tool call. */
     toolCallId: string;
     /** The name of the tool being called. */
@@ -314,7 +314,7 @@ export type MessageFromTheExtensionToTheWebview =
     /** Indicates the message comes from the AI assistant. */
     sender: 'assistant';
     /** Signals the end of a tool call. */
-    type: 'tool_end';
+    type: 'agent:toolEnd';
     /** The ID of the tool call. */
     toolCallId: string;
     /** The name of the tool. */
@@ -328,7 +328,7 @@ export type MessageFromTheExtensionToTheWebview =
     /** Indicates the message comes from the AI assistant. */
     sender: 'assistant';
     /** Signals a request for user confirmation before executing a tool. */
-    type: 'tool_confirmation';
+    type: 'agent:requestConfirmation';
     /** The ID of the tool call. */
     toolCallId: string;
     /** The name of the tool. */
@@ -354,6 +354,8 @@ export type MessageFromTheExtensionToTheWebview =
     /** Indicates the message comes from the AI assistant. */
     sender: 'assistant';
     /** A generic message, often used for error reporting or non-streaming info. */
+    type: 'error';
+    /** The text content of the error. */
     text: string;
   }
   | {
@@ -469,14 +471,19 @@ export interface ILlmProviderAccessor {
 export type GetChatWebviewContent = (args: {
   /** The extension's base URI. */
   extensionUri: IUriLike;
-  /** URI for the main JavaScript bundle of the webview. */
-  scriptUri: IUriLike;
-  /** URI for the syntax highlighting CSS. */
+  /** URI for the main JavaScript bundle of the webview (chat.js). */
+  chatJsUri: IUriLike;
+  /** URI for the markdown rendering bundle (renderMarkDown.js). */
+  markdownJsUri: IUriLike;
+  /** URI for the syntax highlighting CSS (highlight.css). */
   highlightCssUri: IUriLike;
-  /** List of available models. */
-  models: string[];
-  /** The currently active model. */
-  activeModel: string;
+  /** URI for the chat UI CSS (chat.css). */
+  chatCssUri: IUriLike;
+  /** Initial state for the webview. */
+  initialState: {
+    profiles: string[];
+    activeProfile: string;
+  };
   /** VS Code API abstraction. */
   vscodeApi: IVscodeApiLocal;
   /** File reader abstraction. */

@@ -2,10 +2,14 @@ import type { GetChatWebviewContent, IUriLike, IVscodeApiLocal, IFileContentRead
 
 export interface IChatWebviewContentArgs {
     extensionUri: IUriLike;
-    scriptUri: IUriLike;
+    chatJsUri: IUriLike;
+    markdownJsUri: IUriLike;
     highlightCssUri: IUriLike;
-    models: string[];
-    activeModel: string;
+    chatCssUri: IUriLike;
+    initialState: {
+        profiles: string[];
+        activeProfile: string;
+    };
     vscodeApi: IVscodeApiLocal;
     fileReader: IFileContentReader;
 }
@@ -17,12 +21,13 @@ export const getChatWebviewContent: GetChatWebviewContent = (args: IChatWebviewC
     // 2. Read the file content
     let htmlContent = args.fileReader.read(htmlPath.fsPath || '') || '';
 
-    // 3. Replace placeholders with the actual URIs
+    // 3. Replace placeholders with the actual URIs and data
     htmlContent = htmlContent
-        .replace('{{scriptUri}}', args.scriptUri.toString())
+        .replace('{{chatJsUri}}', args.chatJsUri.toString())
+        .replace('{{markdownJsUri}}', args.markdownJsUri.toString())
         .replace('{{highlightCssUri}}', args.highlightCssUri.toString())
-        .replace('{{profiles}}', JSON.stringify(args.models))
-        .replace('{{activeProfile}}', args.activeModel);
+        .replace('{{chatCssUri}}', args.chatCssUri.toString())
+        .replace('{{initialState}}', JSON.stringify(args.initialState));
 
     return htmlContent;
 };

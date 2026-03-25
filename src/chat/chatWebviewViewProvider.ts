@@ -29,6 +29,7 @@ import { IEventBus } from '../utils/eventBus.js';
 import { createEventLogger } from '../log/eventLogger.js';
 import { ChatPrompt } from './chatPrompt.js';
 import { CHAT_MESSAGES, AGENT_LOGS } from '../constants/messages.js';
+import { WEBVIEW_COMMANDS, EXTENSION_EVENTS } from '../constants/protocol.js';
 
 // This interface defines the arguments required to construct a `ChatWebviewViewProvider`.
 // It uses dependency injection to provide all necessary components.
@@ -104,6 +105,7 @@ export class ChatWebviewViewProvider {
             if (this._view) {
                 this._view.webview.postMessage({
                     sender: 'assistant',
+                    type: EXTENSION_EVENTS.ERROR,
                     text: CHAT_MESSAGES.MAX_ITERATIONS_REACHED(payload.maxIterations)
                 });
             }
@@ -116,7 +118,7 @@ export class ChatWebviewViewProvider {
             if (this._view) {
                 this._view.webview.postMessage({
                     sender: 'assistant',
-                    type: 'token',
+                    type: EXTENSION_EVENTS.TOKENS,
                     text: payload.token,
                     tokenType: payload.type
                 });
@@ -127,7 +129,7 @@ export class ChatWebviewViewProvider {
             if (this._view) {
                 this._view.webview.postMessage({
                     sender: 'assistant',
-                    type: 'tool_start',
+                    type: EXTENSION_EVENTS.TOOL_START,
                     toolCallId: payload.toolCallId,
                     toolName: payload.toolName,
                     displayMessage: payload.displayMessage,
@@ -143,7 +145,7 @@ export class ChatWebviewViewProvider {
             if (this._view) {
                 this._view.webview.postMessage({
                     sender: 'assistant',
-                    type: 'tool_end',
+                    type: EXTENSION_EVENTS.TOOL_END,
                     toolCallId: payload.toolCallId,
                     toolName: payload.toolName,
                     result: payload.result,
@@ -161,7 +163,7 @@ export class ChatWebviewViewProvider {
             if (this._view) {
                 this._view.webview.postMessage({
                     sender: 'assistant',
-                    type: 'tool_confirmation',
+                    type: EXTENSION_EVENTS.REQUEST_CONFIRMATION,
                     toolCallId: payload.toolCallId,
                     toolName: payload.toolName,
                     message: payload.message,
@@ -197,14 +199,18 @@ export class ChatWebviewViewProvider {
         // Construct a URI for the `renderMarkDown.js` script, which is compiled from `renderMarkDown.ts`.
         // `asWebviewUri` is crucial: it converts a local file URI into a special URI
         // that the webview can safely load, adhering to VS Code's security policies.
-        // `vscodeApi.Uri.joinPath` constructs a new URI by joining path segments.
-        const scriptUri = this._view.webview.asWebviewUri(
+        // Construct URIs for assets
+        const chatJsUri = this._view.webview.asWebviewUri(
+            this._vscodeApi.Uri.joinPath(this._extensionContext.extensionUri, 'builtResources', 'chat.js')
+        );
+        const markdownJsUri = this._view.webview.asWebviewUri(
             this._vscodeApi.Uri.joinPath(this._extensionContext.extensionUri, 'builtResources', 'renderMarkDown.js')
         );
-
-        // Construct a URI for the `highlight.css` stylesheet, similarly converted for webview use.
         const highlightCssUri = this._view.webview.asWebviewUri(
             this._vscodeApi.Uri.joinPath(this._extensionContext.extensionUri, 'media', 'highlight.css')
+        );
+        const chatCssUri = this._view.webview.asWebviewUri(
+            this._vscodeApi.Uri.joinPath(this._extensionContext.extensionUri, 'media', 'chat.css')
         );
 
         // Retrieve the list of available profiles and the currently active profile from the accessor.
@@ -212,15 +218,16 @@ export class ChatWebviewViewProvider {
         const activeProfile = this._profileAccessor.getActiveProfile();
 
         // Generate the full HTML content for the webview using the `_getChatWebviewContent` function.
-        // This HTML will include references to the `scriptUri` and `highlightCssUri` generated above.
-        // The `webview.html` property (corresponding to `vscode.Webview.html`) sets the content
-        // displayed inside the webview panel.
         this._view.webview.html = this._getChatWebviewContent({
             extensionUri: this._extensionContext.extensionUri,
-            scriptUri,
+            chatJsUri,
+            markdownJsUri,
             highlightCssUri,
-            models: profiles,
-            activeModel: activeProfile,
+            chatCssUri,
+            initialState: {
+                profiles,
+                activeProfile
+            },
             vscodeApi: this._vscodeApi,
             fileReader: this._fileReader
         });
@@ -240,7 +247,7 @@ export class ChatWebviewViewProvider {
         if (this._view) {
             this._view.webview.postMessage({
                 sender: 'assistant',
-                type: 'completion',
+                type: EXTENSION_EVENTS.COMPLETION,
                 text: ''
             });
         }
@@ -259,7 +266,7 @@ export class ChatWebviewViewProvider {
         // back to the extension's backend logic.
         webviewView.webview.onDidReceiveMessage(async (message: WebviewMessage) => {
             // The `command` property of the message determines the action to take.
-            if (message.command === 'sendMessage') {
+            if (message.command === WEBVIEW_COMMANDS.SEND_MESSAGE) {
                 // Handle a message sent by the user from the webview to initiate a chat response.
                 try {
                     // Create a new AbortController for this request
@@ -288,16 +295,17 @@ export class ChatWebviewViewProvider {
                     // If an error occurs during the chat response, post an error message back to the webview.
                     webviewView.webview.postMessage({
                         sender: 'assistant',
+                        type: EXTENSION_EVENTS.ERROR,
                         text: CHAT_MESSAGES.ERROR_PROCESSING_REQUEST(error)
                     });
                 }
-            } else if (message.command === 'cancelRequest') {
+            } else if (message.command === WEBVIEW_COMMANDS.CANCEL_REQUEST) {
                 // Handle cancel request from webview
                 if (this._abortController) {
                     this.logger.info(AGENT_LOGS.CANCEL_REQUEST);
                     this._abortController.abort();
                 }
-            } else if (message.command === 'confirmToolCall') {
+            } else if (message.command === WEBVIEW_COMMANDS.CONFIRM_TOOL_CALL) {
                 if (message.decision === 'deny') {
                     const diffData = this._activeDiffs.get(message.toolCallId);
                     if (diffData) {
@@ -308,20 +316,19 @@ export class ChatWebviewViewProvider {
                     toolCallId: message.toolCallId,
                     decision: message.decision
                 });
-            } else if (message.command === 'viewDiff') {
+            } else if (message.command === WEBVIEW_COMMANDS.VIEW_DIFF) {
                 const diffData = this._activeDiffs.get(message.toolCallId);
                 if (diffData) {
                     await this._diffManager.showDiff(diffData.filePath, diffData.oldContent, diffData.newContent);
                 }
-            } else if (message.command === 'modelChanged') {
+            } else if (message.command === WEBVIEW_COMMANDS.CHAT_PROFILE_CHANGED) {
                 // Handle a message indicating that the active profile has changed in the webview.
                 // Emit a 'chatProfileChanged' event on the global event bus, allowing other parts
                 // of the extension to react to this change.
                 this._eventBus.emit('chatProfileChanged', message.model);
-            } else if (message.command === 'clearHistory') {
+            } else if (message.command === WEBVIEW_COMMANDS.CLEAR_HISTORY) {
                 // Handle a message requesting to clear the chat history.
                 // Call the `clearHistory` method on the `chatHistoryManager`.
-                // TODO: Add a UI element (icon/button) in the webview to trigger this command.
                 this._chatHistoryManager.clearHistory();
             }
         });

@@ -13,9 +13,7 @@ import type {
   ChatRole,
   ChatHistory,
   IPrompt,
-  IAnonymizer,
-  IVscodeApiLocal,
-  IFileContentReader
+  IAnonymizer
 } from '../../src/types.js';
 import { SYSTEM_PROMPTS } from '../../src/constants/prompts.js';
 // Import the actual ChatWebviewViewProvider class that we are testing.
@@ -96,12 +94,12 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     // `receivedArgs` will capture the arguments passed to `getChatWebviewContent`.
     // We initialize it to `null` and expect it to be populated.
-    let receivedArgs: { extensionUri: IUriLike; scriptUri: IUriLike; highlightCssUri: IUriLike; models: string[]; activeModel: string; vscodeApi: IVscodeApiLocal; fileReader: IFileContentReader } | null = null;
+    let receivedArgs: any | null = null;
     // `getChatWebviewContent` is a fake function that generates the HTML for the webview.
     // It captures its arguments and returns a simple HTML string for verification.
-    const getChatWebviewContent = (args: { extensionUri: IUriLike; scriptUri: IUriLike; highlightCssUri: IUriLike; models: string[]; activeModel: string; vscodeApi: IVscodeApiLocal; fileReader: IFileContentReader }) => {
+    const getChatWebviewContent = (args: any) => {
       receivedArgs = args; // Store the arguments for assertion.
-      return `HTML for ${args.models.join(',')}`; // Return a custom HTML string based on models.
+      return `HTML for ${args.initialState.profiles.join(',')}`; // Return a custom HTML string based on profiles.
     };
 
     const recorded: ChatHistory = [];
@@ -148,10 +146,10 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     // Expect `receivedArgs` to have been populated (not null).
     expect(receivedArgs).not.toBeNull();
-    // Expect the models passed to `getChatWebviewContent` to match our fake list.
-    expect(receivedArgs!.models).toEqual(['m1', 'm2']);
-    // Expect the active model to match our fake active model.
-    expect(receivedArgs!.activeModel).toBe('m2');
+    // Expect the profiles passed to `getChatWebviewContent` to match our fake list.
+    expect(receivedArgs!.initialState.profiles).toEqual(['m1', 'm2']);
+    // Expect the active profile to match our fake active profile.
+    expect(receivedArgs!.initialState.activeProfile).toBe('m2');
     // Expect the webview's HTML content to be set to the value returned by our fake `getChatWebviewContent`.
     expect(webview.html).toBe('HTML for m1,m2');
 
@@ -171,8 +169,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // Expect the `posted` array to contain the tokens emitted by our fake `logicHandler`,
     // followed by a 'completion' message indicating the end of the response.
     expect(posted).toEqual([
-      { sender: 'assistant', type: 'token', text: 'tok1', tokenType: 'content' }, // First token.
-      { sender: 'assistant', type: 'token', text: 'tok2', tokenType: 'content' }, // Second token.
+      { sender: 'assistant', type: 'tokens', text: 'tok1', tokenType: 'content' }, // First token.
+      { sender: 'assistant', type: 'tokens', text: 'tok2', tokenType: 'content' }, // Second token.
       { sender: 'assistant', type: 'completion', text: '' } // Completion message.
     ]);
 
@@ -326,7 +324,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     //  Simulate a 'modelChanged' command from the webview.
     // ********************************************************************************
     if (webview.__handler) {
-      await webview.__handler({ command: 'modelChanged', model: 'new-model' });
+      await webview.__handler({ command: 'chatProfileChanged', model: 'new-model' });
     }
     // Expect that the `eventBus` emitted the 'modelChanged' event with the correct model name.
     expect(emittedModel).toBe('new-model');
@@ -548,7 +546,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     // Verify only the first token was posted, followed by a completion message
     expect(posted).toEqual([
-      { sender: 'assistant', type: 'token', text: 'tok1', tokenType: 'content' },
+      { sender: 'assistant', type: 'tokens', text: 'tok1', tokenType: 'content' },
       { sender: 'assistant', type: 'completion', text: '' }
     ]);
   });
@@ -782,8 +780,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     }
 
     expect(posted).toEqual([
-      { sender: 'assistant', type: 'token', text: 'thought', tokenType: 'reasoning' },
-      { sender: 'assistant', type: 'token', text: 'result', tokenType: 'content' },
+      { sender: 'assistant', type: 'tokens', text: 'thought', tokenType: 'reasoning' },
+      { sender: 'assistant', type: 'tokens', text: 'result', tokenType: 'content' },
       { sender: 'assistant', type: 'completion', text: '' }
     ]);
   });
@@ -825,7 +823,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     expect(posted).toContainEqual({
       sender: 'assistant',
-      type: 'tool_end',
+      type: 'agent:toolEnd',
       toolCallId,
       toolName,
       result,
@@ -870,7 +868,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     expect(posted).toContainEqual({
       sender: 'assistant',
-      type: 'tool_start',
+      type: 'agent:toolStart',
       toolCallId,
       toolName,
       displayMessage,
