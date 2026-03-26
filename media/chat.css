@@ -257,13 +257,16 @@ html, body {
 .typing-dot:nth-child(2) { animation-delay: 0.2s; }
 .typing-dot:nth-child(3) { animation-delay: 0.4s; }
 
-.segments {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+.message.assistant > :first-child {
+    margin-top: 0 !important;
+}
+
+.message.assistant > :last-child {
+    margin-bottom: 0 !important;
 }
 
 .reasoning-container {
+    margin-top: 4px;
     margin-bottom: 4px;
     padding: 6px 8px;
     background: var(--vscode-textBlockQuote-background);
@@ -320,9 +323,17 @@ html, body {
     word-wrap: break-word;
 }
 
+.message-content p:first-child {
+    margin-top: 0;
+}
+
+.message-content p:last-child {
+    margin-bottom: 0;
+}
+
 .tool-call-container {
-    margin-top: 8px;
-    margin-bottom: 8px;
+    margin-top: 4px;
+    margin-bottom: 4px;
     border: 1px solid var(--vscode-textSeparator-foreground);
     border-radius: 4px;
     overflow: hidden;

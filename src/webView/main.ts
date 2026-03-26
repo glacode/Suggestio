@@ -232,7 +232,6 @@ class ReasoningSegment extends MessageSegment {
 }
 
 class AssistantMessage {
-    private segmentsContainer: HTMLDivElement;
     private indicator: HTMLDivElement | null;
     private segments: MessageSegment[] = [];
     private toolCalls = new Map<string, ToolCallSegment>();
@@ -251,14 +250,7 @@ class AssistantMessage {
                 <div class="typing-dot"></div>
                 <span class="loading-text">Working...</span>
             </div>
-            <div class="segments"></div>
         `;
-        const segContainer = this.element.querySelector('.segments');
-        if (segContainer instanceof HTMLDivElement) {
-            this.segmentsContainer = segContainer;
-        } else {
-            throw new Error('Segments container not found');
-        }
 
         const ind = this.element.querySelector('.typing-indicator');
         this.indicator = ind instanceof HTMLDivElement ? ind : null;
@@ -270,7 +262,7 @@ class AssistantMessage {
     appendToken(text: string, tokenType: string) {
         if (tokenType === 'reasoning') {
             if (!this.activeReasoningSegment) {
-                this.activeReasoningSegment = new ReasoningSegment(this.segmentsContainer);
+                this.activeReasoningSegment = new ReasoningSegment(this.element);
                 this.segments.push(this.activeReasoningSegment);
             }
             this.activeReasoningSegment.append(text);
@@ -281,7 +273,7 @@ class AssistantMessage {
                 this.activeReasoningSegment = null;
             }
             if (this.lastTokenType !== 'content' || !this.segments.length) {
-                const seg = new ContentSegment(this.segmentsContainer);
+                const seg = new ContentSegment(this.element);
                 this.segments.push(seg);
             }
             this.segments[this.segments.length - 1].append(text);
@@ -294,7 +286,7 @@ class AssistantMessage {
         if (this.activeReasoningSegment) {
             segment = this.activeReasoningSegment.addToolCall(payload);
         } else {
-            segment = new ToolCallSegment(this.segmentsContainer, payload);
+            segment = new ToolCallSegment(this.element, payload);
             this.segments.push(segment);
         }
         this.toolCalls.set(payload.toolCallId, segment);
@@ -314,7 +306,7 @@ class AssistantMessage {
         if (this.activeReasoningSegment) {
             segment = this.activeReasoningSegment.addConfirmation(payload);
         } else {
-            segment = new ConfirmationSegment(this.segmentsContainer, payload);
+            segment = new ConfirmationSegment(this.element, payload);
             this.segments.push(segment);
         }
         this.lastTokenType = 'confirmation';

@@ -422,8 +422,7 @@ test.describe('Chat E2E', () => {
 
         // Initially we expect:
         // - Reasoning Block 1 (Contains multiple nested tool calls)
-        const segments = assistantMessage.locator('.segments');
-        const allSegments = segments.locator('> *');
+        const allSegments = assistantMessage.locator('> *:not(.typing-indicator)');
 
         // Wait for segments to appear (initially only the reasoning container)
         await expect(allSegments).toHaveCount(1, { timeout: 10000 });
@@ -553,7 +552,7 @@ test.describe('Chat E2E', () => {
         // Both reasoning blocks should be collapsed because content followed each of them
         // Block 1: Expanded manually earlier -> stays expanded?
         // Block 2: Collapsed automatically by "Suffix text".
-        const finalReasoningBlocks = assistantMessage.locator('.segments > .reasoning-container');
+        const finalReasoningBlocks = assistantMessage.locator('> .reasoning-container');
         await expect(finalReasoningBlocks.first().locator('.reasoning-content')).not.toHaveClass(/collapsed/);
         await expect(finalReasoningBlocks.nth(1).locator('.reasoning-content')).toHaveClass(/collapsed/);
 
