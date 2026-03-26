@@ -75,8 +75,9 @@ class ToolCallSegment extends MessageSegment {
             prettyArgs = JSON.stringify(JSON.parse(payload.args), null, 2);
         } catch (e) {}
 
+        const isOpen = this.toolName !== 'edit_file';
         this.element.innerHTML = `
-            <details open>
+            <details ${isOpen ? 'open' : ''}>
                 <summary>
                     <span class="tool-call-status-icon">⚙️</span>
                     <span class="tool-status-text">${this.displayMessage}</span>
