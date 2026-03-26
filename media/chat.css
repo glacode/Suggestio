@@ -1,3 +1,7 @@
+* {
+    box-sizing: border-box;
+}
+
 html, body {
     height: 100%;
     margin: 0;
@@ -373,30 +377,51 @@ html, body {
 }
 
 .tool-confirmation-container {
+    margin: 8px 0;
+    padding: 10px;
     background: var(--vscode-editorWidget-background);
     border: 1px solid var(--vscode-editorWidget-border);
     border-radius: 6px;
-    padding: 12px;
-    margin: 8px 0;
+    font-size: 13px;
+    line-height: 1.4;
 }
 
-.tool-confirmation-title {
-    font-weight: bold;
+.tool-confirmation-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    color: var(--vscode-foreground);
+    font-weight: 500;
+}
+
+.tool-confirmation-icon {
+    margin-right: 8px;
+    color: var(--vscode-notificationsInfoIcon-foreground);
+}
+
+.tool-confirmation-message {
     margin-bottom: 8px;
 }
 
-.tool-confirmation-actions {
+.tool-confirmation-buttons {
     display: flex;
     gap: 8px;
-    margin-top: 12px;
+    margin-top: 10px;
+    justify-content: center;
 }
 
 .tool-button {
-    padding: 4px 12px;
+    padding: 6px 16px;
     border-radius: 2px;
     cursor: pointer;
     font-size: 12px;
     border: none;
+    min-width: 80px;
+    max-width: 150px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .tool-button-primary {

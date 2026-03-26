@@ -129,7 +129,7 @@ class ConfirmationSegment extends MessageSegment {
             </div>
             <div class="tool-confirmation-message">${payload.message}</div>
             ${payload.diffData ? `
-                <div style="margin-top: 8px;">
+                <div style="margin-top: 8px; display: flex; justify-content: center;">
                     <button class="tool-button tool-button-secondary view-diff-btn" style="width: 100%; max-width: none;">🔍 View Diff</button>
                 </div>
             ` : ''}
