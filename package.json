@@ -178,18 +178,18 @@
                     "group": "navigation@1"
                 },
                 {
-                    "command": "suggestio.selectCompletionProfile",
-                    "when": "view == suggestio.chat.view",
-                    "group": "navigation@2"
-                },
-                {
                     "command": "suggestio.disableInlineCompletion",
                     "when": "view == suggestio.chat.view && suggestio.inlineCompletionEnabled",
-                    "group": "navigation@3"
+                    "group": "navigation@2"
                 },
                 {
                     "command": "suggestio.enableInlineCompletion",
                     "when": "view == suggestio.chat.view && !suggestio.inlineCompletionEnabled",
+                    "group": "navigation@2"
+                },
+                {
+                    "command": "suggestio.selectCompletionProfile",
+                    "when": "view == suggestio.chat.view",
                     "group": "navigation@3"
                 }
             ]
