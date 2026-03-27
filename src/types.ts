@@ -179,6 +179,29 @@ export interface IWebview {
 }
 
 /**
+ * `IWebviewApi` defines the interface for the VS Code Webview API,
+ * which is available to scripts running inside the webview via `acquireVsCodeApi()`.
+ */
+export interface IWebviewApi<T = any> {
+  /**
+   * Posts a message to the extension backend.
+   * @param message The message to send.
+   */
+  postMessage(message: WebviewMessage): void;
+
+  /**
+   * Retrieves the persisted state for the webview.
+   */
+  getState(): T | undefined;
+
+  /**
+   * Sets the persisted state for the webview.
+   * @param state The state to persist.
+   */
+  setState(state: T): T;
+}
+
+/**
  * `IWebviewView` is a minimal type representing `vscode.WebviewView`.
  * This is the container for a webview within a VS Code sidebar panel.
  */
