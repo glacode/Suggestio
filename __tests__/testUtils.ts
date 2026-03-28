@@ -9,6 +9,8 @@ import {
     IWebviewView,
     IDisposable,
     MessageFromTheExtensionToTheWebview,
+    WebviewMessage,
+    IWebviewApi,
     ITextDocument,
     IIgnoreManager,
     IConfig,
@@ -90,6 +92,27 @@ export const createMockVscodeApi = (
         }
     }
 });
+
+/**
+ * A manual mock implementation of the VS Code Webview API.
+ */
+export class MockWebviewApi implements IWebviewApi {
+    public messages: WebviewMessage[] = [];
+    private state: any = undefined;
+
+    postMessage(message: WebviewMessage): void {
+        this.messages.push(message);
+    }
+
+    getState(): any {
+        return this.state;
+    }
+
+    setState(state: any): any {
+        this.state = state;
+        return state;
+    }
+}
 
 export const createMockWebview = (posted: MessageFromTheExtensionToTheWebview[] = []): IWebview & { __handler?: (msg: any) => void } => {
     const webview: IWebview & { __handler?: (msg: any) => void } = {
@@ -235,3 +258,28 @@ export const createDefaultConfig = (overrides: Partial<IConfig> = {}): IConfig =
     maxAgentIterations: CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS,
     ...overrides
 });
+
+/**
+ * Sets up a minimal DOM required for the Chat UI to initialize.
+ */
+export function setupChatDom() {
+    document.body.innerHTML = `
+        <div id="chat"></div>
+        <div class="chat-input">
+            <div class="input-wrapper">
+                <div id="inputLoadingIndicator"></div>
+                <textarea id="messageInput"></textarea>
+                <div class="chat-controls">
+                    <div id="modelSelector">
+                        <div class="dropdown-label">
+                            <span class="chat-profile-label"></span>
+                        </div>
+                        <div class="dropdown-content"></div>
+                    </div>
+                    <div class="send-icon"></div>
+                </div>
+            </div>
+        </div>
+        <div id="emptyChatContent"></div>
+    `;
+}
