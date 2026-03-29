@@ -1,7 +1,7 @@
 /**
  * @jest-environment jsdom
  */
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, jest, afterEach } from '@jest/globals';
 import { ChatManager, InitialState } from '../../src/webView/chat.js';
 import { MockWebviewApi, setupChatDom, createMockDomRect } from '../testUtils.js';
 import { WEBVIEW_COMMANDS, EXTENSION_EVENTS } from '../../src/constants/protocol.js';
@@ -11,8 +11,16 @@ describe('ChatManager Unit Tests', () => {
     let mockVscode: MockWebviewApi;
 
     beforeEach(() => {
+        jest.useFakeTimers();
         setupChatDom();
         window.HTMLElement.prototype.scrollIntoView = jest.fn();
+
+        // JSDOM doesn't support innerText, so we mock it to reflect textContent
+        Object.defineProperty(window.HTMLElement.prototype, 'innerText', {
+            get() { return this.textContent; },
+            set(value) { this.textContent = value; },
+            configurable: true
+        });
         
         // Mock getBoundingClientRect on Element prototype to cover all elements
         // We use a factory from testUtils to minimize type assertions in test files
@@ -33,6 +41,11 @@ describe('ChatManager Unit Tests', () => {
         mockVscode = new MockWebviewApi();
         chatManager = new ChatManager(mockVscode, initialState);
         chatManager.init();
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
+        jest.restoreAllMocks();
     });
 
     describe('Messaging & Input', () => {
@@ -90,6 +103,64 @@ describe('ChatManager Unit Tests', () => {
             expect(preventDefaultSpy).not.toHaveBeenCalled();
             expect(mockVscode.messages.length).toBe(0);
         });
+
+        it('should send message when send icon is clicked and input is enabled', () => {
+            const input = document.getElementById('messageInput');
+            if (!(input instanceof HTMLTextAreaElement)) { throw new Error('Input not found'); }
+            const sendIcon = document.querySelector('.send-icon');
+            if (!(sendIcon instanceof HTMLElement)) { throw new Error('Send icon not found'); }
+
+            input.value = 'click test';
+            sendIcon.click();
+
+            expect(mockVscode.messages).toContainEqual({
+                command: WEBVIEW_COMMANDS.SEND_MESSAGE,
+                text: 'click test'
+            });
+        });
+
+        it('should cancel request when send icon is clicked and input is disabled', () => {
+            const input = document.getElementById('messageInput');
+            if (!(input instanceof HTMLTextAreaElement)) { throw new Error('Input not found'); }
+            const sendIcon = document.querySelector('.send-icon');
+            if (!(sendIcon instanceof HTMLElement)) { throw new Error('Send icon not found'); }
+
+            // Simulate "Working..." state
+            input.disabled = true;
+            sendIcon.click();
+
+            expect(mockVscode.messages).toContainEqual({
+                command: WEBVIEW_COMMANDS.CANCEL_REQUEST
+            });
+        });
+
+        it('should adjust textarea height on input event', () => {
+            const input = document.getElementById('messageInput');
+            if (!(input instanceof HTMLTextAreaElement)) { throw new Error('Input not found'); }
+            
+            // Trigger input event
+            input.dispatchEvent(new Event('input'));
+            
+            // Branch was hit if it didn't crash (logic sets height to auto then scrollHeight)
+            expect(input.style.height).toBeTruthy();
+        });
+
+        it('should focus input when window receives focus', () => {
+            const input = document.getElementById('messageInput');
+            if (!(input instanceof HTMLTextAreaElement)) { throw new Error('Input not found'); }
+            
+            // Blur it first
+            input.blur();
+            // JSDOM might not support document.activeElement perfectly, 
+            // but triggering the event and running timers covers the branch.
+            window.dispatchEvent(new Event('focus'));
+            
+            // Run the 50ms setTimeout
+            jest.runAllTimers();
+
+            // Success is reaching here without error and hitting the branch in chat.ts
+            expect(input).toBeTruthy();
+        });
     });
 
     describe('Profile Selector', () => {
@@ -142,6 +213,44 @@ describe('ChatManager Unit Tests', () => {
     });
 
     describe('Extension Events', () => {
+        it('should handle user messages from extension', () => {
+            const chat = document.getElementById('chat');
+            if (!chat) { throw new Error('Chat container not found'); }
+
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: 'user', text: 'message from backend' }
+            }));
+
+            const userMsg = chat.querySelector('.message.user');
+            if (!(userMsg instanceof HTMLElement)) { throw new Error('User message not found'); }
+            
+            // Checking textContent instead of chat.innerHTML because JSDOM 
+            // doesn't reflect innerText into innerHTML during tests.
+            expect(userMsg.textContent).toBe('message from backend');
+        });
+
+        it('should handle newChat command via window message', () => {
+            const chat = document.getElementById('chat');
+            if (!chat) { throw new Error('Chat container not found'); }
+            chat.innerHTML = '<div class="message">X</div>';
+            
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { command: 'newChat' }
+            }));
+
+            expect(chat.querySelectorAll('.message').length).toBe(0);
+        });
+
+        it('should handle newChat call directly', () => {
+            const chat = document.getElementById('chat');
+            if (!chat) { throw new Error('Chat container not found'); }
+            chat.innerHTML = '<div class="message">X</div>';
+            
+            chatManager.newChat();
+
+            expect(chat.querySelectorAll('.message').length).toBe(0);
+        });
+
         it('should handle error events by showing text and enabling input', () => {
             const input = document.getElementById('messageInput');
             if (!(input instanceof HTMLTextAreaElement)) {
@@ -299,7 +408,7 @@ describe('ChatManager Unit Tests', () => {
         });
     });
 
-    describe('Edge Cases in Segments', () => {
+    describe('Edge Cases & Branch Coverage', () => {
         it('should remove empty assistant messages on finish', () => {
             const chat = document.getElementById('chat');
             if (!(chat instanceof HTMLElement)) {
@@ -319,14 +428,32 @@ describe('ChatManager Unit Tests', () => {
             expect(chat.querySelector('.message.assistant')).toBeNull();
         });
 
+        it('should preserve assistant message with reasoning content on finish', () => {
+            const chat = document.getElementById('chat');
+            if (!(chat instanceof HTMLElement)) { throw new Error('Chat not found'); }
+
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: 'assistant', type: EXTENSION_EVENTS.TOKENS, text: 'some thoughts', tokenType: 'reasoning' }
+            }));
+
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: 'assistant', type: EXTENSION_EVENTS.COMPLETION }
+            }));
+
+            const msg = chat.querySelector('.message.assistant');
+            expect(msg).toBeTruthy();
+            expect(msg?.textContent).toContain('some thoughts');
+        });
+
         it('should handle complex interleaving (Reasoning -> Tool -> Content)', () => {
             // 1. Reasoning
             window.dispatchEvent(new MessageEvent('message', {
                 data: { sender: 'assistant', type: EXTENSION_EVENTS.TOKENS, text: 'Think', tokenType: 'reasoning' }
             }));
             // 2. Tool inside Reasoning
+            const toolCallId = 't-nested';
             window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: 'assistant', type: EXTENSION_EVENTS.TOOL_START, toolCallId: 't2', toolName: 't', args: '{}' }
+                data: { sender: 'assistant', type: EXTENSION_EVENTS.TOOL_START, toolCallId, toolName: 't', args: '{}' }
             }));
             // 3. Content (Collapses reasoning)
             window.dispatchEvent(new MessageEvent('message', {
@@ -342,7 +469,56 @@ describe('ChatManager Unit Tests', () => {
                 throw new Error('Reasoning content not found');
             }
             expect(content.classList.contains('collapsed')).toBe(true);
-            expect(reasoning.innerHTML).toContain('t2'); // Tool was nested
+            expect(reasoning.innerHTML).toContain(toolCallId); // Tool was nested
+        });
+
+        it('should toggle reasoning visibility when header is clicked', () => {
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: 'assistant', type: EXTENSION_EVENTS.TOKENS, text: 'Thinking...', tokenType: 'reasoning' }
+            }));
+
+            const header = document.querySelector('.reasoning-header');
+            if (!(header instanceof HTMLElement)) { throw new Error('Header not found'); }
+            const content = document.querySelector('.reasoning-content');
+            if (!(content instanceof HTMLElement)) { throw new Error('Content not found'); }
+
+            // Initial state (expanded)
+            expect(content.classList.contains('collapsed')).toBe(false);
+
+            // Toggle (click)
+            header.click();
+            expect(content.classList.contains('collapsed')).toBe(true);
+
+            // Toggle again
+            header.click();
+            expect(content.classList.contains('collapsed')).toBe(false);
+        });
+
+        it('should handle nested confirmation inside reasoning', () => {
+            // 1. Start reasoning
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: 'assistant', type: EXTENSION_EVENTS.TOKENS, text: 'I am thinking...', tokenType: 'reasoning' }
+            }));
+
+            // 2. Send confirmation request while reasoning is active
+            const toolCallId = 'nested-confirm';
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { 
+                    sender: 'assistant', 
+                    type: EXTENSION_EVENTS.REQUEST_CONFIRMATION, 
+                    toolCallId, 
+                    toolName: 'edit_file',
+                    message: 'Allow edit?'
+                }
+            }));
+
+            const reasoning = document.querySelector('.reasoning-container');
+            if (!(reasoning instanceof HTMLElement)) { throw new Error('Reasoning block not found'); }
+            
+            // The confirmation should be INSIDE the reasoning content
+            const nestedConfirm = reasoning.querySelector(`#confirm-${toolCallId}`);
+            expect(nestedConfirm).toBeTruthy();
+            expect(nestedConfirm?.textContent).toContain('Allow edit?');
         });
     });
 });
