@@ -260,6 +260,25 @@ export const createDefaultConfig = (overrides: Partial<IConfig> = {}): IConfig =
 });
 
 /**
+ * Creates a mock DOMRect object that satisfies the DOMRect interface.
+ * We return a plain object that implements all required properties to avoid 'as' assertions.
+ */
+export function createMockDomRect(overrides: Partial<DOMRect> = {}): DOMRect {
+    return {
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
+        width: 0,
+        height: 0,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+        ...overrides
+    };
+}
+
+/**
  * Sets up a minimal DOM required for the Chat UI to initialize.
  */
 export function setupChatDom() {
