@@ -1,23 +1,44 @@
 {
+  "$schema": "./resources/config.schema.json",
   "activeChatProfile": "mistral-devstral-small-2512",
   "activeCompletionProfile": "llm7-qwen32",
   "profiles": {
     "llm7-qwen32": {
       "endpoint": "https://api.llm7.io/v1/chat/completions",
       "model": "qwen2.5-coder-32b-instruct",
-      "apiKey": "unused"
+      "apiKey": "unused",
+      "supportsTools": false
+    },
+    "publicai-olmo-32b": {
+      "endpoint": "https://api.publicai.co/v1/chat/completions",
+      "model": "allenai/Olmo-3.1-32B-Instruct",
+      "apiKey": "${PUBLICAI_API_KEY}",
+      "supportsTools": false
     },
     "publicai-apertus-70b": {
       "endpoint": "https://api.publicai.co/v1/chat/completions",
       "model": "swiss-ai/apertus-70b-instruct",
-      "apiKey": "${PUBLICAI_API_KEY}"
+      "apiKey": "${PUBLICAI_API_KEY}",
+      "supportsTools": false
     },
     "publicai-olmo3-7b": {
       "endpoint": "https://api.publicai.co/v1/chat/completions",
       "model": "allenai/Olmo-3-7B-Instruct",
-      "apiKey": "${PUBLICAI_API_KEY}"
+      "apiKey": "${PUBLICAI_API_KEY}",
+      "supportsTools": false
     },
-    "groq-llama370": {
+    "groq-compound": {
+      "endpoint": "https://api.groq.com/openai/v1/chat/completions",
+      "model": "groq/compound",
+      "apiKey": "${GROQ_API_KEY}",
+      "supportsTools": false
+    },
+    "groq-kimi-k2": {
+      "endpoint": "https://api.groq.com/openai/v1/chat/completions",
+      "model": "moonshotai/kimi-k2-instruct-0905",
+      "apiKey": "${GROQ_API_KEY}"
+    },
+     "groq-llama370": {
       "endpoint": "https://api.groq.com/openai/v1/chat/completions",
       "model": "llama-3.3-70b-versatile",
       "apiKey": "${GROQ_API_KEY}"
@@ -42,7 +63,7 @@
       "model": "qwen3-coder:480b-cloud",
       "apiKey": "${OLLAMA_API_KEY}"
     },
-    "qwen3.5:397b": {
+    "ollama-qwen3.5:397b": {
       "endpoint": "https://ollama.com/v1/chat/completions",
       "model": "qwen3.5:397b-cloud",
       "apiKey": "${OLLAMA_API_KEY}"
@@ -57,12 +78,7 @@
       "model": "labs-devstral-small-2512",
       "apiKey": "${MISTRAL_API_KEY}"
     },
-    "groq-compound": {
-      "endpoint": "https://api.groq.com/openai/v1/chat/completions",
-      "model": "groq/compound",
-      "apiKey": "${GROQ_API_KEY}"
-    },
-    "openrouter-arcee-ai-trinity": {
+   "openrouter-arcee-ai-trinity": {
       "endpoint": "https://openrouter.ai/api/v1/chat/completions",
       "model": "arcee-ai/trinity-large-preview:free",
       "apiKey": "${OPENROUTER_API_KEY}"
@@ -70,12 +86,14 @@
     "hf-lama38": {
       "endpoint": "https://router.huggingface.co/v1/chat/completions",
       "model": "meta-llama/Llama-3.1-8B-Instruct",
-      "apiKey": "${HF_API_KEY}"
+      "apiKey": "${HF_API_KEY}",
+      "supportsTools": false
     },
     "gemini-3.1-flash-lite": {
       "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
       "model": "gemini-3.1-flash-lite-preview",
-      "apiKey": "${GEMINI_API_KEY}"
+      "apiKey": "${GEMINI_API_KEY}",
+      "supportsTools": false
     }
   },
   "anonymizer": {

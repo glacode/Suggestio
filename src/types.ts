@@ -1198,9 +1198,12 @@ export interface IProfileConfig {
   apiKeyPlaceholder?: string; // extracted placeholder, optional
   resolvedApiKey?: string;    // actual key used at runtime
   type?: "openai-compatible" | "gemini"; // defaults to openai-compatible
+  /** Whether the model supports tool calling. If not specified, defaults to true. */
+  supportsTools?: boolean;
 }
 
 export interface IConfig {
+  $schema?: string;
   activeChatProfile: string;
   activeCompletionProfile?: string;
   enableInlineCompletion?: boolean;

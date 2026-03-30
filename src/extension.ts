@@ -192,7 +192,11 @@ export async function activate(context: vscode.ExtensionContext) {
     eventBus
   });
   const providerAccessor = {
-    getProfiles: () => Object.keys(configContainer.config.profiles),
+    getProfiles: () => Object.entries(configContainer.config.profiles)
+      // Filter out profiles that explicitly do not support tools.
+      // If supportsTools is undefined, we assume it supports tools (default).
+      .filter(([_, profile]) => profile.supportsTools !== false)
+      .map(([id]) => id),
     getActiveProfile: () => configContainer.config.activeChatProfile,
   };
 

@@ -4,6 +4,10 @@
   "description": "Configuration for the Suggestio VS Code extension",
   "type": "object",
   "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Path to the JSON schema for this configuration."
+    },
     "activeChatProfile": {
       "type": "string",
       "description": "The ID of the profile to use for Chat (must match a key in the 'profiles' object)."
@@ -40,6 +44,11 @@
           "endpoint": {
             "type": "string",
             "description": "The API endpoint URL (required for OpenAI-compatible profiles, usually ignored for Gemini)."
+          },
+          "supportsTools": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether the model supports tool calling. If not specified, defaults to true."
           }
         },
         "required": ["model", "apiKey"]
