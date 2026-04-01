@@ -31,6 +31,7 @@ export function registerCommands(
   windowProvider: IWindowProvider,
   secretManager: SecretManager
 ) {
+  // Opens the global configuration file (config.json) in the editor for manual modification.
   context.subscriptions.push(
     vscode.commands.registerCommand("suggestio.editGlobalConfig", () =>
       editGlobalConfig(
@@ -48,31 +49,35 @@ export function registerCommands(
 
   const apiKeyPlaceholders = extractApiKeyPlaceholders(config);
 
+  // Prompts the user to select an API key placeholder and then enter a new value for it, which is stored securely.
   context.subscriptions.push(
     vscode.commands.registerCommand("suggestio.updateApiKey", () =>
       handleUpdateApiKeyCommand(secretManager, windowProvider, apiKeyPlaceholders)
     )
   );
 
+  // Prompts the user to select an API key placeholder to be removed from secure storage.
   context.subscriptions.push(
     vscode.commands.registerCommand("suggestio.deleteApiKey", () =>
       handleDeleteApiKeyCommand(secretManager, windowProvider, apiKeyPlaceholders)
     )
   );
 
+  // Focuses the extension's chat view.
   context.subscriptions.push(
     vscode.commands.registerCommand('suggestio.openChat', () => {
       vscode.commands.executeCommand('suggestio.chat.view.focus');
     })
   );
 
+  // Clears the current chat session and starts a new one.
   context.subscriptions.push(
     vscode.commands.registerCommand('suggestio.newChat', () => {
       newChatCapable.newChat();
     })
   );
 
-  // Toggle inline completion UI context (minimal implementation)
+  // Enables inline completion by setting a VS Code context and notifying the extension via the event bus.
   context.subscriptions.push(
     vscode.commands.registerCommand('suggestio.enableInlineCompletion', () => {
       vscode.commands.executeCommand('setContext', 'suggestio.inlineCompletionEnabled', true);
@@ -81,6 +86,7 @@ export function registerCommands(
     })
   );
 
+  // Disables inline completion by setting a VS Code context and notifying the extension via the event bus.
   context.subscriptions.push(
     vscode.commands.registerCommand('suggestio.disableInlineCompletion', () => {
       vscode.commands.executeCommand('setContext', 'suggestio.inlineCompletionEnabled', false);
@@ -89,6 +95,7 @@ export function registerCommands(
     })
   );
 
+  // Allows the user to select an active completion profile from the configured profiles.
   context.subscriptions.push(
     vscode.commands.registerCommand('suggestio.selectCompletionProfile', async () => {
       const profiles = Object.keys(config.profiles);
