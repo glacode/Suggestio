@@ -131,6 +131,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const configProvider: IConfigProvider = {
     getLogLevel: () => vscode.workspace.getConfiguration('suggestio').get<string>('logLevel', CONFIG_DEFAULTS.LOG_LEVEL),
     getMaxAgentIterations: () => vscode.workspace.getConfiguration('suggestio').get<number>('maxAgentIterations', CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS),
+    getAnonymizerEnabled: () => vscode.workspace.getConfiguration('suggestio').get<boolean | undefined>('experimental.anonymizer.enabled'),
     onDidChangeConfiguration: (listener) => vscode.workspace.onDidChangeConfiguration(listener)
   };
 
@@ -148,15 +149,24 @@ export async function activate(context: vscode.ExtensionContext) {
     windowProvider,
     pathResolver
   );
+
   const vsCodeConfig = vscode.workspace.getConfiguration('suggestio');
-  
+
   const logLevel = vsCodeConfig.get<string>('logLevel', CONFIG_DEFAULTS.LOG_LEVEL);
   defaultLogger.setLogLevel(parseLogLevel(logLevel));
 
-  const overrides = {
+  const overrides: any = {
     maxAgentIterations: vsCodeConfig.get<number>('maxAgentIterations', CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS),
     logLevel: logLevel
   };
+
+  const anonymizerEnabled = vsCodeConfig.get<boolean | undefined>('experimental.anonymizer.enabled');
+  if (anonymizerEnabled !== undefined) {
+    overrides.anonymizer = {
+      enabled: anonymizerEnabled
+    };
+  }
+
   const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, secretManager, eventBus, new NodeFetchClient(), overrides);
   // Initialize UI context for inline completion toggle (default true in config)
   await vscode.commands.executeCommand('setContext', 'suggestio.inlineCompletionEnabled', configContainer.config.enableInlineCompletion !== false);

@@ -5,10 +5,26 @@ import { ShannonEntropyCalculator } from "../../src/utils/shannonEntropyCalculat
 import { EventBus } from "../../src/utils/eventBus.js";
 import * as http from "http";
 import { NodeFetchClient } from "../../src/utils/httpClient.js";
+import { createDefaultConfig } from "../testUtils.js";
+import { IConfig } from "../../src/types.js";
 
 const entropyCalculator = new ShannonEntropyCalculator();
 const httpClient = new NodeFetchClient();
 const eventBus = new EventBus();
+
+/**
+ * DRY helper to create a SimpleWordAnonymizer with a specific configuration for testing.
+ */
+function createAnonymizer(anonymizerOverrides: Partial<IConfig['anonymizer']> = {}) {
+    const config = createDefaultConfig({
+        anonymizer: {
+            enabled: true,
+            words: [],
+            ...anonymizerOverrides
+        }
+    });
+    return new SimpleWordAnonymizer({ config, entropyCalculator });
+}
 
 interface MockRequestBody {
     messages: { role: string; content: string }[];
@@ -43,7 +59,7 @@ describe("Inline Completion Anonymization", () => {
     });
 
     it("should anonymize sensitive words in inline completion prompt", async () => {
-        const anonymizer = new SimpleWordAnonymizer({ wordsToAnonymize: ["SECRET_KEY"], entropyCalculator });
+        const anonymizer = createAnonymizer({ words: ["SECRET_KEY"] });
         const provider = new OpenAICompatibleProvider({
             httpClient,
             endpoint,
@@ -64,11 +80,12 @@ describe("Inline Completion Anonymization", () => {
 
     it("should anonymize high entropy tokens in inline completion prompt", async () => {
         // Entropy anonymization: allowedEntropy=0.8, minLength=10
-        const anonymizer = new SimpleWordAnonymizer({
-            wordsToAnonymize: [],
-            entropyCalculator,
-            allowedEntropy: 0.8,
-            minLength: 10
+        const anonymizer = createAnonymizer({
+            words: [],
+            sensitiveData: {
+                allowedEntropy: 0.8,
+                minLength: 10
+            }
         });
         const provider = new OpenAICompatibleProvider({
             httpClient,

@@ -90,11 +90,15 @@ class ConfigProcessor {
      *                  These can override existing properties from the JSON config or provide
      *                  additional properties (e.g., maxAgentIterations) not present in the config file.
      */
-    public async processConfig(rawJson: string, secretManager: SecretManager, eventBus: IEventBus, httpClient: IHttpClient, overrides?: Partial<IConfig>): Promise<IConfigContainer> {
+    public async processConfig(rawJson: string, secretManager: SecretManager, eventBus: IEventBus, httpClient: IHttpClient, overrides?: any): Promise<IConfigContainer> {
         const config: IConfig = JSON.parse(rawJson);
 
         if (overrides) {
-            Object.assign(config, overrides);
+            const { anonymizer, ...rest } = overrides;
+            Object.assign(config, rest);
+            if (anonymizer) {
+                config.anonymizer = { ...config.anonymizer, ...anonymizer };
+            }
         }
 
         this.init(config, secretManager, eventBus, httpClient);

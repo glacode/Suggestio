@@ -6,17 +6,12 @@ import { IEventBus } from "../utils/eventBus.js";
 import { ShannonEntropyCalculator } from "../utils/shannonEntropyCalculator.js";
 
 
-export function getAnonymizer(config: IConfig, eventBus: IEventBus): IAnonymizer | undefined {
-  if (config.anonymizer?.enabled) {
-    const notifier = new EventBusAnonymizationNotifier(eventBus);
-    const entropyCalculator = new ShannonEntropyCalculator();
-    return new SimpleWordAnonymizer({
-      wordsToAnonymize: config.anonymizer.words,
-      entropyCalculator,
-      allowedEntropy: config.anonymizer.sensitiveData?.allowedEntropy,
-      minLength: config.anonymizer.sensitiveData?.minLength,
-      notifier
-    });
-  }
-  return undefined;
+export function getAnonymizer(config: IConfig, eventBus: IEventBus): IAnonymizer {
+  const notifier = new EventBusAnonymizationNotifier(eventBus);
+  const entropyCalculator = new ShannonEntropyCalculator();
+  return new SimpleWordAnonymizer({
+    config,
+    entropyCalculator,
+    notifier
+  });
 }

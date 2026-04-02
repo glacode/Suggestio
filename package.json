@@ -223,6 +223,11 @@
                     ],
                     "default": "Info",
                     "description": "The level of detail for the logs."
+                },
+                "suggestio.experimental.anonymizer.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable experimental code anonymization to prevent sensitive information from being sent to LLMs."
                 }
             }
         }

@@ -9,11 +9,11 @@ describe('getAnonymizer', () => {
     jest.clearAllMocks();
   });
 
-  it('returns undefined when anonymizer is disabled', () => {
+  it('returns SimpleWordAnonymizer instance even when anonymizer is disabled (it handles the flag internally)', () => {
     const config = createDefaultConfig({ anonymizer: { enabled: false, words: [] } });
     const eventBus = new EventBus();
     const result = getAnonymizer(config, eventBus);
-    expect(result).toBeUndefined();
+    expect(result).toBeInstanceOf(SimpleWordAnonymizer);
   });
 
   it('returns SimpleWordAnonymizer instance when anonymizer is enabled', () => {
@@ -31,14 +31,6 @@ describe('getAnonymizer', () => {
     expect(result).toBeInstanceOf(SimpleWordAnonymizer);
   });
 
-  it('returns undefined when anonymizer property is missing', () => {
-    const config = createDefaultConfig();
-    const eventBus = new EventBus();
-
-    const result = getAnonymizer(config, eventBus);
-    expect(result).toBeUndefined();
-  });
-
   it('returns SimpleWordAnonymizer instance when anonymizer is enabled with empty words', () => {
     const config = createDefaultConfig({
       anonymizer: {
@@ -51,5 +43,23 @@ describe('getAnonymizer', () => {
     const result = getAnonymizer(config, eventBus);
 
     expect(result).toBeInstanceOf(SimpleWordAnonymizer);
+  });
+
+  it('the returned anonymizer instance respects the enabled flag', () => {
+    const config = createDefaultConfig({
+      anonymizer: {
+        enabled: false,
+        words: ['secret']
+      }
+    });
+    const eventBus = new EventBus();
+    const anonymizer = getAnonymizer(config, eventBus);
+
+    const input = 'This is a secret';
+    expect(anonymizer.anonymize(input)).toBe(input);
+
+    // Enable it live
+    config.anonymizer.enabled = true;
+    expect(anonymizer.anonymize(input)).toBe('This is a ANON_0');
   });
 });

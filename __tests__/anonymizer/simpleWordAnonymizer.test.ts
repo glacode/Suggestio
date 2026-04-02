@@ -1,6 +1,7 @@
 import { SimpleWordAnonymizer } from '../../src/anonymizer/simpleWordAnonymizer.js';
-import { IAnonymizationNotifier } from '../../src/types.js';
+import { IAnonymizationNotifier, IConfig } from '../../src/types.js';
 import { ShannonEntropyCalculator } from '../../src/utils/shannonEntropyCalculator.js';
+import { createDefaultConfig } from '../testUtils.js';
 
 class MockNotifier implements IAnonymizationNotifier {
     public notifications: { original: string; placeholder: string; type: 'word' | 'entropy' }[] = [];
@@ -12,9 +13,23 @@ class MockNotifier implements IAnonymizationNotifier {
 
 const entropyCalculator = new ShannonEntropyCalculator();
 
+/**
+ * DRY helper to create a SimpleWordAnonymizer with a specific configuration for testing.
+ */
+function createAnonymizer(anonymizerOverrides: Partial<IConfig['anonymizer']> = {}, notifier?: IAnonymizationNotifier) {
+    const config = createDefaultConfig({
+        anonymizer: {
+            enabled: true,
+            words: [],
+            ...anonymizerOverrides
+        }
+    });
+    return new SimpleWordAnonymizer({ config, entropyCalculator, notifier });
+}
+
 describe('SimpleWordAnonymizer', () => {
   test('anonymizes and deanonymizes single word', () => {
-    const anonymizer = new SimpleWordAnonymizer({ wordsToAnonymize: ['secret'], entropyCalculator });
+    const anonymizer = createAnonymizer({ words: ['secret'] });
     const input = 'This is a secret message';
     
     const anonymized = anonymizer.anonymize(input);
@@ -26,7 +41,7 @@ describe('SimpleWordAnonymizer', () => {
   });
 
   test('anonymizes multiple different words', () => {
-    const anonymizer = new SimpleWordAnonymizer({ wordsToAnonymize: ['apple', 'banana'], entropyCalculator });
+    const anonymizer = createAnonymizer({ words: ['apple', 'banana'] });
     const input = 'I like apple and banana';
 
     const anonymized = anonymizer.anonymize(input);
@@ -40,7 +55,7 @@ describe('SimpleWordAnonymizer', () => {
   });
 
   test('handles case-insensitive matches', () => {
-    const anonymizer = new SimpleWordAnonymizer({ wordsToAnonymize: ['secret'], entropyCalculator });
+    const anonymizer = createAnonymizer({ words: ['secret'] });
     const input = 'Secret and SECRET and secret';
     
     const anonymized = anonymizer.anonymize(input);
@@ -52,7 +67,7 @@ describe('SimpleWordAnonymizer', () => {
   });
 
   test('does not anonymize partial words', () => {
-    const anonymizer = new SimpleWordAnonymizer({ wordsToAnonymize: ['cat'], entropyCalculator });
+    const anonymizer = createAnonymizer({ words: ['cat'] });
     const input = 'concatenate catalog cat';
     
     const anonymized = anonymizer.anonymize(input);
@@ -64,7 +79,7 @@ describe('SimpleWordAnonymizer', () => {
   });
 
   test('assigns placeholders consistently across calls', () => {
-    const anonymizer = new SimpleWordAnonymizer({ wordsToAnonymize: ['one', 'two'], entropyCalculator });
+    const anonymizer = createAnonymizer({ words: ['one', 'two'] });
     const result1 = anonymizer.anonymize('one');
     const result2 = anonymizer.anonymize('two');
     const result3 = anonymizer.anonymize('one two');
@@ -75,7 +90,7 @@ describe('SimpleWordAnonymizer', () => {
   });
 
   test('anonymizes word that appears multiple times with same placeholder', () => {
-    const anonymizer = new SimpleWordAnonymizer({ wordsToAnonymize: ['secret'], entropyCalculator });
+    const anonymizer = createAnonymizer({ words: ['secret'] });
     const input = 'This is a secret message with another secret word';
     
     const anonymized = anonymizer.anonymize(input);
@@ -90,7 +105,7 @@ describe('SimpleWordAnonymizer', () => {
   test('handles overlapping placeholders correctly during deanonymization', () => {
     // Generate 11 placeholders: ANON_0 to ANON_10
     const words = Array.from({ length: 11 }, (_, i) => `word${i}`);
-    const anonymizer = new SimpleWordAnonymizer({ wordsToAnonymize: words, entropyCalculator });
+    const anonymizer = createAnonymizer({ words });
     
     // Anonymize all words to populate the mapping
     words.forEach(w => anonymizer.anonymize(w));
@@ -106,7 +121,7 @@ describe('SimpleWordAnonymizer', () => {
     let anonymizer: SimpleWordAnonymizer;
 
     beforeEach(() => {
-        anonymizer = new SimpleWordAnonymizer({ wordsToAnonymize: ['secret'], entropyCalculator });
+        anonymizer = createAnonymizer({ words: ['secret'] });
     });
 
     test('handles a single chunk containing a full placeholder surrounded by text', () => {
@@ -148,11 +163,11 @@ describe('SimpleWordAnonymizer', () => {
     test('anonymizes high entropy strings', () => {
       // A random-looking string: "gH7p2K9wL4xN1" has high entropy
       // A common word: "password" has high-ish normalized entropy but we test it with a threshold
-      const anonymizer = new SimpleWordAnonymizer({
-        wordsToAnonymize: [],
-        entropyCalculator,
-        allowedEntropy: 0.95,
-        minLength: 8
+      const anonymizer = createAnonymizer({
+        sensitiveData: {
+          allowedEntropy: 0.95,
+          minLength: 8
+        }
       });
       const input = 'My key is gH7p2K9w@L4xN1 and my word is password';
       
@@ -169,11 +184,11 @@ describe('SimpleWordAnonymizer', () => {
     });
 
     test('uses same placeholder for same high entropy token', () => {
-      const anonymizer = new SimpleWordAnonymizer({
-        wordsToAnonymize: [],
-        entropyCalculator,
-        allowedEntropy: 0.9,
-        minLength: 8
+      const anonymizer = createAnonymizer({
+        sensitiveData: {
+          allowedEntropy: 0.9,
+          minLength: 8
+        }
       });
       const input = 'Key1: gH7p#2K9wL4xN91, Key2: gH7p#2K9wL4xN91';
       
@@ -185,11 +200,11 @@ describe('SimpleWordAnonymizer', () => {
     });
 
     test('does not anonymize identifiers (alphabetic or underscore)', () => {
-      const anonymizer = new SimpleWordAnonymizer({
-        wordsToAnonymize: [],
-        entropyCalculator,
-        allowedEntropy: 0.8,
-        minLength: 8
+      const anonymizer = createAnonymizer({
+        sensitiveData: {
+          allowedEntropy: 0.8,
+          minLength: 8
+        }
       });
       // "SimpleWordAnonymizer" is long and has reasonable entropy, but should be skipped.
       // "_privateIdentifier" should also be skipped.
@@ -200,12 +215,12 @@ describe('SimpleWordAnonymizer', () => {
     });
 
     test('does not anonymize snake_case identifiers', () => {
-        const anonymizer = new SimpleWordAnonymizer({
-        wordsToAnonymize: [],
-        entropyCalculator,
-        allowedEntropy: 0.8,
-        minLength: 8
-      });
+        const anonymizer = createAnonymizer({
+          sensitiveData: {
+            allowedEntropy: 0.8,
+            minLength: 8
+          }
+        });
         
         const safe = 'long_variable_name_1';
         const stillSafe = 'long_Variable_name_2'; 
@@ -219,12 +234,12 @@ describe('SimpleWordAnonymizer', () => {
     });
 
     test('anonymizes tokens with special characters like #, *, £, ?, ^', () => {
-        const anonymizer = new SimpleWordAnonymizer({
-        wordsToAnonymize: [],
-        entropyCalculator,
-        allowedEntropy: 0.8,
-        minLength: 8
-      });
+        const anonymizer = createAnonymizer({
+          sensitiveData: {
+            allowedEntropy: 0.8,
+            minLength: 8
+          }
+        });
         const input = 'My secret is eT5*yu3^£uYv?BCh#126';
         
         const anonymized = anonymizer.anonymize(input);
@@ -236,11 +251,7 @@ describe('SimpleWordAnonymizer', () => {
   describe('Anonymization Notifications', () => {
     test('notifies when anonymizing words', () => {
         const notifier = new MockNotifier();
-        const anonymizer = new SimpleWordAnonymizer({
-            wordsToAnonymize: ['secret'],
-            entropyCalculator,
-            notifier
-        });
+        const anonymizer = createAnonymizer({ words: ['secret'] }, notifier);
         
         anonymizer.anonymize('This is a secret message');
         
@@ -254,13 +265,12 @@ describe('SimpleWordAnonymizer', () => {
 
     test('notifies when anonymizing by entropy', () => {
         const notifier = new MockNotifier();
-        const anonymizer = new SimpleWordAnonymizer({
-            wordsToAnonymize: [],
-            entropyCalculator,
+        const anonymizer = createAnonymizer({
+          sensitiveData: {
             allowedEntropy: 0.8,
-            minLength: 8,
-            notifier
-        });
+            minLength: 8
+          }
+        }, notifier);
         const highEntropy = 'gH7p2K9wL4x8N1';
         
         anonymizer.anonymize(`Key: ${highEntropy}`);
@@ -272,5 +282,13 @@ describe('SimpleWordAnonymizer', () => {
             type: 'entropy'
         });
     });
+  });
+
+  test('returns input text unchanged when disabled', () => {
+    const anonymizer = createAnonymizer({ enabled: false, words: ['secret'] });
+    const input = 'This is a secret message';
+    
+    const anonymized = anonymizer.anonymize(input);
+    expect(anonymized).toBe(input);
   });
 });

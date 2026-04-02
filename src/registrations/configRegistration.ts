@@ -18,6 +18,7 @@ export function registerConfigHandler(
       if (e.affectsConfiguration('suggestio')) {
         const newLogLevel = configProvider.getLogLevel();
         const newMaxAgentIterations = configProvider.getMaxAgentIterations();
+        const newAnonymizerEnabled = configProvider.getAnonymizerEnabled();
 
         eventBus.emit('log', { level: 'info', message: CONFIG_LOGS.CONFIGURATION_CHANGED(newLogLevel, newMaxAgentIterations) });
 
@@ -28,6 +29,9 @@ export function registerConfigHandler(
         if (configContainer.config) {
           configContainer.config.logLevel = newLogLevel;
           configContainer.config.maxAgentIterations = newMaxAgentIterations;
+          if (newAnonymizerEnabled !== undefined) {
+            configContainer.config.anonymizer.enabled = newAnonymizerEnabled;
+          }
         }
       }
     })

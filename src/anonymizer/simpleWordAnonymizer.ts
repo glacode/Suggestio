@@ -1,4 +1,4 @@
-import { IAnonymizer, IStreamingDeanonymizer, IAnonymizationNotifier, IEntropyCalculator } from "../types.js";
+import { IAnonymizer, IStreamingDeanonymizer, IAnonymizationNotifier, IEntropyCalculator, IConfig } from "../types.js";
 import { isLikeIdentifier } from "./isLikeIdentifier.js";
 import { isLikePath } from "./isLikePath.js";
 import { matchesWellKnownSecret } from "./matchesWellKnownSecret.js";
@@ -7,14 +7,10 @@ import { matchesWellKnownSecret } from "./matchesWellKnownSecret.js";
  * Arguments for the SimpleWordAnonymizer constructor.
  */
 export interface ISimpleWordAnonymizerArgs {
-    /** List of words that should be explicitly anonymized. */
-    wordsToAnonymize: string[];
+    /** The configuration object. */
+    config: IConfig;
     /** Calculator for entropy-based anonymization. */
     entropyCalculator: IEntropyCalculator;
-    /** Optional threshold for entropy-based anonymization. Strings with entropy higher than this will be anonymized. */
-    allowedEntropy?: number;
-    /** Optional minimum length for entropy-based anonymization. */
-    minLength?: number;
     /** Optional notifier to receive events when anonymization occurs. */
     notifier?: IAnonymizationNotifier;
 }
@@ -24,10 +20,8 @@ export class SimpleWordAnonymizer implements IAnonymizer {
     private reverseMapping: Map<string, string> = new Map();
     private placeholderPrefix = 'ANON_';
     private counter = -1;
-    private wordsToAnonymize: string[];
+    private config: IConfig;
     private entropyCalculator: IEntropyCalculator;
-    private allowedEntropy?: number;
-    private minLength?: number;
     private notifier?: IAnonymizationNotifier;
 
     /**
@@ -35,25 +29,27 @@ export class SimpleWordAnonymizer implements IAnonymizer {
      * @param args - The configuration arguments for the anonymizer.
      */
     constructor({
-        wordsToAnonymize,
+        config,
         entropyCalculator,
-        allowedEntropy,
-        minLength,
         notifier
     }: ISimpleWordAnonymizerArgs) {
-        this.wordsToAnonymize = wordsToAnonymize;
+        this.config = config;
         this.entropyCalculator = entropyCalculator;
-        this.allowedEntropy = allowedEntropy;
-        this.minLength = minLength;
         this.notifier = notifier;
     }
 
     private anonymizeEntropy(text: string): string {
-        if (this.allowedEntropy === undefined || this.minLength === undefined) {
+        if (!this.config.anonymizer?.enabled) {
+            return text;
+        }
+        
+        const allowedEntropy = this.config.anonymizer.sensitiveData?.allowedEntropy;
+        const minLen = this.config.anonymizer.sensitiveData?.minLength;
+
+        if (allowedEntropy === undefined || minLen === undefined) {
             return text;
         }
 
-        const minLen = this.minLength;
         const regex = /[a-zA-Z0-9_\-\+/=#@$\*£\?\^]+/g;
         let match;
         const candidates: { start: number; end: number; text: string }[] = [];
@@ -78,7 +74,7 @@ export class SimpleWordAnonymizer implements IAnonymizer {
                 }
 
                 // 4. Entropy check
-                if (this.entropyCalculator.getEntropy(token) > this.allowedEntropy) {
+                if (this.entropyCalculator.getEntropy(token) > allowedEntropy) {
                     candidates.push({
                         start: match.index,
                         end: match.index + token.length,
@@ -118,7 +114,8 @@ export class SimpleWordAnonymizer implements IAnonymizer {
 
     private processWordAnonymization(text: string): string {
         let result = text;
-        for (const word of this.wordsToAnonymize) {
+        const wordsToAnonymize = this.config.anonymizer?.words || [];
+        for (const word of wordsToAnonymize) {
             result = this.anonymizeSingleWord(result, word);
         }
         return result;
@@ -179,6 +176,9 @@ export class SimpleWordAnonymizer implements IAnonymizer {
      * @returns The anonymized text with placeholders.
      */
     anonymize(text: string): string {
+        if (!this.config.anonymizer?.enabled) {
+            return text;
+        }
         const textWithWords = this.processWordAnonymization(text);
         return this.anonymizeEntropy(textWithWords);
     }

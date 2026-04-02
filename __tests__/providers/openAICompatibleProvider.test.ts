@@ -1,11 +1,25 @@
 import { OpenAICompatibleProvider } from "../../src/providers/openAICompatibleProvider.js";
-import { ChatHistory, IChatMessage, IAnonymizer, IPrompt, IHttpClient, IHttpResponse, IToolDefinition, IEventBus } from "../../src/types.js";
+import { ChatHistory, IChatMessage, IAnonymizer, IPrompt, IHttpClient, IHttpResponse, IToolDefinition, IEventBus, IConfig } from "../../src/types.js";
 import { SimpleWordAnonymizer } from "../../src/anonymizer/simpleWordAnonymizer.js";
 import { ShannonEntropyCalculator } from "../../src/utils/shannonEntropyCalculator.js";
 import { jest } from "@jest/globals";
-import { createMockEventBus } from "../testUtils.js";
+import { createMockEventBus, createDefaultConfig } from "../testUtils.js";
 
 const entropyCalculator = new ShannonEntropyCalculator();
+
+/**
+ * DRY helper to create a SimpleWordAnonymizer with a specific configuration for testing.
+ */
+function createAnonymizer(anonymizerOverrides: Partial<IConfig['anonymizer']> = {}) {
+  const config = createDefaultConfig({
+      anonymizer: {
+          enabled: true,
+          words: [],
+          ...anonymizerOverrides
+      }
+  });
+  return new SimpleWordAnonymizer({ config, entropyCalculator });
+}
 
 class TestPrompt implements IPrompt {
   constructor(private messages: IChatMessage[]) { }
@@ -110,7 +124,7 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
     let anonymizer: IAnonymizer;
 
     beforeEach(() => {
-      anonymizer = new SimpleWordAnonymizer({ wordsToAnonymize: ["secret"], entropyCalculator });
+      anonymizer = createAnonymizer({ words: ["secret"] });
     });
 
     it("should anonymize user messages before sending", async () => {

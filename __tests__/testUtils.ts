@@ -240,6 +240,7 @@ export const createMockPathResolver = (): jest.Mocked<IPathResolver> => ({
 export const createMockConfigProvider = (): jest.Mocked<IConfigProvider> => ({
     getLogLevel: jest.fn(),
     getMaxAgentIterations: jest.fn(),
+    getAnonymizerEnabled: jest.fn(),
     onDidChangeConfiguration: jest.fn(),
 });
 

@@ -720,6 +720,11 @@ export interface IConfigProvider {
   getMaxAgentIterations(): number;
 
   /**
+   * Retrieves if anonymizer is enabled. Returns undefined if not set in VS Code settings.
+   */
+  getAnonymizerEnabled(): boolean | undefined;
+
+  /**
    * Fired when the configuration changes.
    * @param listener The function to call when the configuration changes.
    * @returns A disposable to unsubscribe from the event.
