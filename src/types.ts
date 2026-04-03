@@ -1207,7 +1207,20 @@ export interface IProfileConfig {
   supportsTools?: boolean;
 }
 
-export interface IConfig {
+export interface IAnonymizerConfig {
+  enabled: boolean;
+  words: string[];
+  sensitiveData?: {
+    allowedEntropy: number;
+    minLength: number;
+  };
+}
+
+export interface IAnonymizerConfigHolder {
+  anonymizer: IAnonymizerConfig;
+}
+
+export interface IConfig extends IAnonymizerConfigHolder {
   $schema?: string;
   activeChatProfile: string;
   activeCompletionProfile?: string;
@@ -1215,14 +1228,7 @@ export interface IConfig {
   profiles: {
     [key: string]: IProfileConfig;
   };
-  anonymizer: {
-    enabled: boolean;
-    words: string[];
-    sensitiveData?: {
-      allowedEntropy: number;
-      minLength: number;
-    };
-  };
+  anonymizer: IAnonymizerConfig;
   anonymizerInstance?: IAnonymizer;
   llmProviderForInlineCompletion?: ILlmProvider;
   llmProviderForChat?: ILlmProvider;

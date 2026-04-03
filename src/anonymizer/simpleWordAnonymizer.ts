@@ -1,4 +1,4 @@
-import { IAnonymizer, IStreamingDeanonymizer, IAnonymizationNotifier, IEntropyCalculator, IConfig } from "../types.js";
+import { IAnonymizer, IStreamingDeanonymizer, IAnonymizationNotifier, IEntropyCalculator, IAnonymizerConfigHolder } from "../types.js";
 import { isLikeIdentifier } from "./isLikeIdentifier.js";
 import { isLikePath } from "./isLikePath.js";
 import { matchesWellKnownSecret } from "./matchesWellKnownSecret.js";
@@ -7,8 +7,8 @@ import { matchesWellKnownSecret } from "./matchesWellKnownSecret.js";
  * Arguments for the SimpleWordAnonymizer constructor.
  */
 export interface ISimpleWordAnonymizerArgs {
-    /** The configuration object. */
-    config: IConfig;
+    /** The configuration holder object containing anonymizer settings. */
+    config: IAnonymizerConfigHolder;
     /** Calculator for entropy-based anonymization. */
     entropyCalculator: IEntropyCalculator;
     /** Optional notifier to receive events when anonymization occurs. */
@@ -20,7 +20,7 @@ export class SimpleWordAnonymizer implements IAnonymizer {
     private reverseMapping: Map<string, string> = new Map();
     private placeholderPrefix = 'ANON_';
     private counter = -1;
-    private config: IConfig;
+    private config: IAnonymizerConfigHolder;
     private entropyCalculator: IEntropyCalculator;
     private notifier?: IAnonymizationNotifier;
 
