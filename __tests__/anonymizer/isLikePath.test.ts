@@ -1,3 +1,4 @@
+import { describe, test, expect } from '@jest/globals';
 import { isLikePath } from '../../src/anonymizer/isLikePath.js';
 
 describe('isLikePath', () => {

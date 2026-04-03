@@ -5,9 +5,16 @@ import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
 
-export async function launchVscode(workspacePath?: string) {
+export async function launchVscode(workspacePath?: string, settings?: Record<string, any>) {
     const vscodeExecutablePath = await downloadAndUnzipVSCode('1.106.2');
     const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'suggestio-playwright-'));
+    
+    if (settings) {
+        const settingsPath = path.join(userDataDir, 'User', 'settings.json');
+        fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
+        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+    }
+
     const extensionsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'suggestio-playwright-extensions-'));
 
     const args = [

@@ -85,7 +85,7 @@
           "required": ["allowedEntropy", "minLength"]
         }
       },
-      "required": ["enabled", "words"]
+      "required": ["words"]
     }
   },
   "required": ["activeChatProfile", "profiles", "anonymizer"]

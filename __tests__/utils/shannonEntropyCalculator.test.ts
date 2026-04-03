@@ -1,3 +1,4 @@
+import { describe, expect } from '@jest/globals';
 import { ShannonEntropyCalculator } from '../../src/utils/shannonEntropyCalculator.js';
 
 describe('ShannonEntropyCalculator', () => {

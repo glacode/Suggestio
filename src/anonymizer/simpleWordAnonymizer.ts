@@ -189,6 +189,9 @@ export class SimpleWordAnonymizer implements IAnonymizer {
      * @returns The text with placeholders replaced by original values.
      */
     deanonymize(text: string): string {
+        if (!this.config.anonymizer.enabled) {
+            return text;
+        }
         return text.replace(/ANON_\d+/g, (match) => {
             return this.mapping.get(match) || match;
         });
@@ -199,16 +202,23 @@ export class SimpleWordAnonymizer implements IAnonymizer {
      * @returns An object capable of deanonymizing a stream of text chunks.
      */
     createStreamingDeanonymizer(): IStreamingDeanonymizer {
-        return new SimpleStreamingDeanonymizer(this.mapping, this.placeholderPrefix);
+        return new SimpleStreamingDeanonymizer(this.mapping, this.placeholderPrefix, this.config);
     }
 }
 
 class SimpleStreamingDeanonymizer implements IStreamingDeanonymizer {
     private buffer = '';
 
-    constructor(private mapping: Map<string, string>, private prefix: string) { }
+    constructor(
+        private mapping: Map<string, string>,
+        private prefix: string,
+        private config: IAnonymizerConfigHolder
+    ) { }
 
     process(chunk: string): { processed: string; buffer: string } {
+        if (!this.config.anonymizer.enabled) {
+            return { processed: chunk, buffer: '' };
+        }
         this.buffer += chunk;
         let processed = '';
 

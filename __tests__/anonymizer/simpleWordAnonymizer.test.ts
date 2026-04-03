@@ -1,3 +1,4 @@
+import { describe, test, expect, beforeEach } from '@jest/globals';
 import { SimpleWordAnonymizer } from '../../src/anonymizer/simpleWordAnonymizer.js';
 import { IAnonymizationNotifier, IConfig } from '../../src/types.js';
 import { ShannonEntropyCalculator } from '../../src/utils/shannonEntropyCalculator.js';
@@ -288,7 +289,18 @@ describe('SimpleWordAnonymizer', () => {
     const anonymizer = createAnonymizer({ enabled: false, words: ['secret'] });
     const input = 'This is a secret message';
     
+    // Anonymization should do nothing
     const anonymized = anonymizer.anonymize(input);
     expect(anonymized).toBe(input);
+
+    // Deanonymization should also do nothing even if it contains things that look like placeholders
+    const fakeAnonymized = 'This is a ANON_0 message';
+    expect(anonymizer.deanonymize(fakeAnonymized)).toBe(fakeAnonymized);
+
+    // Streaming deanonymization should also do nothing
+    const streamer = anonymizer.createStreamingDeanonymizer();
+    const result = streamer.process(fakeAnonymized);
+    expect(result.processed).toBe(fakeAnonymized);
+    expect(result.buffer).toBe('');
   });
 });

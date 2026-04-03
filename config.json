@@ -97,7 +97,6 @@
     }
   },
   "anonymizer": {
-    "enabled": true,
     "words": [
       "john",
       "doe",

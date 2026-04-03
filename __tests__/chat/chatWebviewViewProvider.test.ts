@@ -2,6 +2,7 @@
 // It's designed to test the `ChatWebviewViewProvider` without actually using a full VS Code environment.
 // Instead, it uses "mocks" (fake versions) of VS Code API parts and other dependencies.
 
+import { describe, it, expect } from '@jest/globals';
 // Import necessary types from the chat module. These define the shapes of objects
 // like URIs, VS Code API, profiles, webviews, and messages.
 import type {

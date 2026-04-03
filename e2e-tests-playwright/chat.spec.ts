@@ -22,7 +22,6 @@ function writeMockConfig(workspace: string) {
         activeCompletionProfile: "testProvider",
         maxAgentIterations: 10,  // TODO it seems to have no effect in the E2E test, investigate why and fix if possible
         anonymizer: {
-            enabled: true,
             words: ["secret"]
         },
         profiles: {
@@ -313,7 +312,9 @@ test.describe('Chat E2E', () => {
         capturedRequests = [];
         server = await createMockServer(capturedRequests);
 
-        const result = await launchVscode(tempWorkspacePath);
+        const result = await launchVscode(tempWorkspacePath, {
+            'suggestio.experimental.anonymizer.enabled': true
+        });
         electronApp = result.electronApp;
 
         page = await electronApp.firstWindow();

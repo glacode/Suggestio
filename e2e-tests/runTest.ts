@@ -31,7 +31,7 @@ async function main() {
                 '--enable-proposed-api=suggestio',
                 '--disable-extensions', // Disable all other extensions for a clean test environment
                 '--force-user-env',
-                '--settings', '{"editor.inlineSuggest.enabled": true}'
+                '--settings', '{"editor.inlineSuggest.enabled": true, "suggestio.experimental.anonymizer.enabled": true}'
             ],
         });
     } catch (err) {

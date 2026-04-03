@@ -1,3 +1,4 @@
+import { describe, it, expect } from '@jest/globals';
 import { ChatPrompt } from '../../src/chat/chatPrompt.js';
 import { ChatHistory, IChatMessage } from '../../src/types.js';
 import { SYSTEM_PROMPTS } from '../../src/constants/prompts.js';

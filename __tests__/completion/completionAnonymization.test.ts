@@ -1,3 +1,4 @@
+import { describe, it, expect } from '@jest/globals';
 import { OpenAICompatibleProvider } from "../../src/providers/openAICompatibleProvider.js";
 import { SimpleWordAnonymizer } from "../../src/anonymizer/simpleWordAnonymizer.js";
 import { UserPrompt } from "../../src/completion/promptBuilder/userPrompt.js";

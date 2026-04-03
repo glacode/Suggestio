@@ -1,3 +1,4 @@
+import { describe, it, expect } from '@jest/globals';
 import { EventBus } from '../../src/utils/eventBus.js';
 import { EventLogHandler } from '../../src/log/eventLogHandler.js';
 import { EventBusAnonymizationNotifier, ANONYMIZATION_EVENT } from '../../src/anonymizer/anonymizationNotifier.js';

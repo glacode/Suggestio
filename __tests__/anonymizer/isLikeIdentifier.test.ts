@@ -1,3 +1,4 @@
+import { describe, test, expect } from '@jest/globals';
 import { isLikeIdentifier } from '../../src/anonymizer/isLikeIdentifier.js';
 
 describe('isLikeIdentifier', () => {

@@ -93,6 +93,13 @@ class ConfigProcessor {
     public async processConfig(rawJson: string, secretManager: SecretManager, eventBus: IEventBus, httpClient: IHttpClient, overrides?: any): Promise<IConfigContainer> {
         const config: IConfig = JSON.parse(rawJson);
 
+        // Ensure anonymizer section exists and has a default 'enabled' state
+        if (!config.anonymizer) {
+            config.anonymizer = { enabled: false, words: [] };
+        } else if (config.anonymizer.enabled === undefined) {
+            config.anonymizer.enabled = false;
+        }
+
         if (overrides) {
             const { anonymizer, ...rest } = overrides;
             Object.assign(config, rest);

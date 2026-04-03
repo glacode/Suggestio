@@ -1,4 +1,5 @@
 // __tests__/src/chat/context.test.ts
+import { describe, expect, beforeEach } from '@jest/globals';
 import { ContextBuilder } from '../../src/chat/context.js';
 import { IActiveTextEditorProvider, IIgnoreManager, IWorkspaceProvider, IPathResolver } from '../../src/types.js';
 import { createMockIgnoreManager, createMockWorkspaceProvider, createMockPathResolver } from '../testUtils.js';

@@ -1,3 +1,4 @@
+import { describe, it, expect } from '@jest/globals';
 import { EventLogHandler } from '../../src/log/eventLogHandler.js';
 import { EventBus } from '../../src/utils/eventBus.js';
 import { createMockLogger } from '../testUtils.js';

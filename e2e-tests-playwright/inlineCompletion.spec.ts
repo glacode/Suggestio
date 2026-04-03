@@ -35,7 +35,6 @@ function writeMockConfig(workspace: string) {
             }
         },
         anonymizer: {
-            enabled: true,
             words: ["john", "doe"]
         }
     };
@@ -97,7 +96,9 @@ test.describe('Inline Completion E2E', () => {
         writeMockConfig(tempWorkspacePath);
         server = await createMockServer();
 
-        const result = await launchVscode(tempWorkspacePath);
+        const result = await launchVscode(tempWorkspacePath, {
+            'suggestio.experimental.anonymizer.enabled': true
+        });
         electronApp = result.electronApp;
 
         page = await electronApp.firstWindow();

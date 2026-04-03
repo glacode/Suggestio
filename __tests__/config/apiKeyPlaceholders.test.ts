@@ -1,3 +1,4 @@
+import { describe, it, expect } from '@jest/globals';
 import { IConfig } from "../../src/types.js";
 import { extractApiKeyPlaceholders } from "../../src/config/apiKeyPlaceholders.js";
 import { createDefaultConfig } from "../testUtils.js";
