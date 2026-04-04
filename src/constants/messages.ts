@@ -68,8 +68,6 @@ export const CONFIG_LOGS = {
     CONFIG_UPDATED_INLINE: (enabled: boolean) => `config updated. enableInlineCompletion: ${enabled}`,
     CONFIG_UPDATED_ACTIVE_CHAT_PROFILE: (profileId: string) => `config updated. activeChatProfile: ${profileId}`,
     CONFIG_UPDATED_ACTIVE_COMPLETION_PROFILE: (profileId: string) => `config updated. activeCompletionProfile: ${profileId}`,
-    SECRET_MANAGER_NOT_INITIALIZED: 'SecretManager is not initialized',
-    CONFIG_PROCESSOR_NOT_INITIALIZED: 'ConfigProcessor is not initialized',
 } as const;
 
 export const COMPLETION_LOGS = {

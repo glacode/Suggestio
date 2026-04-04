@@ -9,88 +9,27 @@ export interface SecretManager {
     getOrRequestAPIKey(providerKey: string): Promise<string>;
 }
 
+/**
+ * Service for processing and initializing the extension configuration.
+ */
 class ConfigProcessor {
-    private _config: IConfig | undefined;
-    private _secretManager: SecretManager | undefined;
-    private _eventBus: IEventBus | undefined;
-    private _httpClient: IHttpClient | undefined;
-
-    private logger: ReturnType<typeof createEventLogger> | undefined;
-
-    constructor() {
-    }
-
-    public init(config: IConfig, secretManager: SecretManager, eventBus: IEventBus, httpClient: IHttpClient) {
-        this._config = config;
-        this._secretManager = secretManager;
-        this._eventBus = eventBus;
-        this._httpClient = httpClient;
-        this.logger = createEventLogger(eventBus);
-
-        // Remove existing listeners to avoid duplicates if init is called multiple times
-        this._eventBus.removeAllListeners('chatProfileChanged');
-        this._eventBus.on('chatProfileChanged', (profileId: string) => {
-            this.logger?.info(CONFIG_LOGS.CHAT_PROFILE_CHANGED(profileId));
-            this.updateActiveProfile(profileId);
-        });
-
-        // Listen for inline completion toggles and update the in-memory config accordingly
-        this._eventBus.removeAllListeners('inlineCompletionToggled');
-        this._eventBus.on('inlineCompletionToggled', (enabled: boolean) => {
-            this.logger?.info(CONFIG_LOGS.INLINE_COMPLETION_TOGGLED(enabled));
-            if (this._config) {
-                this._config.enableInlineCompletion = enabled;
-                this.logger?.info(CONFIG_LOGS.CONFIG_UPDATED_INLINE(this._config.enableInlineCompletion));
-            }
-        });
-
-        this._eventBus.removeAllListeners('completionProfileChanged');
-        this._eventBus.on('completionProfileChanged', (profileId: string) => {
-            this.logger?.info(CONFIG_LOGS.COMPLETION_PROFILE_CHANGED(profileId));
-            if (this._config) {
-                this._config.activeCompletionProfile = profileId;
-                this.updateProviders(this._config);
-                this.logger?.info(CONFIG_LOGS.CONFIG_UPDATED_ACTIVE_COMPLETION_PROFILE(this._config.activeCompletionProfile));
-            }
-        });
-    }
-
-    /**
-     * Resolve the API key for a single profile in memory.
-     * Populates `apiKeyPlaceholder` and `resolvedApiKey`.
-     */
-    private async resolveAPIKeyInMemory(
-        profileConfig: IProfileConfig,
-    ) {
-        if (!this._secretManager) {
-            throw new Error(CONFIG_LOGS.SECRET_MANAGER_NOT_INITIALIZED);
-        }
-        const apiKeyValue = profileConfig.apiKey;
-
-        if (typeof apiKeyValue !== 'string') { return; }
-
-        const match = apiKeyValue.match(/^\$\{(\w+)\}$/);
-        const placeholder = match ? match[1] : undefined;
-        profileConfig.apiKeyPlaceholder = placeholder;
-
-        if (placeholder) {
-            const envValue = process.env[placeholder];
-            profileConfig.resolvedApiKey = envValue?.trim() || await this._secretManager.getOrRequestAPIKey(placeholder);
-        } else {
-            profileConfig.resolvedApiKey = apiKeyValue;
-        }
-    }
+    constructor() { }
 
     /**
      * Process raw config JSON and resolves API keys using a secret manager.
      * @param rawJson The raw JSON string from the configuration file.
      * @param secretManager The secret manager to resolve API keys.
      * @param eventBus The event bus for communication between components.
-     * @param overrides Optional partial configuration coming from standard VSCode extension settings.
-     *                  These can override existing properties from the JSON config or provide
-     *                  additional properties (e.g., maxAgentIterations) not present in the config file.
+     * @param httpClient The HTTP client for provider initialization.
+     * @param overrides Optional partial configuration from standard VSCode extension settings.
      */
-    public async processConfig(rawJson: string, secretManager: SecretManager, eventBus: IEventBus, httpClient: IHttpClient, overrides?: any): Promise<IConfigContainer> {
+    public async processConfig(
+        rawJson: string,
+        secretManager: SecretManager,
+        eventBus: IEventBus,
+        httpClient: IHttpClient,
+        overrides?: any
+    ): Promise<IConfigContainer> {
         const config: IConfig = JSON.parse(rawJson);
 
         // Ensure anonymizer section exists and has a default 'enabled' state
@@ -108,50 +47,99 @@ class ConfigProcessor {
             }
         }
 
-        this.init(config, secretManager, eventBus, httpClient);
+        const logger = createEventLogger(eventBus);
 
-        await this.updateProviders(config);
+        // Register event listeners for live updates to this specific config instance
+        this.registerEventListeners(config, eventBus, secretManager, httpClient, logger);
+
+        await this.updateProviders(config, eventBus, secretManager, httpClient);
 
         return { config };
     }
 
-    private async updateProviders(config: IConfig) {
-        if (!this._eventBus || !this._httpClient) {
-            throw new Error(CONFIG_LOGS.CONFIG_PROCESSOR_NOT_INITIALIZED);
-        }
+    private registerEventListeners(
+        config: IConfig,
+        eventBus: IEventBus,
+        secretManager: SecretManager,
+        httpClient: IHttpClient,
+        logger: ReturnType<typeof createEventLogger>
+    ) {
+        // Remove existing listeners to avoid duplicates if processConfig is called multiple times
+        eventBus.removeAllListeners('chatProfileChanged');
+        eventBus.on('chatProfileChanged', async (profileId: string) => {
+            logger.info(CONFIG_LOGS.CHAT_PROFILE_CHANGED(profileId));
+            if (config.profiles[profileId]) {
+                config.activeChatProfile = profileId;
+                await this.updateProviders(config, eventBus, secretManager, httpClient);
+                logger.info(CONFIG_LOGS.CONFIG_UPDATED_ACTIVE_CHAT_PROFILE(config.activeChatProfile));
+            }
+        });
 
+        eventBus.removeAllListeners('inlineCompletionToggled');
+        eventBus.on('inlineCompletionToggled', (enabled: boolean) => {
+            logger.info(CONFIG_LOGS.INLINE_COMPLETION_TOGGLED(enabled));
+            config.enableInlineCompletion = enabled;
+            logger.info(CONFIG_LOGS.CONFIG_UPDATED_INLINE(config.enableInlineCompletion));
+        });
+
+        eventBus.removeAllListeners('completionProfileChanged');
+        eventBus.on('completionProfileChanged', async (profileId: string) => {
+            logger.info(CONFIG_LOGS.COMPLETION_PROFILE_CHANGED(profileId));
+            config.activeCompletionProfile = profileId;
+            await this.updateProviders(config, eventBus, secretManager, httpClient);
+            logger.info(CONFIG_LOGS.CONFIG_UPDATED_ACTIVE_COMPLETION_PROFILE(config.activeCompletionProfile));
+        });
+    }
+
+    /**
+     * Resolve the API key for a single profile in memory.
+     */
+    private async resolveAPIKeyInMemory(
+        profileConfig: IProfileConfig,
+        secretManager: SecretManager
+    ) {
+        const apiKeyValue = profileConfig.apiKey;
+        if (typeof apiKeyValue !== 'string') { return; }
+
+        const match = apiKeyValue.match(/^\$\{(\w+)\}$/);
+        const placeholder = match ? match[1] : undefined;
+        profileConfig.apiKeyPlaceholder = placeholder;
+
+        if (placeholder) {
+            const envValue = process.env[placeholder];
+            profileConfig.resolvedApiKey = envValue?.trim() || await secretManager.getOrRequestAPIKey(placeholder);
+        } else {
+            profileConfig.resolvedApiKey = apiKeyValue;
+        }
+    }
+
+    private async updateProviders(
+        config: IConfig,
+        eventBus: IEventBus,
+        secretManager: SecretManager,
+        httpClient: IHttpClient
+    ) {
         const { activeChatProfile, activeCompletionProfile, profiles } = config;
 
         // Resolve API key for active (Chat) profile
         if (activeChatProfile && profiles?.[activeChatProfile]) {
-            await this.resolveAPIKeyInMemory(profiles[activeChatProfile]);
+            await this.resolveAPIKeyInMemory(profiles[activeChatProfile], secretManager);
         }
 
         // Resolve API key for Completion profile if it's different
         const targetCompletionProfileId = activeCompletionProfile || activeChatProfile;
         if (targetCompletionProfileId && targetCompletionProfileId !== activeChatProfile && profiles?.[targetCompletionProfileId]) {
-            await this.resolveAPIKeyInMemory(profiles[targetCompletionProfileId]);
+            await this.resolveAPIKeyInMemory(profiles[targetCompletionProfileId], secretManager);
         }
 
         if (!config.anonymizerInstance) {
-            config.anonymizerInstance = getAnonymizer(config, this._eventBus);
+            config.anonymizerInstance = getAnonymizer(config, eventBus);
         }
 
         // Initialize providers
-        config.llmProviderForChat = getLlmProvider(config, this._httpClient, this._eventBus, config.anonymizerInstance, activeChatProfile) ?? undefined;
-        config.llmProviderForInlineCompletion = getLlmProvider(config, this._httpClient, this._eventBus, config.anonymizerInstance, targetCompletionProfileId) ?? undefined;
-    }
-
-    private async updateActiveProfile(profileId: string) {
-        if (!this._config) {
-            return;
-        }
-
-        if (this._config.profiles[profileId]) {
-            this._config.activeChatProfile = profileId;
-            await this.updateProviders(this._config);
-            this.logger?.info(CONFIG_LOGS.CONFIG_UPDATED_ACTIVE_CHAT_PROFILE(this._config.activeChatProfile));
-        }
+        config.llmProviderForChat = getLlmProvider(config, httpClient, eventBus, config.anonymizerInstance, activeChatProfile) ?? undefined;
+        config.llmProviderForInlineCompletion = getLlmProvider(config, httpClient, eventBus, config.anonymizerInstance, targetCompletionProfileId) ?? undefined;
     }
 }
+
 export const configProcessor = new ConfigProcessor();
