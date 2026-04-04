@@ -335,14 +335,20 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     }
 
     let content = choice.content || "";
-    if (content && this.anonymizer) {
-      content = this.anonymizer.deanonymize(content);
+    let reasoning = choice.reasoning || choice.reasoning_content || "";
+    if (this.anonymizer) {
+      if (content) {
+        content = this.anonymizer.deanonymize(content);
+      }
+      if (reasoning) {
+        reasoning = this.anonymizer.deanonymize(reasoning);
+      }
     }
 
     return {
       role: "assistant",
       content,
-      reasoning: choice.reasoning || choice.reasoning_content || undefined,
+      reasoning: reasoning || undefined,
       tool_calls: choice.tool_calls ?? undefined,
     };
   }
@@ -392,7 +398,8 @@ export class OpenAICompatibleProvider implements ILlmProvider {
       throw new Error(LLM_MESSAGES.RESPONSE_BODY_NULL);
     }
 
-    const streamingDeanonymizer = this.anonymizer?.createStreamingDeanonymizer();
+    const contentDeanonymizer = this.anonymizer?.createStreamingDeanonymizer();
+    const reasoningDeanonymizer = this.anonymizer?.createStreamingDeanonymizer();
     let fullContent = "";
     let fullReasoning = "";
     const toolCalls: ToolCall[] = [];
@@ -408,12 +415,14 @@ export class OpenAICompatibleProvider implements ILlmProvider {
         const deltaResult = this.processLine(
           line,
           toolCalls,
-          streamingDeanonymizer
+          contentDeanonymizer,
+          reasoningDeanonymizer
         );
 
         if (deltaResult === null) {
           this.logger.debug(LLM_LOGS.STREAM_DONE);
-          fullContent += this.flushDeanonymizer(streamingDeanonymizer);
+          fullContent += this.flushDeanonymizer(contentDeanonymizer, 'content');
+          fullReasoning += this.flushDeanonymizer(reasoningDeanonymizer, 'reasoning');
           return this.createAssistantMessage(fullContent, fullReasoning, toolCalls);
         }
 
@@ -423,7 +432,8 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     }
 
     this.logger.info(LLM_LOGS.STREAM_FINISHED);
-    fullContent += this.flushDeanonymizer(streamingDeanonymizer);
+    fullContent += this.flushDeanonymizer(contentDeanonymizer, 'content');
+    fullReasoning += this.flushDeanonymizer(reasoningDeanonymizer, 'reasoning');
     return this.createAssistantMessage(fullContent, fullReasoning, toolCalls);
   }
 
@@ -455,7 +465,8 @@ export class OpenAICompatibleProvider implements ILlmProvider {
   private processLine(
     line: string,
     toolCalls: ToolCall[],
-    streamingDeanonymizer: IStreamingDeanonymizer | undefined
+    contentDeanonymizer: IStreamingDeanonymizer | undefined,
+    reasoningDeanonymizer: IStreamingDeanonymizer | undefined
   ): { content: string; reasoning: string } | null {
     if (!line.startsWith("data: ")) {
       return { content: "", reasoning: "" };
@@ -487,7 +498,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
       }
 
       this.handleToolCallsDelta(delta, toolCalls);
-      return this.handleContentDelta(delta, streamingDeanonymizer);
+      return this.handleContentDelta(delta, contentDeanonymizer, reasoningDeanonymizer);
     } catch (e) {
       this.logger.error(LLM_MESSAGES.PARSE_CHUNK_ERROR(data));
       return { content: "", reasoning: "" };
@@ -498,26 +509,36 @@ export class OpenAICompatibleProvider implements ILlmProvider {
    * Processes a content delta from the stream, applying deanonymization if necessary.
    * 
    * @param delta - The delta object from the API response chunk.
-   * @param streamingDeanonymizer - The active streaming deanonymizer instance, if any.
+   * @param contentDeanonymizer - The active streaming deanonymizer instance for content.
+   * @param reasoningDeanonymizer - The active streaming deanonymizer instance for reasoning.
    * @returns The processed content and reasoning tokens.
    */
   private handleContentDelta(
     delta: OpenAIStreamDelta,
-    streamingDeanonymizer: IStreamingDeanonymizer | undefined
+    contentDeanonymizer: IStreamingDeanonymizer | undefined,
+    reasoningDeanonymizer: IStreamingDeanonymizer | undefined
   ): { content: string; reasoning: string } {
     let content = "";
     let reasoning = "";
 
     if (delta.reasoning || delta.reasoning_content) {
       const token = (delta.reasoning || delta.reasoning_content)!;
-      this.eventBus.emit('agent:token', { token, type: 'reasoning' });
-      reasoning = token;
+      if (reasoningDeanonymizer) {
+        const { processed } = reasoningDeanonymizer.process(token);
+        if (processed) {
+          this.eventBus.emit('agent:token', { token: processed, type: 'reasoning' });
+          reasoning = processed;
+        }
+      } else {
+        this.eventBus.emit('agent:token', { token, type: 'reasoning' });
+        reasoning = token;
+      }
     }
 
     if (delta.content) {
       const token = delta.content;
-      if (streamingDeanonymizer) {
-        const { processed } = streamingDeanonymizer.process(token);
+      if (contentDeanonymizer) {
+        const { processed } = contentDeanonymizer.process(token);
         if (processed) {
           this.eventBus.emit('agent:token', { token: processed, type: 'content' });
           content = processed;
@@ -580,12 +601,13 @@ export class OpenAICompatibleProvider implements ILlmProvider {
    * @returns The flushed content string.
    */
   private flushDeanonymizer(
-    streamingDeanonymizer: IStreamingDeanonymizer | undefined
+    deanonymizer: IStreamingDeanonymizer | undefined,
+    type: 'content' | 'reasoning'
   ): string {
-    if (streamingDeanonymizer) {
-      const remaining = streamingDeanonymizer.flush();
+    if (deanonymizer) {
+      const remaining = deanonymizer.flush();
       if (remaining) {
-        this.eventBus.emit('agent:token', { token: remaining, type: 'content' });
+        this.eventBus.emit('agent:token', { token: remaining, type });
         return remaining;
       }
     }

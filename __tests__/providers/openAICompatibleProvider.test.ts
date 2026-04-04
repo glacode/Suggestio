@@ -171,6 +171,34 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "ok, I will keep the ", type: "content" });
       expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "secret safe", type: "content" });
     });
+
+    it("should deanonymize the reasoning from query", async () => {
+      mockHttpClient.post.mockResolvedValue(createMockResponse({
+        json: { choices: [{ message: { reasoning: "I am thinking about ANON_0", content: "ok" } }] }
+      }));
+
+      const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer, eventBus: mockEventBus });
+      const prompt = new TestPrompt([{ role: "user", content: "this is a secret" }]);
+      const response = await provider.query(prompt);
+      expect(response?.reasoning).toBe("I am thinking about secret");
+    });
+
+    it("should deanonymize the reasoning from queryStream", async () => {
+      mockHttpClient.post.mockResolvedValue(createMockResponse({
+        body: createStream([
+          'data: {"choices":[{"delta":{"reasoning":"I am thinking about "}}]}\n\n',
+          'data: {"choices":[{"delta":{"reasoning":"ANON_0"}}]}\n\n',
+          'data: {"choices":[{"delta":{"content":"ok"}}]}\n\n',
+          'data: [DONE]\n\n'
+        ])
+      }));
+
+      const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer, eventBus: mockEventBus });
+      const prompt = new TestPrompt([{ role: "user", content: "this is a secret" }]);
+      await provider.queryStream(prompt);
+      expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "I am thinking about ", type: "reasoning" });
+      expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "secret", type: "reasoning" });
+    });
   });
 
   it("should handle tool calls in queryStream", async () => {
