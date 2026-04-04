@@ -522,33 +522,32 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     let reasoning = "";
 
     if (delta.reasoning || delta.reasoning_content) {
-      const token = (delta.reasoning || delta.reasoning_content)!;
-      if (reasoningDeanonymizer) {
-        const { processed } = reasoningDeanonymizer.process(token);
-        if (processed) {
-          this.eventBus.emit('agent:token', { token: processed, type: 'reasoning' });
-          reasoning = processed;
-        }
-      } else {
-        this.eventBus.emit('agent:token', { token, type: 'reasoning' });
-        reasoning = token;
-      }
+      reasoning = this.processTokenStream((delta.reasoning || delta.reasoning_content)!, reasoningDeanonymizer, 'reasoning');
     }
 
     if (delta.content) {
-      const token = delta.content;
-      if (contentDeanonymizer) {
-        const { processed } = contentDeanonymizer.process(token);
-        if (processed) {
-          this.eventBus.emit('agent:token', { token: processed, type: 'content' });
-          content = processed;
-        }
-      } else {
-        this.eventBus.emit('agent:token', { token, type: 'content' });
-        content = token;
-      }
+      content = this.processTokenStream(delta.content, contentDeanonymizer, 'content');
     }
+
     return { content, reasoning };
+  }
+
+  private processTokenStream(
+    token: string,
+    deanonymizer: IStreamingDeanonymizer | undefined,
+    type: 'content' | 'reasoning'
+  ): string {
+    if (deanonymizer) {
+      const { processed } = deanonymizer.process(token);
+      if (processed) {
+        this.eventBus.emit('agent:token', { token: processed, type });
+        return processed;
+      }
+      return "";
+    } else {
+      this.eventBus.emit('agent:token', { token, type });
+      return token;
+    }
   }
 
   /**
