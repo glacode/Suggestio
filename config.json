@@ -93,7 +93,7 @@
       "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
       "model": "gemini-3.1-flash-lite-preview",
       "apiKey": "${GEMINI_API_KEY}",
-      "supportsTools": false
+      "supportsTools": true
     },
     "gemma-4-31b-it": {
       "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",

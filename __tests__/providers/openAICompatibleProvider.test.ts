@@ -1,8 +1,8 @@
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { OpenAICompatibleProvider } from "../../src/providers/openAICompatibleProvider.js";
 import { ChatHistory, IChatMessage, IAnonymizer, IPrompt, IHttpClient, IHttpResponse, IToolDefinition, IEventBus, IConfig } from "../../src/types.js";
 import { SimpleWordAnonymizer } from "../../src/anonymizer/simpleWordAnonymizer.js";
 import { ShannonEntropyCalculator } from "../../src/utils/shannonEntropyCalculator.js";
-import { jest } from "@jest/globals";
 import { createMockEventBus, createDefaultConfig } from "../testUtils.js";
 
 const entropyCalculator = new ShannonEntropyCalculator();
@@ -216,6 +216,46 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
     expect(response?.tool_calls).toHaveLength(1);
     expect(response?.tool_calls?.[0].function.name).toBe("test_tool");
     expect(response?.tool_calls?.[0].function.arguments).toBe('{"arg":"val"}');
+  });
+
+  it("should correctly parse and preserve 'extra_content' (Gemini thought_signature) in streaming responses", async () => {
+    const thoughtSignature = "EjQKMgG+Pvb72cjHxhsqoc9qRytxpQtJ0HV6akkbvTZ6wTot0B96r1uaYVAvBNmsbJ9ddVDF";
+    mockHttpClient.post.mockResolvedValue(createMockResponse({
+      body: createStream([
+        `data: {"choices":[{"delta":{"role":"assistant","tool_calls":[{"extra_content":{"google":{"thought_signature":"${thoughtSignature}"}},"function":{"arguments":"{\\"directory\\":\\".\\"}"},"id":"qgeezd3x","type":"function"}]},"index":0}]}\n\n`,
+        'data: {"choices":[{"delta":{"role":"assistant"},"finish_reason":"stop","index":0}]}\n\n',
+        'data: [DONE]\n\n'
+      ])
+    }));
+
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
+    const prompt = new TestPrompt([{ role: "user", content: "list files" }]);
+    const result = await provider.queryStream(prompt);
+
+    expect(result).not.toBeNull();
+    expect(result?.tool_calls).toBeDefined();
+    expect(result?.tool_calls?.[0].extra_content).toEqual({
+      google: { thought_signature: thoughtSignature }
+    });
+
+    // Verify it is preserved and re-sent when querying again with the result in history
+    mockHttpClient.post.mockResolvedValue(createMockResponse({
+      body: createStream(['data: {"choices":[{"delta":{"content":"final response"}}]}\n\n', 'data: [DONE]\n\n'])
+    }));
+
+    const prompt2 = new TestPrompt([
+      { role: "user", content: "list files" },
+      result!
+    ]);
+    await provider.queryStream(prompt2);
+
+    expect(mockHttpClient.post).toHaveBeenCalledTimes(2);
+    const lastCallArgs = mockHttpClient.post.mock.calls[1];
+    const body = JSON.parse(lastCallArgs[1].body);
+    const assistantMessage = body.messages.find((m: any) => m.role === "assistant");
+    expect(assistantMessage.tool_calls[0].extra_content).toEqual({
+      google: { thought_signature: thoughtSignature }
+    });
   });
 
   it("should skip malformed stream chunks", async () => {

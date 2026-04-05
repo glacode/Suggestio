@@ -10,6 +10,13 @@ export const ToolCallSchema = z.object({
     name: z.string(),
     arguments: z.string(),
   }),
+  /**
+   * Optional field for vendor-specific metadata.
+   * For example, Gemini via OpenAI-compatible API requires a 'thought_signature' 
+   * (found inside extra_content) to be preserved and re-sent in the conversation 
+   * history for subsequent tool-related requests.
+   */
+  extra_content: z.record(z.string(), z.any()).optional(),
 });
 
 /**

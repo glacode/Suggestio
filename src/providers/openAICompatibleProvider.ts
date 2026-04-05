@@ -76,6 +76,11 @@ const OpenAIStreamingToolCallSchema = z.object({
      */
     arguments: z.string().optional().nullable(),
   }).nullish(),
+  /**
+   * Optional field for vendor-specific metadata.
+   * For Gemini via OpenAI API, this can contain 'thought_signature'.
+   */
+  extra_content: z.record(z.string(), z.any()).nullish(),
 });
 
 /**
@@ -593,6 +598,14 @@ export class OpenAICompatibleProvider implements ILlmProvider {
 
         if (tc.id) {
           toolCalls[index].id = tc.id;
+        }
+        if (tc.extra_content) {
+          // Merge extra_content to ensure that all metadata (like Gemini's thought_signature)
+          // is preserved for re-sending in the next iteration's history.
+          toolCalls[index].extra_content = {
+            ...(toolCalls[index].extra_content || {}),
+            ...tc.extra_content,
+          };
         }
         if (tc.function?.name) {
           toolCalls[index].function.name += tc.function.name;
