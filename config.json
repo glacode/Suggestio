@@ -38,7 +38,7 @@
       "model": "moonshotai/kimi-k2-instruct-0905",
       "apiKey": "${GROQ_API_KEY}"
     },
-     "groq-llama370": {
+    "groq-llama370": {
       "endpoint": "https://api.groq.com/openai/v1/chat/completions",
       "model": "llama-3.3-70b-versatile",
       "apiKey": "${GROQ_API_KEY}"
@@ -78,7 +78,7 @@
       "model": "labs-devstral-small-2512",
       "apiKey": "${MISTRAL_API_KEY}"
     },
-   "openrouter-arcee-ai-trinity": {
+    "openrouter-arcee-ai-trinity": {
       "endpoint": "https://openrouter.ai/api/v1/chat/completions",
       "model": "arcee-ai/trinity-large-preview:free",
       "apiKey": "${OPENROUTER_API_KEY}"
@@ -94,6 +94,11 @@
       "model": "gemini-3.1-flash-lite-preview",
       "apiKey": "${GEMINI_API_KEY}",
       "supportsTools": false
+    },
+    "gemma-4-31b-it": {
+      "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+      "model": "gemma-4-31b-it",
+      "apiKey": "${GEMINI_API_KEY}"
     }
   },
   "anonymizer": {

@@ -269,7 +269,7 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       .rejects.toThrow("Response body is null");
   });
 
-  it("should skip tool calls without index", async () => {
+  it("should parse tool calls even if index is missing", async () => {
     mockHttpClient.post.mockResolvedValue(createMockResponse({
       body: createStream([
         'data: {"choices":[{"delta":{"tool_calls":[{"id":"call_1"}]}}]}\n\n',
@@ -279,7 +279,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
 
     const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus });
     const response = await provider.queryStream(new TestPrompt([]));
-    expect(response?.tool_calls).toBeUndefined();
+    expect(response?.tool_calls).toBeDefined();
+    expect(response?.tool_calls?.[0].id).toBe("call_1");
   });
 
   it("should reset tool call when a new ID arrives for the same index", async () => {

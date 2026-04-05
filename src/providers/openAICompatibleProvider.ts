@@ -561,33 +561,44 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     toolCalls: ToolCall[]
   ): void {
     if (delta.tool_calls) {
-      for (const tc of delta.tool_calls) {
-        if (tc.index === undefined || tc.index === null) {
-          continue;
+      for (let i = 0; i < delta.tool_calls.length; i++) {
+        const tc = delta.tool_calls[i];
+        let index: number;
+
+        if (tc.index !== undefined && tc.index !== null) {
+          index = tc.index;
+        } else if (tc.id) {
+          const foundIndex = toolCalls.findIndex((t) => t.id === tc.id);
+          index = foundIndex !== -1 ? foundIndex : toolCalls.length;
+        } else if (delta.tool_calls.length === 1 && toolCalls.length <= 1) {
+          index = 0;
+        } else {
+          index = i;
         }
-        if (!toolCalls[tc.index]) {
-          toolCalls[tc.index] = {
+
+        if (!toolCalls[index]) {
+          toolCalls[index] = {
             id: tc.id || "",
             type: "function",
             function: { name: "", arguments: "" },
           };
-        } else if (tc.id && toolCalls[tc.index].id && toolCalls[tc.index].id !== tc.id) {
+        } else if (tc.id && toolCalls[index].id && toolCalls[index].id !== tc.id) {
           // If we see a new ID for an existing index, it means the model is starting a new tool call
           // at the same index (non-standard behavior from some providers). 
           // We reset the function name and arguments to avoid merging them.
-          toolCalls[tc.index].id = tc.id;
-          toolCalls[tc.index].function.name = "";
-          toolCalls[tc.index].function.arguments = "";
+          toolCalls[index].id = tc.id;
+          toolCalls[index].function.name = "";
+          toolCalls[index].function.arguments = "";
         }
 
         if (tc.id) {
-          toolCalls[tc.index].id = tc.id;
+          toolCalls[index].id = tc.id;
         }
         if (tc.function?.name) {
-          toolCalls[tc.index].function.name += tc.function.name;
+          toolCalls[index].function.name += tc.function.name;
         }
         if (tc.function?.arguments) {
-          toolCalls[tc.index].function.arguments += tc.function.arguments;
+          toolCalls[index].function.arguments += tc.function.arguments;
         }
       }
     }
