@@ -83,6 +83,8 @@ const OpenAIStreamingToolCallSchema = z.object({
   extra_content: z.record(z.string(), z.any()).nullish(),
 });
 
+type OpenAIStreamingToolCall = z.infer<typeof OpenAIStreamingToolCallSchema>;
+
 /**
  * Represents the incremental change (delta) in a streaming response chunk.
  */
@@ -556,6 +558,87 @@ export class OpenAICompatibleProvider implements ILlmProvider {
   }
 
   /**
+   * Determines the target index in the toolCalls array for a given tool call delta.
+   * 
+   * @param tc - The streaming tool call delta from the provider.
+   * @param toolCalls - The array of accumulated tool calls.
+   * @param deltaCount - The total number of tool calls in the current stream chunk.
+   * @param currentIterationIndex - The loop index when iterating through deltas.
+   * @returns The index to use in the toolCalls array.
+   */
+  private getToolCallIndex(
+    tc: OpenAIStreamingToolCall,
+    toolCalls: ToolCall[],
+    deltaCount: number,
+    currentIterationIndex: number
+  ): number {
+    if (tc.index !== undefined && tc.index !== null) {
+      return tc.index;
+    } 
+    
+    if (tc.id) {
+      const foundIndex = toolCalls.findIndex((t) => t.id === tc.id);
+      if (foundIndex !== -1) {
+        return foundIndex;
+      }
+      return toolCalls.length;
+    } 
+    
+    if (deltaCount === 1 && toolCalls.length <= 1) {
+      return 0;
+    } 
+    
+    return currentIterationIndex;
+  }
+
+  /**
+   * Applies a tool call delta to the toolCalls array at the specified index.
+   * Handles initialization of new tool calls and resetting when a provider returns a new ID for an existing index.
+   * 
+   * @param index - The index in the toolCalls array to update.
+   * @param tc - The streaming tool call delta from the provider.
+   * @param toolCalls - The array of accumulated tool calls.
+   */
+  private applyToolCallDelta(
+    index: number,
+    tc: OpenAIStreamingToolCall,
+    toolCalls: ToolCall[]
+  ): void {
+    if (!toolCalls[index]) {
+      toolCalls[index] = {
+        id: tc.id || "",
+        type: "function",
+        function: { name: "", arguments: "" },
+      };
+    } else if (tc.id && toolCalls[index].id && toolCalls[index].id !== tc.id) {
+      // If we see a new ID for an existing index, it means the model is starting a new tool call
+      // at the same index (non-standard behavior from some providers). 
+      // We reset the function name and arguments to avoid merging them.
+      toolCalls[index].id = tc.id;
+      toolCalls[index].function.name = "";
+      toolCalls[index].function.arguments = "";
+    }
+
+    if (tc.id) {
+      toolCalls[index].id = tc.id;
+    }
+    if (tc.extra_content) {
+      // Merge extra_content to ensure that all metadata (like Gemini's thought_signature)
+      // is preserved for re-sending in the next iteration's history.
+      toolCalls[index].extra_content = {
+        ...(toolCalls[index].extra_content || {}),
+        ...tc.extra_content,
+      };
+    }
+    if (tc.function?.name) {
+      toolCalls[index].function.name += tc.function.name;
+    }
+    if (tc.function?.arguments) {
+      toolCalls[index].function.arguments += tc.function.arguments;
+    }
+  }
+
+  /**
    * Accumulates tool call deltas into the provided toolCalls array.
    * 
    * @param delta - The delta object from the API response chunk.
@@ -565,55 +648,14 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     delta: OpenAIStreamDelta,
     toolCalls: ToolCall[]
   ): void {
-    if (delta.tool_calls) {
-      for (let i = 0; i < delta.tool_calls.length; i++) {
-        const tc = delta.tool_calls[i];
-        let index: number;
+    if (!delta.tool_calls) {
+      return;
+    }
 
-        if (tc.index !== undefined && tc.index !== null) {
-          index = tc.index;
-        } else if (tc.id) {
-          const foundIndex = toolCalls.findIndex((t) => t.id === tc.id);
-          index = foundIndex !== -1 ? foundIndex : toolCalls.length;
-        } else if (delta.tool_calls.length === 1 && toolCalls.length <= 1) {
-          index = 0;
-        } else {
-          index = i;
-        }
-
-        if (!toolCalls[index]) {
-          toolCalls[index] = {
-            id: tc.id || "",
-            type: "function",
-            function: { name: "", arguments: "" },
-          };
-        } else if (tc.id && toolCalls[index].id && toolCalls[index].id !== tc.id) {
-          // If we see a new ID for an existing index, it means the model is starting a new tool call
-          // at the same index (non-standard behavior from some providers). 
-          // We reset the function name and arguments to avoid merging them.
-          toolCalls[index].id = tc.id;
-          toolCalls[index].function.name = "";
-          toolCalls[index].function.arguments = "";
-        }
-
-        if (tc.id) {
-          toolCalls[index].id = tc.id;
-        }
-        if (tc.extra_content) {
-          // Merge extra_content to ensure that all metadata (like Gemini's thought_signature)
-          // is preserved for re-sending in the next iteration's history.
-          toolCalls[index].extra_content = {
-            ...(toolCalls[index].extra_content || {}),
-            ...tc.extra_content,
-          };
-        }
-        if (tc.function?.name) {
-          toolCalls[index].function.name += tc.function.name;
-        }
-        if (tc.function?.arguments) {
-          toolCalls[index].function.arguments += tc.function.arguments;
-        }
-      }
+    for (let i = 0; i < delta.tool_calls.length; i++) {
+      const tc = delta.tool_calls[i];
+      const index = this.getToolCallIndex(tc, toolCalls, delta.tool_calls.length, i);
+      this.applyToolCallDelta(index, tc, toolCalls);
     }
   }
 
