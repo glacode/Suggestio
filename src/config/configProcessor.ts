@@ -7,6 +7,7 @@ import { CONFIG_LOGS } from '../constants/messages.js';
 
 export interface SecretManager {
     getOrRequestAPIKey(providerKey: string): Promise<string>;
+    getSecret(apiKeyPlaceholder: string): Promise<string | undefined>;
 }
 
 /**
@@ -96,7 +97,8 @@ class ConfigProcessor {
      */
     private async resolveAPIKeyInMemory(
         profileConfig: IProfileConfig,
-        secretManager: SecretManager
+        secretManager: SecretManager,
+        forcePrompt: boolean = false
     ) {
         const apiKeyValue = profileConfig.apiKey;
         if (typeof apiKeyValue !== 'string') { return; }
@@ -107,29 +109,36 @@ class ConfigProcessor {
 
         if (placeholder) {
             const envValue = process.env[placeholder];
-            profileConfig.resolvedApiKey = envValue?.trim() || await secretManager.getOrRequestAPIKey(placeholder);
+            if (envValue?.trim()) {
+                profileConfig.resolvedApiKey = envValue.trim();
+            } else {
+                profileConfig.resolvedApiKey = forcePrompt
+                    ? await secretManager.getOrRequestAPIKey(placeholder)
+                    : await secretManager.getSecret(placeholder);
+            }
         } else {
             profileConfig.resolvedApiKey = apiKeyValue;
         }
     }
 
-    private async updateProviders(
+    public async updateProviders(
         config: IConfig,
         eventBus: IEventBus,
         secretManager: SecretManager,
-        httpClient: IHttpClient
+        httpClient: IHttpClient,
+        forcePrompt: boolean = false
     ) {
         const { activeChatProfile, activeCompletionProfile, profiles } = config;
 
         // Resolve API key for active (Chat) profile
         if (activeChatProfile && profiles?.[activeChatProfile]) {
-            await this.resolveAPIKeyInMemory(profiles[activeChatProfile], secretManager);
+            await this.resolveAPIKeyInMemory(profiles[activeChatProfile], secretManager, forcePrompt);
         }
 
         // Resolve API key for Completion profile if it's different
         const targetCompletionProfileId = activeCompletionProfile || activeChatProfile;
         if (targetCompletionProfileId && targetCompletionProfileId !== activeChatProfile && profiles?.[targetCompletionProfileId]) {
-            await this.resolveAPIKeyInMemory(profiles[targetCompletionProfileId], secretManager);
+            await this.resolveAPIKeyInMemory(profiles[targetCompletionProfileId], secretManager, forcePrompt);
         }
 
         if (!config.anonymizerInstance) {

@@ -221,7 +221,10 @@ export async function activate(context: vscode.ExtensionContext) {
     fileReader: fileContentReader,
     eventBus,
     diffManager,
-    anonymizer: configContainer.config.anonymizerInstance
+    anonymizer: configContainer.config.anonymizerInstance,
+    config: configContainer.config,
+    secretManager,
+    httpClient: new NodeFetchClient()
   });
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(ChatWebviewViewProvider.viewType, chatWebviewViewProvider, {

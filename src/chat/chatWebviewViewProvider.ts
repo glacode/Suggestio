@@ -21,7 +21,9 @@ import type {
     IToolCallEventPayload,
     IToolResultEventPayload,
     IToolConfirmationPayload,
-    IDiffManager
+    IDiffManager,
+    IConfig,
+    IHttpClient
 } from '../types.js';
 // Importing the `eventBus`, a custom mechanism for different parts of the extension
 // to communicate by emitting and listening for events.
@@ -30,6 +32,7 @@ import { createEventLogger } from '../log/eventLogger.js';
 import { ChatPrompt } from './chatPrompt.js';
 import { CHAT_MESSAGES, AGENT_LOGS } from '../constants/messages.js';
 import { WEBVIEW_COMMANDS, EXTENSION_EVENTS } from '../constants/protocol.js';
+import { configProcessor, SecretManager } from '../config/configProcessor.js';
 
 // This interface defines the arguments required to construct a `ChatWebviewViewProvider`.
 // It uses dependency injection to provide all necessary components.
@@ -45,6 +48,9 @@ interface IChatWebviewViewProviderArgs {
     eventBus: IEventBus;
     diffManager: IDiffManager;
     anonymizer?: IAnonymizer;
+    config: IConfig;
+    secretManager: SecretManager;
+    httpClient: IHttpClient;
 }
 
 /**
@@ -75,6 +81,9 @@ export class ChatWebviewViewProvider {
     private readonly _eventBus: IEventBus;
     private readonly _diffManager: IDiffManager;
     private readonly _anonymizer?: IAnonymizer;
+    private readonly _config: IConfig;
+    private readonly _secretManager: SecretManager;
+    private readonly _httpClient: IHttpClient;
     private _abortController?: AbortController; // For cancelling ongoing LLM requests
     
     // Store active diff data keyed by toolCallId to handle 'viewDiff' commands
@@ -86,7 +95,7 @@ export class ChatWebviewViewProvider {
      * The constructor initializes the `ChatWebviewViewProvider` with its dependencies.
      * These dependencies are typically passed from `extension.ts` during activation.
      */
-    constructor({ extensionContext, profileAccessor, chatAgent, chatHistoryManager, buildContext, getChatWebviewContent, vscodeApi, fileReader, eventBus, diffManager, anonymizer }: IChatWebviewViewProviderArgs) {
+    constructor({ extensionContext, profileAccessor, chatAgent, chatHistoryManager, buildContext, getChatWebviewContent, vscodeApi, fileReader, eventBus, diffManager, anonymizer, config, secretManager, httpClient }: IChatWebviewViewProviderArgs) {
         this._extensionContext = extensionContext;
         this._profileAccessor = profileAccessor;
         this._chatAgent = chatAgent;
@@ -98,6 +107,9 @@ export class ChatWebviewViewProvider {
         this._eventBus = eventBus;
         this._diffManager = diffManager;
         this._anonymizer = anonymizer;
+        this._config = config;
+        this._secretManager = secretManager;
+        this._httpClient = httpClient;
         this.logger = createEventLogger(eventBus);
 
         this._eventBus.on('agent:maxIterationsReached', (payload: { maxIterations: number }) => {
@@ -269,6 +281,13 @@ export class ChatWebviewViewProvider {
             if (message.command === WEBVIEW_COMMANDS.SEND_MESSAGE) {
                 // Handle a message sent by the user from the webview to initiate a chat response.
                 try {
+                    // Lazy resolution of API key if missing
+                    const activeProfile = this._config.activeChatProfile;
+                    const profileConfig = this._config.profiles[activeProfile];
+                    if (profileConfig && !profileConfig.resolvedApiKey && profileConfig.apiKeyPlaceholder) {
+                        await configProcessor.updateProviders(this._config, this._eventBus, this._secretManager, this._httpClient, true);
+                    }
+
                     // Create a new AbortController for this request
                     this._abortController = new AbortController();
 

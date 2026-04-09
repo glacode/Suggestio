@@ -16,7 +16,8 @@ describe('ConfigProcessor', () => {
     eventBus = new EventBus();
 
     mockSecretManager = {
-      getOrRequestAPIKey: jest.fn((key: string) => Promise.resolve(`secret-for-${key}`))
+      getOrRequestAPIKey: jest.fn((key: string) => Promise.resolve(`secret-for-${key}`)),
+      getSecret: jest.fn((key: string) => Promise.resolve(`secret-for-${key}`))
     };
   });
 
@@ -54,7 +55,7 @@ describe('ConfigProcessor', () => {
       expect(provider.apiKeyPlaceholder).toBe('TEST_KEY');
     });
 
-    it('resolves a placeholder using secret manager if env var not set', async () => {
+    it('resolves a placeholder using secret manager (passive) if env var not set', async () => {
       const rawJson = JSON.stringify({
         activeChatProfile: 'provider1',
         profiles: {
@@ -68,6 +69,26 @@ describe('ConfigProcessor', () => {
       const provider = configContainer.config.profiles.provider1;
       expect(provider.resolvedApiKey).toBe('secret-for-TEST_KEY');
       expect(provider.apiKeyPlaceholder).toBe('TEST_KEY');
+      expect(mockSecretManager.getSecret).toHaveBeenCalledWith('TEST_KEY');
+      expect(mockSecretManager.getOrRequestAPIKey).not.toHaveBeenCalled();
+    });
+
+    it('triggers prompt when updateProviders is called with forcePrompt=true', async () => {
+      const rawJson = JSON.stringify({
+        activeChatProfile: 'provider1',
+        profiles: {
+          provider1: { endpoint: 'https://api.example.com', model: 'gpt-4', apiKey: '${TEST_KEY}' }
+        },
+        anonymizer: { enabled: false, words: [] }
+      });
+
+      const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, mockSecretManager, eventBus, httpClient);
+      
+      // Reset mocks to check subsequent call
+      jest.clearAllMocks();
+      
+      await configProcessor.updateProviders(configContainer.config, eventBus, mockSecretManager, httpClient, true);
+
       expect(mockSecretManager.getOrRequestAPIKey).toHaveBeenCalledWith('TEST_KEY');
     });
 
