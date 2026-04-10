@@ -339,6 +339,7 @@ export class ChatManager {
     private messageInput!: HTMLTextAreaElement;
     public currentAssistantMessage: AssistantMessage | null = null;
     private lastUserMessageElement: HTMLElement | null = null;
+    private currentNotification: HTMLElement | null = null;
 
     /**
      * @param vscode The VS Code Webview API instance.
@@ -449,7 +450,15 @@ export class ChatManager {
             }
 
             if (sender === 'assistant') {
-                if (type === EXTENSION_EVENTS.TOKENS) {
+                if (type === EXTENSION_EVENTS.NOTIFICATION) {
+                    // text === null means hide notification
+                    if (text === null) {
+                        this.removeNotification();
+                    } else {
+                        this.showNotification(text);
+                    }
+                    return;
+                } else if (type === EXTENSION_EVENTS.TOKENS) {
                     if (!this.currentAssistantMessage || !this.currentAssistantMessage.isStreaming) {
                         this.currentAssistantMessage = new AssistantMessage(this, this.chatContainer);
                     }
@@ -476,11 +485,13 @@ export class ChatManager {
                     }
                     this.currentAssistantMessage.addConfirmation(event.data);
                 } else if (type === EXTENSION_EVENTS.COMPLETION) {
+                    this.removeNotification();
                     if (this.currentAssistantMessage) {
                         this.currentAssistantMessage.finish();
                     }
                     this.enableInput();
                 } else {
+                    this.removeNotification();
                     this.enableInput();
                     if (this.currentAssistantMessage) {
                         this.currentAssistantMessage.finish();
@@ -586,7 +597,28 @@ export class ChatManager {
         if(emptyChatContent) {
             emptyChatContent.style.display = 'flex';
         }
+        this.removeNotification();
         this.currentAssistantMessage = null;
+    }
+
+    private showNotification(text: string) {
+        this.removeNotification(); // Remove any existing notification
+        const notification = document.createElement('div');
+        notification.className = 'message notification';
+        const content = document.createElement('div');
+        content.className = 'message-content';
+        content.innerHTML = window.renderMarkdown(text);
+        notification.appendChild(content);
+        this.chatContainer.appendChild(notification);
+        notification.scrollIntoView();
+        this.currentNotification = notification;
+    }
+
+    private removeNotification() {
+        if (this.currentNotification) {
+            this.currentNotification.remove();
+            this.currentNotification = null;
+        }
     }
 
     confirmTool(toolCallId: string, decision: 'allow' | 'deny') {

@@ -285,7 +285,24 @@ export class ChatWebviewViewProvider {
                     const activeProfile = this._config.activeChatProfile;
                     const profileConfig = this._config.profiles[activeProfile];
                     if (profileConfig && !profileConfig.resolvedApiKey && profileConfig.apiKeyPlaceholder) {
+                        // Show notification that we need API key
+                        if (this._view) {
+                            this._view.webview.postMessage({
+                                sender: 'assistant',
+                                type: EXTENSION_EVENTS.NOTIFICATION,
+                                text: `Waiting for API key "${profileConfig.apiKeyPlaceholder}" to be entered...`
+                            });
+                        }
+                        // Prompt user for API key (with forcePrompt=true)
                         await configProcessor.updateProviders(this._config, this._eventBus, this._secretManager, this._httpClient, true);
+                        // Hide notification after key is resolved
+                        if (this._view) {
+                            this._view.webview.postMessage({
+                                sender: 'assistant',
+                                type: EXTENSION_EVENTS.NOTIFICATION,
+                                text: null
+                            });
+                        }
                     }
 
                     // Create a new AbortController for this request

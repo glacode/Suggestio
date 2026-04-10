@@ -22,6 +22,7 @@ export const EXTENSION_EVENTS = {
     TOOL_START: 'agent:toolStart',
     TOOL_END: 'agent:toolEnd',
     REQUEST_CONFIRMATION: 'agent:requestConfirmation',
+    NOTIFICATION: 'notification',
 } as const;
 
 export type WebviewCommand = typeof WEBVIEW_COMMANDS[keyof typeof WEBVIEW_COMMANDS];

@@ -382,6 +382,14 @@ export type MessageFromTheExtensionToTheWebview =
     text: string;
   }
   | {
+    /** Indicates the message comes from the AI assistant. */
+    sender: 'assistant';
+    /** A notification message that appears in chat but doesn't affect conversation history. */
+    type: 'notification';
+    /** The text content of the notification, or null to hide notification. */
+    text: string | null;
+  }
+  | {
     /** Instructs the webview to initiate and display a new chat session. */
     command: 'newChat';
   };

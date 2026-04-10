@@ -463,3 +463,14 @@ html, body {
     border: 1px solid var(--vscode-editorWidget-border);
     cursor: help;
 }
+
+.message.notification {
+    background: var(--vscode-notificationCenter-border, #0e639c);
+    color: var(--vscode-notificationCenterHeader-foreground, #ffffff);
+    padding: 10px 14px;
+    margin: 8px 0;
+    border-radius: 6px;
+    border-left: 4px solid var(--vscode-notificationsInfoIcon-foreground, #3794ff);
+    font-style: italic;
+    font-weight: 500;
+}
