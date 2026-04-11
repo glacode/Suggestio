@@ -239,6 +239,12 @@ export type WebviewMessage =
     model: string;
   }
   | {
+    /** User has selected a different completion model profile. */
+    command: 'completionProfileChanged';
+    /** The ID of the selected profile. */
+    model: string;
+  }
+  | {
     /** User wants to clear the chat history. */
     command: 'clearHistory';
   }
@@ -392,6 +398,10 @@ export type MessageFromTheExtensionToTheWebview =
   | {
     /** Instructs the webview to initiate and display a new chat session. */
     command: 'newChat';
+  }
+  | {
+    /** Instructs the webview to open the settings overlay. */
+    command: 'openSettings';
   };
 
 /**
@@ -490,6 +500,18 @@ export interface ILlmProviderAccessor {
    * @returns The active profile ID string.
    */
   getActiveProfile(): string;
+  /**
+   * Optional: returns the list of completion profiles (including those that may not
+   * be eligible for tool calls). If omitted, callers should fall back to
+   * `getProfiles()`.
+   */
+  getCompletionProfiles?: () => string[];
+    /**
+     * Optional: returns the identifier of the active profile to be used for
+     * inline/completion-specific features. If omitted, callers should fall back
+     * to the chat active profile.
+     */
+    getCompletionActiveProfile?: () => string;
 }
 
 /**
@@ -514,6 +536,8 @@ export type GetChatWebviewContent = (args: {
   initialState: {
     profiles: string[];
     activeProfile: string;
+    completionProfiles?: string[];
+    activeCompletionProfile?: string;
   };
   /** VS Code API abstraction. */
   vscodeApi: IVscodeApiLocal;

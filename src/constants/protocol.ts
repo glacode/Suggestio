@@ -4,6 +4,7 @@
 export const WEBVIEW_COMMANDS = {
     SEND_MESSAGE: 'sendMessage',
     CHAT_PROFILE_CHANGED: 'chatProfileChanged',
+    COMPLETION_PROFILE_CHANGED: 'completionProfileChanged',
     CLEAR_HISTORY: 'clearHistory',
     VIEW_DIFF: 'viewDiff',
     CONFIRM_TOOL_CALL: 'confirmToolCall',

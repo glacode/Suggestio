@@ -228,6 +228,13 @@ export class ChatWebviewViewProvider {
         // Retrieve the list of available profiles and the currently active profile from the accessor.
         const profiles = this._profileAccessor.getProfiles();
         const activeProfile = this._profileAccessor.getActiveProfile();
+        // completionProfiles should include all models (not only tool-enabled).
+        const completionProfiles = typeof this._profileAccessor.getCompletionProfiles === 'function'
+            ? this._profileAccessor.getCompletionProfiles()!
+            : profiles;
+        const activeCompletionProfile = typeof this._profileAccessor.getCompletionActiveProfile === 'function'
+            ? this._profileAccessor.getCompletionActiveProfile!()
+            : (this._config.activeCompletionProfile || activeProfile);
 
         // Generate the full HTML content for the webview using the `_getChatWebviewContent` function.
         this._view.webview.html = this._getChatWebviewContent({
@@ -238,7 +245,9 @@ export class ChatWebviewViewProvider {
             chatCssUri,
             initialState: {
                 profiles,
-                activeProfile
+                activeProfile,
+                completionProfiles: completionProfiles,
+                activeCompletionProfile: activeCompletionProfile
             },
             vscodeApi: this._vscodeApi,
             fileReader: this._fileReader
@@ -252,6 +261,15 @@ export class ChatWebviewViewProvider {
         this._chatHistoryManager.clearHistory();
         if (this._view) {
             this._view.webview.postMessage({ command: 'newChat' });
+        }
+    }
+
+    /**
+     * Request the webview to open the settings overlay.
+     */
+    public showSettings() {
+        if (this._view) {
+            this._view.webview.postMessage({ command: 'openSettings' });
         }
     }
 
@@ -366,6 +384,11 @@ export class ChatWebviewViewProvider {
                 // Handle a message requesting to clear the chat history.
                 // Call the `clearHistory` method on the `chatHistoryManager`.
                 this._chatHistoryManager.clearHistory();
+            } else if (message.command === WEBVIEW_COMMANDS.COMPLETION_PROFILE_CHANGED) {
+                // Handle a message from the webview indicating the user changed the
+                // completion profile in the settings overlay. Emit the existing
+                // 'completionProfileChanged' event so configProcessor picks it up.
+                this._eventBus.emit('completionProfileChanged', message.model);
             }
         });
     }

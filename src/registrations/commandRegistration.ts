@@ -16,6 +16,7 @@ import { IEventBus } from '../utils/eventBus.js';
 
 interface INewChatCapable {
   newChat(): void;
+  showSettings?: () => void;
 }
 
 export function registerCommands(
@@ -98,6 +99,16 @@ export function registerCommands(
   // Allows the user to select an active completion profile from the configured profiles.
   context.subscriptions.push(
     vscode.commands.registerCommand('suggestio.selectCompletionProfile', async () => {
+      // Prefer opening the in-webview settings overlay if the chat provider exposes it
+      if (newChatCapable && typeof newChatCapable.showSettings === 'function') {
+        try {
+          newChatCapable.showSettings();
+          return;
+        } catch (e) {
+          // fallback to quick pick below
+        }
+      }
+
       const profiles = Object.keys(config.profiles);
       if (profiles.length === 0) {
         windowProvider.showErrorMessage("No profiles found in configuration.");

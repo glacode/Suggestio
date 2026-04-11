@@ -1,4 +1,5 @@
 import { WEBVIEW_COMMANDS, EXTENSION_EVENTS } from '../constants/protocol.js';
+import { initOverlay, showOverlay, hideOverlay, setupCompletionProfileSelector } from './settingsOverlay.js';
 import type { IWebviewApi } from '../types.js';
 
 /**
@@ -7,6 +8,8 @@ import type { IWebviewApi } from '../types.js';
 export interface InitialState {
     profiles: string[];
     activeProfile: string;
+    completionProfiles?: string[];
+    activeCompletionProfile?: string;
 }
 
 // These are provided by the environment (main.ts)
@@ -380,6 +383,17 @@ export class ChatManager {
         });
 
         this.setupProfileSelector();
+        // Initialize settings overlay attached to the full webview (body)
+        try {
+            const root = document.querySelector('.chat-container') || document.body;
+            if (root instanceof HTMLElement) {
+                initOverlay(root);
+            } else {
+                initOverlay(document.body);
+            }
+        } catch (e) {
+            console.warn('Failed to init settings overlay', e);
+        }
         this.setupMessageListener();
     }
 
@@ -443,9 +457,23 @@ export class ChatManager {
     private setupMessageListener() {
         window.addEventListener('message', event => {
             const { sender, type, text, tokenType, command } = event.data;
-            
+
+            // Handle extension-initiated commands
             if (command === 'newChat') {
                 this.newChat();
+                return;
+            }
+            if (command === 'openSettings') {
+                // Populate overlay with completion profile selector then show it
+                try {
+                    setupCompletionProfileSelector(this.vscode, this.initialState.completionProfiles || [], this.initialState.activeCompletionProfile);
+                } catch (e) {}
+                showOverlay();
+                return;
+            }
+
+            if (command === 'closeSettings') {
+                hideOverlay();
                 return;
             }
 

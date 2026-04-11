@@ -208,6 +208,8 @@ export async function activate(context: vscode.ExtensionContext) {
       .filter(([_, profile]) => profile.supportsTools !== false)
       .map(([id]) => id),
     getActiveProfile: () => configContainer.config.activeChatProfile,
+    getCompletionProfiles: () => Object.entries(configContainer.config.profiles).map(([id]) => id),
+    getCompletionActiveProfile: () => configContainer.config.activeCompletionProfile || configContainer.config.activeChatProfile
   };
 
   const chatWebviewViewProvider = new ChatWebviewViewProvider({
