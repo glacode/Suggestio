@@ -593,7 +593,7 @@ export interface IIgnoreManager {
 }
 
 /**
- * Provides access to the workspace root path.
+ * Provides access to the workspace root path and URI.
  */
 export interface IWorkspaceProvider {
   /**
@@ -601,6 +601,12 @@ export interface IWorkspaceProvider {
    * @returns The root path string, or undefined if no workspace is open.
    */
   rootPath(): string | undefined;
+
+  /**
+   * Returns the root URI of the current workspace.
+   * @returns The root URI, or undefined if no workspace is open.
+   */
+  rootUri(): IUriLike | undefined;
 }
 
 /**
@@ -755,6 +761,11 @@ export interface IConfigProvider {
    * Retrieves if anonymizer is enabled. Returns undefined if not set in VS Code settings.
    */
   getAnonymizerEnabled(): boolean | undefined;
+
+  /**
+   * Retrieves if inline completion is enabled.
+   */
+  getEnableInlineCompletion(): boolean;
 
   /**
    * Fired when the configuration changes.
@@ -1252,20 +1263,29 @@ export interface IAnonymizerConfigHolder {
   anonymizer: IAnonymizerConfig;
 }
 
-export interface IConfig extends IAnonymizerConfigHolder {
+/**
+ * Represents the structure of the project-specific configuration file (suggestio.config.json).
+ */
+export interface IProjectConfig extends IAnonymizerConfigHolder {
   $schema?: string;
   activeChatProfile: string;
   activeCompletionProfile?: string;
-  enableInlineCompletion?: boolean;
   profiles: {
     [key: string]: IProfileConfig;
   };
   anonymizer: IAnonymizerConfig;
+}
+
+/**
+ * Represents the merged, runtime configuration used by the extension.
+ */
+export interface IConfig extends IProjectConfig {
   anonymizerInstance?: IAnonymizer;
   llmProviderForInlineCompletion?: ILlmProvider;
   llmProviderForChat?: ILlmProvider;
   maxAgentIterations: number;
   logLevel: string;
+  enableInlineCompletion: boolean;
 }
 
 export interface IConfigContainer {

@@ -16,11 +16,6 @@
       "type": "string",
       "description": "The ID of the profile to use for inline completions (optional, defaults to activeChatProfile)."
     },
-    "enableInlineCompletion": {
-      "type": "boolean",
-      "default": true,
-      "description": "Whether to enable inline code completion. Defaults to true."
-    },
     "profiles": {
       "type": "object",
       "description": "Configuration for different LLM profiles.",

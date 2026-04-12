@@ -84,9 +84,9 @@ describe('provideInlineCompletionItems', () => {
         expect(result.items[0].insertText).toBe(' suggestion ');
     });
 
-    it('should proceed if enableInlineCompletion is undefined (default true)', async () => {
+    it('should proceed if enableInlineCompletion is true (default)', async () => {
         const config = createDefaultConfig();
-        delete config.enableInlineCompletion;
+        // Default is true in createDefaultConfig
 
         const promise = provideInlineCompletionItems(
             mockProvider,

@@ -15,6 +15,7 @@ describe("GrepSearchTool", () => {
     beforeEach(() => {
         workspaceProvider = {
             rootPath: () => mockRootPath,
+            rootUri: () => undefined,
         };
 
         fileReader = createMockFileContentReader();

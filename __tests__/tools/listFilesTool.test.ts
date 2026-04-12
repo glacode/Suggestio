@@ -14,6 +14,7 @@ describe("ListFilesTool Security", () => {
     beforeEach(() => {
         workspaceProvider = {
             rootPath: () => mockRootPath,
+            rootUri: () => undefined,
         };
 
         workspaceScanner = {

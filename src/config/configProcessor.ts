@@ -1,9 +1,10 @@
 import { getAnonymizer } from '../anonymizer/anonymizer.js';
 import { getLlmProvider } from '../providers/providerFactory.js';
-import { IConfig, IConfigContainer, IProfileConfig, IHttpClient } from '../types.js';
+import { IConfig, IConfigContainer, IProfileConfig, IHttpClient, IProjectConfig } from '../types.js';
 import { IEventBus } from '../utils/eventBus.js';
 import { createEventLogger } from '../log/eventLogger.js';
 import { CONFIG_LOGS } from '../constants/messages.js';
+import { CONFIG_DEFAULTS } from '../constants/config.js';
 
 export interface SecretManager {
     getOrRequestAPIKey(providerKey: string): Promise<string>;
@@ -31,15 +32,24 @@ class ConfigProcessor {
         httpClient: IHttpClient,
         overrides?: any
     ): Promise<IConfigContainer> {
-        const config: IConfig = JSON.parse(rawJson);
+        const projectConfig: IProjectConfig = JSON.parse(rawJson);
 
         // Ensure anonymizer section exists and has a default 'enabled' state
-        if (!config.anonymizer) {
-            config.anonymizer = { enabled: false, words: [] };
-        } else if (config.anonymizer.enabled === undefined) {
-            config.anonymizer.enabled = false;
+        if (!projectConfig.anonymizer) {
+            projectConfig.anonymizer = { enabled: false, words: [] };
+        } else if (projectConfig.anonymizer.enabled === undefined) {
+            projectConfig.anonymizer.enabled = false;
         }
 
+        // Initialize merged runtime config with project data and defaults
+        const config: IConfig = {
+            ...projectConfig,
+            maxAgentIterations: CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS,
+            logLevel: CONFIG_DEFAULTS.LOG_LEVEL,
+            enableInlineCompletion: true,
+        };
+
+        // Apply overrides from standard VSCode extension settings
         if (overrides) {
             const { anonymizer, ...rest } = overrides;
             Object.assign(config, rest);

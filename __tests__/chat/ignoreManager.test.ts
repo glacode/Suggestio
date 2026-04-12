@@ -21,6 +21,7 @@ describe('IgnoreManager', () => {
     
     mockWorkspaceProvider = {
       rootPath: () => rootPathValue,
+      rootUri: () => undefined,
     };
     mockFileContentProvider = {
       read: (p: string) => fileContents[p],

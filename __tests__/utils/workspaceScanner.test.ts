@@ -14,6 +14,7 @@ describe("WorkspaceScanner", () => {
     beforeEach(() => {
         workspaceProvider = {
             rootPath: () => mockRootPath,
+            rootUri: () => undefined,
         };
         
         directoryProvider = createMockDirectoryReader();

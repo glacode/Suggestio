@@ -192,10 +192,12 @@ export const createMockWindowProvider = (): jest.Mocked<IWindowProvider> => ({
 
 export const createMockWorkspaceProvider = (): jest.Mocked<IWorkspaceProvider> => ({
     rootPath: jest.fn(),
+    rootUri: jest.fn(),
 });
 
 export const createMockWorkspaceProviderFull = (): jest.Mocked<IWorkspaceProviderFull> => ({
     rootPath: jest.fn(),
+    rootUri: jest.fn(),
     openTextDocument: jest.fn(),
 });
 
@@ -241,6 +243,7 @@ export const createMockConfigProvider = (): jest.Mocked<IConfigProvider> => ({
     getLogLevel: jest.fn(),
     getMaxAgentIterations: jest.fn(),
     getAnonymizerEnabled: jest.fn(),
+    getEnableInlineCompletion: jest.fn(),
     onDidChangeConfiguration: jest.fn(),
 });
 

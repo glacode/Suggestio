@@ -71,13 +71,11 @@ export async function activate(context: vscode.ExtensionContext) {
     });
   });
 
+  const getActiveWorkspaceUri = () => vscode.workspace.workspaceFolders?.[0]?.uri;
+
   const workspaceProvider: IWorkspaceProvider = {
-    rootPath: () => {
-      if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
-        return vscode.workspace.workspaceFolders[0].uri.fsPath;
-      }
-      return undefined;
-    }
+    rootPath: () => getActiveWorkspaceUri()?.fsPath,
+    rootUri: () => getActiveWorkspaceUri()
   };
 
   const directoryReader: IDirectoryReader = {
@@ -129,9 +127,10 @@ export async function activate(context: vscode.ExtensionContext) {
   const pathResolver: IPathResolver = path;
 
   const configProvider: IConfigProvider = {
-    getLogLevel: () => vscode.workspace.getConfiguration('suggestio').get<string>('logLevel', CONFIG_DEFAULTS.LOG_LEVEL),
-    getMaxAgentIterations: () => vscode.workspace.getConfiguration('suggestio').get<number>('maxAgentIterations', CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS),
-    getAnonymizerEnabled: () => vscode.workspace.getConfiguration('suggestio').get<boolean | undefined>('experimental.anonymizer.enabled'),
+    getLogLevel: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<string>('logLevel', CONFIG_DEFAULTS.LOG_LEVEL),
+    getMaxAgentIterations: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<number>('maxAgentIterations', CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS),
+    getAnonymizerEnabled: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<boolean | undefined>('experimental.anonymizer.enabled'),
+    getEnableInlineCompletion: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<boolean>('enableInlineCompletion', true),
     onDidChangeConfiguration: (listener) => vscode.workspace.onDidChangeConfiguration(listener)
   };
 
@@ -150,14 +149,15 @@ export async function activate(context: vscode.ExtensionContext) {
     pathResolver
   );
 
-  const vsCodeConfig = vscode.workspace.getConfiguration('suggestio');
+  const vsCodeConfig = vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri());
 
   const logLevel = vsCodeConfig.get<string>('logLevel', CONFIG_DEFAULTS.LOG_LEVEL);
   defaultLogger.setLogLevel(parseLogLevel(logLevel));
 
   const overrides: any = {
     maxAgentIterations: vsCodeConfig.get<number>('maxAgentIterations', CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS),
-    logLevel: logLevel
+    logLevel: logLevel,
+    enableInlineCompletion: vsCodeConfig.get<boolean>('enableInlineCompletion', true)
   };
 
   const anonymizerEnabled = vsCodeConfig.get<boolean | undefined>('experimental.anonymizer.enabled');

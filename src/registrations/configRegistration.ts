@@ -19,6 +19,7 @@ export function registerConfigHandler(
         const newLogLevel = configProvider.getLogLevel();
         const newMaxAgentIterations = configProvider.getMaxAgentIterations();
         const newAnonymizerEnabled = configProvider.getAnonymizerEnabled();
+        const newEnableInlineCompletion = configProvider.getEnableInlineCompletion();
 
         eventBus.emit('log', { level: 'info', message: CONFIG_LOGS.CONFIGURATION_CHANGED(newLogLevel, newMaxAgentIterations) });
 
@@ -29,6 +30,7 @@ export function registerConfigHandler(
         if (configContainer.config) {
           configContainer.config.logLevel = newLogLevel;
           configContainer.config.maxAgentIterations = newMaxAgentIterations;
+          configContainer.config.enableInlineCompletion = newEnableInlineCompletion;
           if (newAnonymizerEnabled !== undefined) {
             configContainer.config.anonymizer.enabled = newAnonymizerEnabled;
           }
