@@ -9,6 +9,7 @@
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
         "outDir": "../../builtResources",
+        "rootDir": "..",
         "noEmit": true
     },
     "include": ["**/*.ts"]
