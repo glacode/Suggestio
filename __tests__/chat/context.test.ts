@@ -2,7 +2,7 @@
 import { describe, expect, beforeEach } from '@jest/globals';
 import { ContextBuilder } from '../../src/chat/context.js';
 import { IActiveTextEditorProvider, IIgnoreManager, IWorkspaceProvider, IPathResolver } from '../../src/types.js';
-import { createMockIgnoreManager, createMockWorkspaceProvider, createMockPathResolver } from '../testUtils.js';
+import { createMockIgnoreManager, createMockWorkspaceProvider, createMockPathResolver, createMockUri } from '../testUtils.js';
 import { jest } from '@jest/globals';
 
 describe('ContextBuilder', () => {
@@ -26,11 +26,24 @@ describe('ContextBuilder', () => {
       });
   });
 
+  it('returns empty string by default (includeActiveEditor: false)', async () => {
+    const mockProvider: IActiveTextEditorProvider = {
+      activeTextEditor: {
+        document: {
+          uri: createMockUri('/some/file.ts'),
+          getText: () => 'some content'
+        }
+      }
+    };
+    const result = await new ContextBuilder(mockProvider, mockIgnoreManager, mockWorkspaceProvider, mockPathResolver).buildContext();
+    expect(result).toBe('');
+  });
+
   it('returns placeholder if no editor or document is available', async () => {
     const mockProvider: IActiveTextEditorProvider = {
       activeTextEditor: undefined,
     };
-    const result = await new ContextBuilder(mockProvider, mockIgnoreManager, mockWorkspaceProvider, mockPathResolver).buildContext();
+    const result = await new ContextBuilder(mockProvider, mockIgnoreManager, mockWorkspaceProvider, mockPathResolver).buildContext({ includeActiveEditor: true });
     expect(result).toBe('[No active editor found. Please open a file to provide context.]');
   });
 
@@ -54,7 +67,7 @@ describe('ContextBuilder', () => {
       activeTextEditor: mockEditor,
     };
 
-    const result = await new ContextBuilder(mockProvider, mockIgnoreManager, mockWorkspaceProvider, mockPathResolver).buildContext();
+    const result = await new ContextBuilder(mockProvider, mockIgnoreManager, mockWorkspaceProvider, mockPathResolver).buildContext({ includeActiveEditor: true });
     const expectedContext = `Context from file:\n[Path: ${filePath}]\n${fileContent}`;
 
     expect(result).toBe(expectedContext);
@@ -82,7 +95,7 @@ describe('ContextBuilder', () => {
       activeTextEditor: mockEditor,
     };
 
-    const result = await new ContextBuilder(mockProvider, mockIgnoreManager, mockWorkspaceProvider, mockPathResolver).buildContext();
+    const result = await new ContextBuilder(mockProvider, mockIgnoreManager, mockWorkspaceProvider, mockPathResolver).buildContext({ includeActiveEditor: true });
     const expectedContext = `Context from file:\n[Path: src/file.ts]\n${fileContent}`;
 
     expect(result).toBe(expectedContext);
@@ -105,7 +118,7 @@ describe('ContextBuilder', () => {
       activeTextEditor: mockEditor,
     };
 
-    const result = await new ContextBuilder(mockProvider, mockIgnoreManager, mockWorkspaceProvider, mockPathResolver).buildContext();
+    const result = await new ContextBuilder(mockProvider, mockIgnoreManager, mockWorkspaceProvider, mockPathResolver).buildContext({ includeActiveEditor: true });
     expect(result).toBe('[No file path found for the active editor.]');
   });
 
@@ -126,7 +139,7 @@ describe('ContextBuilder', () => {
       activeTextEditor: mockEditor,
     };
 
-    const result = await new ContextBuilder(mockProvider, mockIgnoreManager, mockWorkspaceProvider, mockPathResolver).buildContext();
+    const result = await new ContextBuilder(mockProvider, mockIgnoreManager, mockWorkspaceProvider, mockPathResolver).buildContext({ includeActiveEditor: true });
     expect(result).toBe('[Active editor is not a file (e.g., Output tab) and will not be included in context.]');
   });
 
@@ -149,7 +162,7 @@ describe('ContextBuilder', () => {
       activeTextEditor: mockEditor,
     };
 
-    const context = await new ContextBuilder(mockProvider, mockIgnoreManager, mockWorkspaceProvider, mockPathResolver).buildContext();
+    const context = await new ContextBuilder(mockProvider, mockIgnoreManager, mockWorkspaceProvider, mockPathResolver).buildContext({ includeActiveEditor: true });
     expect(context).toBe(`[File ${filePath} is ignored and will not be included in context.]`);
     expect(mockIgnoreManager.shouldIgnore).toHaveBeenCalledWith(filePath);
   });
@@ -173,7 +186,7 @@ describe('ContextBuilder', () => {
       activeTextEditor: mockEditor,
     };
 
-    const context = await new ContextBuilder(mockProvider, mockIgnoreManager, mockWorkspaceProvider, mockPathResolver).buildContext();
+    const context = await new ContextBuilder(mockProvider, mockIgnoreManager, mockWorkspaceProvider, mockPathResolver).buildContext({ includeActiveEditor: true });
     expect(context).toBe(`[File ${filePath} is ignored and will not be included in context.]`);
     expect(mockIgnoreManager.shouldIgnore).toHaveBeenCalledWith(filePath);
   });
@@ -197,7 +210,7 @@ describe('ContextBuilder', () => {
       activeTextEditor: mockEditor,
     };
 
-    const context = await new ContextBuilder(mockProvider, mockIgnoreManager, mockWorkspaceProvider, mockPathResolver).buildContext();
+    const context = await new ContextBuilder(mockProvider, mockIgnoreManager, mockWorkspaceProvider, mockPathResolver).buildContext({ includeActiveEditor: true });
     expect(context).toBe(`[File ${filePath} is ignored and will not be included in context.]`);
     expect(mockIgnoreManager.shouldIgnore).toHaveBeenCalledWith(filePath);
   });

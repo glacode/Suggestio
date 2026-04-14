@@ -571,15 +571,27 @@ export interface IActiveTextEditorProvider {
 }
 
 /**
+ * Options for building the context string.
+ */
+export interface IContextOptions {
+  /**
+   * Whether to include the content of the currently active text editor.
+   * Defaults to false to avoid context bloat in agentic workflows.
+   */
+  includeActiveEditor?: boolean;
+}
+
+/**
  * Contract for building a context string to be used as additional information in a system prompt.
  * This context might be derived from the active editor, workspace, etc.
  */
 export interface IContextBuilder {
   /**
-   * Builds the context string.
+   * Builds the context string based on the provided options.
+   * @param options Options to control what context is included.
    * @returns A promise that resolves to the context string.
    */
-  buildContext(): Promise<string>;
+  buildContext(options?: IContextOptions): Promise<string>;
 }
 
 /**

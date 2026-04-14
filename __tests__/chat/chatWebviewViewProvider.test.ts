@@ -105,9 +105,9 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       }
     };
 
-    // `buildContext` is a simple fake builder object that returns a static "CONTEXT" string.
+    // `buildContext` is a simple fake builder object that returns an empty string by default.
     // This context is typically added to the user's prompt before sending it to the AI.
-    const buildContext = { buildContext: async () => 'CONTEXT' };
+    const buildContext = { buildContext: async () => '' };
 
     // `receivedArgs` will capture the arguments passed to `getChatWebviewContent`.
     // We initialize it to `null` and expect it to be populated.
@@ -205,7 +205,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const chatHistory: ChatHistory = promptsSent[0].generateChatHistory();
     expect(chatHistory.length).toBe(2);
 
-    expect(chatHistory[0]).toEqual({ role: 'system', content: `${SYSTEM_PROMPTS.AGENT}\nCONTEXT` });
+    expect(chatHistory[0]).toEqual({ role: 'system', content: `${SYSTEM_PROMPTS.AGENT}` });
     expect(chatHistory[1]).toEqual({ role: 'user', content: 'hello' });
 
   });
@@ -260,7 +260,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       profileAccessor,
       chatAgent,
       chatHistoryManager,
-      buildContext: { buildContext: async () => 'CONTEXT' },
+      buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
       vscodeApi,
       fileReader: createMockFileContentReader(),
@@ -503,6 +503,72 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       profileAccessor,
       chatAgent,
       chatHistoryManager,
+      buildContext: { buildContext: async (opts) => opts?.includeActiveEditor ? 'This is a SECRET' : '' },
+      getChatWebviewContent: () => '',
+      vscodeApi,
+      fileReader: createMockFileContentReader(),
+      eventBus,
+      diffManager: createMockDiffManager(),
+      anonymizer,
+      config,
+      secretManager,
+      httpClient
+    });
+
+    provider.resolveWebviewView(webviewView);
+
+    if (webview.__handler) {
+      await webview.__handler({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' });
+    }
+
+    expect(promptsSent.length).toBe(1);
+    const chatHistory = promptsSent[0].generateChatHistory();
+    // By default, context is empty, so content should be just the agent prompt
+    expect(chatHistory[0].content).toBe(SYSTEM_PROMPTS.AGENT);
+    expect(chatHistory[0].content).not.toContain('SECRET');
+  });
+
+  it('anonymizes context if the builder provides it (verifies wiring)', async () => {
+    const extensionUri = createMockUri('/ext');
+    const vscodeApi = createMockVscodeApi();
+    const profileAccessor: ILlmProviderAccessor = { getProfiles: () => [], getActiveProfile: () => '' };
+    const webview = createMockWebview();
+    const webviewView = createMockWebviewView(webview, 'X');
+
+    const promptsSent: IPrompt[] = [];
+    const chatAgent: IChatAgent = {
+      run: async (prompt: IPrompt) => {
+        promptsSent.push(prompt);
+        return Promise.resolve();
+      }
+    };
+
+    const chatHistoryManager: IChatHistoryManager = {
+      clearHistory: () => { },
+      addMessage: () => { },
+      getChatHistory: () => []
+    };
+
+    // The anonymizer replaces 'SECRET' with 'ANONYMIZED'
+    const anonymizer: IAnonymizer = {
+      anonymize: (text: string) => text.replace('SECRET', 'ANONYMIZED'),
+      deanonymize: (text: string) => text,
+      createStreamingDeanonymizer: () => ({
+        process: (chunk: string) => ({ processed: chunk, buffer: '' }),
+        flush: () => ''
+      })
+    };
+
+    const eventBus = new EventBus();
+    const { config, secretManager, httpClient } = createMocks();
+
+    const provider = new ChatWebviewViewProvider({
+      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
+      profileAccessor,
+      chatAgent,
+      chatHistoryManager,
+      // Here we simulate a builder that ignores the 'disabled' default and returns content anyway
+      // to verify that IF there is content, it IS anonymized.
       buildContext: { buildContext: async () => 'This is a SECRET' },
       getChatWebviewContent: () => '',
       vscodeApi,
@@ -523,6 +589,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     expect(promptsSent.length).toBe(1);
     const chatHistory = promptsSent[0].generateChatHistory();
+    // Verify that the 'SECRET' from the builder was passed through the anonymizer
     expect(chatHistory[0].content).toContain('This is a ANONYMIZED');
     expect(chatHistory[0].content).not.toContain('SECRET');
   });
