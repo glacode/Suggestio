@@ -1,5 +1,5 @@
-import { WEBVIEW_COMMANDS, EXTENSION_EVENTS } from '../constants/protocol.js';
-import { initOverlay, showOverlay, hideOverlay, setupCompletionProfileSelector } from './settingsOverlay.js';
+import { WEBVIEW_COMMANDS, EXTENSION_EVENTS, EXTENSION_COMMANDS, MESSAGE_SENDERS } from '../constants/protocol.js';
+import { initOverlay, showOverlay, setupCompletionProfileSelector } from './settingsOverlay.js';
 import type { IWebviewApi } from '../types.js';
 
 /**
@@ -459,11 +459,11 @@ export class ChatManager {
             const { sender, type, text, tokenType, command } = event.data;
 
             // Handle extension-initiated commands
-            if (command === 'newChat') {
+            if (command === EXTENSION_COMMANDS.NEW_CHAT) {
                 this.newChat();
                 return;
             }
-            if (command === 'openSettings') {
+            if (command === EXTENSION_COMMANDS.OPEN_SETTINGS) {
                 // Populate overlay with completion profile selector then show it
                 try {
                     setupCompletionProfileSelector(this.vscode, this.initialState.completionProfiles || [], this.initialState.activeCompletionProfile);
@@ -472,12 +472,7 @@ export class ChatManager {
                 return;
             }
 
-            if (command === 'closeSettings') {
-                hideOverlay();
-                return;
-            }
-
-            if (sender === 'assistant') {
+            if (sender === MESSAGE_SENDERS.ASSISTANT) {
                 if (type === EXTENSION_EVENTS.NOTIFICATION) {
                     // text === null means hide notification
                     if (text === null) {
@@ -526,7 +521,7 @@ export class ChatManager {
                     }
                     this.appendStaticAssistantMessage(text);
                 }
-            } else if (sender === 'user') {
+            } else if (sender === MESSAGE_SENDERS.USER) {
                 this.appendUserMessage(text);
             }
         });

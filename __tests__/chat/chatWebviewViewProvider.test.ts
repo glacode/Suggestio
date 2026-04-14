@@ -17,6 +17,7 @@ import type {
   IAnonymizer
 } from '../../src/types.js';
 import { SYSTEM_PROMPTS } from '../../src/constants/prompts.js';
+import { WEBVIEW_COMMANDS, EXTENSION_COMMANDS, EXTENSION_EVENTS, MESSAGE_SENDERS } from '../../src/constants/protocol.js';
 // Import the actual ChatWebviewViewProvider class that we are testing.
 import { ChatWebviewViewProvider } from '../../src/chat/chatWebviewViewProvider.js';
 import { EventBus } from '../../src/utils/eventBus.js';
@@ -180,7 +181,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     // Call the handler to simulate sending a 'sendMessage' command with user text.
     if (webview.__handler) {
-      await webview.__handler({ command: 'sendMessage', text: 'hello' });
+      await webview.__handler({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' });
     }
 
     // ********************************************************************************
@@ -190,9 +191,9 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // Expect the `posted` array to contain the tokens emitted by our fake `logicHandler`,
     // followed by a 'completion' message indicating the end of the response.
     expect(posted).toEqual([
-      { sender: 'assistant', type: 'tokens', text: 'tok1', tokenType: 'content' }, // First token.
-      { sender: 'assistant', type: 'tokens', text: 'tok2', tokenType: 'content' }, // Second token.
-      { sender: 'assistant', type: 'completion', text: '' } // Completion message.
+      { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'tok1', tokenType: 'content' }, // First token.
+      { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'tok2', tokenType: 'content' }, // Second token.
+      { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.COMPLETION, text: '' } // Completion message.
     ]);
 
     // ********************************************************************************
@@ -273,7 +274,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     provider.resolveWebviewView(webviewView);
 
     if (webview.__handler) {
-      await webview.__handler({ command: 'sendMessage', text: 'hello' });
+      await webview.__handler({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' });
     }
 
     // Expect the first added message to be exactly the user's text without the build context.
@@ -357,7 +358,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     //  Simulate a 'modelChanged' command from the webview.
     // ********************************************************************************
     if (webview.__handler) {
-      await webview.__handler({ command: 'chatProfileChanged', model: 'new-model' });
+      await webview.__handler({ command: WEBVIEW_COMMANDS.CHAT_PROFILE_CHANGED, model: 'new-model' });
     }
     // Expect that the `eventBus` emitted the 'modelChanged' event with the correct model name.
     expect(emittedModel).toBe('new-model');
@@ -366,7 +367,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     //  Simulate a 'clearHistory' command from the webview.
     // ********************************************************************************
     if (webview.__handler) {
-      await webview.__handler({ command: 'clearHistory' });
+      await webview.__handler({ command: WEBVIEW_COMMANDS.CLEAR_HISTORY });
     }
     // Expect that the `clearHistory` method on our fake `chatHistoryManager` was called.
     expect(chatHistoryCleared).toBe(true);
@@ -375,7 +376,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     //  Simulate a 'sendMessage' command which is expected to trigger an error.
     // ********************************************************************************
     if (webview.__handler) {
-      await webview.__handler({ command: 'sendMessage', text: 'x' });
+      await webview.__handler({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'x' });
     }
     // Get the last message that was posted to the webview.
     const last = responseMessagesFromTheExtensionToTheWebview[responseMessagesFromTheExtensionToTheWebview.length - 1];
@@ -517,7 +518,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     provider.resolveWebviewView(webviewView);
 
     if (webview.__handler) {
-      await webview.__handler({ command: 'sendMessage', text: 'hello' });
+      await webview.__handler({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' });
     }
 
     expect(promptsSent.length).toBe(1);
@@ -545,7 +546,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
         // Simulate cancellation mid-stream
         if (webview.__handler) {
-          await webview.__handler({ command: 'cancelRequest' });
+          await webview.__handler({ command: WEBVIEW_COMMANDS.CANCEL_REQUEST });
         }
 
         eventBus.emit('agent:token', { token: 'tok2', type: 'content' });
@@ -585,7 +586,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     provider.resolveWebviewView(webviewView);
 
     if (webview.__handler) {
-      await webview.__handler({ command: 'sendMessage', text: 'hello' });
+      await webview.__handler({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' });
     }
 
     // Verify signal was aborted
@@ -594,8 +595,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     // Verify only the first token was posted, followed by a completion message
     expect(posted).toEqual([
-      { sender: 'assistant', type: 'tokens', text: 'tok1', tokenType: 'content' },
-      { sender: 'assistant', type: 'completion', text: '' }
+      { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'tok1', tokenType: 'content' },
+      { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.COMPLETION, text: '' }
     ]);
   });
 
@@ -641,7 +642,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     provider.resolveWebviewView(webviewView);
     provider.newChat();
     expect(historyCleared).toBe(true);
-    expect(posted).toContainEqual({ command: 'newChat' });
+    expect(posted).toContainEqual({ command: EXTENSION_COMMANDS.NEW_CHAT });
   });
 
   it('handles viewDiff command by calling diffManager.showDiff', async () => {
@@ -687,7 +688,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     // 2. Simulate the webview sending 'viewDiff'
     if (webview.__handler) {
-      await webview.__handler({ command: 'viewDiff', toolCallId });
+      await webview.__handler({ command: WEBVIEW_COMMANDS.VIEW_DIFF, toolCallId });
     }
 
     expect(diffManager.showDiff).toHaveBeenCalledWith(diffData.filePath, diffData.oldContent, diffData.newContent);
@@ -737,7 +738,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     // 2. Simulate the webview sending 'confirmToolCall' with 'deny'
     if (webview.__handler) {
-      await webview.__handler({ command: 'confirmToolCall', toolCallId, decision: 'deny' });
+      await webview.__handler({ command: WEBVIEW_COMMANDS.CONFIRM_TOOL_CALL, toolCallId, decision: 'deny' });
     }
 
     // 3. Verify that closeDiff was called with the correct file path
@@ -812,7 +813,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     provider.resolveWebviewView(webviewView);
     if (webview.__handler) {
-      await webview.__handler({ command: 'cancelRequest' });
+      await webview.__handler({ command: WEBVIEW_COMMANDS.CANCEL_REQUEST });
     }
   });
 
@@ -855,13 +856,13 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     provider.resolveWebviewView(webviewView);
 
     if (webview.__handler) {
-      await webview.__handler({ command: 'sendMessage', text: 'hello' });
+      await webview.__handler({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' });
     }
 
     expect(posted).toEqual([
-      { sender: 'assistant', type: 'tokens', text: 'thought', tokenType: 'reasoning' },
-      { sender: 'assistant', type: 'tokens', text: 'result', tokenType: 'content' },
-      { sender: 'assistant', type: 'completion', text: '' }
+      { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'thought', tokenType: 'reasoning' },
+      { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'result', tokenType: 'content' },
+      { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.COMPLETION, text: '' }
     ]);
   });
 
@@ -906,8 +907,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     });
 
     expect(posted).toContainEqual({
-      sender: 'assistant',
-      type: 'agent:toolEnd',
+      sender: MESSAGE_SENDERS.ASSISTANT,
+      type: EXTENSION_EVENTS.TOOL_END,
       toolCallId,
       toolName,
       result,
@@ -956,8 +957,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     });
 
     expect(posted).toContainEqual({
-      sender: 'assistant',
-      type: 'agent:toolStart',
+      sender: MESSAGE_SENDERS.ASSISTANT,
+      type: EXTENSION_EVENTS.TOOL_START,
       toolCallId,
       toolName,
       displayMessage,
@@ -1005,7 +1006,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     provider.resolveWebviewView(webviewView);
     if (webview.__handler) {
-      await webview.__handler({ command: 'sendMessage', text: 'hello' });
+      await webview.__handler({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' });
     }
 
     expect(provider._view).toBeUndefined();
@@ -1051,7 +1052,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const updateProvidersSpy = jest.spyOn(configProcessor, 'updateProviders');
 
     if (webview.__handler) {
-      await webview.__handler({ command: 'sendMessage', text: 'hello' });
+      await webview.__handler({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' });
     }
 
     expect(updateProvidersSpy).toHaveBeenCalledWith(config, eventBus, secretManager, httpClient, true);

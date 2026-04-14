@@ -4,7 +4,7 @@
 import { describe, it, expect, beforeEach, jest, afterEach } from '@jest/globals';
 import { ChatManager, InitialState } from '../../src/webView/chat.js';
 import { MockWebviewApi, setupChatDom, createMockDomRect } from '../testUtils.js';
-import { WEBVIEW_COMMANDS, EXTENSION_EVENTS } from '../../src/constants/protocol.js';
+import { WEBVIEW_COMMANDS, EXTENSION_EVENTS, EXTENSION_COMMANDS, MESSAGE_SENDERS } from '../../src/constants/protocol.js';
 
 describe('ChatManager Unit Tests', () => {
     let chatManager: ChatManager;
@@ -218,7 +218,7 @@ describe('ChatManager Unit Tests', () => {
             if (!chat) { throw new Error('Chat container not found'); }
 
             window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: 'user', text: 'message from backend' }
+                data: { sender: MESSAGE_SENDERS.USER, text: 'message from backend' }
             }));
 
             const userMsg = chat.querySelector('.message.user');
@@ -235,7 +235,7 @@ describe('ChatManager Unit Tests', () => {
             chat.innerHTML = '<div class="message">X</div>';
             
             window.dispatchEvent(new MessageEvent('message', {
-                data: { command: 'newChat' }
+                data: { command: EXTENSION_COMMANDS.NEW_CHAT }
             }));
 
             expect(chat.querySelectorAll('.message').length).toBe(0);
@@ -259,7 +259,7 @@ describe('ChatManager Unit Tests', () => {
             input.disabled = true;
 
             window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: 'assistant', type: EXTENSION_EVENTS.ERROR, text: 'Something went wrong' }
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.ERROR, text: 'Something went wrong' }
             }));
 
             const chat = document.getElementById('chat');
@@ -278,7 +278,7 @@ describe('ChatManager Unit Tests', () => {
             input.disabled = true;
 
             window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: 'assistant', type: EXTENSION_EVENTS.COMPLETION }
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.COMPLETION }
             }));
 
             expect(input.disabled).toBe(false);
@@ -290,7 +290,7 @@ describe('ChatManager Unit Tests', () => {
             // Start
             window.dispatchEvent(new MessageEvent('message', {
                 data: { 
-                    sender: 'assistant', 
+                    sender: MESSAGE_SENDERS.ASSISTANT, 
                     type: EXTENSION_EVENTS.TOOL_START, 
                     toolCallId, 
                     toolName: 'test_tool',
@@ -306,7 +306,7 @@ describe('ChatManager Unit Tests', () => {
             // End (Success)
             window.dispatchEvent(new MessageEvent('message', {
                 data: { 
-                    sender: 'assistant', 
+                    sender: MESSAGE_SENDERS.ASSISTANT, 
                     type: EXTENSION_EVENTS.TOOL_END, 
                     toolCallId, 
                     toolName: 'test_tool',
@@ -321,7 +321,7 @@ describe('ChatManager Unit Tests', () => {
             const toolCallId = 'c1';
             window.dispatchEvent(new MessageEvent('message', {
                 data: { 
-                    sender: 'assistant', 
+                    sender: MESSAGE_SENDERS.ASSISTANT, 
                     type: EXTENSION_EVENTS.REQUEST_CONFIRMATION, 
                     toolCallId, 
                     toolName: 'edit_file',
@@ -353,7 +353,7 @@ describe('ChatManager Unit Tests', () => {
         it('should handle viewDiff command', () => {
             window.dispatchEvent(new MessageEvent('message', {
                 data: { 
-                    sender: 'assistant', 
+                    sender: MESSAGE_SENDERS.ASSISTANT, 
                     type: EXTENSION_EVENTS.REQUEST_CONFIRMATION, 
                     toolCallId: 'diff1', 
                     toolName: 'edit_file',
@@ -401,7 +401,7 @@ describe('ChatManager Unit Tests', () => {
             });
 
             window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: 'assistant', type: EXTENSION_EVENTS.TOKENS, text: 'scroll test', tokenType: 'content' }
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'scroll test', tokenType: 'content' }
             }));
 
             expect(userMsg.getBoundingClientRect).toHaveBeenCalled();
@@ -415,14 +415,14 @@ describe('ChatManager Unit Tests', () => {
                 throw new Error('Chat not found');
             }
             window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: 'assistant', type: EXTENSION_EVENTS.TOKENS, text: '   ', tokenType: 'content' }
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: '   ', tokenType: 'content' }
             }));
             
             const msg = chat.querySelector('.message.assistant');
             expect(msg).toBeTruthy();
 
             window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: 'assistant', type: EXTENSION_EVENTS.COMPLETION }
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.COMPLETION }
             }));
 
             expect(chat.querySelector('.message.assistant')).toBeNull();
@@ -433,11 +433,11 @@ describe('ChatManager Unit Tests', () => {
             if (!(chat instanceof HTMLElement)) { throw new Error('Chat not found'); }
 
             window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: 'assistant', type: EXTENSION_EVENTS.TOKENS, text: 'some thoughts', tokenType: 'reasoning' }
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'some thoughts', tokenType: 'reasoning' }
             }));
 
             window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: 'assistant', type: EXTENSION_EVENTS.COMPLETION }
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.COMPLETION }
             }));
 
             const msg = chat.querySelector('.message.assistant');
@@ -448,16 +448,16 @@ describe('ChatManager Unit Tests', () => {
         it('should handle complex interleaving (Reasoning -> Tool -> Content)', () => {
             // 1. Reasoning
             window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: 'assistant', type: EXTENSION_EVENTS.TOKENS, text: 'Think', tokenType: 'reasoning' }
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'Think', tokenType: 'reasoning' }
             }));
             // 2. Tool inside Reasoning
             const toolCallId = 't-nested';
             window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: 'assistant', type: EXTENSION_EVENTS.TOOL_START, toolCallId, toolName: 't', args: '{}' }
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOOL_START, toolCallId, toolName: 't', args: '{}' }
             }));
             // 3. Content (Collapses reasoning)
             window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: 'assistant', type: EXTENSION_EVENTS.TOKENS, text: 'Done', tokenType: 'content' }
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'Done', tokenType: 'content' }
             }));
 
             const reasoning = document.querySelector('.reasoning-container');
@@ -474,7 +474,7 @@ describe('ChatManager Unit Tests', () => {
 
         it('should toggle reasoning visibility when header is clicked', () => {
             window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: 'assistant', type: EXTENSION_EVENTS.TOKENS, text: 'Thinking...', tokenType: 'reasoning' }
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'Thinking...', tokenType: 'reasoning' }
             }));
 
             const header = document.querySelector('.reasoning-header');
@@ -497,14 +497,14 @@ describe('ChatManager Unit Tests', () => {
         it('should handle nested confirmation inside reasoning', () => {
             // 1. Start reasoning
             window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: 'assistant', type: EXTENSION_EVENTS.TOKENS, text: 'I am thinking...', tokenType: 'reasoning' }
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'I am thinking...', tokenType: 'reasoning' }
             }));
 
             // 2. Send confirmation request while reasoning is active
             const toolCallId = 'nested-confirm';
             window.dispatchEvent(new MessageEvent('message', {
                 data: { 
-                    sender: 'assistant', 
+                    sender: MESSAGE_SENDERS.ASSISTANT, 
                     type: EXTENSION_EVENTS.REQUEST_CONFIRMATION, 
                     toolCallId, 
                     toolName: 'edit_file',

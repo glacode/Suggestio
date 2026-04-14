@@ -217,6 +217,8 @@ export interface IWebviewView {
   webview: IWebview;
 }
 
+import { WEBVIEW_COMMANDS, EXTENSION_COMMANDS, EXTENSION_EVENTS, MESSAGE_SENDERS } from './constants/protocol.js';
+
 // --------------------------------------------------------------------------------
 //  Custom Chat-Specific Types
 // --------------------------------------------------------------------------------
@@ -228,39 +230,39 @@ export interface IWebviewView {
 export type WebviewMessage =
   | {
     /** User wants to send a chat message. */
-    command: 'sendMessage';
+    command: typeof WEBVIEW_COMMANDS.SEND_MESSAGE;
     /** The text of the message to send. */
     text: string;
   }
   | {
     /** User has selected a different language model profile. */
-    command: 'chatProfileChanged';
+    command: typeof WEBVIEW_COMMANDS.CHAT_PROFILE_CHANGED;
     /** The ID of the selected profile. */
     model: string;
   }
   | {
     /** User has selected a different completion model profile. */
-    command: 'completionProfileChanged';
+    command: typeof WEBVIEW_COMMANDS.COMPLETION_PROFILE_CHANGED;
     /** The ID of the selected profile. */
     model: string;
   }
   | {
     /** User wants to clear the chat history. */
-    command: 'clearHistory';
+    command: typeof WEBVIEW_COMMANDS.CLEAR_HISTORY;
   }
   | {
     /** User wants to cancel the current LLM request. */
-    command: 'cancelRequest';
+    command: typeof WEBVIEW_COMMANDS.CANCEL_REQUEST;
   }
   | {
     /** User wants to view a diff for a tool call. */
-    command: 'viewDiff';
+    command: typeof WEBVIEW_COMMANDS.VIEW_DIFF;
     /** The ID of the tool call. */
     toolCallId: string;
   }
   | {
     /** User has responded to a tool confirmation request. */
-    command: 'confirmToolCall';
+    command: typeof WEBVIEW_COMMANDS.CONFIRM_TOOL_CALL;
     /** The ID of the tool call. */
     toolCallId: string;
     /** The user's decision ('allow' or 'deny'). */
@@ -317,9 +319,9 @@ export interface IChatMessage {
 export type MessageFromTheExtensionToTheWebview =
   | {
     /** Indicates the message comes from the AI assistant. */
-    sender: 'assistant';
+    sender: typeof MESSAGE_SENDERS.ASSISTANT;
     /** Represents a partial piece of the AI's response (for streaming). */
-    type: 'tokens';
+    type: typeof EXTENSION_EVENTS.TOKENS;
     /** The text content of the token. */
     text: string;
     /** The type of token. */
@@ -327,9 +329,9 @@ export type MessageFromTheExtensionToTheWebview =
   }
   | {
     /** Indicates the message comes from the AI assistant. */
-    sender: 'assistant';
+    sender: typeof MESSAGE_SENDERS.ASSISTANT;
     /** Signals the start of a tool call. */
-    type: 'agent:toolStart';
+    type: typeof EXTENSION_EVENTS.TOOL_START;
     /** The ID of the tool call. */
     toolCallId: string;
     /** The name of the tool being called. */
@@ -341,9 +343,9 @@ export type MessageFromTheExtensionToTheWebview =
   }
   | {
     /** Indicates the message comes from the AI assistant. */
-    sender: 'assistant';
+    sender: typeof MESSAGE_SENDERS.ASSISTANT;
     /** Signals the end of a tool call. */
-    type: 'agent:toolEnd';
+    type: typeof EXTENSION_EVENTS.TOOL_END;
     /** The ID of the tool call. */
     toolCallId: string;
     /** The name of the tool. */
@@ -355,9 +357,9 @@ export type MessageFromTheExtensionToTheWebview =
   }
   | {
     /** Indicates the message comes from the AI assistant. */
-    sender: 'assistant';
+    sender: typeof MESSAGE_SENDERS.ASSISTANT;
     /** Signals a request for user confirmation before executing a tool. */
-    type: 'agent:requestConfirmation';
+    type: typeof EXTENSION_EVENTS.REQUEST_CONFIRMATION;
     /** The ID of the tool call. */
     toolCallId: string;
     /** The name of the tool. */
@@ -373,35 +375,35 @@ export type MessageFromTheExtensionToTheWebview =
   }
   | {
     /** Indicates the message comes from the AI assistant. */
-    sender: 'assistant';
+    sender: typeof MESSAGE_SENDERS.ASSISTANT;
     /** Signals that the AI's response stream has finished. */
-    type: 'completion';
+    type: typeof EXTENSION_EVENTS.COMPLETION;
     /** The final text of the completion (or empty if tokens were fully streamed). */
     text: string;
   }
   | {
     /** Indicates the message comes from the AI assistant. */
-    sender: 'assistant';
+    sender: typeof MESSAGE_SENDERS.ASSISTANT;
     /** A generic message, often used for error reporting or non-streaming info. */
-    type: 'error';
+    type: typeof EXTENSION_EVENTS.ERROR;
     /** The text content of the error. */
     text: string;
   }
   | {
     /** Indicates the message comes from the AI assistant. */
-    sender: 'assistant';
+    sender: typeof MESSAGE_SENDERS.ASSISTANT;
     /** A notification message that appears in chat but doesn't affect conversation history. */
-    type: 'notification';
+    type: typeof EXTENSION_EVENTS.NOTIFICATION;
     /** The text content of the notification, or null to hide notification. */
     text: string | null;
   }
   | {
     /** Instructs the webview to initiate and display a new chat session. */
-    command: 'newChat';
+    command: typeof EXTENSION_COMMANDS.NEW_CHAT;
   }
   | {
     /** Instructs the webview to open the settings overlay. */
-    command: 'openSettings';
+    command: typeof EXTENSION_COMMANDS.OPEN_SETTINGS;
   };
 
 /**

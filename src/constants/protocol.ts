@@ -12,6 +12,14 @@ export const WEBVIEW_COMMANDS = {
 } as const;
 
 /**
+ * Commands sent from the Extension backend to the Webview UI.
+ */
+export const EXTENSION_COMMANDS = {
+    NEW_CHAT: 'newChat',
+    OPEN_SETTINGS: 'openSettings',
+} as const;
+
+/**
  * Event types sent from the Extension backend to the Webview UI.
  */
 export const EXTENSION_EVENTS = {
@@ -26,5 +34,15 @@ export const EXTENSION_EVENTS = {
     NOTIFICATION: 'notification',
 } as const;
 
+/**
+ * Message senders for chat communication.
+ */
+export const MESSAGE_SENDERS = {
+    ASSISTANT: 'assistant',
+    USER: 'user',
+} as const;
+
 export type WebviewCommand = typeof WEBVIEW_COMMANDS[keyof typeof WEBVIEW_COMMANDS];
+export type ExtensionCommand = typeof EXTENSION_COMMANDS[keyof typeof EXTENSION_COMMANDS];
 export type ExtensionEvent = typeof EXTENSION_EVENTS[keyof typeof EXTENSION_EVENTS];
+export type MessageSender = typeof MESSAGE_SENDERS[keyof typeof MESSAGE_SENDERS];

@@ -31,7 +31,7 @@ import { IEventBus } from '../utils/eventBus.js';
 import { createEventLogger } from '../log/eventLogger.js';
 import { ChatPrompt } from './chatPrompt.js';
 import { CHAT_MESSAGES, AGENT_LOGS } from '../constants/messages.js';
-import { WEBVIEW_COMMANDS, EXTENSION_EVENTS } from '../constants/protocol.js';
+import { WEBVIEW_COMMANDS, EXTENSION_EVENTS, EXTENSION_COMMANDS, MESSAGE_SENDERS } from '../constants/protocol.js';
 import { configProcessor, SecretManager } from '../config/configProcessor.js';
 
 // This interface defines the arguments required to construct a `ChatWebviewViewProvider`.
@@ -116,7 +116,7 @@ export class ChatWebviewViewProvider {
             this.logger.info(AGENT_LOGS.MAX_ITERATIONS_REACHED(payload.maxIterations));
             if (this._view) {
                 this._view.webview.postMessage({
-                    sender: 'assistant',
+                    sender: MESSAGE_SENDERS.ASSISTANT,
                     type: EXTENSION_EVENTS.ERROR,
                     text: CHAT_MESSAGES.MAX_ITERATIONS_REACHED(payload.maxIterations)
                 });
@@ -129,7 +129,7 @@ export class ChatWebviewViewProvider {
             }
             if (this._view) {
                 this._view.webview.postMessage({
-                    sender: 'assistant',
+                    sender: MESSAGE_SENDERS.ASSISTANT,
                     type: EXTENSION_EVENTS.TOKENS,
                     text: payload.token,
                     tokenType: payload.type
@@ -140,7 +140,7 @@ export class ChatWebviewViewProvider {
         this._eventBus.on('agent:toolStart', (payload: IToolCallEventPayload) => {
             if (this._view) {
                 this._view.webview.postMessage({
-                    sender: 'assistant',
+                    sender: MESSAGE_SENDERS.ASSISTANT,
                     type: EXTENSION_EVENTS.TOOL_START,
                     toolCallId: payload.toolCallId,
                     toolName: payload.toolName,
@@ -156,7 +156,7 @@ export class ChatWebviewViewProvider {
 
             if (this._view) {
                 this._view.webview.postMessage({
-                    sender: 'assistant',
+                    sender: MESSAGE_SENDERS.ASSISTANT,
                     type: EXTENSION_EVENTS.TOOL_END,
                     toolCallId: payload.toolCallId,
                     toolName: payload.toolName,
@@ -174,7 +174,7 @@ export class ChatWebviewViewProvider {
 
             if (this._view) {
                 this._view.webview.postMessage({
-                    sender: 'assistant',
+                    sender: MESSAGE_SENDERS.ASSISTANT,
                     type: EXTENSION_EVENTS.REQUEST_CONFIRMATION,
                     toolCallId: payload.toolCallId,
                     toolName: payload.toolName,
@@ -260,7 +260,7 @@ export class ChatWebviewViewProvider {
     public newChat() {
         this._chatHistoryManager.clearHistory();
         if (this._view) {
-            this._view.webview.postMessage({ command: 'newChat' });
+            this._view.webview.postMessage({ command: EXTENSION_COMMANDS.NEW_CHAT });
         }
     }
 
@@ -269,14 +269,14 @@ export class ChatWebviewViewProvider {
      */
     public showSettings() {
         if (this._view) {
-            this._view.webview.postMessage({ command: 'openSettings' });
+            this._view.webview.postMessage({ command: EXTENSION_COMMANDS.OPEN_SETTINGS });
         }
     }
 
     private _sendCompletionMessage() {
         if (this._view) {
             this._view.webview.postMessage({
-                sender: 'assistant',
+                sender: MESSAGE_SENDERS.ASSISTANT,
                 type: EXTENSION_EVENTS.COMPLETION,
                 text: ''
             });
@@ -306,7 +306,7 @@ export class ChatWebviewViewProvider {
                         // Show notification that we need API key
                         if (this._view) {
                             this._view.webview.postMessage({
-                                sender: 'assistant',
+                                sender: MESSAGE_SENDERS.ASSISTANT,
                                 type: EXTENSION_EVENTS.NOTIFICATION,
                                 text: `Waiting for API key "${profileConfig.apiKeyPlaceholder}" to be entered...`
                             });
@@ -316,7 +316,7 @@ export class ChatWebviewViewProvider {
                         // Hide notification after key is resolved
                         if (this._view) {
                             this._view.webview.postMessage({
-                                sender: 'assistant',
+                                sender: MESSAGE_SENDERS.ASSISTANT,
                                 type: EXTENSION_EVENTS.NOTIFICATION,
                                 text: null
                             });
@@ -348,7 +348,7 @@ export class ChatWebviewViewProvider {
                     }
                     // If an error occurs during the chat response, post an error message back to the webview.
                     webviewView.webview.postMessage({
-                        sender: 'assistant',
+                        sender: MESSAGE_SENDERS.ASSISTANT,
                         type: EXTENSION_EVENTS.ERROR,
                         text: CHAT_MESSAGES.ERROR_PROCESSING_REQUEST(error)
                     });
