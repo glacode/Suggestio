@@ -262,7 +262,10 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     const body: OpenAIRequestBody = {
       model: this.model,
       messages: messages,
-      max_tokens: 10000,
+      // TODO this is a Groq Compound model hard-coded limit; later I will implement a more sophisticated strategy
+      // max_tokens is the max number of OUTPUT tokens
+      // for sure, inline completion should allow for much fewer tokens than the chat agent
+      max_tokens: 8192, 
     };
 
     if (stream) {
