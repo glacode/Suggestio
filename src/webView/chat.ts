@@ -483,6 +483,14 @@ export class ChatManager {
                 return;
             }
 
+            if (type === EXTENSION_EVENTS.UPDATE_PROFILE_METADATA) {
+                this.initialState.profileMetadata = event.data.metadata;
+                try {
+                    renderProfileSettings(this.vscode, this.initialState);
+                } catch (e) {}
+                return;
+            }
+
             if (sender === MESSAGE_SENDERS.ASSISTANT) {
                 if (type === EXTENSION_EVENTS.NOTIFICATION) {
                     // text === null means hide notification

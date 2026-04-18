@@ -34,6 +34,7 @@ export const EXTENSION_EVENTS = {
     TOOL_END: 'agent:toolEnd',
     REQUEST_CONFIRMATION: 'agent:requestConfirmation',
     NOTIFICATION: 'notification',
+    UPDATE_PROFILE_METADATA: 'updateProfileMetadata',
 } as const;
 
 /**

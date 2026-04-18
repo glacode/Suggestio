@@ -416,6 +416,12 @@ export type MessageFromTheExtensionToTheWebview =
   | {
     /** Instructs the webview to open the settings overlay. */
     command: typeof EXTENSION_COMMANDS.OPEN_SETTINGS;
+  }
+  | {
+    /** Updates the profile metadata displayed in settings overlay. */
+    type: typeof EXTENSION_EVENTS.UPDATE_PROFILE_METADATA;
+    /** Updated profile metadata. */
+    metadata: any[];
   };
 
 /**
