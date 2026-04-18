@@ -2,16 +2,21 @@
  * @jest-environment jsdom
  */
 import { describe, it, expect, beforeEach, jest, afterEach } from '@jest/globals';
-import { ChatManager, InitialState } from '../../src/webView/chat.js';
+import type { ChatManager as ChatManagerType, InitialState } from '../../src/webView/chat.js';
 import { MockWebviewApi, setupChatDom, createMockDomRect } from '../testUtils.js';
 import { WEBVIEW_COMMANDS, EXTENSION_EVENTS, EXTENSION_COMMANDS, MESSAGE_SENDERS } from '../../src/constants/protocol.js';
 
 describe('ChatManager Unit Tests', () => {
-    let chatManager: ChatManager;
+    let chatManager: ChatManagerType;
     let mockVscode: MockWebviewApi;
+    let ChatManager: any;
 
-    beforeEach(() => {
+    beforeEach(async () => {
         jest.useFakeTimers();
+        jest.resetModules();
+        const chatModule = await import('../../src/webView/chat.js');
+        ChatManager = chatModule.ChatManager;
+
         setupChatDom();
         window.HTMLElement.prototype.scrollIntoView = jest.fn();
 
@@ -249,6 +254,26 @@ describe('ChatManager Unit Tests', () => {
             chatManager.newChat();
 
             expect(chat.querySelectorAll('.message').length).toBe(0);
+        });
+
+        it('should toggle settings overlay when OPEN_SETTINGS command is received', () => {
+            const overlay = document.getElementById('settingsOverlay');
+            if (!overlay) { throw new Error('Settings overlay not found'); }
+
+            // 1. Initial state: hidden
+            expect(overlay.classList.contains('hidden')).toBe(true);
+
+            // 2. First command: show
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { command: EXTENSION_COMMANDS.OPEN_SETTINGS }
+            }));
+            expect(overlay.classList.contains('hidden')).toBe(false);
+
+            // 3. Second command: toggle hide
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { command: EXTENSION_COMMANDS.OPEN_SETTINGS }
+            }));
+            expect(overlay.classList.contains('hidden')).toBe(true);
         });
 
         it('should handle error events by showing text and enabling input', () => {

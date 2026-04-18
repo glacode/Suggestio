@@ -287,22 +287,24 @@ export function createMockDomRect(overrides: Partial<DOMRect> = {}): DOMRect {
  */
 export function setupChatDom() {
     document.body.innerHTML = `
-        <div id="chat"></div>
-        <div class="chat-input">
-            <div class="input-wrapper">
-                <div id="inputLoadingIndicator"></div>
-                <textarea id="messageInput"></textarea>
-                <div class="chat-controls">
-                    <div id="modelSelector">
-                        <div class="dropdown-label">
-                            <span class="chat-profile-label"></span>
+        <div class="chat-container">
+            <div id="chat"></div>
+            <div class="chat-input">
+                <div class="input-wrapper">
+                    <div id="inputLoadingIndicator"></div>
+                    <textarea id="messageInput"></textarea>
+                    <div class="chat-controls">
+                        <div id="modelSelector">
+                            <div class="dropdown-label">
+                                <span class="chat-profile-label"></span>
+                            </div>
+                            <div class="dropdown-content"></div>
                         </div>
-                        <div class="dropdown-content"></div>
+                        <div class="send-icon"></div>
                     </div>
-                    <div class="send-icon"></div>
                 </div>
             </div>
+            <div id="emptyChatContent"></div>
         </div>
-        <div id="emptyChatContent"></div>
     `;
 }

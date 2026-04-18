@@ -106,6 +106,24 @@ describe('settingsOverlay Unit Tests', () => {
             settingsOverlay.hideOverlay();
             expect(document.body.classList.contains('overlay-open')).toBe(false);
         });
+
+        it('should return correct visibility status with isOverlayVisible', () => {
+            const container = document.querySelector('.chat-container');
+            if (!(container instanceof HTMLElement)) { throw new Error('Container not found'); }
+            
+            // Not initialized
+            expect(settingsOverlay.isOverlayVisible()).toBe(false);
+
+            settingsOverlay.initOverlay(container);
+            // Initialized but hidden
+            expect(settingsOverlay.isOverlayVisible()).toBe(false);
+
+            settingsOverlay.showOverlay();
+            expect(settingsOverlay.isOverlayVisible()).toBe(true);
+
+            settingsOverlay.hideOverlay();
+            expect(settingsOverlay.isOverlayVisible()).toBe(false);
+        });
     });
 
     describe('renderProfileSettings', () => {

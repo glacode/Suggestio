@@ -1,5 +1,5 @@
 import { WEBVIEW_COMMANDS, EXTENSION_EVENTS, EXTENSION_COMMANDS, MESSAGE_SENDERS } from '../constants/protocol.js';
-import { initOverlay, showOverlay, renderProfileSettings } from './settingsOverlay.js';
+import { initOverlay, showOverlay, hideOverlay, isOverlayVisible, renderProfileSettings } from './settingsOverlay.js';
 import type { IWebviewApi } from '../types.js';
 
 /**
@@ -475,11 +475,15 @@ export class ChatManager {
                 return;
             }
             if (command === EXTENSION_COMMANDS.OPEN_SETTINGS) {
-                // Populate overlay with profile settings then show it
-                try {
-                    renderProfileSettings(this.vscode, this.initialState);
-                } catch (e) {}
-                showOverlay();
+                if (isOverlayVisible()) {
+                    hideOverlay();
+                } else {
+                    // Populate overlay with profile settings then show it
+                    try {
+                        renderProfileSettings(this.vscode, this.initialState);
+                    } catch (e) {}
+                    showOverlay();
+                }
                 return;
             }
 

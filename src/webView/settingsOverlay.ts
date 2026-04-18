@@ -57,6 +57,10 @@ export function hideOverlay() {
   document.body.classList.remove('overlay-open');
 }
 
+export function isOverlayVisible(): boolean {
+    return !!_overlayRoot && !_overlayRoot.classList.contains('hidden');
+}
+
 /**
  * Render profile settings with API key management.
  */
