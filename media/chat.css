@@ -542,72 +542,12 @@ body.overlay-open textarea#messageInput {
     filter: blur(0.5px);
 }
 
-/* Completion profile selector styles */
+/* Profile Manager Styles */
 .settings-section {
     margin-bottom: 16px;
     max-width: 720px;
 }
 
-.settings-label {
-    display: block;
-    font-size: 13px;
-    color: var(--vscode-descriptionForeground);
-    margin-bottom: 6px;
-}
-
-.profile-selector {
-    position: relative;
-    width: 100%;
-    max-width: 420px;
-}
-
-.selected-profile {
-    padding: 8px 12px;
-    border: 1px solid var(--vscode-input-border);
-    border-radius: 4px;
-    background: var(--vscode-input-background);
-    color: var(--vscode-input-foreground);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    cursor: pointer;
-}
-
-.profile-options {
-    position: absolute;
-    top: calc(100% + 6px);
-    left: 0;
-    background: var(--vscode-editorWidget-background);
-    border: 1px solid var(--vscode-editorWidget-border);
-    border-radius: 4px;
-    padding: 4px;
-    min-width: 220px;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.25);
-    z-index: 60;
-    display: none;
-}
-
-.profile-options a {
-    display: block;
-    padding: 8px 10px;
-    color: var(--vscode-editor-foreground);
-    text-decoration: none;
-    white-space: nowrap;
-}
-
-.profile-options a:hover {
-    background: var(--vscode-list-hoverBackground);
-    color: var(--vscode-list-hoverForeground);
-}
-
-.selected-profile::after {
-    content: '\25BC';
-    margin-left: 8px;
-    font-size: 10px;
-    opacity: 0.7;
-}
-
-/* Enhanced Profile Manager Styles */
 .settings-subtitle {
     font-size: 14px;
     font-weight: 600;
