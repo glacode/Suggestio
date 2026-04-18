@@ -417,6 +417,11 @@ export class ChatWebviewViewProvider {
                 // completion profile in the settings overlay. Emit the existing
                 // 'completionProfileChanged' event so configProcessor picks it up.
                 this._eventBus.emit('completionProfileChanged', message.model);
+
+                // Trigger live update of the settings overlay
+                const completionProfiles = typeof this._profileAccessor.getCompletionProfiles === 'function' ? this._profileAccessor.getCompletionProfiles()! : this._profileAccessor.getProfiles();
+                const metadata = await this._getProfileMetadata(completionProfiles, this._profileAccessor.getActiveProfile(), message.model);
+                this._view?.webview.postMessage({ type: EXTENSION_EVENTS.UPDATE_PROFILE_METADATA, metadata });
             } else if (message.command === WEBVIEW_COMMANDS.EDIT_API_KEY) {
                 await this._secretManager.updateAPIKey(message.placeholder);
                 // Refresh background provider instances with new key
