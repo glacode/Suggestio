@@ -606,3 +606,129 @@ body.overlay-open textarea#messageInput {
     font-size: 10px;
     opacity: 0.7;
 }
+
+/* Enhanced Profile Manager Styles */
+.settings-subtitle {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--vscode-foreground);
+    border-bottom: 1px solid var(--vscode-settings-headerBorder);
+    padding-bottom: 4px;
+}
+
+.profiles-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.profile-item {
+    padding: 10px;
+    border: 1px solid var(--vscode-widget-border);
+    border-radius: 4px;
+    background: var(--vscode-editor-background);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.profile-item.active {
+    border-color: var(--vscode-focusBorder);
+    background: var(--vscode-list-hoverBackground);
+}
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.profile-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.profile-id {
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.active-badge {
+    background: var(--vscode-badge-background);
+    color: var(--vscode-badge-foreground);
+    font-size: 9px;
+    padding: 1px 4px;
+    border-radius: 2px;
+    font-weight: bold;
+}
+
+.profile-details {
+    font-size: 11px;
+    color: var(--vscode-descriptionForeground);
+}
+
+.profile-status {
+    margin-top: 4px;
+}
+
+.status-badge {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-weight: 500;
+}
+
+.status-badge.success {
+    background: rgba(137, 209, 133, 0.2);
+    color: #89d185;
+}
+
+.status-badge.warning {
+    background: rgba(204, 184, 0, 0.2);
+    color: #cca700;
+}
+
+.status-badge.info {
+    background: rgba(55, 148, 255, 0.2);
+    color: #3794ff;
+}
+
+.profile-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.icon-button {
+    background: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+    border: none;
+    padding: 4px;
+    border-radius: 3px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.1s;
+}
+
+.icon-button:hover {
+    background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.icon-button.select-btn {
+    font-size: 11px;
+    padding: 4px 8px;
+    background: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+}
+
+.icon-button.select-btn:hover {
+    background: var(--vscode-button-hoverBackground);
+}
+
+.icon-button.delete-btn:hover {
+    background: var(--vscode-errorForeground);
+    color: white;
+}

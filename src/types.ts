@@ -267,6 +267,18 @@ export type WebviewMessage =
     toolCallId: string;
     /** The user's decision ('allow' or 'deny'). */
     decision: 'allow' | 'deny';
+  }
+  | {
+    /** User wants to edit an API key. */
+    command: typeof WEBVIEW_COMMANDS.EDIT_API_KEY;
+    /** The placeholder of the key to edit. */
+    placeholder: string;
+  }
+  | {
+    /** User wants to delete an API key. */
+    command: typeof WEBVIEW_COMMANDS.DELETE_API_KEY;
+    /** The placeholder of the key to delete. */
+    placeholder: string;
   };
 
 /**
@@ -540,6 +552,7 @@ export type GetChatWebviewContent = (args: {
     activeProfile: string;
     completionProfiles?: string[];
     activeCompletionProfile?: string;
+    profileMetadata?: any[];
   };
   /** VS Code API abstraction. */
   vscodeApi: IVscodeApiLocal;

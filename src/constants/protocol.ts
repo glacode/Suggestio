@@ -9,6 +9,8 @@ export const WEBVIEW_COMMANDS = {
     VIEW_DIFF: 'viewDiff',
     CONFIRM_TOOL_CALL: 'confirmToolCall',
     CANCEL_REQUEST: 'cancelRequest',
+    EDIT_API_KEY: 'editApiKey',
+    DELETE_API_KEY: 'deleteApiKey',
 } as const;
 
 /**

@@ -6,9 +6,11 @@ import { createEventLogger } from '../log/eventLogger.js';
 import { CONFIG_LOGS } from '../constants/messages.js';
 import { CONFIG_DEFAULTS } from '../constants/config.js';
 
-export interface SecretManager {
+export interface ISecretManager {
     getOrRequestAPIKey(providerKey: string): Promise<string>;
     getSecret(apiKeyPlaceholder: string): Promise<string | undefined>;
+    updateAPIKey(apiKeyPlaceholder: string): Promise<void>;
+    deleteSecret(apiKeyPlaceholder: string): Promise<void>;
 }
 
 /**
@@ -27,7 +29,7 @@ class ConfigProcessor {
      */
     public async processConfig(
         rawJson: string,
-        secretManager: SecretManager,
+        secretManager: ISecretManager,
         eventBus: IEventBus,
         httpClient: IHttpClient,
         overrides?: any
@@ -71,7 +73,7 @@ class ConfigProcessor {
     private registerEventListeners(
         config: IConfig,
         eventBus: IEventBus,
-        secretManager: SecretManager,
+        secretManager: ISecretManager,
         httpClient: IHttpClient,
         logger: ReturnType<typeof createEventLogger>
     ) {
@@ -107,7 +109,7 @@ class ConfigProcessor {
      */
     private async resolveAPIKeyInMemory(
         profileConfig: IProfileConfig,
-        secretManager: SecretManager,
+        secretManager: ISecretManager,
         forcePrompt: boolean = false
     ) {
         const apiKeyValue = profileConfig.apiKey;
@@ -134,7 +136,7 @@ class ConfigProcessor {
     public async updateProviders(
         config: IConfig,
         eventBus: IEventBus,
-        secretManager: SecretManager,
+        secretManager: ISecretManager,
         httpClient: IHttpClient,
         forcePrompt: boolean = false
     ) {

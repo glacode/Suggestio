@@ -108,136 +108,88 @@ describe('settingsOverlay Unit Tests', () => {
         });
     });
 
-    describe('setupCompletionProfileSelector', () => {
-        it('should render profiles and handle selection', () => {
+    describe('renderProfileSettings', () => {
+        const mockState: any = {
+            profileMetadata: [
+                {
+                    id: 'p1',
+                    model: 'model-1',
+                    needsApiKey: true,
+                    hasApiKey: false,
+                    apiKeyPlaceholder: 'P1_KEY',
+                    isActiveChat: true,
+                    isActiveCompletion: true
+                },
+                {
+                    id: 'p2',
+                    model: 'model-2',
+                    needsApiKey: false,
+                    hasApiKey: false,
+                    isActiveChat: false,
+                    isActiveCompletion: false
+                }
+            ]
+        };
+
+        it('should render profiles and handle completion profile change', () => {
             const container = document.querySelector('.chat-container');
             if (!(container instanceof HTMLElement)) { throw new Error('Container not found'); }
             settingsOverlay.initOverlay(container);
             
-            const profiles = ['profile-a', 'profile-b'];
-            settingsOverlay.setupCompletionProfileSelector(mockVscode, profiles, 'profile-a');
+            settingsOverlay.renderProfileSettings(mockVscode, mockState);
             
-            const selectedLabel = document.querySelector('.selected-profile');
-            expect(selectedLabel?.textContent).toBe('profile-a');
+            const items = document.querySelectorAll('.profile-item');
+            expect(items.length).toBe(2);
+            expect(items[0].classList.contains('active')).toBe(true);
+            expect(items[0].textContent).toContain('Key ❌');
+            expect(items[1].textContent).toContain('No Key Required');
             
-            const options = document.querySelector('.profile-options');
-            expect(options?.children.length).toBe(2);
+            const selectBtn = items[1].querySelector('.select-btn');
+            if (!(selectBtn instanceof HTMLElement)) { throw new Error('Select btn not found'); }
+            selectBtn.click();
             
-            // Toggle options
-            if (!(selectedLabel instanceof HTMLElement)) { throw new Error('Selected label not found'); }
-            selectedLabel.click();
-            if (!(options instanceof HTMLElement)) { throw new Error('Options container not found'); }
-            expect(options.style.display).toBe('block');
-            
-            // Select profile-b
-            const optionB = options.querySelectorAll('a')[1];
-            if (!(optionB instanceof HTMLElement)) { throw new Error('Option B not found'); }
-            optionB.click();
-            
-            expect(selectedLabel.textContent).toBe('profile-b');
-            expect(options.style.display).toBe('none');
             expect(mockVscode.messages).toContainEqual({
                 command: WEBVIEW_COMMANDS.COMPLETION_PROFILE_CHANGED,
-                model: 'profile-b'
+                model: 'p2'
             });
         });
 
-        it('should toggle options when clicking selected profile', () => {
+        it('should handle API key edit and delete', () => {
             const container = document.querySelector('.chat-container');
             if (!(container instanceof HTMLElement)) { throw new Error('Container not found'); }
             settingsOverlay.initOverlay(container);
-            settingsOverlay.setupCompletionProfileSelector(mockVscode, ['a'], 'a');
             
-            const selected = document.querySelector('.selected-profile');
-            const options = document.querySelector('.profile-options');
-            if (!(selected instanceof HTMLElement) || !(options instanceof HTMLElement)) {
-                throw new Error('Elements not found');
-            }
-            
-            selected.click();
-            expect(options.style.display).toBe('block');
-            selected.click();
-            expect(options.style.display).toBe('none');
-        });
+            const stateWithKey = JSON.parse(JSON.stringify(mockState));
+            stateWithKey.profileMetadata[0].hasApiKey = true;
 
-        it('should close options when clicking outside the overlay', () => {
-            const container = document.querySelector('.chat-container');
-            if (!(container instanceof HTMLElement)) { throw new Error('Container not found'); }
-            settingsOverlay.initOverlay(container);
-            settingsOverlay.setupCompletionProfileSelector(mockVscode, ['a'], 'a');
+            settingsOverlay.renderProfileSettings(mockVscode, stateWithKey);
             
-            const selected = document.querySelector('.selected-profile');
-            const options = document.querySelector('.profile-options');
-            if (!(selected instanceof HTMLElement) || !(options instanceof HTMLElement)) {
-                throw new Error('Elements not found');
-            }
-            
-            selected.click();
-            expect(options.style.display).toBe('block');
-            
-            // Click outside
-            document.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-            expect(options.style.display).toBe('none');
-        });
+            const p1 = document.querySelectorAll('.profile-item')[0];
+            expect(p1.textContent).toContain('Key ✅');
 
-        it('should not close options when clicking inside the overlay', () => {
-            const container = document.querySelector('.chat-container');
-            if (!(container instanceof HTMLElement)) { throw new Error('Container not found'); }
-            settingsOverlay.initOverlay(container);
-            settingsOverlay.setupCompletionProfileSelector(mockVscode, ['a'], 'a');
-            
-            const selected = document.querySelector('.selected-profile');
-            const options = document.querySelector('.profile-options');
-            if (!(selected instanceof HTMLElement) || !(options instanceof HTMLElement)) {
-                throw new Error('Elements not found');
+            const editBtn = p1.querySelector('.edit-btn');
+            const deleteBtn = p1.querySelector('.delete-btn');
+
+            if (!(editBtn instanceof HTMLElement) || !(deleteBtn instanceof HTMLElement)) {
+                throw new Error('Buttons not found');
             }
-            
-            selected.click();
-            expect(options.style.display).toBe('block');
-            
-            // Click inside
-            const title = document.querySelector('.settings-title');
-            if (!(title instanceof HTMLElement)) { throw new Error('Title not found'); }
-            title.click();
-            expect(options.style.display).toBe('block');
+
+            editBtn.click();
+            expect(mockVscode.messages).toContainEqual({
+                command: WEBVIEW_COMMANDS.EDIT_API_KEY,
+                placeholder: 'P1_KEY'
+            });
+
+            deleteBtn.click();
+            expect(mockVscode.messages).toContainEqual({
+                command: WEBVIEW_COMMANDS.DELETE_API_KEY,
+                placeholder: 'P1_KEY'
+            });
         });
 
         it('should do nothing if not initialized', () => {
-            settingsOverlay.setupCompletionProfileSelector(mockVscode, ['a'], 'a');
-            expect(document.querySelector('.settings-section')).toBeNull();
-        });
-
-        it('should clear existing content before rendering new selector', () => {
-            const container = document.querySelector('.chat-container');
-            if (!(container instanceof HTMLElement)) { throw new Error('Container not found'); }
-            settingsOverlay.initOverlay(container);
-            
-            settingsOverlay.setupCompletionProfileSelector(mockVscode, ['a'], 'a');
-            const firstSection = document.querySelector('.settings-section');
-            expect(firstSection).toBeTruthy();
-            
-            settingsOverlay.setupCompletionProfileSelector(mockVscode, ['b'], 'b');
-            const sections = document.querySelectorAll('.settings-section');
-            expect(sections.length).toBe(1);
-            expect(sections[0].textContent).toContain('b');
-        });
-
-        it('should handle error in postMessage gracefully', () => {
-            const container = document.querySelector('.chat-container');
-            if (!(container instanceof HTMLElement)) { throw new Error('Container not found'); }
-            settingsOverlay.initOverlay(container);
-            
-            jest.spyOn(mockVscode, 'postMessage').mockImplementation(() => {
-                throw new Error('Mock error');
-            });
-
-            settingsOverlay.setupCompletionProfileSelector(mockVscode, ['a'], 'a');
-            const options = document.querySelector('.profile-options');
-            const a = options?.querySelector('a');
-            a?.click();
-
-            // Should not throw
-            expect(true).toBe(true);
+            settingsOverlay.renderProfileSettings(mockVscode, mockState);
+            expect(document.querySelector('.profiles-list')).toBeNull();
         });
 
         it('should return early if body element is missing', () => {
@@ -249,38 +201,8 @@ describe('settingsOverlay Unit Tests', () => {
             const body = overlay?.querySelector('.settings-body');
             body?.remove();
 
-            settingsOverlay.setupCompletionProfileSelector(mockVscode, ['a'], 'a');
-            expect(document.querySelector('.settings-section')).toBeNull();
-        });
-
-        it('should return early if selected-profile is missing from template', () => {
-            const container = document.querySelector('.chat-container');
-            if (!(container instanceof HTMLElement)) { throw new Error('Container not found'); }
-            settingsOverlay.initOverlay(container);
-            
-            const originalCreateElement = document.createElement.bind(document);
-            jest.spyOn(document, 'createElement').mockImplementation((tagName: string) => {
-                const el = originalCreateElement(tagName);
-                if (tagName === 'div' && el instanceof HTMLDivElement) {
-                    const storage = new Map<HTMLElement, string>();
-                    Object.defineProperty(el, 'innerHTML', {
-                        set(html: string) {
-                            if (html.includes('profile-selector')) {
-                                this.textContent = 'corrupted'; 
-                            } else {
-                                storage.set(this, html);
-                            }
-                        },
-                        get() { return storage.get(this) || ''; },
-                        configurable: true
-                    });
-                }
-                return el;
-            });
-
-            settingsOverlay.setupCompletionProfileSelector(mockVscode, ['a'], 'a');
-            expect(document.querySelector('.selected-profile')).toBeNull();
-            jest.restoreAllMocks();
+            settingsOverlay.renderProfileSettings(mockVscode, mockState);
+            expect(document.querySelector('.profiles-list')).toBeNull();
         });
     });
 });

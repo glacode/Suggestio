@@ -32,7 +32,7 @@ import { createEventLogger } from '../log/eventLogger.js';
 import { ChatPrompt } from './chatPrompt.js';
 import { CHAT_MESSAGES, AGENT_LOGS } from '../constants/messages.js';
 import { WEBVIEW_COMMANDS, EXTENSION_EVENTS, EXTENSION_COMMANDS, MESSAGE_SENDERS } from '../constants/protocol.js';
-import { configProcessor, SecretManager } from '../config/configProcessor.js';
+import { configProcessor, ISecretManager } from '../config/configProcessor.js';
 
 // This interface defines the arguments required to construct a `ChatWebviewViewProvider`.
 // It uses dependency injection to provide all necessary components.
@@ -49,7 +49,7 @@ interface IChatWebviewViewProviderArgs {
     diffManager: IDiffManager;
     anonymizer?: IAnonymizer;
     config: IConfig;
-    secretManager: SecretManager;
+    secretManager: ISecretManager;
     httpClient: IHttpClient;
 }
 
@@ -82,7 +82,7 @@ export class ChatWebviewViewProvider {
     private readonly _diffManager: IDiffManager;
     private readonly _anonymizer?: IAnonymizer;
     private readonly _config: IConfig;
-    private readonly _secretManager: SecretManager;
+    private readonly _secretManager: ISecretManager;
     private readonly _httpClient: IHttpClient;
     private _abortController?: AbortController; // For cancelling ongoing LLM requests
     
@@ -192,7 +192,7 @@ export class ChatWebviewViewProvider {
      *
      * @param webviewView The `IWebviewView` object representing the VS Code chat sidebar panel.
      */
-    public resolveWebviewView(webviewView: IWebviewView) {
+    public async resolveWebviewView(webviewView: IWebviewView) {
         this._view = webviewView; // Store the provided webviewView for later access.
 
         // Sets the title of the webview sidebar panel. By setting it to an empty string,
@@ -208,9 +208,18 @@ export class ChatWebviewViewProvider {
             // extension's own directory for security.
         };
 
-        // Construct a URI for the `renderMarkDown.js` script, which is compiled from `renderMarkDown.ts`.
-        // `asWebviewUri` is crucial: it converts a local file URI into a special URI
-        // that the webview can safely load, adhering to VS Code's security policies.
+        // Initial state population and HTML setting
+        await this._updateWebviewState();
+
+        // Set up the message listener to handle communication from the webview (frontend).
+        this.setupMessageHandler(this._view);
+    }
+
+    private async _updateWebviewState() {
+        if (!this._view) {
+            return;
+        }
+
         // Construct URIs for assets
         const chatJsUri = this._view.webview.asWebviewUri(
             this._vscodeApi.Uri.joinPath(this._extensionContext.extensionUri, 'builtResources', 'chat.js')
@@ -236,6 +245,25 @@ export class ChatWebviewViewProvider {
             ? this._profileAccessor.getCompletionActiveProfile!()
             : (this._config.activeCompletionProfile || activeProfile);
 
+        // Enrich profile metadata
+        const profileMetadata = await Promise.all(completionProfiles.map(async (id) => {
+            const profile = this._config.profiles[id];
+            const apiKeyValue = profile?.apiKey;
+            const match = typeof apiKeyValue === "string" ? apiKeyValue.match(/^\$\{(\w+)\}$/) : null;
+            const placeholder = match ? match[1] : undefined;
+            const hasApiKey = placeholder ? !!(await this._secretManager.getSecret(placeholder)) : false;
+
+            return {
+                id,
+                model: profile?.model || '',
+                needsApiKey: !!placeholder,
+                hasApiKey,
+                apiKeyPlaceholder: placeholder,
+                isActiveChat: id === activeProfile,
+                isActiveCompletion: id === activeCompletionProfile
+            };
+        }));
+
         // Generate the full HTML content for the webview using the `_getChatWebviewContent` function.
         this._view.webview.html = this._getChatWebviewContent({
             extensionUri: this._extensionContext.extensionUri,
@@ -247,14 +275,12 @@ export class ChatWebviewViewProvider {
                 profiles,
                 activeProfile,
                 completionProfiles: completionProfiles,
-                activeCompletionProfile: activeCompletionProfile
+                activeCompletionProfile: activeCompletionProfile,
+                profileMetadata
             },
             vscodeApi: this._vscodeApi,
             fileReader: this._fileReader
         });
-
-        // Set up the message listener to handle communication from the webview (frontend).
-        this.setupMessageHandler(this._view);
     }
 
     public newChat() {
@@ -389,6 +415,16 @@ export class ChatWebviewViewProvider {
                 // completion profile in the settings overlay. Emit the existing
                 // 'completionProfileChanged' event so configProcessor picks it up.
                 this._eventBus.emit('completionProfileChanged', message.model);
+            } else if (message.command === WEBVIEW_COMMANDS.EDIT_API_KEY) {
+                await this._secretManager.updateAPIKey(message.placeholder);
+                // Refresh background provider instances with new key
+                await configProcessor.updateProviders(this._config, this._eventBus, this._secretManager, this._httpClient);
+                await this._updateWebviewState();
+            } else if (message.command === WEBVIEW_COMMANDS.DELETE_API_KEY) {
+                await this._secretManager.deleteSecret(message.placeholder);
+                // Refresh background provider instances
+                await configProcessor.updateProviders(this._config, this._eventBus, this._secretManager, this._httpClient);
+                await this._updateWebviewState();
             }
         });
     }

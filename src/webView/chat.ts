@@ -1,15 +1,26 @@
 import { WEBVIEW_COMMANDS, EXTENSION_EVENTS, EXTENSION_COMMANDS, MESSAGE_SENDERS } from '../constants/protocol.js';
-import { initOverlay, showOverlay, setupCompletionProfileSelector } from './settingsOverlay.js';
+import { initOverlay, showOverlay, renderProfileSettings } from './settingsOverlay.js';
 import type { IWebviewApi } from '../types.js';
 
 /**
  * Interface for the initial state passed to the webview.
  */
+export interface ProfileMetadata {
+    id: string;
+    model: string;
+    needsApiKey: boolean;
+    hasApiKey: boolean;
+    apiKeyPlaceholder?: string;
+    isActiveChat: boolean;
+    isActiveCompletion: boolean;
+}
+
 export interface InitialState {
     profiles: string[];
     activeProfile: string;
     completionProfiles?: string[];
     activeCompletionProfile?: string;
+    profileMetadata?: ProfileMetadata[];
 }
 
 // These are provided by the environment (main.ts)
@@ -464,9 +475,9 @@ export class ChatManager {
                 return;
             }
             if (command === EXTENSION_COMMANDS.OPEN_SETTINGS) {
-                // Populate overlay with completion profile selector then show it
+                // Populate overlay with profile settings then show it
                 try {
-                    setupCompletionProfileSelector(this.vscode, this.initialState.completionProfiles || [], this.initialState.activeCompletionProfile);
+                    renderProfileSettings(this.vscode, this.initialState);
                 } catch (e) {}
                 showOverlay();
                 return;

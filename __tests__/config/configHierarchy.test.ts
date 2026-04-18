@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import { configProcessor, SecretManager } from '../../src/config/configProcessor.js';
+import { configProcessor, ISecretManager } from '../../src/config/configProcessor.js';
 import { IConfigContainer } from '../../src/types.js';
 import { EventBus } from '../../src/utils/eventBus.js';
 import { NodeFetchClient } from '../../src/utils/httpClient.js';
@@ -8,16 +8,18 @@ import { CONFIG_DEFAULTS } from '../../src/constants/config.js';
 const httpClient = new NodeFetchClient();
 
 describe('Config Hierarchy', () => {
-  let mockSecretManager: SecretManager;
+  let mockISecretManager: ISecretManager;
   let eventBus: EventBus;
 
   beforeEach(() => {
     jest.resetAllMocks();
     eventBus = new EventBus();
 
-    mockSecretManager = {
+    mockISecretManager = {
       getOrRequestAPIKey: jest.fn((key: string) => Promise.resolve(`secret-for-${key}`)),
-      getSecret: jest.fn((key: string) => Promise.resolve(`secret-for-${key}`))
+      getSecret: jest.fn((key: string) => Promise.resolve(`secret-for-${key}`)),
+      updateAPIKey: jest.fn(() => Promise.resolve()),
+      deleteSecret: jest.fn(() => Promise.resolve())
     };
   });
 
@@ -33,7 +35,7 @@ describe('Config Hierarchy', () => {
       anonymizer: { enabled: false, words: [] }
     });
 
-    const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, mockSecretManager, eventBus, httpClient);
+    const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, mockISecretManager, eventBus, httpClient);
 
     // It should NOT be 10 or false, but the defaults
     expect(configContainer.config.maxAgentIterations).toBe(CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS);
@@ -54,7 +56,7 @@ describe('Config Hierarchy', () => {
       logLevel: 'Debug'
     };
 
-    const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, mockSecretManager, eventBus, httpClient, overrides);
+    const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, mockISecretManager, eventBus, httpClient, overrides);
 
     expect(configContainer.config.maxAgentIterations).toBe(50);
     expect(configContainer.config.logLevel).toBe('Debug');
@@ -73,7 +75,7 @@ describe('Config Hierarchy', () => {
       anonymizer: { enabled: true }
     };
 
-    const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, mockSecretManager, eventBus, httpClient, overrides);
+    const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, mockISecretManager, eventBus, httpClient, overrides);
 
     expect(configContainer.config.anonymizer.enabled).toBe(true);
     expect(configContainer.config.anonymizer.words).toEqual(['json-word']); // Words from JSON preserved

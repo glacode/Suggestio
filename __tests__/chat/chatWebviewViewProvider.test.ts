@@ -32,7 +32,7 @@ import {
   createDefaultConfig
 } from '../testUtils.js';
 import { CONFIG_DEFAULTS } from '../../src/constants/config.js';
-import { configProcessor, type SecretManager } from '../../src/config/configProcessor.js';
+import { configProcessor, type ISecretManager } from '../../src/config/configProcessor.js';
 import type { IHttpClient } from '../../src/types.js';
 import { jest } from '@jest/globals';
 
@@ -44,10 +44,13 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
   const createMocks = () => {
     const config = createDefaultConfig();
-    const secretManager: SecretManager = {
+    const secretManager: ISecretManager = {
       getOrRequestAPIKey: jest.fn<any>().mockResolvedValue('resolved-key'),
       getSecret: jest.fn<any>().mockResolvedValue('resolved-key'),
+      updateAPIKey: jest.fn<any>().mockResolvedValue(undefined),
+      deleteSecret: jest.fn<any>().mockResolvedValue(undefined),
     };
+
     const httpClient: IHttpClient = {
       post: jest.fn<any>()
     };
@@ -146,7 +149,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // ********************************************************************************
     //  Call `resolveWebviewView` which is the method VS Code calls to initialize the webview.
     // ********************************************************************************
-    webViewViewProvider.resolveWebviewView(webviewView);
+    await webViewViewProvider.resolveWebviewView(webviewView);
 
     // ********************************************************************************
     //  Assertions: Verify that the webview and its options are set up correctly.
@@ -271,7 +274,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       httpClient
     });
 
-    provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView);
 
     if (webview.__handler) {
       await webview.__handler({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' });
@@ -344,7 +347,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       httpClient
     });
 
-    provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView);
 
     // ********************************************************************************
     //  Listen to the `chatProfileChanged` event on the global event bus.
@@ -447,7 +450,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       httpClient
     });
 
-    provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView);
 
     // ********************************************************************************
     //  Simulate sending an unknown command from the webview.
@@ -515,7 +518,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       httpClient
     });
 
-    provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView);
 
     if (webview.__handler) {
       await webview.__handler({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' });
@@ -581,7 +584,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       httpClient
     });
 
-    provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView);
 
     if (webview.__handler) {
       await webview.__handler({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' });
@@ -650,7 +653,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       httpClient
     });
 
-    provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView);
 
     if (webview.__handler) {
       await webview.__handler({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' });
@@ -706,7 +709,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     expect(posted.length).toBe(0);
 
     historyCleared = false;
-    provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView);
     provider.newChat();
     expect(historyCleared).toBe(true);
     expect(posted).toContainEqual({ command: EXTENSION_COMMANDS.NEW_CHAT });
@@ -740,7 +743,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       httpClient
     });
 
-    provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView);
 
     // 1. First trigger a confirmation request to populate the active diffs map
     const toolCallId = 'call-123';
@@ -789,7 +792,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       httpClient
     });
 
-    provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView);
 
     // 1. First trigger a confirmation request to populate the active diffs map
     const toolCallId = 'call-deny-test';
@@ -844,7 +847,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     eventBus.emit('agent:maxIterationsReached', { maxIterations: CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS });
     expect(posted.length).toBe(0);
 
-    provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView);
     eventBus.emit('agent:maxIterationsReached', { maxIterations: 10 });
     expect(posted.length).toBe(1);
     const lastPosted = posted[0];
@@ -878,7 +881,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       httpClient
     });
 
-    provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView);
     if (webview.__handler) {
       await webview.__handler({ command: WEBVIEW_COMMANDS.CANCEL_REQUEST });
     }
@@ -920,7 +923,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       httpClient
     });
 
-    provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView);
 
     if (webview.__handler) {
       await webview.__handler({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' });
@@ -959,7 +962,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       httpClient
     });
 
-    provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView);
 
     const toolCallId = 'call-123';
     const toolName = 'testTool';
@@ -1009,7 +1012,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       httpClient
     });
 
-    provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView);
 
     const toolCallId = 'call-123';
     const toolName = 'testTool';
@@ -1071,7 +1074,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       httpClient
     });
 
-    provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView);
     if (webview.__handler) {
       await webview.__handler({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' });
     }
@@ -1114,7 +1117,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     const webview = createMockWebview();
     const webviewView = createMockWebviewView(webview, 'X');
-    provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView);
 
     const updateProvidersSpy = jest.spyOn(configProcessor, 'updateProviders');
 
