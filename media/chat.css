@@ -390,8 +390,8 @@ html, body {
 .tool-output {
     margin: 6px 0 0 0;
     padding: 8px;
-    background: #000000;
-    color: #ffffff;
+    background: var(--vscode-editor-background);
+    color: var(--vscode-editor-foreground);
     border-radius: 3px;
     font-size: 11px;
     height: 180px;
