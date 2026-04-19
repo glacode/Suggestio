@@ -240,6 +240,11 @@ html, body {
     30% { opacity: 1; }
 }
 
+@keyframes spinnerRotation {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
 .typing-indicator {
     display: inline-flex;
     gap: 3px;
@@ -367,6 +372,10 @@ html, body {
     font-size: 14px;
     display: flex;
     align-items: center;
+}
+
+.tool-call-status-icon.spinning .tool-spinner {
+    animation: spinnerRotation 1s linear infinite;
 }
 
 .tool-call-container pre {

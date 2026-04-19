@@ -86,6 +86,17 @@ export class ToolCallSegment extends MessageSegment {
         }
     }
 
+    startSpinner() {
+        if (this.statusIcon) {
+            // Replace gear icon with spinning SVG circle
+            const spinnerSvg = `<svg class="tool-spinner" width="14" height="14" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="7" cy="7" r="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="8 4" />
+            </svg>`;
+            this.statusIcon.innerHTML = spinnerSvg;
+            this.statusIcon.classList.add('spinning');
+        }
+    }
+
     append() {}
 
     update(payload: any) {
@@ -319,6 +330,10 @@ export class AssistantMessage {
         }
         this.lastTokenType = 'confirmation';
         segment.element.scrollIntoView();
+    }
+
+    getToolCall(toolCallId: string): ToolCallSegment | undefined {
+        return this.toolCalls.get(toolCallId);
     }
 
     finish() {
@@ -685,6 +700,15 @@ export class ChatManager {
         if (container) {
             container.remove();
         }
+        
+        // If user allowed, start the spinner on the tool call
+        if (decision === 'allow' && this.currentAssistantMessage) {
+            const toolSegment = this.currentAssistantMessage.getToolCall(toolCallId);
+            if (toolSegment) {
+                toolSegment.startSpinner();
+            }
+        }
+        
         this.vscode.postMessage({ command: WEBVIEW_COMMANDS.CONFIRM_TOOL_CALL, toolCallId, decision });
     }
 
