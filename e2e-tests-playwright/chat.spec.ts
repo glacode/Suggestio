@@ -542,10 +542,9 @@ test.describe('Chat E2E', () => {
         // Total: 6 - 1 + 1 = 6.
         await expect(allSegments).toHaveCount(6, { timeout: 10000 });
 
-        // Verify Reasoning Block 2 is now followed by Suffix Text
-        // Note: Reasoning Block 2 might collapse now because content follows?
-        // Wait, "Suffix text" is in Turn 3.
-        // When Turn 3 arrives (Content token), it collapses the active reasoning segment (Block 2).
+        // Verify Reasoning Block 2 is followed by "Suffix text".
+        // When Turn 3 arrives, the new content token will automatically
+        // collapse the active reasoning segment (Block 2).
         
         const suffixText = assistantMessage.locator('.message-content').last();
         await expect(suffixText).toContainText('Suffix text.', { timeout: 15000 });

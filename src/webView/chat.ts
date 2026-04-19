@@ -108,6 +108,11 @@ export class ToolCallSegment extends MessageSegment {
         if (this.pre && payload.result) {
             this.pre.textContent = payload.result;
         }
+
+        // Hide the tool output container upon tool completion.
+        if (this.outputContainer) {
+            this.outputContainer.style.display = 'none';
+        }
     }
 }
 
