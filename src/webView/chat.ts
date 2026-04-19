@@ -105,6 +105,7 @@ export class ToolCallSegment extends MessageSegment {
         }
         if (this.statusIcon) {
             this.statusIcon.textContent = payload.success ? '✅' : '❌';
+            this.statusIcon.classList.remove('spinning');
         }
         if (this.statusText) {
             let message = payload.customMessage || this.displayMessage;
