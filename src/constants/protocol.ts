@@ -31,6 +31,7 @@ export const EXTENSION_EVENTS = {
     ERROR: 'error',
     ANONYMIZATION: 'anonymization',
     TOOL_START: 'agent:toolStart',
+    TOOL_OUTPUT: 'agent:toolOutput',
     TOOL_END: 'agent:toolEnd',
     REQUEST_CONFIRMATION: 'agent:requestConfirmation',
     NOTIFICATION: 'notification',

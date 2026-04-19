@@ -19,6 +19,7 @@ import type {
     IAnonymizer,
     ITokenEventPayload,
     IToolCallEventPayload,
+    IToolOutputEventPayload,
     IToolResultEventPayload,
     IToolConfirmationPayload,
     IDiffManager,
@@ -146,6 +147,17 @@ export class ChatWebviewViewProvider {
                     toolName: payload.toolName,
                     displayMessage: payload.displayMessage,
                     args: payload.args
+                });
+            }
+        });
+
+        this._eventBus.on('agent:toolOutput', (payload: IToolOutputEventPayload) => {
+            if (this._view) {
+                this._view.webview.postMessage({
+                    sender: MESSAGE_SENDERS.ASSISTANT,
+                    type: EXTENSION_EVENTS.TOOL_OUTPUT,
+                    toolCallId: payload.toolCallId,
+                    output: payload.output
                 });
             }
         });

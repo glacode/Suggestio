@@ -43,6 +43,7 @@ export class ToolCallSegment extends MessageSegment {
     private statusText: HTMLSpanElement | null = null;
     private details: HTMLDetailsElement | null = null;
     private pre: HTMLPreElement | null = null;
+    private outputContainer: HTMLDivElement | null = null;
 
     constructor(container: HTMLElement, payload: any) {
         super(container, 'tool_call');
@@ -65,12 +66,24 @@ export class ToolCallSegment extends MessageSegment {
                     <span class="tool-status-text">${this.displayMessage}</span>
                 </summary>
                 <pre>${prettyArgs}</pre>
+                <div class="tool-output"></div>
             </details>
         `;
         this.statusIcon = this.element.querySelector('.tool-call-status-icon');
         this.statusText = this.element.querySelector('.tool-status-text');
         this.details = this.element.querySelector('details');
         this.pre = this.element.querySelector('pre');
+        this.outputContainer = this.element.querySelector('.tool-output');
+    }
+
+    appendOutput(text: string) {
+        if (this.outputContainer) {
+            this.outputContainer.textContent += text;
+            this.outputContainer.scrollTop = this.outputContainer.scrollHeight;
+            
+            // If it was collapsed and we got output, maybe we should expand?
+            // But usually we keep it as it was.
+        }
     }
 
     append() {}
@@ -275,6 +288,13 @@ export class AssistantMessage {
         this.toolCalls.set(payload.toolCallId, segment);
         this.lastTokenType = 'tool_call';
         segment.element.scrollIntoView();
+    }
+
+    appendToolOutput(payload: any) {
+        const segment = this.toolCalls.get(payload.toolCallId);
+        if (segment) {
+            segment.appendOutput(payload.output);
+        }
     }
 
     updateToolCall(payload: any) {
@@ -505,6 +525,10 @@ export class ChatManager {
                         this.currentAssistantMessage = new AssistantMessage(this, this.chatContainer);
                     }
                     this.currentAssistantMessage.addToolCall(event.data);
+                } else if (type === EXTENSION_EVENTS.TOOL_OUTPUT) {
+                    if (this.currentAssistantMessage) {
+                        this.currentAssistantMessage.appendToolOutput(event.data);
+                    }
                 } else if (type === EXTENSION_EVENTS.TOOL_END) {
                     if (this.currentAssistantMessage) {
                         this.currentAssistantMessage.updateToolCall(event.data);

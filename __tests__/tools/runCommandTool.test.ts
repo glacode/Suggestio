@@ -149,4 +149,38 @@ describe('RunCommandTool', () => {
         expect(result.success).toBe(false);
         expect(result.content).toContain('Error executing command: Spawn failed');
     });
+
+    it('should emit agent:toolOutput events during execution', async () => {
+        const toolCallId = 'test-call-id';
+        const command = 'echo hello';
+
+        mockCommandExecutor.execute.mockImplementation(async (_cmd, options) => {
+            options?.onStdout?.('hello');
+            options?.onStderr?.('world');
+            return {
+                stdout: 'hello',
+                stderr: 'world',
+                exitCode: 0
+            };
+        });
+
+        // Mock confirmation to auto-allow
+        mockEventBus.on.mockImplementation((event: string, callback: any) => {
+            if (event === 'user:confirmationResponse') {
+                setImmediate(() => callback({ toolCallId, decision: 'allow' }));
+            }
+            return { dispose: jest.fn() };
+        });
+
+        await tool.execute({ command }, undefined, toolCallId);
+
+        expect(mockEventBus.emit).toHaveBeenCalledWith('agent:toolOutput', {
+            toolCallId,
+            output: 'hello'
+        });
+        expect(mockEventBus.emit).toHaveBeenCalledWith('agent:toolOutput', {
+            toolCallId,
+            output: 'world'
+        });
+    });
 });

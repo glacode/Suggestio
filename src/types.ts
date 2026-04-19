@@ -356,6 +356,16 @@ export type MessageFromTheExtensionToTheWebview =
   | {
     /** Indicates the message comes from the AI assistant. */
     sender: typeof MESSAGE_SENDERS.ASSISTANT;
+    /** Signals streaming output from a tool call. */
+    type: typeof EXTENSION_EVENTS.TOOL_OUTPUT;
+    /** The ID of the tool call. */
+    toolCallId: string;
+    /** The output text. */
+    output: string;
+  }
+  | {
+    /** Indicates the message comes from the AI assistant. */
+    sender: typeof MESSAGE_SENDERS.ASSISTANT;
     /** Signals the end of a tool call. */
     type: typeof EXTENSION_EVENTS.TOOL_END;
     /** The ID of the tool call. */
@@ -867,10 +877,15 @@ export interface ICommandExecutor {
   /**
    * Executes a shell command.
    * @param command The command to execute.
-   * @param options Execution options including working directory and cancellation signal.
+   * @param options Execution options including working directory, cancellation signal, and streaming callbacks.
    * @returns A promise that resolves to the command execution result.
    */
-  execute(command: string, options?: { cwd?: string; signal?: AbortSignal }): Promise<ICommandResult>;
+  execute(command: string, options?: { 
+    cwd?: string; 
+    signal?: AbortSignal;
+    onStdout?: (data: string) => void;
+    onStderr?: (data: string) => void;
+  }): Promise<ICommandResult>;
 }
 
 /**
@@ -1054,6 +1069,11 @@ export interface IToolResultEventPayload {
   success: boolean;
 }
 
+export interface IToolOutputEventPayload {
+  toolCallId: string;
+  output: string;
+}
+
 export interface IToolConfirmationPayload {
   toolCallId: string;
   toolName: string;
@@ -1081,6 +1101,7 @@ export interface IAppEvents {
   'anonymization': IAnonymizationEventPayload;
   'agent:token': ITokenEventPayload;
   'agent:toolStart': IToolCallEventPayload;
+  'agent:toolOutput': IToolOutputEventPayload;
   'agent:toolEnd': IToolResultEventPayload;
   /**
    * Fired when a tool requires explicit user confirmation before execution.

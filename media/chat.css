@@ -387,6 +387,25 @@ html, body {
     color: var(--vscode-symbolIcon-functionForeground);
 }
 
+.tool-output {
+    margin: 6px 0 0 0;
+    padding: 8px;
+    background: #000000;
+    color: #ffffff;
+    border-radius: 3px;
+    font-size: 11px;
+    height: 180px;
+    overflow-y: auto;
+    font-family: var(--vscode-editor-font-family, monospace);
+    white-space: pre-wrap;
+    word-break: break-all;
+    border: 1px solid var(--vscode-textSeparator-foreground);
+}
+
+.tool-output:empty {
+    display: none;
+}
+
 .tool-confirmation-container {
     margin: 8px 0;
     padding: 10px;

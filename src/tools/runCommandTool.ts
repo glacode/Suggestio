@@ -77,7 +77,17 @@ export class RunCommandTool extends BaseTool<RunCommandArgs> {
         try {
             const result = await this.commandExecutor.execute(args.command, { 
                 cwd: rootPath, 
-                signal 
+                signal,
+                onStdout: (data) => {
+                    if (toolCallId) {
+                        this.eventBus.emit('agent:toolOutput', { toolCallId, output: data });
+                    }
+                },
+                onStderr: (data) => {
+                    if (toolCallId) {
+                        this.eventBus.emit('agent:toolOutput', { toolCallId, output: data });
+                    }
+                }
             });
 
             const output = [
