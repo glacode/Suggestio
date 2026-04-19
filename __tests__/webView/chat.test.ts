@@ -2,21 +2,19 @@
  * @jest-environment jsdom
  */
 import { describe, it, expect, beforeEach, jest, afterEach } from '@jest/globals';
-import type { ChatManager as ChatManagerType, InitialState } from '../../src/webView/chat.js';
+import { ChatManager } from '../../src/webView/chat.js';
+import { InitialState } from '../../src/types.js';
+import { SettingsOverlay } from '../../src/webView/settingsOverlay.js';
 import { MockWebviewApi, setupChatDom, createMockDomRect } from '../testUtils.js';
 import { WEBVIEW_COMMANDS, EXTENSION_EVENTS, EXTENSION_COMMANDS, MESSAGE_SENDERS } from '../../src/constants/protocol.js';
 
 describe('ChatManager Unit Tests', () => {
-    let chatManager: ChatManagerType;
+    let chatManager: ChatManager;
     let mockVscode: MockWebviewApi;
-    let ChatManager: any;
+    let settingsOverlay: SettingsOverlay;
 
-    beforeEach(async () => {
+    beforeEach(() => {
         jest.useFakeTimers();
-        jest.resetModules();
-        const chatModule = await import('../../src/webView/chat.js');
-        ChatManager = chatModule.ChatManager;
-
         setupChatDom();
         window.HTMLElement.prototype.scrollIntoView = jest.fn();
 
@@ -44,7 +42,8 @@ describe('ChatManager Unit Tests', () => {
         });
 
         mockVscode = new MockWebviewApi();
-        chatManager = new ChatManager(mockVscode, initialState);
+        settingsOverlay = new SettingsOverlay();
+        chatManager = new ChatManager(mockVscode, initialState, settingsOverlay);
         chatManager.init();
     });
 

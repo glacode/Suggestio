@@ -1,27 +1,6 @@
 import { WEBVIEW_COMMANDS, EXTENSION_EVENTS, EXTENSION_COMMANDS, MESSAGE_SENDERS } from '../constants/protocol.js';
-import { initOverlay, showOverlay, hideOverlay, isOverlayVisible, renderProfileSettings } from './settingsOverlay.js';
-import type { IWebviewApi } from '../types.js';
-
-/**
- * Interface for the initial state passed to the webview.
- */
-export interface ProfileMetadata {
-    id: string;
-    model: string;
-    needsApiKey: boolean;
-    hasApiKey: boolean;
-    apiKeyPlaceholder?: string;
-    isActiveChat: boolean;
-    isActiveCompletion: boolean;
-}
-
-export interface InitialState {
-    profiles: string[];
-    activeProfile: string;
-    completionProfiles?: string[];
-    activeCompletionProfile?: string;
-    profileMetadata?: ProfileMetadata[];
-}
+import { SettingsOverlay } from './settingsOverlay.js';
+import type { IWebviewApi, InitialState } from '../types.js';
 
 // These are provided by the environment (main.ts)
 declare const window: Window & { 
@@ -358,8 +337,13 @@ export class ChatManager {
     /**
      * @param vscode The VS Code Webview API instance.
      * @param initialState The initial configuration data passed from the extension.
+     * @param settingsOverlay The settings overlay manager.
      */
-    constructor(private vscode: IWebviewApi, private initialState: InitialState) {}
+    constructor(
+        private vscode: IWebviewApi,
+        private initialState: InitialState,
+        private settingsOverlay: SettingsOverlay
+    ) {}
 
     /**
      * Initializes the UI components and event listeners.
@@ -398,9 +382,9 @@ export class ChatManager {
         try {
             const root = document.querySelector('.chat-container') || document.body;
             if (root instanceof HTMLElement) {
-                initOverlay(root);
+                this.settingsOverlay.init(root);
             } else {
-                initOverlay(document.body);
+                this.settingsOverlay.init(document.body);
             }
         } catch (e) {
             console.warn('Failed to init settings overlay', e);
@@ -475,14 +459,14 @@ export class ChatManager {
                 return;
             }
             if (command === EXTENSION_COMMANDS.OPEN_SETTINGS) {
-                if (isOverlayVisible()) {
-                    hideOverlay();
+                if (this.settingsOverlay.isVisible()) {
+                    this.settingsOverlay.hide();
                 } else {
                     // Populate overlay with profile settings then show it
                     try {
-                        renderProfileSettings(this.vscode, this.initialState);
+                        this.settingsOverlay.render(this.vscode, this.initialState);
                     } catch (e) {}
-                    showOverlay();
+                    this.settingsOverlay.show();
                 }
                 return;
             }
@@ -490,7 +474,7 @@ export class ChatManager {
             if (type === EXTENSION_EVENTS.UPDATE_PROFILE_METADATA) {
                 this.initialState.profileMetadata = event.data.metadata;
                 try {
-                    renderProfileSettings(this.vscode, this.initialState);
+                    this.settingsOverlay.render(this.vscode, this.initialState);
                 } catch (e) {}
                 return;
             }

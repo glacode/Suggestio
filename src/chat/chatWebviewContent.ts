@@ -1,4 +1,4 @@
-import type { GetChatWebviewContent, IUriLike, IVscodeApiLocal, IFileContentReader } from '../types.js';
+import type { GetChatWebviewContent, IUriLike, IVscodeApiLocal, IFileContentReader, InitialState } from '../types.js';
 
 export interface IChatWebviewContentArgs {
     extensionUri: IUriLike;
@@ -6,10 +6,7 @@ export interface IChatWebviewContentArgs {
     markdownJsUri: IUriLike;
     highlightCssUri: IUriLike;
     chatCssUri: IUriLike;
-    initialState: {
-        profiles: string[];
-        activeProfile: string;
-    };
+    initialState: InitialState;
     vscodeApi: IVscodeApiLocal;
     fileReader: IFileContentReader;
 }

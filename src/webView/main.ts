@@ -1,5 +1,6 @@
-import { ChatManager, InitialState } from './chat.js';
-import { IWebviewApi } from '../types.js';
+import { ChatManager } from './chat.js';
+import { SettingsOverlay } from './settingsOverlay.js';
+import { IWebviewApi, InitialState } from '../types.js';
 
 declare const acquireVsCodeApi: () => IWebviewApi;
 declare const window: Window & { 
@@ -8,7 +9,8 @@ declare const window: Window & {
 
 // Bootstrap the Chat UI
 const vscode = acquireVsCodeApi();
-const chatManager = new ChatManager(vscode, window.initialState);
+const settingsOverlay = new SettingsOverlay();
+const chatManager = new ChatManager(vscode, window.initialState, settingsOverlay);
 
 document.addEventListener('DOMContentLoaded', () => {
     chatManager.init();

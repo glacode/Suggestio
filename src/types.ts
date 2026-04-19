@@ -421,7 +421,7 @@ export type MessageFromTheExtensionToTheWebview =
     /** Updates the profile metadata displayed in settings overlay. */
     type: typeof EXTENSION_EVENTS.UPDATE_PROFILE_METADATA;
     /** Updated profile metadata. */
-    metadata: any[];
+    metadata: ProfileMetadata[];
   };
 
 /**
@@ -535,6 +535,30 @@ export interface ILlmProviderAccessor {
 }
 
 /**
+ * Interface for the profile metadata passed to the webview.
+ */
+export interface ProfileMetadata {
+  id: string;
+  model: string;
+  needsApiKey: boolean;
+  hasApiKey: boolean;
+  apiKeyPlaceholder?: string;
+  isActiveChat: boolean;
+  isActiveCompletion: boolean;
+}
+
+/**
+ * Interface for the initial state passed to the webview.
+ */
+export interface InitialState {
+  profiles: string[];
+  activeProfile: string;
+  completionProfiles?: string[];
+  activeCompletionProfile?: string;
+  profileMetadata?: ProfileMetadata[];
+}
+
+/**
  * `GetChatWebviewContent` is a function type responsible for generating the
  * complete HTML string that will be loaded into the webview.
  *
@@ -553,13 +577,7 @@ export type GetChatWebviewContent = (args: {
   /** URI for the chat UI CSS (chat.css). */
   chatCssUri: IUriLike;
   /** Initial state for the webview. */
-  initialState: {
-    profiles: string[];
-    activeProfile: string;
-    completionProfiles?: string[];
-    activeCompletionProfile?: string;
-    profileMetadata?: any[];
-  };
+  initialState: InitialState;
   /** VS Code API abstraction. */
   vscodeApi: IVscodeApiLocal;
   /** File reader abstraction. */

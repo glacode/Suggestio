@@ -4,24 +4,24 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { MockWebviewApi } from '../testUtils.js';
 import { WEBVIEW_COMMANDS } from '../../src/constants/protocol.js';
+import { SettingsOverlay } from '../../src/webView/settingsOverlay.js';
 
-describe('settingsOverlay Unit Tests', () => {
+describe('SettingsOverlay Unit Tests', () => {
     let mockVscode: MockWebviewApi;
-    let settingsOverlay: typeof import('../../src/webView/settingsOverlay.js');
+    let settingsOverlay: SettingsOverlay;
 
-    beforeEach(async () => {
-        jest.resetModules();
-        settingsOverlay = await import('../../src/webView/settingsOverlay.js');
+    beforeEach(() => {
+        settingsOverlay = new SettingsOverlay();
         document.body.innerHTML = '<div class="chat-container"></div>';
         document.body.className = '';
         mockVscode = new MockWebviewApi();
     });
 
-    describe('initOverlay', () => {
+    describe('init', () => {
         it('should initialize the overlay and append it to the container', () => {
             const container = document.querySelector('.chat-container');
             if (!(container instanceof HTMLElement)) { throw new Error('Container not found'); }
-            settingsOverlay.initOverlay(container);
+            settingsOverlay.init(container);
 
             const overlay = document.getElementById('settingsOverlay');
             expect(overlay).toBeTruthy();
@@ -32,10 +32,10 @@ describe('settingsOverlay Unit Tests', () => {
         it('should not initialize multiple times', () => {
             const container = document.querySelector('.chat-container');
             if (!(container instanceof HTMLElement)) { throw new Error('Container not found'); }
-            settingsOverlay.initOverlay(container);
+            settingsOverlay.init(container);
             const firstOverlay = document.getElementById('settingsOverlay');
             
-            settingsOverlay.initOverlay(container);
+            settingsOverlay.init(container);
             const secondOverlay = document.getElementById('settingsOverlay');
             
             expect(firstOverlay).toBe(secondOverlay);
@@ -44,8 +44,8 @@ describe('settingsOverlay Unit Tests', () => {
         it('should hide the overlay when the done button is clicked', () => {
             const container = document.querySelector('.chat-container');
             if (!(container instanceof HTMLElement)) { throw new Error('Container not found'); }
-            settingsOverlay.initOverlay(container);
-            settingsOverlay.showOverlay();
+            settingsOverlay.init(container);
+            settingsOverlay.show();
             
             const doneBtn = document.getElementById('settingsDoneBtn');
             if (!(doneBtn instanceof HTMLButtonElement)) { throw new Error('Done button not found'); }
@@ -58,13 +58,13 @@ describe('settingsOverlay Unit Tests', () => {
         });
     });
 
-    describe('showOverlay and hideOverlay', () => {
+    describe('show and hide', () => {
         it('should show the overlay and add class to body', () => {
             const container = document.querySelector('.chat-container');
             if (!(container instanceof HTMLElement)) { throw new Error('Container not found'); }
-            settingsOverlay.initOverlay(container);
+            settingsOverlay.init(container);
             
-            settingsOverlay.showOverlay();
+            settingsOverlay.show();
             
             const overlay = document.getElementById('settingsOverlay');
             expect(overlay?.classList.contains('hidden')).toBe(false);
@@ -74,59 +74,59 @@ describe('settingsOverlay Unit Tests', () => {
         it('should focus the done button when shown', () => {
             const container = document.querySelector('.chat-container');
             if (!(container instanceof HTMLElement)) { throw new Error('Container not found'); }
-            settingsOverlay.initOverlay(container);
+            settingsOverlay.init(container);
             const doneBtn = document.getElementById('settingsDoneBtn');
             if (!(doneBtn instanceof HTMLButtonElement)) { throw new Error('Done button not found'); }
             const focusSpy = jest.spyOn(doneBtn, 'focus');
             
-            settingsOverlay.showOverlay();
+            settingsOverlay.show();
             
             expect(focusSpy).toHaveBeenCalled();
         });
 
-        it('should do nothing in showOverlay if not initialized', () => {
-            settingsOverlay.showOverlay();
+        it('should do nothing in show if not initialized', () => {
+            settingsOverlay.show();
             expect(document.body.classList.contains('overlay-open')).toBe(false);
         });
 
         it('should hide the overlay and remove class from body', () => {
             const container = document.querySelector('.chat-container');
             if (!(container instanceof HTMLElement)) { throw new Error('Container not found'); }
-            settingsOverlay.initOverlay(container);
-            settingsOverlay.showOverlay();
+            settingsOverlay.init(container);
+            settingsOverlay.show();
             
-            settingsOverlay.hideOverlay();
+            settingsOverlay.hide();
             
             const overlay = document.getElementById('settingsOverlay');
             expect(overlay?.classList.contains('hidden')).toBe(true);
             expect(document.body.classList.contains('overlay-open')).toBe(false);
         });
 
-        it('should do nothing in hideOverlay if not initialized', () => {
-            settingsOverlay.hideOverlay();
+        it('should do nothing in hide if not initialized', () => {
+            settingsOverlay.hide();
             expect(document.body.classList.contains('overlay-open')).toBe(false);
         });
 
-        it('should return correct visibility status with isOverlayVisible', () => {
+        it('should return correct visibility status with isVisible', () => {
             const container = document.querySelector('.chat-container');
             if (!(container instanceof HTMLElement)) { throw new Error('Container not found'); }
             
             // Not initialized
-            expect(settingsOverlay.isOverlayVisible()).toBe(false);
+            expect(settingsOverlay.isVisible()).toBe(false);
 
-            settingsOverlay.initOverlay(container);
+            settingsOverlay.init(container);
             // Initialized but hidden
-            expect(settingsOverlay.isOverlayVisible()).toBe(false);
+            expect(settingsOverlay.isVisible()).toBe(false);
 
-            settingsOverlay.showOverlay();
-            expect(settingsOverlay.isOverlayVisible()).toBe(true);
+            settingsOverlay.show();
+            expect(settingsOverlay.isVisible()).toBe(true);
 
-            settingsOverlay.hideOverlay();
-            expect(settingsOverlay.isOverlayVisible()).toBe(false);
+            settingsOverlay.hide();
+            expect(settingsOverlay.isVisible()).toBe(false);
         });
     });
 
-    describe('renderProfileSettings', () => {
+    describe('render', () => {
         const mockState: any = {
             profileMetadata: [
                 {
@@ -152,9 +152,9 @@ describe('settingsOverlay Unit Tests', () => {
         it('should render profiles and handle completion profile change', () => {
             const container = document.querySelector('.chat-container');
             if (!(container instanceof HTMLElement)) { throw new Error('Container not found'); }
-            settingsOverlay.initOverlay(container);
+            settingsOverlay.init(container);
             
-            settingsOverlay.renderProfileSettings(mockVscode, mockState);
+            settingsOverlay.render(mockVscode, mockState);
             
             const items = document.querySelectorAll('.profile-item');
             expect(items.length).toBe(2);
@@ -175,12 +175,12 @@ describe('settingsOverlay Unit Tests', () => {
         it('should handle API key edit and delete', () => {
             const container = document.querySelector('.chat-container');
             if (!(container instanceof HTMLElement)) { throw new Error('Container not found'); }
-            settingsOverlay.initOverlay(container);
+            settingsOverlay.init(container);
             
             const stateWithKey = JSON.parse(JSON.stringify(mockState));
             stateWithKey.profileMetadata[0].hasApiKey = true;
 
-            settingsOverlay.renderProfileSettings(mockVscode, stateWithKey);
+            settingsOverlay.render(mockVscode, stateWithKey);
             
             const p1 = document.querySelectorAll('.profile-item')[0];
             expect(p1.textContent).toContain('Key ✅');
@@ -206,20 +206,20 @@ describe('settingsOverlay Unit Tests', () => {
         });
 
         it('should do nothing if not initialized', () => {
-            settingsOverlay.renderProfileSettings(mockVscode, mockState);
+            settingsOverlay.render(mockVscode, mockState);
             expect(document.querySelector('.profiles-list')).toBeNull();
         });
 
         it('should return early if body element is missing', () => {
             const container = document.querySelector('.chat-container');
             if (!(container instanceof HTMLElement)) { throw new Error('Container not found'); }
-            settingsOverlay.initOverlay(container);
+            settingsOverlay.init(container);
             
             const overlay = document.getElementById('settingsOverlay');
             const body = overlay?.querySelector('.settings-body');
             body?.remove();
 
-            settingsOverlay.renderProfileSettings(mockVscode, mockState);
+            settingsOverlay.render(mockVscode, mockState);
             expect(document.querySelector('.profiles-list')).toBeNull();
         });
     });
