@@ -375,7 +375,7 @@ html, body {
 }
 
 .tool-call-status-icon.spinning .tool-spinner {
-    animation: spinnerRotation 1s linear infinite;
+    animation: spinnerRotation 1.5s linear infinite;
 }
 
 .tool-call-container pre {
