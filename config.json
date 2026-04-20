@@ -99,6 +99,21 @@
       "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
       "model": "gemma-4-31b-it",
       "apiKey": "${GEMINI_API_KEY}"
+    },
+    "nvidia-glm4.7": {
+      "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
+      "model": "z-ai/glm4.7",
+      "apiKey": "${NVIDIA_API_KEY}"
+    },
+    "nvidia-minimax2.7": {
+      "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
+      "model": "minimaxai/minimax-m2.7",
+      "apiKey": "${NVIDIA_API_KEY}"
+    },
+    "nvidia-deepseek3.2": {
+      "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
+      "model": "deepseek-ai/deepseek-v3.2",
+      "apiKey": "${NVIDIA_API_KEY}"
     }
   },
   "anonymizer": {
