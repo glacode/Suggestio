@@ -121,9 +121,10 @@ export class ToolCallSegment extends MessageSegment {
             this.pre.textContent = payload.result;
         }
 
-        // Hide the tool output container upon tool completion.
+        // Remove the tool output container upon tool completion to free memory.
         if (this.outputContainer) {
-            this.outputContainer.style.display = 'none';
+            this.outputContainer.remove();
+            this.outputContainer = null;
         }
     }
 }
