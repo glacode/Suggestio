@@ -4,6 +4,7 @@ import { IEventBus } from "../utils/eventBus.js";
 import { createEventLogger } from "../log/eventLogger.js";
 import { AGENT_MESSAGES, AGENT_LOGS } from "../constants/messages.js";
 import { ChatPrompt } from "../chat/chatPrompt.js";
+import { adaptiveMiddleTruncate } from "../utils/textUtils.js";
 
 /**
  * Arguments for the Agent constructor.
@@ -202,16 +203,17 @@ export class Agent implements IChatAgent {
      * Adds the tool execution result (or error) to the chat history.
      */
     private recordToolResult(toolCallId: string, toolName: string, content: string, success: boolean): void {
+        const truncatedContent = adaptiveMiddleTruncate(content, this.config.toolResultMaxLength);
         this.logger.debug(AGENT_LOGS.TOOL_RESULT_RECORDED(toolCallId));
         this.eventBus.emit('agent:toolEnd', {
             toolCallId: toolCallId,
             toolName: toolName,
-            result: content,
+            result: truncatedContent,
             success: success
         });
         this.chatHistoryManager.addMessage({
             role: 'tool',
-            content: content,
+            content: truncatedContent,
             tool_call_id: toolCallId
         });
     }

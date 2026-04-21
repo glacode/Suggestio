@@ -1358,6 +1358,10 @@ export interface IConfig extends IProjectConfig {
   maxAgentIterations: number;
   logLevel: string;
   enableInlineCompletion: boolean;
+  /**
+   * Maximum length for tool results in characters before they are truncated.
+   */
+  toolResultMaxLength: number;
 }
 
 export interface IConfigContainer {

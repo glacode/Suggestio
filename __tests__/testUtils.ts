@@ -260,6 +260,7 @@ export const createDefaultConfig = (overrides: Partial<IConfig> = {}): IConfig =
     anonymizer: { enabled: false, words: [] },
     logLevel: CONFIG_DEFAULTS.LOG_LEVEL,
     maxAgentIterations: CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS,
+    toolResultMaxLength: CONFIG_DEFAULTS.TOOL_RESULT_MAX_LENGTH,
     ...overrides
 });
 

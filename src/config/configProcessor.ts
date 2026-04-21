@@ -48,6 +48,7 @@ class ConfigProcessor {
             ...projectConfig,
             maxAgentIterations: CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS,
             logLevel: CONFIG_DEFAULTS.LOG_LEVEL,
+            toolResultMaxLength: CONFIG_DEFAULTS.TOOL_RESULT_MAX_LENGTH,
             enableInlineCompletion: true,
         };
 

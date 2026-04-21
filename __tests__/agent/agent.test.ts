@@ -357,6 +357,49 @@ describe("Agent", () => {
         expect(mockChatHistory[4]).toEqual(finalResponse);
     });
 
+    it("truncates long tool results before adding them to history", async () => {
+        const longContent = "A".repeat(20000);
+        const toolCall: ToolCall = {
+            id: "call_long",
+            type: "function",
+            function: { name: "longTool", arguments: "{}" }
+        };
+        const assistantResponse: IChatMessage = {
+            role: "assistant",
+            content: "Running tool",
+            tool_calls: [toolCall]
+        };
+        const finalResponse: IChatMessage = {
+            role: "assistant",
+            content: "Done."
+        };
+
+        const provider = new FakeProvider([assistantResponse, finalResponse], mockEventBus);
+        const mockTool: IToolImplementation = {
+            definition: { name: "longTool", description: "Returns long content", parameters: { type: "object", properties: {} } },
+            schema: z.any(),
+            execute: jest.fn(async () => ({ content: longContent, success: true }))
+        };
+
+        const agent = new Agent({
+            config: createDefaultConfig({ 
+                llmProviderForChat: provider,
+                toolResultMaxLength: 1000 // Small limit for testing
+            }),
+            chatHistoryManager: mockChatHistoryManager,
+            tools: [mockTool],
+            eventBus: mockEventBus
+        });
+
+        await agent.run(mockPrompt);
+
+        expect(mockChatHistory.length).toBe(3);
+        const toolMessage = mockChatHistory[1];
+        expect(toolMessage.role).toBe("tool");
+        expect(toolMessage.content.length).toBeLessThan(longContent.length);
+        expect(toolMessage.content).toContain("... (truncated");
+    });
+
     it("STOPS the loop if AbortSignal is aborted between iterations", async () => {
         const tool: IToolImplementation = {
             definition: {
