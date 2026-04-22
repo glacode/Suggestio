@@ -1111,6 +1111,10 @@ export interface IAppEvents {
    * Fired when the user responds (Allow/Deny) to a tool confirmation request.
    */
   'user:confirmationResponse': IUserConfirmationPayload;
+  /**
+   * Fired to show a notification message in the chat UI.
+   */
+  'agent:notification': { text: string | null };
   'log': ILogEventPayload;
 }
 

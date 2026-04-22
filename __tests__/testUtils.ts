@@ -29,7 +29,8 @@ import {
     IWorkspaceProviderFull,
     IEventBus,
     IConfigProvider,
-    IDiffManager
+    IDiffManager,
+    IHttpClient
 } from "../src/types.js"; import { ILogger } from "../src/log/logger.js";
 import { CONFIG_DEFAULTS } from "../src/constants/config.js";
 import { jest } from "@jest/globals";
@@ -144,6 +145,10 @@ export const createMockDocument = (content: string = 'content', languageId: stri
     languageId,
     lineCount: content.split('\n').length,
     lineAt: (line: number) => ({ text: content.split('\n')[line] }),
+});
+
+export const createMockHttpClient = (): jest.Mocked<IHttpClient> => ({
+    post: jest.fn<IHttpClient["post"]>(),
 });
 
 export const createMockProvider = (): jest.Mocked<ILlmProvider> => ({

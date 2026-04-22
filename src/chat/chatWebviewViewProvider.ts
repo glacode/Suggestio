@@ -178,6 +178,16 @@ export class ChatWebviewViewProvider {
             }
         });
 
+        this._eventBus.on('agent:notification', (payload: { text: string | null }) => {
+            if (this._view) {
+                this._view.webview.postMessage({
+                    sender: MESSAGE_SENDERS.ASSISTANT,
+                    type: EXTENSION_EVENTS.NOTIFICATION,
+                    text: payload.text
+                });
+            }
+        });
+
         this._eventBus.on('agent:requestConfirmation', (payload: IToolConfirmationPayload) => {
             // Store diff data if present
             if (payload.diffData) {
