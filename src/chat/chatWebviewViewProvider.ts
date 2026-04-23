@@ -179,13 +179,7 @@ export class ChatWebviewViewProvider {
         });
 
         this._eventBus.on('agent:notification', (payload: { text: string | null }) => {
-            if (this._view) {
-                this._view.webview.postMessage({
-                    sender: MESSAGE_SENDERS.ASSISTANT,
-                    type: EXTENSION_EVENTS.NOTIFICATION,
-                    text: payload.text
-                });
-            }
+            this._sendNotification(payload.text);
         });
 
         this._eventBus.on('agent:requestConfirmation', (payload: IToolConfirmationPayload) => {
@@ -323,6 +317,16 @@ export class ChatWebviewViewProvider {
         }
     }
 
+    private _sendNotification(text: string | null) {
+        if (this._view) {
+            this._view.webview.postMessage({
+                sender: MESSAGE_SENDERS.ASSISTANT,
+                type: EXTENSION_EVENTS.NOTIFICATION,
+                text
+            });
+        }
+    }
+
     private _sendCompletionMessage() {
         if (this._view) {
             this._view.webview.postMessage({
@@ -354,23 +358,15 @@ export class ChatWebviewViewProvider {
                     const profileConfig = this._config.profiles[activeProfile];
                     if (profileConfig && !profileConfig.resolvedApiKey && profileConfig.apiKeyPlaceholder) {
                         // Show notification that we need API key
-                        if (this._view) {
-                            this._view.webview.postMessage({
-                                sender: MESSAGE_SENDERS.ASSISTANT,
-                                type: EXTENSION_EVENTS.NOTIFICATION,
-                                text: `Waiting for API key "${profileConfig.apiKeyPlaceholder}" to be entered...`
-                            });
-                        }
+                        this._eventBus.emit('agent:notification', {
+                            text: `Waiting for API key "${profileConfig.apiKeyPlaceholder}" to be entered...`
+                        });
+
                         // Prompt user for API key (with forcePrompt=true)
                         await configProcessor.updateProviders(this._config, this._eventBus, this._secretManager, this._httpClient, true);
+
                         // Hide notification after key is resolved
-                        if (this._view) {
-                            this._view.webview.postMessage({
-                                sender: MESSAGE_SENDERS.ASSISTANT,
-                                type: EXTENSION_EVENTS.NOTIFICATION,
-                                text: null
-                            });
-                        }
+                        this._eventBus.emit('agent:notification', { text: null });
                     }
 
                     // Create a new AbortController for this request
