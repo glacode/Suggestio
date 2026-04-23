@@ -245,11 +245,13 @@ export const createMockPathResolver = (): jest.Mocked<IPathResolver> => ({
 });
 
 export const createMockConfigProvider = (): jest.Mocked<IConfigProvider> => ({
-    getLogLevel: jest.fn(),
-    getMaxAgentIterations: jest.fn(),
-    getAnonymizerEnabled: jest.fn(),
-    getEnableInlineCompletion: jest.fn(),
-    onDidChangeConfiguration: jest.fn(),
+    getLogLevel: jest.fn<() => string>(),
+    getMaxAgentIterations: jest.fn<() => number>(),
+    getAnonymizerEnabled: jest.fn<() => boolean | undefined>(),
+    getEnableInlineCompletion: jest.fn<() => boolean>(),
+    getMaxRetries: jest.fn<() => number>(),
+    getInitialDelay: jest.fn<() => number>(),
+    onDidChangeConfiguration: jest.fn<any>(),
 });
 
 export const createMockProfileConfig = (overrides: Partial<IProfileConfig> = {}): IProfileConfig => ({
@@ -266,6 +268,8 @@ export const createDefaultConfig = (overrides: Partial<IConfig> = {}): IConfig =
     logLevel: CONFIG_DEFAULTS.LOG_LEVEL,
     maxAgentIterations: CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS,
     toolResultMaxLength: CONFIG_DEFAULTS.TOOL_RESULT_MAX_LENGTH,
+    maxRetries: CONFIG_DEFAULTS.MAX_RETRIES,
+    initialDelay: CONFIG_DEFAULTS.INITIAL_DELAY,
     ...overrides
 });
 

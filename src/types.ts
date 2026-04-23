@@ -829,6 +829,16 @@ export interface IConfigProvider {
   getEnableInlineCompletion(): boolean;
 
   /**
+   * Retrieves the maximum number of retries for LLM API calls.
+   */
+  getMaxRetries(): number;
+
+  /**
+   * Retrieves the initial delay for exponential backoff in ms.
+   */
+  getInitialDelay(): number;
+
+  /**
    * Fired when the configuration changes.
    * @param listener The function to call when the configuration changes.
    * @returns A disposable to unsubscribe from the event.
@@ -1366,6 +1376,14 @@ export interface IConfig extends IProjectConfig {
    * Maximum length for tool results in characters before they are truncated.
    */
   toolResultMaxLength: number;
+  /**
+   * Maximum number of retries for LLM API calls.
+   */
+  maxRetries: number;
+  /**
+   * Initial delay for exponential backoff in ms.
+   */
+  initialDelay: number;
 }
 
 export interface IConfigContainer {

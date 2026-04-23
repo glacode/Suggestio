@@ -60,6 +60,8 @@ export function getLlmProvider(
       model: profileConfig.model,
       eventBus,
       anonymizer,
+      maxRetries: config.maxRetries,
+      initialDelay: config.initialDelay,
     });
   }
 

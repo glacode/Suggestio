@@ -49,6 +49,8 @@ class ConfigProcessor {
             maxAgentIterations: CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS,
             logLevel: CONFIG_DEFAULTS.LOG_LEVEL,
             toolResultMaxLength: CONFIG_DEFAULTS.TOOL_RESULT_MAX_LENGTH,
+            maxRetries: CONFIG_DEFAULTS.MAX_RETRIES,
+            initialDelay: CONFIG_DEFAULTS.INITIAL_DELAY,
             enableInlineCompletion: true,
         };
 

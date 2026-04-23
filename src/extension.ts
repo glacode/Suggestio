@@ -131,6 +131,8 @@ export async function activate(context: vscode.ExtensionContext) {
     getMaxAgentIterations: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<number>('maxAgentIterations', CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS),
     getAnonymizerEnabled: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<boolean | undefined>('experimental.anonymizer.enabled'),
     getEnableInlineCompletion: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<boolean>('enableInlineCompletion', true),
+    getMaxRetries: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<number>('llm.maxRetries', CONFIG_DEFAULTS.MAX_RETRIES),
+    getInitialDelay: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<number>('llm.initialDelay', CONFIG_DEFAULTS.INITIAL_DELAY),
     onDidChangeConfiguration: (listener) => vscode.workspace.onDidChangeConfiguration(listener)
   };
 
@@ -157,7 +159,9 @@ export async function activate(context: vscode.ExtensionContext) {
   const overrides: any = {
     maxAgentIterations: vsCodeConfig.get<number>('maxAgentIterations', CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS),
     logLevel: logLevel,
-    enableInlineCompletion: vsCodeConfig.get<boolean>('enableInlineCompletion', true)
+    enableInlineCompletion: vsCodeConfig.get<boolean>('enableInlineCompletion', true),
+    maxRetries: vsCodeConfig.get<number>('llm.maxRetries', CONFIG_DEFAULTS.MAX_RETRIES),
+    initialDelay: vsCodeConfig.get<number>('llm.initialDelay', CONFIG_DEFAULTS.INITIAL_DELAY)
   };
 
   const anonymizerEnabled = vsCodeConfig.get<boolean | undefined>('experimental.anonymizer.enabled');
@@ -167,11 +171,12 @@ export async function activate(context: vscode.ExtensionContext) {
     };
   }
 
-  const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, secretManager, eventBus, new NodeFetchClient(), overrides);
+  const httpClient = new NodeFetchClient();
+  const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, secretManager, eventBus, httpClient, overrides);
   // Initialize UI context for inline completion toggle (default true in config)
   await vscode.commands.executeCommand('setContext', 'suggestio.inlineCompletionEnabled', configContainer.config.enableInlineCompletion !== false);
 
-  registerConfigHandler(context.subscriptions, configProvider, configContainer, eventBus);
+  registerConfigHandler(context.subscriptions, configProvider, configContainer, eventBus, secretManager, httpClient);
 
   const conversationHistory = new ChatHistoryManager();
   const chatHistoryManager = conversationHistory;

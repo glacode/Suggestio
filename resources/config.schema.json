@@ -81,7 +81,22 @@
         }
       },
       "required": ["words"]
-    }
-  },
-  "required": ["activeChatProfile", "profiles", "anonymizer"]
-}
+      },
+      "maxAgentIterations": {
+      "type": "number",
+      "default": 30,
+      "description": "Maximum number of iterations the agent can perform for a single request."
+      },
+      "maxRetries": {
+      "type": "number",
+      "default": 5,
+      "description": "Maximum number of retry attempts for LLM API calls."
+      },
+      "initialDelay": {
+      "type": "number",
+      "default": 1000,
+      "description": "Initial delay in milliseconds for exponential backoff during retries."
+      }
+      },
+      "required": ["activeChatProfile", "profiles", "anonymizer"]
+      }
