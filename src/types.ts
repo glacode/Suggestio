@@ -279,6 +279,10 @@ export type WebviewMessage =
     command: typeof WEBVIEW_COMMANDS.DELETE_API_KEY;
     /** The placeholder of the key to delete. */
     placeholder: string;
+  }
+  | {
+    /** User wants to retry the last message. */
+    command: typeof WEBVIEW_COMMANDS.RETRY_LAST_MESSAGE;
   };
 
 /**

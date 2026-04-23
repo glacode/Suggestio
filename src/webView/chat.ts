@@ -338,6 +338,35 @@ export class AssistantMessage {
         return this.toolCalls.get(toolCallId);
     }
 
+    showError(text: string) {
+        this.isStreaming = false;
+        this.element.classList.remove('loading');
+        this.element.classList.add('error');
+        if (this.indicator) {
+            this.indicator.remove();
+        }
+
+        const errorContainer = document.createElement('div');
+        errorContainer.className = 'error-container';
+        errorContainer.innerHTML = `
+            <div class="error-message">
+                <span class="error-icon">⚠️</span>
+                <span>${window.renderMarkdown(text)}</span>
+            </div>
+            <button class="retry-button">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 18 10"></polyline><polyline points="1 20 1 14 6 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                Retry
+            </button>
+        `;
+
+        errorContainer.querySelector('.retry-button')?.addEventListener('click', () => {
+            this.chatManager.retryLastMessage();
+        });
+
+        this.element.appendChild(errorContainer);
+        this.element.scrollIntoView();
+    }
+
     finish() {
         this.isStreaming = false;
         this.element.classList.remove('loading');
@@ -566,6 +595,14 @@ export class ChatManager {
                         this.currentAssistantMessage.finish();
                     }
                     this.enableInput();
+                } else if (type === EXTENSION_EVENTS.ERROR) {
+                    this.removeNotification();
+                    this.enableInput();
+                    if (this.currentAssistantMessage) {
+                        this.currentAssistantMessage.showError(text);
+                    } else {
+                        this.appendStaticAssistantMessage(text);
+                    }
                 } else {
                     this.removeNotification();
                     this.enableInput();
@@ -603,6 +640,17 @@ export class ChatManager {
 
     cancelRequest() {
         this.vscode.postMessage({ command: WEBVIEW_COMMANDS.CANCEL_REQUEST });
+    }
+
+    retryLastMessage() {
+        if (this.currentAssistantMessage) {
+            this.currentAssistantMessage.element.remove();
+            this.currentAssistantMessage = null;
+        }
+        
+        this.currentAssistantMessage = new AssistantMessage(this, this.chatContainer);
+        this.disableInput();
+        this.vscode.postMessage({ command: WEBVIEW_COMMANDS.RETRY_LAST_MESSAGE });
     }
 
     appendUserMessage(text: string) {

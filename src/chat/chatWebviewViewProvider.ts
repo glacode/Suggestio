@@ -337,6 +337,36 @@ export class ChatWebviewViewProvider {
         }
     }
 
+    private async _processAgentRun() {
+        let context = await this._buildContext.buildContext();
+        if (this._anonymizer) {
+            context = this._anonymizer.anonymize(context);
+        }
+        const prompt = new ChatPrompt(this._chatHistoryManager.getChatHistory(), context);
+        
+        // Call the agent to run the logic loop.
+        await this._chatAgent.run(prompt, this._abortController!.signal);
+
+        // Always send completion to reset UI state
+        this._sendCompletionMessage();
+    }
+
+    private _handleAgentError(error: any, webviewView: IWebviewView) {
+        // If request was cancelled, don't show error
+        if (this._abortController?.signal.aborted) {
+            this.logger.info(AGENT_LOGS.REQUEST_CANCELLED);
+            this._sendCompletionMessage();
+            return;
+        }
+        
+        // If an error occurs during the chat response, post an error message back to the webview.
+        webviewView.webview.postMessage({
+            sender: MESSAGE_SENDERS.ASSISTANT,
+            type: EXTENSION_EVENTS.ERROR,
+            text: CHAT_MESSAGES.ERROR_PROCESSING_REQUEST(error)
+        });
+    }
+
     /**
      * `setupMessageHandler` configures the listener for messages sent *from* the webview.
      * This is the primary way the webview (e.g., user input, model selection) communicates
@@ -373,31 +403,16 @@ export class ChatWebviewViewProvider {
                     this._abortController = new AbortController();
 
                     this._chatHistoryManager.addMessage({ role: 'user', content: message.text });
-                    let context = await this._buildContext.buildContext();
-                    if (this._anonymizer) {
-                        context = this._anonymizer.anonymize(context);
-                    }
-                    const prompt = new ChatPrompt(this._chatHistoryManager.getChatHistory(), context);
-                    // Call the `logicHandler` to fetch a streaming chat response.
-                    // Tokens are now received via the 'agent:token' event on the event bus.
-                    await this._chatAgent.run(prompt, this._abortController.signal);
-
-                    // Always send completion to reset UI state (enable input, remove spinner)
-                    // even if the request was cancelled.
-                    this._sendCompletionMessage();
+                    await this._processAgentRun();
                 } catch (error) {
-                    // If request was cancelled, don't show error
-                    if (this._abortController?.signal.aborted) {
-                        this.logger.info(AGENT_LOGS.REQUEST_CANCELLED);
-                        this._sendCompletionMessage();
-                        return;
-                    }
-                    // If an error occurs during the chat response, post an error message back to the webview.
-                    webviewView.webview.postMessage({
-                        sender: MESSAGE_SENDERS.ASSISTANT,
-                        type: EXTENSION_EVENTS.ERROR,
-                        text: CHAT_MESSAGES.ERROR_PROCESSING_REQUEST(error)
-                    });
+                    this._handleAgentError(error, webviewView);
+                }
+            } else if (message.command === WEBVIEW_COMMANDS.RETRY_LAST_MESSAGE) {
+                try {
+                    this._abortController = new AbortController();
+                    await this._processAgentRun();
+                } catch (error) {
+                    this._handleAgentError(error, webviewView);
                 }
             } else if (message.command === WEBVIEW_COMMANDS.CANCEL_REQUEST) {
                 // Handle cancel request from webview

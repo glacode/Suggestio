@@ -11,6 +11,7 @@ export const WEBVIEW_COMMANDS = {
     CANCEL_REQUEST: 'cancelRequest',
     EDIT_API_KEY: 'editApiKey',
     DELETE_API_KEY: 'deleteApiKey',
+    RETRY_LAST_MESSAGE: 'retryLastMessage',
 } as const;
 
 /**

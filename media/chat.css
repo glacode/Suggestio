@@ -503,6 +503,51 @@ html, body {
     font-weight: 500;
 }
 
+.error-container {
+    margin-top: 8px;
+    padding: 8px;
+    background: var(--vscode-input-background);
+    border: 1px solid var(--vscode-errorForeground);
+    border-radius: 4px;
+}
+
+.error-message {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    color: var(--vscode-errorForeground);
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+.error-icon {
+    font-size: 14px;
+}
+
+.retry-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 6px;
+    background: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+    border: 1px solid var(--vscode-button-secondaryHoverBackground);
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.1s;
+}
+
+.retry-button:hover {
+    background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.retry-button svg {
+    flex-shrink: 0;
+}
+
 /* Settings overlay styles (minimal) */
 
 .settings-overlay {
