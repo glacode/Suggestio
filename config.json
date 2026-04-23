@@ -119,6 +119,11 @@
       "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
       "model": "deepseek-ai/deepseek-v3.2",
       "apiKey": "${NVIDIA_API_KEY}"
+    },
+    "test-for-retry": {
+      "endpoint": "https://httpstat.us/500",
+      "model": "use-just-for-testing-retry-logic",
+      "apiKey": "none"
     }
   },
   "anonymizer": {
