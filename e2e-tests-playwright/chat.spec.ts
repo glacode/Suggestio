@@ -38,6 +38,11 @@ function writeMockConfig(workspace: string) {
                 endpoint: "http://localhost:3001/v1/auto-retry/completions",
                 model: "test-model",
                 apiKey: "unused"
+            },
+            manualRetryProvider: {
+                endpoint: "http://localhost:3001/v1/manual-retry/completions",
+                model: "test-model",
+                apiKey: "unused"
             }
         }
     };
@@ -193,6 +198,25 @@ function createMockServer(capturedRequests: any[]): Promise<Server> {
         app.use(express.json());
 
         let autoRetryCallCount = 0;
+        let manualRetryCallCount = 0;
+
+        app.post('/v1/manual-retry/completions', (req, res) => {
+            capturedRequests.push({ endpoint: 'manual-retry', body: req.body });
+            manualRetryCallCount++;
+
+            if (manualRetryCallCount === 1) {
+                // First request: Success
+                res.setHeader('Content-Type', 'text/event-stream');
+                streamDefaultModel(res, "First Response");
+            } else if (manualRetryCallCount <= 5) {
+                // Second request + 3 auto-retries: Failure (Total 4 attempts for Request 2)
+                res.status(500).json({ error: `Manual retry phase fail ${manualRetryCallCount}` });
+            } else {
+                // Sixth request (manual retry click): Success
+                res.setHeader('Content-Type', 'text/event-stream');
+                streamDefaultModel(res, "Success after manual retry");
+            }
+        });
 
         app.post('/v1/auto-retry/completions', (req, res) => {
             capturedRequests.push({ endpoint: 'auto-retry', body: req.body });
@@ -335,7 +359,7 @@ test.describe('Chat E2E', () => {
             'suggestio.experimental.anonymizer.enabled': true,
             'suggestio.maxAgentIterations': 10,
             'suggestio.llm.initialDelay': 100,
-            'suggestio.llm.maxRetries': 5
+            'suggestio.llm.maxRetries': 3
         });
         electronApp = result.electronApp;
 
@@ -596,10 +620,10 @@ test.describe('Chat E2E', () => {
         // The notification appears after the first failure
         const notification = inner.locator('.message.notification');
         await expect(notification).toBeVisible({ timeout: 10000 });
-        await expect(notification).toContainText('Retrying (attempt 1 of 5)');
+        await expect(notification).toContainText('Retrying (attempt 1 of 3)');
         
         // Wait for it to progress to attempt 3
-        await expect(notification).toContainText('Retrying (attempt 3 of 5)', { timeout: 10000 });
+        await expect(notification).toContainText('Retrying (attempt 3 of 3)', { timeout: 10000 });
 
         // 4. Assert that the notification eventually disappears (success or final failure)
         await expect(notification).not.toBeVisible({ timeout: 10000 });
@@ -612,5 +636,69 @@ test.describe('Chat E2E', () => {
         // 6. Verify that the mock server received four requests for the auto-retry endpoint (1 initial + 3 retries)
         const autoRetryRequests = capturedRequests.filter(r => r.endpoint === 'auto-retry');
         expect(autoRetryRequests.length).toBe(4);
+    });
+
+    test('should show a retry button after all auto-retries fail and successfully retry with clean history', async () => {
+        const inner = await getChatFrames(page);
+
+        // 1. Switch to the manual-retry profile and start a new chat
+        await switchModel(inner, 'manualRetryProvider');
+        await clickNewChat(page);
+
+        // 2. Turn 1: Send "Request 1" -> Success
+        await sendChatMessage(inner, 'Request 1');
+        await expect(inner.locator('.message.assistant').last()).toHaveText('First Response', { timeout: 10000 });
+
+        // 3. Turn 2: Send "Request 2" -> This will fail all 4 attempts (1 initial + 3 retries)
+        await sendChatMessage(inner, 'Request 2');
+
+        // 4. Assert that the "Retrying..." notification appears and increments
+        const notification = inner.locator('.message.notification');
+        await expect(notification).toBeVisible({ timeout: 10000 });
+        await expect(notification).toContainText('Retrying (attempt 1 of 3)');
+        await expect(notification).toContainText('Retrying (attempt 3 of 3)', { timeout: 10000 });
+
+        // 5. Verify that previous messages are still visible above the notifications
+        const userMessages = inner.locator('.message.user');
+        await expect(userMessages.nth(0)).toHaveText('Request 1');
+        await expect(inner.locator('.message.assistant').nth(0)).toHaveText('First Response');
+        await expect(userMessages.nth(1)).toHaveText('Request 2');
+
+        // 6. Assert the final failure phase: Error container + Retry button appears
+        const assistantMessage = inner.locator('.message.assistant').last();
+        const retryBtn = assistantMessage.locator('button.retry-button');
+        await expect(retryBtn).toBeVisible({ timeout: 10000 });
+        await expect(assistantMessage).toContainText('Sorry, there was an error processing your request');
+
+        // 7. Click the "Retry" button
+        await retryBtn.click();
+
+        // 8. Recovery Phase: Error container and button should be removed
+        // (the retry logic removes the failed message element and creates a new loading one)
+        await expect(retryBtn).not.toBeVisible();
+
+        // 9. Final Verification: Success after manual retry
+        const finalAssistantMessage = inner.locator('.message.assistant').last();
+        await expect(finalAssistantMessage).toContainText('Success after manual retry', { timeout: 15000 });
+
+        // 10. CRUCIAL: Verify History Integrity (Clean request sent to LLM)
+        // Filter requests for our endpoint
+        const manualRetryRequests = capturedRequests.filter(r => r.endpoint === 'manual-retry');
+        
+        // Last request is the manual retry (call #6 in our mock logic)
+        const lastRequest = manualRetryRequests[manualRetryRequests.length - 1].body;
+        
+        // It should contain: [System Message, User: Request 1, Assistant: First Response, User: Request 2]
+        // AND nothing else (no error messages, no "retry" strings)
+        expect(lastRequest.messages).toHaveLength(4);
+        
+        // Check System Message
+        expect(lastRequest.messages[0].role).toBe('system');
+        expect(lastRequest.messages[0].content).toContain('code assistant');
+
+        // Check the conversation flow
+        expect(lastRequest.messages[1]).toMatchObject({ role: 'user', content: 'Request 1' });
+        expect(lastRequest.messages[2]).toMatchObject({ role: 'assistant', content: 'First Response' });
+        expect(lastRequest.messages[3]).toMatchObject({ role: 'user', content: 'Request 2' });
     });
 });
