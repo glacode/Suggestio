@@ -183,9 +183,9 @@ export interface IOpenAICompatibleProviderArgs {
   /** Optional anonymizer to protect sensitive data in user messages. */
   anonymizer?: IAnonymizer;
   /** Maximum number of retries for API calls. */
-  maxRetries?: number;
+  maxRetries: number;
   /** Initial delay for exponential backoff in ms. */
-  initialDelay?: number;
+  initialDelay: number;
 }
 
 export class OpenAICompatibleProvider implements ILlmProvider {
@@ -212,8 +212,8 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     model,
     eventBus,
     anonymizer,
-    maxRetries = 5,
-    initialDelay = 1000,
+    maxRetries,
+    initialDelay,
   }: IOpenAICompatibleProviderArgs) {
     this.httpClient = httpClient;
     this.endpoint = endpoint;

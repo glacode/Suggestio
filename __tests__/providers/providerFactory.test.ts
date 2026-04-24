@@ -68,6 +68,8 @@ describe("providerFactory", () => {
         endpoint: "http://api.openai.com",
         apiKey: "test-key",
         model: "gpt-4",
+        maxRetries: config.maxRetries,
+        initialDelay: config.initialDelay,
     }));
   });
 
@@ -125,6 +127,8 @@ describe("providerFactory", () => {
 
     expect(OpenAICompatibleProvider).toHaveBeenCalledWith(expect.objectContaining({
         anonymizer: mockAnonymizer,
+        maxRetries: config.maxRetries,
+        initialDelay: config.initialDelay,
     }));
   });
 

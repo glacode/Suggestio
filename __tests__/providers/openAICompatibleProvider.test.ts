@@ -81,7 +81,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       apiKey,
       model,
       eventBus: mockEventBus,
-      maxRetries: 0
+      maxRetries: 0,
+      initialDelay: 0
     });
     const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
     const response = await provider.query(prompt);
@@ -107,7 +108,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       apiKey,
       model,
       eventBus: mockEventBus,
-      maxRetries: 0
+      maxRetries: 0,
+      initialDelay: 0
     });
     const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
     const response = await provider.queryStream(prompt);
@@ -128,7 +130,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       apiKey,
       model,
       eventBus: mockEventBus,
-      maxRetries: 0
+      maxRetries: 0,
+      initialDelay: 0
     });
     const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
     const tools: IToolDefinition[] = [{ name: "test_tool", description: "test", parameters: { type: "object", properties: {} } }];
@@ -153,7 +156,7 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
         json: { choices: [{ message: { content: "ok" } }] }
       }));
 
-      const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer, eventBus: mockEventBus });
+      const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer, eventBus: mockEventBus, maxRetries: 0, initialDelay: 0 });
       const prompt = new TestPrompt([
         { role: "user", content: "this is a secret" },
       ]);
@@ -171,7 +174,7 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
         json: { choices: [{ message: { content: "ok, I will keep the ANON_0 safe" } }] }
       }));
 
-      const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer, eventBus: mockEventBus });
+      const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer, eventBus: mockEventBus, maxRetries: 0, initialDelay: 0 });
       const prompt = new TestPrompt([{ role: "user", content: "this is a secret" }]);
       const response = await provider.query(prompt);
       expect(response?.content).toBe("ok, I will keep the secret safe");
@@ -186,7 +189,7 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
         ])
       }));
 
-      const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer, eventBus: mockEventBus });
+      const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer, eventBus: mockEventBus, maxRetries: 0, initialDelay: 0 });
       const prompt = new TestPrompt([{ role: "user", content: "this is a secret" }]);
       await provider.queryStream(prompt);
       expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "ok, I will keep the ", type: "content" });
@@ -198,7 +201,7 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
         json: { choices: [{ message: { reasoning: "I am thinking about ANON_0", content: "ok" } }] }
       }));
 
-      const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer, eventBus: mockEventBus });
+      const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer, eventBus: mockEventBus, maxRetries: 0, initialDelay: 0 });
       const prompt = new TestPrompt([{ role: "user", content: "this is a secret" }]);
       const response = await provider.query(prompt);
       expect(response?.reasoning).toBe("I am thinking about secret");
@@ -214,7 +217,7 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
         ])
       }));
 
-      const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer, eventBus: mockEventBus });
+      const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer, eventBus: mockEventBus, maxRetries: 0, initialDelay: 0 });
       const prompt = new TestPrompt([{ role: "user", content: "this is a secret" }]);
       await provider.queryStream(prompt);
       expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "I am thinking about ", type: "reasoning" });
@@ -237,7 +240,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       apiKey,
       model,
       eventBus: mockEventBus,
-      maxRetries: 0
+      maxRetries: 0,
+      initialDelay: 0
     });
     const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
     const response = await provider.queryStream(prompt);
@@ -262,7 +266,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       apiKey,
       model,
       eventBus: mockEventBus,
-      maxRetries: 0
+      maxRetries: 0,
+      initialDelay: 0
     });
     const prompt = new TestPrompt([{ role: "user", content: "list files" }]);
     const result = await provider.queryStream(prompt);
@@ -309,7 +314,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       apiKey,
       model,
       eventBus: mockEventBus,
-      maxRetries: 0
+      maxRetries: 0,
+      initialDelay: 0
     });
     await provider.queryStream(new TestPrompt([]));
     expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "ok", type: "content" });
@@ -331,7 +337,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       apiKey,
       model,
       eventBus: mockEventBus,
-      maxRetries: 0
+      maxRetries: 0,
+      initialDelay: 0
     });
     await provider.queryStream(new TestPrompt([]));
     expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "ok", type: "content" });
@@ -352,7 +359,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       apiKey,
       model,
       eventBus: mockEventBus,
-      maxRetries: 0
+      maxRetries: 0,
+      initialDelay: 0
     });
     await provider.queryStream(new TestPrompt([]));
     expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "ok", type: "content" });
@@ -366,7 +374,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       apiKey,
       model,
       eventBus: mockEventBus,
-      maxRetries: 0
+      maxRetries: 0,
+      initialDelay: 0
     });
     await expect(provider.queryStream(new TestPrompt([])))
       .rejects.toThrow("Response body is null");
@@ -386,7 +395,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       apiKey,
       model,
       eventBus: mockEventBus,
-      maxRetries: 0
+      maxRetries: 0,
+      initialDelay: 0
     });
     const response = await provider.queryStream(new TestPrompt([]));
     expect(response?.tool_calls).toBeDefined();
@@ -408,7 +418,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       apiKey,
       model,
       eventBus: mockEventBus,
-      maxRetries: 0
+      maxRetries: 0,
+      initialDelay: 0
     });
     const response = await provider.queryStream(new TestPrompt([]));
     
@@ -441,7 +452,7 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       ])
     }));
 
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer, eventBus: mockEventBus });
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer, eventBus: mockEventBus, maxRetries: 0, initialDelay: 0 });
     await provider.queryStream(new TestPrompt([]));
     expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "secret", type: "content" });
   });
@@ -463,7 +474,7 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       ])
     }));
 
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer, eventBus: mockEventBus });
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer, eventBus: mockEventBus, maxRetries: 0, initialDelay: 0 });
     await provider.queryStream(new TestPrompt([]));
     expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "flushed", type: "content" });
   });
@@ -485,7 +496,7 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       ])
     }));
 
-    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer, eventBus: mockEventBus });
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer, eventBus: mockEventBus, maxRetries: 0, initialDelay: 0 });
     await provider.queryStream(new TestPrompt([]));
     expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "ok", type: "content" });
   });
@@ -501,7 +512,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       apiKey,
       model,
       eventBus: mockEventBus,
-      maxRetries: 0
+      maxRetries: 0,
+      initialDelay: 0
     });
     await expect(provider.query(new TestPrompt([]))).rejects.toThrow("OpenAI API error: Internal Server Error");
   });
@@ -517,7 +529,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       apiKey,
       model,
       eventBus: mockEventBus,
-      maxRetries: 0
+      maxRetries: 0,
+      initialDelay: 0
     });
     await expect(provider.query(new TestPrompt([]))).rejects.toThrow("OpenAI API error: Internal Server Error");
   });
@@ -534,7 +547,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       apiKey,
       model,
       eventBus: mockEventBus,
-      maxRetries: 0
+      maxRetries: 0,
+      initialDelay: 0
     });
     await expect(provider.query(new TestPrompt([]))).rejects.toThrow("Failed to parse response as JSON: 200 OK");
   });
@@ -549,7 +563,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       apiKey,
       model,
       eventBus: mockEventBus,
-      maxRetries: 0
+      maxRetries: 0,
+      initialDelay: 0
     });
     await expect(provider.query(new TestPrompt([]))).rejects.toThrow("Unexpected OpenAI API response: Missing 'choices' field.");
   });
@@ -564,7 +579,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       apiKey,
       model,
       eventBus: mockEventBus,
-      maxRetries: 0
+      maxRetries: 0,
+      initialDelay: 0
     });
     await expect(provider.query(new TestPrompt([]))).rejects.toThrow("Malformed OpenAI API response");
   });
@@ -579,7 +595,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       apiKey,
       model,
       eventBus: mockEventBus,
-      maxRetries: 0
+      maxRetries: 0,
+      initialDelay: 0
     });
     const response = await provider.query(new TestPrompt([]));
     expect(response).toBeNull();
@@ -601,7 +618,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       apiKey,
       model,
       eventBus: mockEventBus,
-      maxRetries: 0
+      maxRetries: 0,
+      initialDelay: 0
     });
     const response = await provider.queryStream(new TestPrompt([]));
     expect(response?.tool_calls?.[0].id).toBe("call_1_updated");
@@ -623,7 +641,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       apiKey,
       model,
       eventBus: mockEventBus,
-      maxRetries: 0
+      maxRetries: 0,
+      initialDelay: 0
     });
     const response = await provider.queryStream(new TestPrompt([]));
     expect(response?.tool_calls?.[0].function.arguments).toBe('{"a":1,"b":2}');
@@ -644,7 +663,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       apiKey,
       model,
       eventBus: mockEventBus,
-      maxRetries: 0
+      maxRetries: 0,
+      initialDelay: 0
     });
     const response = await provider.queryStream(new TestPrompt([]));
     expect(response?.content).toBe("");
@@ -662,7 +682,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       apiKey,
       model,
       eventBus: mockEventBus,
-      maxRetries: 0
+      maxRetries: 0,
+      initialDelay: 0
     });
     await expect(provider.queryStream(new TestPrompt([]))).rejects.toThrow("OpenAI API error: 500 - Internal Server Error");
   });
@@ -680,7 +701,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       apiKey,
       model,
       eventBus: mockEventBus,
-      maxRetries: 0
+      maxRetries: 0,
+      initialDelay: 0
     });
     const response = await provider.queryStream(new TestPrompt([]));
     expect(response?.content).toBe("ok");
@@ -696,7 +718,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       apiKey,
       model,
       eventBus: mockEventBus,
-      maxRetries: 0
+      maxRetries: 0,
+      initialDelay: 0
     });
     const prompt = new TestPrompt([
       { role: "system", content: "You are a bot" },
@@ -726,7 +749,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       apiKey,
       model,
       eventBus: mockEventBus,
-      maxRetries: 0
+      maxRetries: 0,
+      initialDelay: 0
     });
     const response = await provider.queryStream(new TestPrompt([]));
     expect(response?.content).toBe("ok");
@@ -747,7 +771,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       apiKey,
       model,
       eventBus: mockEventBus,
-      maxRetries: 0
+      maxRetries: 0,
+      initialDelay: 0
     });
     const response = await provider.queryStream(new TestPrompt([]));
     expect(response?.content).toBe("ok");
@@ -764,7 +789,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       apiKey,
       model,
       eventBus: mockEventBus,
-      maxRetries: 0
+      maxRetries: 0,
+      initialDelay: 0
     });
     await expect(provider.query(new TestPrompt([]))).rejects.toThrow('OpenAI API error: {}');
   });
@@ -783,7 +809,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       apiKey,
       model,
       eventBus: mockEventBus,
-      maxRetries: 0
+      maxRetries: 0,
+      initialDelay: 0
     });
     const response = await provider.queryStream(new TestPrompt([]));
     expect(response?.tool_calls?.[0].function.name).toBe("");
@@ -805,7 +832,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       apiKey,
       model,
       eventBus: mockEventBus,
-      maxRetries: 0
+      maxRetries: 0,
+      initialDelay: 0
     });
     const response = await provider.queryStream(new TestPrompt([]));
 

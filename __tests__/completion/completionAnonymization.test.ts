@@ -64,10 +64,12 @@ describe("Inline Completion Anonymization", () => {
         const provider = new OpenAICompatibleProvider({
             httpClient,
             endpoint,
-            apiKey: "key",
-            model: "model",
+            apiKey: "test-key",
+            model: "test-model",
             eventBus,
             anonymizer,
+            maxRetries: 0,
+            initialDelay: 0,
         });
 
         const promptText = "const api = 'SECRET_KEY';\n// cursor here";
@@ -91,10 +93,12 @@ describe("Inline Completion Anonymization", () => {
         const provider = new OpenAICompatibleProvider({
             httpClient,
             endpoint,
-            apiKey: "key",
-            model: "model",
+            apiKey: "test-key",
+            model: "test-model",
             eventBus,
             anonymizer,
+            maxRetries: 0,
+            initialDelay: 0,
         });
 
         const highEntropyString = "a1b2c3d4e5f6g7h8i9j0"; // Very high entropy (Hn = 1.0)
