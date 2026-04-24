@@ -118,7 +118,7 @@ export class ChatWebviewViewProvider {
             if (this._view) {
                 this._view.webview.postMessage({
                     sender: MESSAGE_SENDERS.ASSISTANT,
-                    type: EXTENSION_EVENTS.ERROR,
+                    type: EXTENSION_EVENTS.HALTED,
                     text: CHAT_MESSAGES.MAX_ITERATIONS_REACHED(payload.maxIterations)
                 });
             }

@@ -548,6 +548,52 @@ html, body {
     flex-shrink: 0;
 }
 
+/* Halted/Warning state (e.g. Max Iterations reached) */
+.halted-container {
+    margin-top: 8px;
+    padding: 8px;
+    background: var(--vscode-input-background);
+    border: 1px solid var(--vscode-notificationsWarningIcon-foreground, #cca700);
+    border-radius: 4px;
+}
+
+.halted-message {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    color: var(--vscode-foreground);
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+.halted-icon {
+    font-size: 14px;
+}
+
+.continue-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 6px;
+    background: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.1s;
+}
+
+.continue-button:hover {
+    background: var(--vscode-button-hoverBackground);
+}
+
+.continue-button svg {
+    flex-shrink: 0;
+}
+
 /* Settings overlay styles (minimal) */
 
 .settings-overlay {

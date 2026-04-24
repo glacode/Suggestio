@@ -37,6 +37,8 @@ export const EXTENSION_EVENTS = {
     REQUEST_CONFIRMATION: 'agent:requestConfirmation',
     NOTIFICATION: 'notification',
     UPDATE_PROFILE_METADATA: 'updateProfileMetadata',
+    /** Fired when the agent reaches a logical limit (like max iterations) and needs user permission to continue. */
+    HALTED: 'halted',
 } as const;
 
 /**

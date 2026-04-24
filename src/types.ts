@@ -418,6 +418,14 @@ export type MessageFromTheExtensionToTheWebview =
   | {
     /** Indicates the message comes from the AI assistant. */
     sender: typeof MESSAGE_SENDERS.ASSISTANT;
+    /** Signals that the AI reached a logical limit and needs user permission to continue. */
+    type: typeof EXTENSION_EVENTS.HALTED;
+    /** The text content explaining the limit. */
+    text: string;
+  }
+  | {
+    /** Indicates the message comes from the AI assistant. */
+    sender: typeof MESSAGE_SENDERS.ASSISTANT;
     /** A notification message that appears in chat but doesn't affect conversation history. */
     type: typeof EXTENSION_EVENTS.NOTIFICATION;
     /** The text content of the notification, or null to hide notification. */

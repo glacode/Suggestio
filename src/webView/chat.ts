@@ -367,6 +367,71 @@ export class AssistantMessage {
         this.element.scrollIntoView();
     }
 
+    /**
+     * Displays a warning state when the agent reaches a logical limit (like max iterations).
+     * Provides a "Continue" button to let the user proceed with the current task.
+     * @param text The message explaining why the agent stopped.
+     */
+    showHalted(text: string) {
+        this.isStreaming = false;
+        this.element.classList.remove('loading');
+        this.element.classList.add('halted');
+        if (this.indicator) {
+            this.indicator.remove();
+        }
+
+        const haltedContainer = document.createElement('div');
+        haltedContainer.className = 'halted-container';
+        haltedContainer.innerHTML = `
+            <div class="halted-message">
+                <span class="halted-icon">⏳</span>
+                <span>${window.renderMarkdown(text)}</span>
+            </div>
+            <button class="continue-button">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                Continue
+            </button>
+        `;
+
+        haltedContainer.querySelector('.continue-button')?.addEventListener('click', () => {
+            this.chatManager.retryLastMessage();
+        });
+
+        this.element.appendChild(haltedContainer);
+        this.element.scrollIntoView();
+    }
+
+    /**
+     * Surgically removes error or halted containers and resets the state to loading
+     * for a clean resumption of the agent loop.
+     */
+    prepareForResumption() {
+        this.isStreaming = true;
+        this.element.classList.remove('error', 'halted');
+        this.element.classList.add('loading');
+
+        // Remove the error or halted container if it exists
+        this.element.querySelector('.error-container')?.remove();
+        this.element.querySelector('.halted-container')?.remove();
+
+        // Re-add the indicator if it was removed
+        if (!this.indicator) {
+            this.indicator = document.createElement('div');
+            this.indicator.className = 'typing-indicator';
+            this.indicator.innerHTML = `
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <span class="loading-text">Working...</span>
+            `;
+            this.element.appendChild(this.indicator);
+        } else if (!this.element.contains(this.indicator)) {
+            this.element.appendChild(this.indicator);
+        }
+        
+        this.element.scrollIntoView();
+    }
+
     finish() {
         this.isStreaming = false;
         this.element.classList.remove('loading');
@@ -603,6 +668,14 @@ export class ChatManager {
                     } else {
                         this.appendStaticAssistantMessage(text);
                     }
+                } else if (type === EXTENSION_EVENTS.HALTED) {
+                    this.removeNotification();
+                    this.enableInput();
+                    if (this.currentAssistantMessage) {
+                        this.currentAssistantMessage.showHalted(text);
+                    } else {
+                        this.appendStaticAssistantMessage(text);
+                    }
                 } else {
                     this.removeNotification();
                     this.enableInput();
@@ -644,11 +717,12 @@ export class ChatManager {
 
     retryLastMessage() {
         if (this.currentAssistantMessage) {
-            this.currentAssistantMessage.element.remove();
-            this.currentAssistantMessage = null;
+            this.currentAssistantMessage.prepareForResumption();
+        } else {
+            // Fallback if somehow currentAssistantMessage was lost
+            this.currentAssistantMessage = new AssistantMessage(this, this.chatContainer);
         }
         
-        this.currentAssistantMessage = new AssistantMessage(this, this.chatContainer);
         this.disableInput();
         this.vscode.postMessage({ command: WEBVIEW_COMMANDS.RETRY_LAST_MESSAGE });
     }
