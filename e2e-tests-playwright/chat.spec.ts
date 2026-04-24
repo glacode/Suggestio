@@ -33,6 +33,11 @@ function writeMockConfig(workspace: string) {
                 endpoint: "http://localhost:3001/v1/chat/completions",
                 model: "reasoning-model",
                 apiKey: "unused"
+            },
+            autoRetryProvider: {
+                endpoint: "http://localhost:3001/v1/auto-retry/completions",
+                model: "test-model",
+                apiKey: "unused"
             }
         }
     };
@@ -187,6 +192,21 @@ function createMockServer(capturedRequests: any[]): Promise<Server> {
         const app = express();
         app.use(express.json());
 
+        let autoRetryCallCount = 0;
+
+        app.post('/v1/auto-retry/completions', (req, res) => {
+            capturedRequests.push({ endpoint: 'auto-retry', body: req.body });
+            autoRetryCallCount++;
+
+            // Fail 3 times, succeed on the 4th
+            if (autoRetryCallCount <= 3) {
+                res.status(500).json({ error: `Simulated failure ${autoRetryCallCount}` });
+            } else {
+                res.setHeader('Content-Type', 'text/event-stream');
+                streamDefaultModel(res, "Success after 3 retries");
+            }
+        });
+
         app.post('/v1/chat/completions', (req, res) => {
             // 1. Capture the request for later inspection in tests
             capturedRequests.push(req.body);
@@ -313,7 +333,9 @@ test.describe('Chat E2E', () => {
 
         const result = await launchVscode(tempWorkspacePath, {
             'suggestio.experimental.anonymizer.enabled': true,
-            'suggestio.maxAgentIterations': 10
+            'suggestio.maxAgentIterations': 10,
+            'suggestio.llm.initialDelay': 100,
+            'suggestio.llm.maxRetries': 5
         });
         electronApp = result.electronApp;
 
@@ -558,5 +580,37 @@ test.describe('Chat E2E', () => {
 
         // uncomment this if you want to visually verify the test in the Electron window
         // await page.waitForTimeout(30000);
+    });
+
+    test('should automatically retry on failure and succeed', async () => {
+        const inner = await getChatFrames(page);
+
+        // 1. Switch to the auto-retry profile and start a new chat
+        await switchModel(inner, 'autoRetryProvider');
+        await clickNewChat(page);
+
+        // 2. Send a message to trigger the flow
+        await sendChatMessage(inner, 'Trigger Retry');
+
+        // 3. Assert that the notification bubble appeared and updated
+        // The notification appears after the first failure
+        const notification = inner.locator('.message.notification');
+        await expect(notification).toBeVisible({ timeout: 10000 });
+        await expect(notification).toContainText('Retrying (attempt 1 of 5)');
+        
+        // Wait for it to progress to attempt 3
+        await expect(notification).toContainText('Retrying (attempt 3 of 5)', { timeout: 10000 });
+
+        // 4. Assert that the notification eventually disappears (success or final failure)
+        await expect(notification).not.toBeVisible({ timeout: 10000 });
+
+        // 5. Assert that the assistant message eventually displays the successful response
+        const assistantMessage = inner.locator('.message.assistant').last();
+        await expect(assistantMessage).toBeVisible();
+        await expect(assistantMessage).toContainText('Success after 3 retries', { timeout: 10000 });
+
+        // 6. Verify that the mock server received four requests for the auto-retry endpoint (1 initial + 3 retries)
+        const autoRetryRequests = capturedRequests.filter(r => r.endpoint === 'auto-retry');
+        expect(autoRetryRequests.length).toBe(4);
     });
 });
