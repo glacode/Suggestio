@@ -48,6 +48,11 @@ function writeMockConfig(workspace: string) {
                 endpoint: "http://localhost:3001/v1/reasoning-retry/completions",
                 model: "test-model",
                 apiKey: "unused"
+            },
+            maxIterationsProvider: {
+                endpoint: "http://localhost:3001/v1/max-iterations/completions",
+                model: "test-model",
+                apiKey: "unused"
             }
         }
     };
@@ -205,6 +210,57 @@ function createMockServer(capturedRequests: any[]): Promise<Server> {
         let autoRetryCallCount = 0;
         let manualRetryCallCount = 0;
         let reasoningRetryCallCount = 0;
+        let maxIterationsCallCount = 0;
+
+        app.post('/v1/max-iterations/completions', (req, res) => {
+            capturedRequests.push({ endpoint: 'max-iterations', body: req.body });
+            maxIterationsCallCount++;
+
+            if (maxIterationsCallCount === 1) {
+                // First request: Success
+                res.setHeader('Content-Type', 'text/event-stream');
+                streamDefaultModel(res, "First Response");
+            } else if (maxIterationsCallCount === 2) {
+                // Second request: Return tool_calls indefinitely to trigger max iterations loop
+                // Return a tool_call that will keep the agent in the iteration loop
+                res.setHeader('Content-Type', 'text/event-stream');
+                writeSSEChunk(res, {
+                    choices: [{
+                        delta: {
+                            tool_calls: [{
+                                index: 0,
+                                id: 'call_list',
+                                type: 'function',
+                                function: { name: 'list_files', arguments: '{}' }
+                            }]
+                        }
+                    }]
+                });
+                sendDone(res);
+            } else if (maxIterationsCallCount <= 11) {
+                // Requests 3-11: Continue returning tool_calls
+                // This keeps agent in loop: request → tool_calls → execute → request → ...
+                // After 10 iterations (10 LLM calls), agent halts at max iterations
+                res.setHeader('Content-Type', 'text/event-stream');
+                writeSSEChunk(res, {
+                    choices: [{
+                        delta: {
+                            tool_calls: [{
+                                index: 0,
+                                id: 'call_list',
+                                type: 'function',
+                                function: { name: 'list_files', arguments: '{}' }
+                            }]
+                        }
+                    }]
+                });
+                sendDone(res);
+            } else {
+                // Continue click (request 12): Success
+                res.setHeader('Content-Type', 'text/event-stream');
+                streamDefaultModel(res, "Success after continuing from max iterations");
+            }
+        });
 
         app.post('/v1/reasoning-retry/completions', (req, res) => {
             capturedRequests.push({ endpoint: 'reasoning-retry', body: req.body });
@@ -770,5 +826,74 @@ test.describe('Chat E2E', () => {
 
         // - EXTREMELY CRUCIAL: There should be exactly ONE reasoning container
         await expect(assistantMessage.locator('.reasoning-container')).toHaveCount(1);
+    });
+
+    test('should show continue button when max iterations reached and successfully continue with clean history', async () => {
+        const inner = await getChatFrames(page);
+
+        // 1. Switch to the max-iterations profile and start a new chat
+        await switchModel(inner, 'maxIterationsProvider');
+        await clickNewChat(page);
+
+        // 2. Turn 1: Send "Request 1" -> Success
+        await sendChatMessage(inner, 'Request 1');
+        await expect(inner.locator('.message.assistant').last()).toHaveText('First Response', { timeout: 10000 });
+
+        // 3. Turn 2: Send "Request 2" -> This triggers continuous tool calls that reach max iterations
+        await sendChatMessage(inner, 'Request 2');
+
+        // 4. Wait for the halted container with max iterations message and continue button
+        const haltedContainer = inner.locator('.halted-container');
+        await expect(haltedContainer).toBeVisible({ timeout: 15000 });
+
+        // 5. Assert the halted message is present with correct text
+        const haltedMessage = haltedContainer.locator('.halted-message');
+        await expect(haltedMessage).toBeVisible();
+        await expect(haltedMessage).toContainText('Max iterations reached');
+
+        // 6. Assert the continue button is visible
+        const continueBtn = haltedContainer.locator('button.continue-button');
+        await expect(continueBtn).toBeVisible();
+
+        // 7. Verify that previous messages are still visible above the halted container
+        const userMessages = inner.locator('.message.user');
+        await expect(userMessages.nth(0)).toHaveText('Request 1');
+        await expect(inner.locator('.message.assistant').nth(0)).toHaveText('First Response');
+        await expect(userMessages.nth(1)).toHaveText('Request 2');
+
+        // 8. Click the "Continue" button
+        await continueBtn.click();
+
+        // 9. Recovery Phase: Halted container should be removed
+        await expect(haltedContainer).not.toBeVisible();
+
+        // 10. Final Verification: Success after continue
+        const finalAssistantMessage = inner.locator('.message.assistant').last();
+        await expect(finalAssistantMessage).toContainText('Success after continuing from max iterations', { timeout: 15000 });
+
+        // 11. CRUCIAL: Verify History Integrity
+        // When max iterations is reached with tool calls, the history includes all intermediate tool calls and results.
+        // After continuing, the new request should be sent with this full history.
+        // Filter requests for our endpoint
+        const maxIterationRequests = capturedRequests.filter(r => r.endpoint === 'max-iterations');
+        
+        // Last request is the continue click
+        const lastRequest = maxIterationRequests[maxIterationRequests.length - 1].body;
+        
+        // Verify structure: Should start with System Message, then User Request 1, Assistant First Response, User Request 2
+        // and include all the intermediate tool calls that triggered max iterations
+        expect(lastRequest.messages.length).toBeGreaterThan(4);
+        expect(lastRequest.messages[0].role).toBe('system');
+        expect(lastRequest.messages[0].content).toContain('code assistant');
+        
+        // Verify the conversation started correctly
+        expect(lastRequest.messages[1]).toMatchObject({ role: 'user', content: 'Request 1' });
+        expect(lastRequest.messages[2]).toMatchObject({ role: 'assistant', content: 'First Response' });
+        expect(lastRequest.messages[3]).toMatchObject({ role: 'user', content: 'Request 2' });
+        
+        // Verify the last message in history before the continue request shows tool calls
+        // (indicating the agent made progress through iterations)
+        const lastHistoryMessage = lastRequest.messages[lastRequest.messages.length - 1];
+        expect(lastHistoryMessage.role).toBe('tool');
     });
 });
