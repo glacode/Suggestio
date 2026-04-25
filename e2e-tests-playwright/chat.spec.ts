@@ -53,6 +53,11 @@ function writeMockConfig(workspace: string) {
                 endpoint: "http://localhost:3001/v1/max-iterations/completions",
                 model: "test-model",
                 apiKey: "unused"
+            },
+            maxIterationsReasoningProvider: {
+                endpoint: "http://localhost:3001/v1/max-iterations-reasoning/completions",
+                model: "test-model",
+                apiKey: "unused"
             }
         }
     };
@@ -211,6 +216,47 @@ function createMockServer(capturedRequests: any[]): Promise<Server> {
         let manualRetryCallCount = 0;
         let reasoningRetryCallCount = 0;
         let maxIterationsCallCount = 0;
+        let maxIterationsReasoningCallCount = 0;
+
+        app.post('/v1/max-iterations-reasoning/completions', (req, res) => {
+            capturedRequests.push({ endpoint: 'max-iterations-reasoning', body: req.body });
+            maxIterationsReasoningCallCount++;
+
+            if (maxIterationsReasoningCallCount === 1) {
+                // Initial success
+                res.setHeader('Content-Type', 'text/event-stream');
+                streamDefaultModel(res, "First Response");
+            } else if (maxIterationsReasoningCallCount <= 11) {
+                // Iterations 2-11: Reasoning + Tool call
+                res.setHeader('Content-Type', 'text/event-stream');
+                writeSSEChunk(res, {
+                    choices: [{
+                        delta: {
+                            reasoning_content: `Thinking turn ${maxIterationsReasoningCallCount}... `,
+                            tool_calls: [{
+                                index: 0,
+                                id: 'call_list',
+                                type: 'function',
+                                function: { name: 'list_files', arguments: '{}' }
+                            }]
+                        }
+                    }]
+                });
+                sendDone(res);
+            } else {
+                // Continue click (request 12): Final reasoning and content
+                res.setHeader('Content-Type', 'text/event-stream');
+                writeSSEChunk(res, {
+                    choices: [{
+                        delta: {
+                            reasoning_content: "Final thought.",
+                            content: "Final answer."
+                        }
+                    }]
+                });
+                sendDone(res);
+            }
+        });
 
         app.post('/v1/max-iterations/completions', (req, res) => {
             capturedRequests.push({ endpoint: 'max-iterations', body: req.body });
@@ -422,7 +468,8 @@ async function switchModel(inner: ReturnType<Page["frameLocator"]>, modelName: s
     // Wait for dropdown to be visible
     const dropdown = inner.locator('.dropdown-content');
     await dropdown.waitFor({ state: 'visible' });
-    await dropdown.locator(`a:has-text("${modelName}")`).click();
+    // Use exact text match to avoid ambiguity (e.g., "reasoningProvider" matching "maxIterationsReasoningProvider")
+    await dropdown.locator('a').filter({ hasText: new RegExp(`^${modelName}$`) }).click();
 }
 
 // -----------------------------------------------------------------------------
@@ -895,5 +942,74 @@ test.describe('Chat E2E', () => {
         // (indicating the agent made progress through iterations)
         const lastHistoryMessage = lastRequest.messages[lastRequest.messages.length - 1];
         expect(lastHistoryMessage.role).toBe('tool');
+    });
+
+    test('should preserve and continue reasoning bubble when reaching max iterations and clicking continue', async () => {
+        const inner = await getChatFrames(page);
+
+        // 1. Switch to the max-iterations-reasoning profile and start a new chat
+        await switchModel(inner, 'maxIterationsReasoningProvider');
+        await clickNewChat(page);
+
+        // 2. Turn 1: Send "Request 1" -> Success
+        await sendChatMessage(inner, 'Request 1');
+        await expect(inner.locator('.message.assistant').last()).toHaveText('First Response', { timeout: 10000 });
+
+        // 3. Turn 2: Send "Request 2" -> This triggers continuous reasoning + tool calls that reach max iterations
+        await sendChatMessage(inner, 'Request 2');
+
+        // 4. Wait for the halted container with max iterations message and continue button
+        const haltedContainer = inner.locator('.halted-container');
+        await expect(haltedContainer).toBeVisible({ timeout: 20000 });
+
+        // 5. Assert the halted message is present with correct text
+        const haltedMessage = haltedContainer.locator('.halted-message');
+        await expect(haltedMessage).toContainText('Max iterations reached');
+
+        // 6. Assert the continue button is visible and has correct text
+        const continueBtn = haltedContainer.locator('button.continue-button');
+        await expect(continueBtn).toBeVisible();
+        await expect(continueBtn).toContainText('Continue');
+
+        // 7. Assert that initial reasoning is displayed
+        const assistantMessage = inner.locator('.message.assistant').last();
+        const reasoningContainer = assistantMessage.locator('.reasoning-container');
+        const reasoningContent = reasoningContainer.locator('.reasoning-content');
+        await expect(reasoningContainer).toBeVisible();
+        // It should contain multiple "Thinking turn X... " messages
+        await expect(reasoningContent).toContainText('Thinking turn 2...');
+        await expect(reasoningContent).toContainText('Thinking turn 11...');
+
+        // 8. Click the "Continue" button
+        await continueBtn.click();
+
+        // 9. Recovery Phase: Halted container should be removed
+        await expect(haltedContainer).not.toBeVisible();
+
+        // 10. Final Verification
+        // - Reasoning should contain BOTH parts (initial turns + final thought)
+        await expect(reasoningContent).toContainText('Thinking turn 11...', { timeout: 15000 });
+        await expect(reasoningContent).toContainText('Final thought.', { timeout: 15000 });
+        
+        // - Final answer should be displayed
+        await expect(assistantMessage).toContainText('Final answer.');
+
+        // - EXTREMELY CRUCIAL: There should be exactly ONE reasoning container
+        await expect(assistantMessage.locator('.reasoning-container')).toHaveCount(1);
+
+        // 11. CRUCIAL: Verify History Integrity
+        const maxReasoningRequests = capturedRequests.filter(r => r.endpoint === 'max-iterations-reasoning');
+        const lastRequest = maxReasoningRequests[maxReasoningRequests.length - 1].body;
+        
+        // Check history cleanliness: no halt messages should be sent to the LLM
+        expect(lastRequest.messages.every((m: any) => 
+            m.content === undefined || 
+            (typeof m.content === 'string' && !m.content.includes('Max iterations reached'))
+        )).toBe(true);
+        
+        // Verify we have multiple reasoning steps in history
+        const assistantMessagesWithReasoning = lastRequest.messages.filter((m: any) => m.role === 'assistant' && m.reasoning);
+        expect(assistantMessagesWithReasoning.length).toBeGreaterThan(5);
+        expect(assistantMessagesWithReasoning.some((m: any) => m.reasoning.includes('Thinking turn 2'))).toBe(true);
     });
 });
