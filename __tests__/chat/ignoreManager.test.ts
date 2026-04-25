@@ -66,8 +66,8 @@ dist/`);
     await expect(ignoreManager.shouldIgnore(path.join(workspaceRoot, 'src/index.ts'))).resolves.toBe(false);
   });
 
-  test('should ignore files listed in .vscodeignore', async () => {
-    setupIgnoreFile('.vscodeignore', '*.test.ts\ncoverage/');
+  test('should ignore files listed in .suggestioignore', async () => {
+    setupIgnoreFile('.suggestioignore', '*.test.ts\ncoverage/');
     ignoreManager = createManager();
 
     await expect(ignoreManager.shouldIgnore(path.join(workspaceRoot, 'src/app.test.ts'))).resolves.toBe(true);
@@ -75,12 +75,12 @@ dist/`);
     await expect(ignoreManager.shouldIgnore(path.join(workspaceRoot, 'src/app.ts'))).resolves.toBe(false);
   });
   
-  test('should ignore files from both .gitignore and .vscodeignore', async () => {
+  test('should ignore files from both .gitignore and .suggestioignore', async () => {
     const gitignorePath = path.join(workspaceRoot, '.gitignore');
-    const vscodeignorePath = path.join(workspaceRoot, '.vscodeignore');
+    const suggestioignorePath = path.join(workspaceRoot, '.suggestioignore');
     
     fileContents[gitignorePath] = '*.log';
-    fileContents[vscodeignorePath] = '*.tmp';
+    fileContents[suggestioignorePath] = '*.tmp';
     
     ignoreManager = createManager();
     

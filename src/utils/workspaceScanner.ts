@@ -53,7 +53,7 @@ export class WorkspaceScanner implements IWorkspaceScanner {
         for (const file of files) {
             const fullPath = this.pathResolver.join(currentPath, file);
             
-            // Security check: apply ignore patterns (.gitignore, .vscodeignore, .env, etc.)
+            // Security check: apply ignore patterns (.gitignore, .suggestioignore, .env, etc.)
             // We check this for both files and directories to avoid unnecessary traversal.
             if (await this.ignoreManager.shouldIgnore(fullPath)) {
                 continue;

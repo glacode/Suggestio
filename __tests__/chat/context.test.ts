@@ -191,7 +191,7 @@ describe('ContextBuilder', () => {
     expect(mockIgnoreManager.shouldIgnore).toHaveBeenCalledWith(filePath);
   });
 
-  it('should exclude files listed in .vscodeignore', async () => {
+  it('should exclude files listed in .suggestioignore', async () => {
     const filePath = '/project/root/resources/icon.png';
     const fileContent = 'binary_image_data_here';
 

@@ -654,8 +654,7 @@ export interface IContextBuilder {
 }
 
 /**
- * Manages ignore patterns from sources like .gitignore and .vscodeignore.
- */
+ * Manages ignore patterns from sources like .gitignore and .suggestioignore. */
 export interface IIgnoreManager {
   /**
    * Checks if a file path should be ignored based on current patterns.

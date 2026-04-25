@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   **Interactive Chat Sidebar:** Introduced a dedicated "Suggestio" sidebar view (`SUGGESTIO`) for real-time AI assistance.
     -   **Streaming Responses:** Chat responses now stream token-by-token for immediate feedback.
     -   **Rich Text Support:** Full Markdown rendering with syntax highlighting for code blocks.
-    -   **Context Awareness:** The chat now tracks your active editor and respects `.gitignore` / `.vscodeignore` files when building context.
+    -   **Context Awareness:** The chat now tracks your active editor and respects `.gitignore` / `.suggestioignore` files when building context.
     -   **History Management:** Added conversation history persistence and a "New Chat" command to clear context.
 -   **Advanced Anonymization Engine:**
     -   **Entropy-Based Detection:** Implemented Shannon entropy analysis to automatically detect and mask high-randomness strings (like API keys and tokens).

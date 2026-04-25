@@ -23,7 +23,7 @@ export class IgnoreManager implements IIgnoreManager {
 
         const ignoreFilePaths = [
             this.pathResolver.join(workspaceRoot, '.gitignore'),
-            this.pathResolver.join(workspaceRoot, '.vscodeignore'),
+            this.pathResolver.join(workspaceRoot, '.suggestioignore'),
         ];
 
         for (const filePath of ignoreFilePaths) {
