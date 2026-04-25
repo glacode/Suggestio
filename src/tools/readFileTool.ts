@@ -35,7 +35,8 @@ export class ReadFileTool extends BaseTool<ReadFileArgs> {
         private fileReader: IFileContentReader,
         private pathResolver: IPathResolver,
         private eventBus: IEventBus,
-        private ignoreManager: IIgnoreManager
+        private ignoreManager: IIgnoreManager,
+        private requireUserConfirmation: boolean = true
     ) {
         super();
     }
@@ -64,7 +65,7 @@ export class ReadFileTool extends BaseTool<ReadFileArgs> {
         }
 
         // Confirmation handshake
-        if (toolCallId) {
+        if (this.requireUserConfirmation && toolCallId) {
             const userDecision = await this.requestUserConfirmation(
                 toolCallId,
                 this.eventBus,

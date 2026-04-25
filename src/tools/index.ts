@@ -18,7 +18,7 @@ export function getTools(
 ): IToolImplementation[] {
     return [
         new ListFilesTool(workspaceProvider, pathResolver, workspaceScanner),
-        new ReadFileTool(workspaceProvider, fileReader, pathResolver, eventBus, ignoreManager),
+        new ReadFileTool(workspaceProvider, fileReader, pathResolver, eventBus, ignoreManager, false),
         new EditFileTool(workspaceProvider, fileReader, fileWriter, pathResolver, eventBus, ignoreManager),
         new GrepSearchTool(workspaceProvider, fileReader, pathResolver, eventBus, workspaceScanner),
         new RunCommandTool(workspaceProvider, commandExecutor, eventBus, commandValidator)

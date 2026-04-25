@@ -106,6 +106,20 @@ describe("ReadFileTool", () => {
         expect(eventBus.emit).not.toHaveBeenCalled();
     });
 
+    it("should return success: true immediately when requireUserConfirmation is false", async () => {
+        const filePath = "src/test.ts";
+        const content = "no confirmation needed";
+        const toolCallId = "call-123";
+        fileReader.read.mockReturnValue(content);
+
+        const toolNoConfirm = new ReadFileTool(workspaceProvider, fileReader, pathResolver, eventBus, ignoreManager, false);
+        const result = await toolNoConfirm.execute({ path: filePath }, undefined, toolCallId);
+
+        expect(result.success).toBe(true);
+        expect(result.content).toBe(content);
+        expect(eventBus.emit).not.toHaveBeenCalled();
+    });
+
     it("should handle cancellation signal by denying access", async () => {
         const filePath = "src/test.ts";
         const toolCallId = "call-123";
