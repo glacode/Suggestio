@@ -269,7 +269,8 @@
         "watch:webview": "node esbuild.js --watch",
         "copy-css": "node ./scripts/build/copyCss.js",
         "serve:chat": "node scripts/tools/serve-chat.js",
-        "test:providers": "node --env-file=.env scripts/tools/test-providers.js"
+        "test:providers": "node --env-file=.env scripts/tools/test-providers.js",
+        "dev:install": "npx vsce package -o suggestio.vsix && code --install-extension suggestio.vsix --force"
     },
     "dependencies": {
         "highlight.js": "^11.11.1",
