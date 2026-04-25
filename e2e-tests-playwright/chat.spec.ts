@@ -43,6 +43,11 @@ function writeMockConfig(workspace: string) {
                 endpoint: "http://localhost:3001/v1/manual-retry/completions",
                 model: "test-model",
                 apiKey: "unused"
+            },
+            reasoningRetryProvider: {
+                endpoint: "http://localhost:3001/v1/reasoning-retry/completions",
+                model: "test-model",
+                apiKey: "unused"
             }
         }
     };
@@ -199,6 +204,32 @@ function createMockServer(capturedRequests: any[]): Promise<Server> {
 
         let autoRetryCallCount = 0;
         let manualRetryCallCount = 0;
+        let reasoningRetryCallCount = 0;
+
+        app.post('/v1/reasoning-retry/completions', (req, res) => {
+            capturedRequests.push({ endpoint: 'reasoning-retry', body: req.body });
+            reasoningRetryCallCount++;
+
+            if (reasoningRetryCallCount === 1) {
+                // First request: partial reasoning then CRASH
+                res.setHeader('Content-Type', 'text/event-stream');
+                res.write('data: {"choices":[{"delta":{"reasoning":"Thinking mid-thought..."}}]}\n\n');
+                // Abruptly destroy the socket to simulate network error
+                setTimeout(() => res.destroy(), 100);
+            } else if (reasoningRetryCallCount <= 4) {
+                // Auto-retries fail
+                res.status(500).json({ error: "Still failing" });
+            } else {
+                // Manual retry: Success
+                res.setHeader('Content-Type', 'text/event-stream');
+                res.write('data: {"choices":[{"delta":{"reasoning":" Continuing thought."}}]}\n\n');
+                setTimeout(() => {
+                    res.write('data: {"choices":[{"delta":{"content":"Final answer."}}]}\n\n');
+                    res.write('data: [DONE]\n\n');
+                    res.end();
+                }, 100);
+            }
+        });
 
         app.post('/v1/manual-retry/completions', (req, res) => {
             capturedRequests.push({ endpoint: 'manual-retry', body: req.body });
@@ -700,5 +731,44 @@ test.describe('Chat E2E', () => {
         expect(lastRequest.messages[1]).toMatchObject({ role: 'user', content: 'Request 1' });
         expect(lastRequest.messages[2]).toMatchObject({ role: 'assistant', content: 'First Response' });
         expect(lastRequest.messages[3]).toMatchObject({ role: 'user', content: 'Request 2' });
+    });
+
+    test('should preserve and continue reasoning bubble when retrying mid-thought', async () => {
+        const inner = await getChatFrames(page);
+
+        // 1. Switch to reasoning-retry profile
+        await switchModel(inner, 'reasoningRetryProvider');
+        await clickNewChat(page);
+
+        // 2. Send message
+        await sendChatMessage(inner, 'Reason about something');
+
+        // 3. Assert initial reasoning is displayed
+        const assistantMessage = inner.locator('.message.assistant').last();
+        const reasoningContainer = assistantMessage.locator('.reasoning-container');
+        const reasoningContent = reasoningContainer.locator('.reasoning-content');
+        
+        await expect(reasoningContainer).toBeVisible({ timeout: 10000 });
+        await expect(reasoningContent).toContainText('Thinking mid-thought...');
+
+        // 4. Wait for retry button (after auto-retries fail)
+        const retryBtn = assistantMessage.locator('button.retry-button');
+        await expect(retryBtn).toBeVisible({ timeout: 10000 });
+
+        // 5. Click Retry
+        await retryBtn.click();
+
+        // 6. Final Verification
+        // - Error container should be gone
+        await expect(retryBtn).not.toBeVisible();
+        
+        // - Reasoning should contain BOTH parts
+        await expect(reasoningContent).toContainText('Thinking mid-thought... Continuing thought.', { timeout: 10000 });
+        
+        // - Final answer should be displayed
+        await expect(assistantMessage).toContainText('Final answer.');
+
+        // - EXTREMELY CRUCIAL: There should be exactly ONE reasoning container
+        await expect(assistantMessage.locator('.reasoning-container')).toHaveCount(1);
     });
 });
