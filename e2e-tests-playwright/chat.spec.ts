@@ -58,6 +58,16 @@ function writeMockConfig(workspace: string) {
                 endpoint: "http://localhost:3001/v1/max-iterations-reasoning/completions",
                 model: "test-model",
                 apiKey: "unused"
+            },
+            alwaysFailProvider: {
+                endpoint: "http://localhost:3001/v1/always-fail/completions",
+                model: "test-model",
+                apiKey: "unused"
+            },
+            alwaysHaltProvider: {
+                endpoint: "http://localhost:3001/v1/always-halt/completions",
+                model: "test-model",
+                apiKey: "unused"
             }
         }
     };
@@ -217,6 +227,30 @@ function createMockServer(capturedRequests: any[]): Promise<Server> {
         let reasoningRetryCallCount = 0;
         let maxIterationsCallCount = 0;
         let maxIterationsReasoningCallCount = 0;
+
+        app.post('/v1/always-fail/completions', (req, res) => {
+            capturedRequests.push({ endpoint: 'always-fail', body: req.body });
+            res.status(500).json({ error: "Always failing for test" });
+        });
+
+        app.post('/v1/always-halt/completions', (req, res) => {
+            capturedRequests.push({ endpoint: 'always-halt', body: req.body });
+            // Return a tool_call to keep the agent in the loop
+            res.setHeader('Content-Type', 'text/event-stream');
+            writeSSEChunk(res, {
+                choices: [{
+                    delta: {
+                        tool_calls: [{
+                            index: 0,
+                            id: 'call_list',
+                            type: 'function',
+                            function: { name: 'list_files', arguments: '{}' }
+                        }]
+                    }
+                }]
+            });
+            sendDone(res);
+        });
 
         app.post('/v1/max-iterations-reasoning/completions', (req, res) => {
             capturedRequests.push({ endpoint: 'max-iterations-reasoning', body: req.body });
@@ -1011,5 +1045,69 @@ test.describe('Chat E2E', () => {
         const assistantMessagesWithReasoning = lastRequest.messages.filter((m: any) => m.role === 'assistant' && m.reasoning);
         expect(assistantMessagesWithReasoning.length).toBeGreaterThan(5);
         expect(assistantMessagesWithReasoning.some((m: any) => m.reasoning.includes('Thinking turn 2'))).toBe(true);
+    });
+
+    test('should remove retry button and error message when user sends a new message after failure', async () => {
+        const inner = await getChatFrames(page);
+
+        // 1. Switch to the always-fail profile and start a new chat
+        await switchModel(inner, 'alwaysFailProvider');
+        await clickNewChat(page);
+
+        // 2. Trigger a failure
+        await sendChatMessage(inner, 'Fail me');
+
+        // 3. Wait for the error container and retry button to appear
+        const assistantMessage = inner.locator('.message.assistant').last();
+        const errorContainer = assistantMessage.locator('.error-container');
+        await expect(errorContainer).toBeVisible({ timeout: 15000 });
+        await expect(assistantMessage).toHaveClass(/error/);
+
+        // 4. Switch to a working provider so the next message succeeds
+        await switchModel(inner, 'testProvider');
+
+        // 5. Send a new message instead of clicking retry
+        await sendChatMessage(inner, 'New message');
+
+        // 6. Verify the error container is removed and the class is gone
+        await expect(errorContainer).not.toBeVisible();
+        await expect(assistantMessage).not.toHaveClass(/error/);
+        
+        // 7. Verify the new message is processed
+        // history: ['Fail me', 'New message'] -> assistant echoes both
+        await expect(inner.locator('.message.assistant').last()).toHaveText('Fail me New message', { timeout: 10000 });
+    });
+
+    test('should remove continue button and halted message when user sends a new message after halt', async () => {
+        const inner = await getChatFrames(page);
+
+        // 1. Switch to the always-halt profile and start a new chat
+        await switchModel(inner, 'alwaysHaltProvider');
+        await clickNewChat(page);
+
+        // 2. Trigger a halt (max iterations)
+        await sendChatMessage(inner, 'Halt me');
+
+        // 3. Wait for the halted container and continue button to appear
+        const assistantMessage = inner.locator('.message.assistant').last();
+        const haltedContainer = assistantMessage.locator('.halted-container');
+        await expect(haltedContainer).toBeVisible({ timeout: 20000 });
+        await expect(assistantMessage).toHaveClass(/halted/);
+
+        // 4. Switch to a working provider
+        await switchModel(inner, 'testProvider');
+
+        // 5. Send a new message instead of clicking continue
+        await sendChatMessage(inner, 'New message');
+
+        // 6. Verify the halted container is removed and the class is gone
+        await expect(haltedContainer).not.toBeVisible();
+        await expect(assistantMessage).not.toHaveClass(/halted/);
+        
+        // 7. Verify the new message is processed
+        // The history will include the tool calls from the halt, but since we switched to testProvider,
+        // it just echoes the user messages it sees in the history.
+        // history includes ['Halt me', 'New message']
+        await expect(inner.locator('.message.assistant').last()).toContainText('Halt me New message', { timeout: 10000 });
     });
 });

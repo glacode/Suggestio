@@ -696,6 +696,8 @@ export class ChatManager {
             return;
         }
 
+        this.clearStaleButtons();
+
         const emptyChatContent = document.getElementById('emptyChatContent');
         if (emptyChatContent) {
             emptyChatContent.style.display = 'none';
@@ -709,6 +711,18 @@ export class ChatManager {
         this.disableInput();
         
         this.vscode.postMessage({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text });
+    }
+
+    private clearStaleButtons() {
+        // Remove error and halted containers
+        const containers = this.chatContainer.querySelectorAll('.error-container, .halted-container');
+        containers.forEach(container => container.remove());
+
+        // Remove error and halted classes from assistant message bubbles to reset their styling
+        const assistantMessages = this.chatContainer.querySelectorAll('.message.assistant.error, .message.assistant.halted');
+        assistantMessages.forEach(msg => {
+            msg.classList.remove('error', 'halted');
+        });
     }
 
     cancelRequest() {
