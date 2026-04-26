@@ -1,6 +1,6 @@
-import { IWorkspaceProvider, IPathResolver, IToolImplementation, IFileContentReader, IFileContentWriter, IEventBus, IIgnoreManager, IWorkspaceScanner, ICommandExecutor, ICommandValidator } from '../types.js';
+import { IWorkspaceProvider, IPathResolver, IFileContentReader, IFileContentWriter, IEventBus, IIgnoreManager, ICommandExecutor, ICommandValidator, IWorkspaceScanner } from '../types.js';
 import { ReadFileTool } from './readFileTool.js';
-import { EditFileTool } from './editFileTool.js';
+import { WriteFileTool } from './writeFileTool.js';
 import { ListFilesTool } from './listFilesTool.js';
 import { GrepSearchTool } from './grepSearchTool.js';
 import { RunCommandTool } from './runCommandTool.js';
@@ -15,14 +15,14 @@ export function getTools(
     workspaceScanner: IWorkspaceScanner,
     commandExecutor: ICommandExecutor,
     commandValidator: ICommandValidator
-): IToolImplementation[] {
+) {
     return [
-        new ListFilesTool(workspaceProvider, pathResolver, workspaceScanner),
         new ReadFileTool(workspaceProvider, fileReader, pathResolver, eventBus, ignoreManager, false),
-        new EditFileTool(workspaceProvider, fileReader, fileWriter, pathResolver, eventBus, ignoreManager),
+        new WriteFileTool(workspaceProvider, fileReader, fileWriter, pathResolver, eventBus, ignoreManager),
+        new ListFilesTool(workspaceProvider, pathResolver, workspaceScanner),
         new GrepSearchTool(workspaceProvider, fileReader, pathResolver, eventBus, workspaceScanner),
         new RunCommandTool(workspaceProvider, commandExecutor, eventBus, commandValidator)
     ];
 }
 
-export { ReadFileTool, EditFileTool, ListFilesTool, GrepSearchTool, RunCommandTool };
+export { ReadFileTool, WriteFileTool, ListFilesTool, GrepSearchTool, RunCommandTool };

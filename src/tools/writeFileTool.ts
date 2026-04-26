@@ -3,20 +3,20 @@ import { IWorkspaceProvider, IToolDefinition, IPathResolver, IFileContentReader,
 import { AGENT_MESSAGES } from '../constants/messages.js';
 import { BaseTool } from './baseTool.js';
 
-const EditFileSchema = z.object({
+const WriteFileSchema = z.object({
     path: z.string().describe('The path of the file to edit (relative to workspace root).'),
     content: z.string().describe('The full new content of the file.'),
 }).strict();
 
-type EditFileArgs = z.infer<typeof EditFileSchema>;
+type WriteFileArgs = z.infer<typeof WriteFileSchema>;
 
 /**
- * Tool for editing (overwriting) a file within the workspace after user confirmation.
+ * Tool for writing (overwriting) a file within the workspace after user confirmation.
  */
-export class EditFileTool extends BaseTool<EditFileArgs> {
+export class WriteFileTool extends BaseTool<WriteFileArgs> {
     readonly definition: IToolDefinition = {
-        name: 'edit_file',
-        description: 'Overwrite a file in the workspace with new content.',
+        name: 'write_file',
+        description: 'Write the full content to a file. Use this for creating new files or when a file needs to be completely rewritten.',
         parameters: {
             type: 'object',
             properties: {
@@ -33,7 +33,7 @@ export class EditFileTool extends BaseTool<EditFileArgs> {
         },
     };
 
-    readonly schema = EditFileSchema;
+    readonly schema = WriteFileSchema;
 
     constructor(
         private workspaceProvider: IWorkspaceProvider,
@@ -46,11 +46,11 @@ export class EditFileTool extends BaseTool<EditFileArgs> {
         super();
     }
 
-    formatMessage(args: EditFileArgs): string {
-        return `Editing file ${args.path}`;
+    formatMessage(args: WriteFileArgs): string {
+        return `Writing file ${args.path}`;
     }
 
-    async execute(args: EditFileArgs, signal?: AbortSignal, toolCallId?: string): Promise<IToolResult> {
+    async execute(args: WriteFileArgs, signal?: AbortSignal, toolCallId?: string): Promise<IToolResult> {
         const rootPath = this.workspaceProvider.rootPath();
         if (!rootPath) {
             return { content: AGENT_MESSAGES.ERROR_NO_WORKSPACE, success: false };
@@ -86,7 +86,7 @@ export class EditFileTool extends BaseTool<EditFileArgs> {
             const userDecision = await this.requestUserConfirmation(
                 toolCallId,
                 this.eventBus,
-                `Allow Suggestio to apply changes to ${args.path}?`,
+                `Allow Suggestio to write to ${args.path}?`,
                 {
                     oldContent,
                     newContent: args.content,
@@ -96,14 +96,14 @@ export class EditFileTool extends BaseTool<EditFileArgs> {
             );
 
             if (userDecision !== 'allow') {
-                return { content: `Error: User denied permission to edit file ${args.path}.`, success: false };
+                return { content: `Error: User denied permission to write to file ${args.path}.`, success: false };
             }
         }
 
         // 3. Perform the write
         try {
             this.fileWriter.write(resolvedPath, args.content);
-            return { content: `Successfully updated ${args.path}`, success: true };
+            return { content: `Successfully wrote ${args.path}`, success: true };
         } catch (error: any) {
             return { content: `Error writing to file: ${error.message}`, success: false };
         }

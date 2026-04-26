@@ -348,7 +348,7 @@ describe('ChatManager Unit Tests', () => {
                     sender: MESSAGE_SENDERS.ASSISTANT, 
                     type: EXTENSION_EVENTS.REQUEST_CONFIRMATION, 
                     toolCallId, 
-                    toolName: 'edit_file',
+                    toolName: 'write_file',
                     message: 'Confirm?'
                 }
             }));
@@ -380,7 +380,7 @@ describe('ChatManager Unit Tests', () => {
                     sender: MESSAGE_SENDERS.ASSISTANT, 
                     type: EXTENSION_EVENTS.REQUEST_CONFIRMATION, 
                     toolCallId: 'diff1', 
-                    toolName: 'edit_file',
+                    toolName: 'write_file',
                     message: 'Diff?',
                     diffData: { old: '', new: '', path: '' }
                 }
@@ -531,7 +531,7 @@ describe('ChatManager Unit Tests', () => {
                     sender: MESSAGE_SENDERS.ASSISTANT, 
                     type: EXTENSION_EVENTS.REQUEST_CONFIRMATION, 
                     toolCallId, 
-                    toolName: 'edit_file',
+                    toolName: 'write_file',
                     message: 'Allow edit?'
                 }
             }));

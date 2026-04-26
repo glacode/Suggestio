@@ -751,7 +751,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     
     eventBus.emit('agent:requestConfirmation', {
       toolCallId,
-      toolName: 'edit_file',
+      toolName: 'write_file',
       message: 'test',
       diffData
     });
@@ -801,7 +801,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     
     eventBus.emit('agent:requestConfirmation', {
       toolCallId,
-      toolName: 'edit_file',
+      toolName: 'write_file',
       message: 'test',
       diffData
     });

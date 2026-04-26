@@ -106,11 +106,11 @@ function streamReasoningModel(res: any, messages: any[]) {
                 { id: 'call_list_nested', name: 'list_files', arguments: '{}' }
             ]}
         ],
-        // Turn 1b: more thinking and nested tool request (edit_file - requires confirmation)
+        // Turn 1b: more thinking and nested tool request (write_file - requires confirmation)
         [
             { type: 'reasoning', content: ' more thinking...' },
             { type: 'tool_calls', calls: [
-                { id: 'call_edit_nested', name: 'edit_file', arguments: '{"path":"nested.txt","content":"nested content"}' }
+                { id: 'call_edit_nested', name: 'write_file', arguments: '{"path":"nested.txt","content":"nested content"}' }
             ]}
         ],
         // Turn 1c: Content and other tool requests
@@ -119,7 +119,7 @@ function streamReasoningModel(res: any, messages: any[]) {
             { type: 'content', content: 'Prefix text.' },
             { type: 'tool_calls', calls: [
                 { id: 'call_list', name: 'list_files', arguments: '{"directory":"."}' },
-                { id: 'call_edit', name: 'edit_file', arguments: '{"path":"test.txt","content":"new content"}' }
+                { id: 'call_edit', name: 'write_file', arguments: '{"path":"test.txt","content":"new content"}' }
             ]}
         ],
         // Turn 2: Follow-up reasoning and nested tool request (run_command)
@@ -673,11 +673,11 @@ test.describe('Chat E2E', () => {
         // 4. Nested tool call with confirmation
         const nestedToolCall2 = reasoningChildren.nth(3);
         await expect(nestedToolCall2).toHaveClass(/tool-call-container/);
-        await expect(nestedToolCall2).toContainText('Editing file nested.txt');
+        await expect(nestedToolCall2).toContainText('Writing file nested.txt');
 
         const nestedConfirmation = reasoningChildren.nth(4);
         await expect(nestedConfirmation).toHaveClass(/tool-confirmation-container/);
-        await expect(nestedConfirmation).toContainText('Allow Suggestio to apply changes to nested.txt?');
+        await expect(nestedConfirmation).toContainText('Allow Suggestio to write to nested.txt?');
 
         // 3. Confirm the first nested tool call (triggers Turn 1c)
         const allowBtnNested = reasoningChildren.nth(4).locator('button.tool-button-primary:has-text("Allow")');
@@ -692,7 +692,7 @@ test.describe('Chat E2E', () => {
         await expect(reasoningChildren.nth(4)).toHaveText(' thinking after edit...');
 
         // Wait for subsequent segments (Turn 1c) to appear
-        // Total segments: Reasoning 1, Prefix text, list_files, edit_file status, edit_file confirmation
+        // Total segments: Reasoning 1, Prefix text, list_files, write_file status, write_file confirmation
         await expect(allSegments).toHaveCount(5, { timeout: 10000 });
 
         await expect(allSegments.nth(1)).toHaveClass(/message-content/);
@@ -702,10 +702,10 @@ test.describe('Chat E2E', () => {
         await expect(allSegments.nth(2)).toContainText('Listing files');
 
         await expect(allSegments.nth(3)).toHaveClass(/tool-call-container/);
-        await expect(allSegments.nth(3)).toContainText('Editing file test.txt');
+        await expect(allSegments.nth(3)).toContainText('Writing file test.txt');
 
         await expect(allSegments.nth(4)).toHaveClass(/tool-confirmation-container/);
-        await expect(allSegments.nth(4)).toContainText('Allow Suggestio to apply changes to test.txt?');
+        await expect(allSegments.nth(4)).toContainText('Allow Suggestio to write to test.txt?');
 
         // Manually expand Reasoning 1 again (it was collapsed by "Prefix text")
         await allSegments.nth(0).locator('.reasoning-header').click();

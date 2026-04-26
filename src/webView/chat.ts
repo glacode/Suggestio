@@ -58,7 +58,7 @@ export class ToolCallSegment extends MessageSegment {
             prettyArgs = JSON.stringify(JSON.parse(payload.args), null, 2);
         } catch (e) {}
 
-        const isOpen = this.toolName !== 'edit_file';
+        const isOpen = this.toolName !== 'write_file';
         this.element.innerHTML = `
             <details ${isOpen ? 'open' : ''}>
                 <summary>

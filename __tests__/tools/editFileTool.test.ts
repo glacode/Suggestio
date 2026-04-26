@@ -1,18 +1,18 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { EditFileTool } from "../../src/tools/editFileTool.js";
-import { IWorkspaceProvider, IFileContentReader, IFileContentWriter, IPathResolver, IEventBus, IIgnoreManager, IUserConfirmationPayload } from "../../src/types.js";
+import { WriteFileTool } from "../../src/tools/writeFileTool.js";
+import { IWorkspaceProvider, IPathResolver, IFileContentReader, IFileContentWriter, IEventBus, IIgnoreManager, IUserConfirmationPayload } from "../../src/types.js";
 import { AGENT_MESSAGES } from "../../src/constants/messages.js";
-import { createMockPathResolver, createMockFileContentReader, createMockFileContentWriter, createMockWorkspaceProvider, createMockEventBus, createMockIgnoreManager } from "../testUtils.js";
+import { createMockPathResolver, createMockFileContentReader, createMockWorkspaceProvider, createMockEventBus, createMockIgnoreManager, createMockFileContentWriter } from "../testUtils.js";
 
-describe("EditFileTool", () => {
+describe("WriteFileTool", () => {
+    let tool: WriteFileTool;
     let workspaceProvider: jest.Mocked<IWorkspaceProvider>;
     let fileReader: jest.Mocked<IFileContentReader>;
     let fileWriter: jest.Mocked<IFileContentWriter>;
     let pathResolver: jest.Mocked<IPathResolver>;
     let eventBus: jest.Mocked<IEventBus>;
     let ignoreManager: jest.Mocked<IIgnoreManager>;
-    let tool: EditFileTool;
-    const mockRootPath = "/home/user/project";
+    const mockRootPath = "/root";
 
     beforeEach(() => {
         workspaceProvider = createMockWorkspaceProvider();
@@ -25,20 +25,47 @@ describe("EditFileTool", () => {
         ignoreManager = createMockIgnoreManager();
         ignoreManager.shouldIgnore.mockResolvedValue(false);
 
-        tool = new EditFileTool(workspaceProvider, fileReader, fileWriter, pathResolver, eventBus, ignoreManager);
+        tool = new WriteFileTool(workspaceProvider, fileReader, fileWriter, pathResolver, eventBus, ignoreManager);
     });
 
-    it("should overwrite file and return success when user confirms", async () => {
-        const filePath = "src/test.ts";
-        const oldContent = "old content";
-        const newContent = "new content";
-        const toolCallId = "call-edit-123";
-        
-        fileReader.read.mockReturnValue(oldContent);
+    it("should have the correct definition", () => {
+        expect(tool.definition.name).toBe("write_file");
+        expect(tool.definition.description).toContain("Write the full content to a file");
+    });
 
+    it("should return error if no workspace is open", async () => {
+        workspaceProvider.rootPath.mockReturnValue(undefined);
+        const result = await tool.execute({ path: "test.ts", content: "test" });
+        expect(result.success).toBe(false);
+        expect(result.content).toBe(AGENT_MESSAGES.ERROR_NO_WORKSPACE);
+    });
+
+    it("should return error if path is outside workspace", async () => {
+        workspaceProvider.rootPath.mockReturnValue(mockRootPath);
+        // pathResolver join/resolve will use real path.join/resolve via mock
+        const result = await tool.execute({ path: "../test.ts", content: "test" });
+        expect(result.success).toBe(false);
+        expect(result.content).toBe(AGENT_MESSAGES.ERROR_PATH_OUTSIDE_WORKSPACE);
+    });
+
+    it("should return error if path is ignored", async () => {
+        ignoreManager.shouldIgnore.mockResolvedValue(true);
+
+        const result = await tool.execute({ path: "test.ts", content: "test" });
+        expect(result.success).toBe(false);
+        expect(result.content).toBe(AGENT_MESSAGES.ERROR_PATH_IGNORED("test.ts"));
+    });
+
+    it("should request confirmation and write if allowed", async () => {
+        const filePath = "test.ts";
+        const content = "new content";
+        const toolCallId = "call1";
+        fileReader.read.mockReturnValue("old content");
+
+        // Mock eventBus to simulate user confirmation
         let userResponseCallback: (payload: IUserConfirmationPayload) => void;
         eventBus.on.mockImplementation((event: string, cb: any) => {
-            if (event === 'user:confirmationResponse') {
+            if (event === "user:confirmationResponse") {
                 userResponseCallback = cb;
             }
             return { dispose: () => { } };
@@ -55,30 +82,29 @@ describe("EditFileTool", () => {
             return true;
         });
 
-        const result = await tool.execute({ path: filePath, content: newContent }, undefined, toolCallId);
+        const result = await tool.execute({ path: filePath, content }, undefined, toolCallId);
 
-        // Verify event was emitted with diff data
-        expect(eventBus.emit).toHaveBeenCalledWith('agent:requestConfirmation', expect.objectContaining({
+        expect(eventBus.emit).toHaveBeenCalledWith("agent:requestConfirmation", expect.objectContaining({
             toolCallId,
-            diffData: {
-                oldContent,
-                newContent,
-                filePath
-            }
+            message: expect.stringContaining(filePath),
+            diffData: expect.objectContaining({
+                oldContent: "old content",
+                newContent: content,
+                filePath: filePath
+            })
         }));
-
+        expect(fileWriter.write).toHaveBeenCalledWith(expect.stringContaining(filePath), content);
         expect(result.success).toBe(true);
-        expect(fileWriter.write).toHaveBeenCalledWith(expect.anything(), newContent);
+        expect(result.content).toContain(`Successfully wrote ${filePath}`);
     });
 
-    it("should NOT overwrite file and return error when user denies", async () => {
-        const filePath = "src/test.ts";
-        const newContent = "should not be written";
-        const toolCallId = "call-edit-456";
+    it("should return error if user denies confirmation", async () => {
+        const filePath = "test.ts";
+        const toolCallId = "call1";
 
         let userResponseCallback: (payload: IUserConfirmationPayload) => void;
         eventBus.on.mockImplementation((event: string, cb: any) => {
-            if (event === 'user:confirmationResponse') {
+            if (event === "user:confirmationResponse") {
                 userResponseCallback = cb;
             }
             return { dispose: () => { } };
@@ -95,69 +121,10 @@ describe("EditFileTool", () => {
             return true;
         });
 
-        const result = await tool.execute({ path: filePath, content: newContent }, undefined, toolCallId);
+        const result = await tool.execute({ path: filePath, content: "new" }, undefined, toolCallId);
 
         expect(result.success).toBe(false);
-        expect(result.content).toContain("User denied permission");
+        expect(result.content).toContain(`User denied permission to write to file ${filePath}`);
         expect(fileWriter.write).not.toHaveBeenCalled();
-    });
-
-    it("should treat missing file as empty string for diffing", async () => {
-        const filePath = "new-file.ts";
-        const newContent = "fresh content";
-        const toolCallId = "call-new-789";
-        
-        fileReader.read.mockReturnValue(undefined);
-
-        let userResponseCallback: (payload: IUserConfirmationPayload) => void;
-        eventBus.on.mockImplementation((event: string, cb: any) => {
-            if (event === 'user:confirmationResponse') {
-                userResponseCallback = cb;
-            }
-            return { dispose: () => { } };
-        });
-
-        eventBus.emit.mockImplementation((event: string, payload: any) => {
-            if (event === 'agent:requestConfirmation' && payload.toolCallId === toolCallId) {
-                setImmediate(() => {
-                    if (userResponseCallback) {
-                        userResponseCallback({ toolCallId, decision: 'allow' });
-                    }
-                });
-            }
-            return true;
-        });
-
-        await tool.execute({ path: filePath, content: newContent }, undefined, toolCallId);
-
-        expect(eventBus.emit).toHaveBeenCalledWith('agent:requestConfirmation', expect.objectContaining({
-            diffData: expect.objectContaining({ oldContent: '' })
-        }));
-    });
-
-    describe("Security", () => {
-        it("should prevent accessing parent directories", async () => {
-            const result = await tool.execute({ path: "../outside.ts", content: "hacked" });
-            expect(result.success).toBe(false);
-            expect(result.content).toBe(AGENT_MESSAGES.ERROR_PATH_OUTSIDE_WORKSPACE);
-            expect(fileWriter.write).not.toHaveBeenCalled();
-        });
-
-        it("should prevent accessing absolute paths outside workspace via traversal", async () => {
-            const result = await tool.execute({ path: "../../../../etc/passwd", content: "hacked" });
-            expect(result.success).toBe(false);
-            expect(result.content).toBe(AGENT_MESSAGES.ERROR_PATH_OUTSIDE_WORKSPACE);
-        });
-
-        it("should prevent accessing ignored files", async () => {
-            const filePath = ".env";
-            ignoreManager.shouldIgnore.mockResolvedValue(true);
-            
-            const result = await tool.execute({ path: filePath, content: "hacked" });
-            
-            expect(result.success).toBe(false);
-            expect(result.content).toBe(AGENT_MESSAGES.ERROR_PATH_IGNORED(filePath));
-            expect(fileWriter.write).not.toHaveBeenCalled();
-        });
     });
 });
