@@ -33,9 +33,9 @@
       "apiKey": "${GROQ_API_KEY}",
       "supportsTools": false
     },
-    "groq-kimi-k2": {
+    "groq-gpt-oss-120b": {
       "endpoint": "https://api.groq.com/openai/v1/chat/completions",
-      "model": "moonshotai/kimi-k2-instruct-0905",
+      "model": "openai/gpt-oss-120b",
       "apiKey": "${GROQ_API_KEY}"
     },
     "groq-llama370": {
