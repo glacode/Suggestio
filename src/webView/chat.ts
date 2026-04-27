@@ -58,7 +58,9 @@ export class ToolCallSegment extends MessageSegment {
             prettyArgs = JSON.stringify(JSON.parse(payload.args), null, 2);
         } catch (e) {}
 
-        const isOpen = this.toolName !== 'write_file';
+        // Determine if the arguments should be visible or collapsed based on tool-provided hints.
+        // We avoid hardcoding tool names here to keep the UI generic and data-driven.
+        const isOpen = !payload.uiOptions?.collapseByDefault;
         this.element.innerHTML = `
             <details ${isOpen ? 'open' : ''}>
                 <summary>

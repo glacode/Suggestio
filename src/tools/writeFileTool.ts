@@ -35,6 +35,13 @@ export class WriteFileTool extends BaseTool<WriteFileArgs> {
 
     readonly schema = WriteFileSchema;
 
+    /**
+     * Internal UI hint to keep the UI clean by collapsing full-file content by default.
+     */
+    readonly uiOptions = {
+        collapseByDefault: true,
+    };
+
     constructor(
         private workspaceProvider: IWorkspaceProvider,
         private fileReader: IFileContentReader,

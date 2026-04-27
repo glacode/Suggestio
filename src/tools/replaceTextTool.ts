@@ -40,6 +40,14 @@ export class ReplaceTextTool extends BaseTool<ReplaceTextArgs> {
 
     readonly schema = ReplaceTextSchema;
 
+    /**
+     * Internal UI hint to keep the UI clean. For surgical edits, 
+     * the user should focus on the side-by-side diff instead of raw JSON args.
+     */
+    readonly uiOptions = {
+        collapseByDefault: true,
+    };
+
     constructor(
         private workspaceProvider: IWorkspaceProvider,
         private fileReader: IFileContentReader,

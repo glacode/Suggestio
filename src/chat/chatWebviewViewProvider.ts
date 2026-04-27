@@ -146,7 +146,9 @@ export class ChatWebviewViewProvider {
                     toolCallId: payload.toolCallId,
                     toolName: payload.toolName,
                     displayMessage: payload.displayMessage,
-                    args: payload.args
+                    args: payload.args,
+                    // Forward internal UI hints to the webview.
+                    uiOptions: payload.uiOptions
                 });
             }
         });

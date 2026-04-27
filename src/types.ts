@@ -325,6 +325,19 @@ export interface IChatMessage {
 }
 
 /**
+ * Internal UI configuration for tool rendering in the Suggestio interface.
+ * This metadata is used to guide the frontend and is NOT sent to the LLM.
+ */
+export interface IToolUiOptions {
+  /** 
+   * When true, the tool's raw arguments will be hidden behind a collapsed 
+   * <details> element in the chat. This is useful for tools with large 
+   * inputs (like file writes) to keep the chat interface clean and focused.
+   */
+  collapseByDefault?: boolean;
+}
+
+/**
  * `MessageFromTheExtensionToTheWebview` defines the types of messages that can be sent *from* the extension
  * (backend) to the webview (frontend).
  *
@@ -356,6 +369,8 @@ export type MessageFromTheExtensionToTheWebview =
     displayMessage?: string;
     /** The arguments passed to the tool. */
     args: string;
+    /** Internal metadata to guide the frontend rendering. */
+    uiOptions?: IToolUiOptions;
   }
   | {
     /** Indicates the message comes from the AI assistant. */
@@ -1081,6 +1096,8 @@ export interface IToolCallEventPayload {
   toolName: string;
   displayMessage?: string;
   args: string;
+  /** Internal metadata to guide the frontend rendering. */
+  uiOptions?: IToolUiOptions;
 }
 
 export interface IToolResultEventPayload {
@@ -1274,7 +1291,17 @@ export interface IToolResult {
  * Interface for a tool implementation.
  */
 export interface IToolImplementation<T = unknown> {
+  /** 
+   * The definition sent to the LLM (name, description, parameters). 
+   */
   definition: IToolDefinition;
+
+  /**
+   * Internal UI configuration for the Suggestio interface.
+   * IMPORTANT: This is NOT sent to the LLM to keep the context clean.
+   */
+  uiOptions?: IToolUiOptions;
+
   /**
    * Zod type to validate the tool arguments at runtime.
    */

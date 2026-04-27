@@ -152,7 +152,9 @@ export class Agent implements IChatAgent {
             toolCallId: toolCall.id,
             toolName: toolCall.function.name,
             displayMessage,
-            args: toolCall.function.arguments
+            args: toolCall.function.arguments,
+            // Pass UI hints from the tool implementation to the frontend.
+            uiOptions: tool.uiOptions,
         });
 
         try {
