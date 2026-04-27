@@ -36,7 +36,7 @@ export class ReadFileTool extends BaseTool<ReadFileArgs> {
         private pathResolver: IPathResolver,
         private eventBus: IEventBus,
         private ignoreManager: IIgnoreManager,
-        private requireUserConfirmation: boolean = true
+        public readonly requireUserConfirmation: boolean = true
     ) {
         super();
     }
