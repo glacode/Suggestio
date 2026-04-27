@@ -22,7 +22,7 @@ export function getTools(
         new WriteFileTool(workspaceProvider, fileReader, fileWriter, pathResolver, eventBus, ignoreManager),
         new ReplaceTextTool(workspaceProvider, fileReader, fileWriter, pathResolver, eventBus, ignoreManager),
         new ListFilesTool(workspaceProvider, pathResolver, workspaceScanner),
-        new GrepSearchTool(workspaceProvider, fileReader, pathResolver, eventBus, workspaceScanner),
+        new GrepSearchTool(workspaceProvider, fileReader, pathResolver, eventBus, workspaceScanner, false),
         new RunCommandTool(workspaceProvider, commandExecutor, eventBus, commandValidator)
     ];
 }

@@ -113,4 +113,16 @@ describe("GrepSearchTool", () => {
         expect(result.success).toBe(false);
         expect(result.content).toContain("User denied permission");
     });
+
+    it("should return success immediately when requireUserConfirmation is false", async () => {
+        fileReader.read.mockReturnValue("match");
+        const toolCallId = "test-id";
+
+        const toolNoConfirm = new GrepSearchTool(workspaceProvider, fileReader, pathResolver, eventBus, workspaceScanner, false);
+        const result = await toolNoConfirm.execute({ pattern: "match", isCaseSensitive: false }, undefined, toolCallId);
+
+        expect(result.success).toBe(true);
+        expect(result.content).toContain("match");
+        expect(eventBus.emit).not.toHaveBeenCalled();
+    });
 });

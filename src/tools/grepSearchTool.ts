@@ -53,7 +53,8 @@ export class GrepSearchTool extends BaseTool<GrepSearchArgs> {
         private fileReader: IFileContentReader,
         private pathResolver: IPathResolver,
         private eventBus: IEventBus,
-        private workspaceScanner: IWorkspaceScanner
+        private workspaceScanner: IWorkspaceScanner,
+        public readonly requireUserConfirmation: boolean = true
     ) {
         super();
     }
@@ -69,7 +70,7 @@ export class GrepSearchTool extends BaseTool<GrepSearchArgs> {
         }
 
         // 1. Request user confirmation
-        if (toolCallId) {
+        if (this.requireUserConfirmation && toolCallId) {
             const userDecision = await this.requestUserConfirmation(
                 toolCallId,
                 this.eventBus,
