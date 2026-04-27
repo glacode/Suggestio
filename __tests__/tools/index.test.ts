@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { getTools } from "../../src/tools/index.js";
-import { ReadFileTool, WriteFileTool, ListFilesTool, GrepSearchTool, RunCommandTool } from "../../src/tools/index.js";
+import { ReadFileTool, WriteFileTool, ReplaceTextTool, ListFilesTool, GrepSearchTool, RunCommandTool } from "../../src/tools/index.js";
 import { createMockWorkspaceProvider, createMockFileContentReader, createMockFileContentWriter, createMockPathResolver, createMockEventBus, createMockIgnoreManager } from "../testUtils.js";
 import { ICommandExecutor, ICommandValidator, IWorkspaceScanner, IWorkspaceProvider, IFileContentReader, IFileContentWriter, IPathResolver, IEventBus, IIgnoreManager } from "../../src/types.js";
 import { jest } from "@jest/globals";
@@ -41,9 +41,10 @@ describe("Tools Index", () => {
             commandValidator
         );
 
-        expect(tools).toHaveLength(5);
+        expect(tools).toHaveLength(6);
         expect(tools.some(t => t instanceof ReadFileTool)).toBe(true);
         expect(tools.some(t => t instanceof WriteFileTool)).toBe(true);
+        expect(tools.some(t => t instanceof ReplaceTextTool)).toBe(true);
         expect(tools.some(t => t instanceof ListFilesTool)).toBe(true);
         expect(tools.some(t => t instanceof GrepSearchTool)).toBe(true);
         expect(tools.some(t => t instanceof RunCommandTool)).toBe(true);
