@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { getTools } from "../../src/tools/index.js";
 import { ReadFileTool, WriteFileTool, ReplaceTextTool, ListFilesTool, GrepSearchTool, RunCommandTool } from "../../src/tools/index.js";
-import { createMockWorkspaceProvider, createMockFileContentReader, createMockFileContentWriter, createMockPathResolver, createMockEventBus, createMockIgnoreManager, createDefaultConfig } from "../testUtils.js";
+import { createMockWorkspaceProvider, createMockFileContentReader, createMockFileContentWriter, createMockPathResolver, createMockEventBus, createMockIgnoreManager } from "../testUtils.js";
 import { ICommandExecutor, ICommandValidator, IWorkspaceScanner, IWorkspaceProvider, IFileContentReader, IFileContentWriter, IPathResolver, IEventBus, IIgnoreManager } from "../../src/types.js";
 import { jest } from "@jest/globals";
 
@@ -39,7 +39,7 @@ describe("Tools Index", () => {
             workspaceScanner,
             commandExecutor,
             commandValidator,
-            createDefaultConfig()
+            { autoAcceptEdits: false }
         );
 
         expect(tools).toHaveLength(6);
@@ -62,7 +62,7 @@ describe("Tools Index", () => {
             workspaceScanner,
             commandExecutor,
             commandValidator,
-            createDefaultConfig()
+            { autoAcceptEdits: false }
         );
 
         const readFileTool = tools.find((t): t is ReadFileTool => t instanceof ReadFileTool);
