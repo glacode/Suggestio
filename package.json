@@ -172,7 +172,7 @@
             {
                 "command": "suggestio.enableAutoAcceptEdits",
                 "title": "Suggestio: Enable Auto-Accept Edits",
-                "icon": "$(zap)"
+                "icon": "$(shield)"
             },
             {
                 "command": "suggestio.selectCompletionProfile",
