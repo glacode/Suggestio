@@ -270,6 +270,7 @@ export const createDefaultConfig = (overrides: Partial<IConfig> = {}): IConfig =
     toolResultMaxLength: CONFIG_DEFAULTS.TOOL_RESULT_MAX_LENGTH,
     maxRetries: CONFIG_DEFAULTS.MAX_RETRIES,
     initialDelay: CONFIG_DEFAULTS.INITIAL_DELAY,
+    autoAcceptEdits: false,
     ...overrides
 });
 

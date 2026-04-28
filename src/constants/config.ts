@@ -7,4 +7,6 @@ export const CONFIG_DEFAULTS = {
     MAX_RETRIES: 5,
     /** Default initial delay for exponential backoff in ms. */
     INITIAL_DELAY: 1000,
+    /** Default session-only auto-accept edits setting. */
+    AUTO_ACCEPT_EDITS: false,
 } as const;

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { IWorkspaceProvider, IToolDefinition, IPathResolver, IFileContentReader, IFileContentWriter, IToolResult, IEventBus, IIgnoreManager } from '../types.js';
+import { IWorkspaceProvider, IToolDefinition, IPathResolver, IFileContentReader, IFileContentWriter, IToolResult, IEventBus, IIgnoreManager, IAutoAcceptProvider } from '../types.js';
 import { AGENT_MESSAGES } from '../constants/messages.js';
 import { BaseTool } from './baseTool.js';
 
@@ -48,9 +48,11 @@ export class WriteFileTool extends BaseTool<WriteFileArgs> {
         private fileWriter: IFileContentWriter,
         private pathResolver: IPathResolver,
         private eventBus: IEventBus,
-        private ignoreManager: IIgnoreManager
+        private ignoreManager: IIgnoreManager,
+        autoAcceptProvider?: IAutoAcceptProvider
     ) {
         super();
+        this.autoAcceptProvider = autoAcceptProvider;
     }
 
     formatMessage(args: WriteFileArgs): string {
@@ -99,7 +101,8 @@ export class WriteFileTool extends BaseTool<WriteFileArgs> {
                     newContent: args.content,
                     filePath: args.path
                 },
-                signal
+                signal,
+                { isEdit: true }
             );
 
             if (userDecision !== 'allow') {

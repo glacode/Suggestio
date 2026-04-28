@@ -1,6 +1,6 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { WriteFileTool } from "../../src/tools/writeFileTool.js";
-import { IWorkspaceProvider, IPathResolver, IFileContentReader, IFileContentWriter, IEventBus, IIgnoreManager, IUserConfirmationPayload } from "../../src/types.js";
+import { IWorkspaceProvider, IPathResolver, IFileContentReader, IFileContentWriter, IEventBus, IIgnoreManager, IUserConfirmationPayload, IAutoAcceptProvider } from "../../src/types.js";
 import { AGENT_MESSAGES } from "../../src/constants/messages.js";
 import { createMockPathResolver, createMockFileContentReader, createMockWorkspaceProvider, createMockEventBus, createMockIgnoreManager, createMockFileContentWriter } from "../testUtils.js";
 
@@ -126,5 +126,20 @@ describe("WriteFileTool", () => {
         expect(result.success).toBe(false);
         expect(result.content).toContain(`User denied permission to write to file ${filePath}`);
         expect(fileWriter.write).not.toHaveBeenCalled();
+    });
+
+    it("should bypass confirmation if autoAcceptEdits is enabled", async () => {
+        const filePath = "test.ts";
+        const content = "new content";
+        const toolCallId = "call1";
+        const autoAcceptProvider: IAutoAcceptProvider = { autoAcceptEdits: true };
+        
+        tool = new WriteFileTool(workspaceProvider, fileReader, fileWriter, pathResolver, eventBus, ignoreManager, autoAcceptProvider);
+
+        const result = await tool.execute({ path: filePath, content }, undefined, toolCallId);
+
+        expect(eventBus.emit).not.toHaveBeenCalledWith("agent:requestConfirmation", expect.anything());
+        expect(fileWriter.write).toHaveBeenCalledWith(expect.stringContaining(filePath), content);
+        expect(result.success).toBe(true);
     });
 });

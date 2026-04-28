@@ -68,6 +68,11 @@ function writeMockConfig(workspace: string) {
                 endpoint: "http://localhost:3001/v1/always-halt/completions",
                 model: "test-model",
                 apiKey: "unused"
+            },
+            autoAcceptEditsProvider: {
+                endpoint: "http://localhost:3001/v1/auto-accept/completions",
+                model: "test-model",
+                apiKey: "unused"
             }
         }
     };
@@ -245,6 +250,24 @@ function createMockServer(capturedRequests: any[]): Promise<Server> {
                             id: 'call_list',
                             type: 'function',
                             function: { name: 'list_files', arguments: '{}' }
+                        }]
+                    }
+                }]
+            });
+            sendDone(res);
+        });
+
+        app.post('/v1/auto-accept/completions', (req, res) => {
+            capturedRequests.push({ endpoint: 'auto-accept', body: req.body });
+            res.setHeader('Content-Type', 'text/event-stream');
+            writeSSEChunk(res, {
+                choices: [{
+                    delta: {
+                        tool_calls: [{
+                            index: 0,
+                            id: 'call_edit_auto',
+                            type: 'function',
+                            function: { name: 'write_file', arguments: '{"path":"auto.txt","content":"auto content"}' }
                         }]
                     }
                 }]
@@ -1109,5 +1132,44 @@ test.describe('Chat E2E', () => {
         // it just echoes the user messages it sees in the history.
         // history includes ['Halt me', 'New message']
         await expect(inner.locator('.message.assistant').last()).toContainText('Halt me New message', { timeout: 10000 });
+    });
+
+    test('should bypass confirmation when "Auto-Accept Edits" is enabled', async () => {
+        const inner = await getChatFrames(page);
+
+        // 1. Switch to autoAcceptEditsProvider
+        await switchModel(inner, 'autoAcceptEditsProvider');
+        await clickNewChat(page);
+
+        // 2. Enable Auto-Accept Edits via the view title action
+        // The icon is "$(zap)", and we have two commands toggled by context.
+        // We look for the one that is currently visible (Enable).
+        const enableBtn = page.locator('[role="button"][aria-label="Suggestio: Enable Auto-Accept Edits"]').first();
+        await enableBtn.click();
+
+        // 3. Send a message that triggers a write_file tool call
+        await sendChatMessage(inner, 'Edit file automatically');
+
+        // 4. Verify that the tool call starts and completes WITHOUT showing a confirmation UI
+        const assistantMessage = inner.locator('.message.assistant').last();
+
+        // Wait for the tool call container to appear
+        const toolCall = assistantMessage.locator('.tool-call-container').first();
+        await expect(toolCall).toBeVisible({ timeout: 15000 });
+        await expect(toolCall).toContainText('Writing file auto.txt');
+
+        // Verify that NO confirmation container appears
+        const confirmation = assistantMessage.locator('.tool-confirmation-container');
+        await expect(confirmation).not.toBeVisible();
+
+        // Verify that the tool eventually completes (shows checkmark or success message)
+        await expect(toolCall).toContainText('Successfully wrote auto.txt', { timeout: 10000 });
+
+        // 5. Disable Auto-Accept Edits for future tests and verify it asks again
+        const disableBtn = page.locator('[role="button"][aria-label="Suggestio: Disable Auto-Accept Edits"]').first();
+        await disableBtn.click();
+
+        await sendChatMessage(inner, 'Edit file again');
+        await expect(assistantMessage.locator('.tool-confirmation-container').last()).toBeVisible({ timeout: 15000 });
     });
 });

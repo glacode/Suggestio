@@ -173,8 +173,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
   const httpClient = new NodeFetchClient();
   const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, secretManager, eventBus, httpClient, overrides);
-  // Initialize UI context for inline completion toggle (default true in config)
+  // Initialize UI context for toggles
   await vscode.commands.executeCommand('setContext', 'suggestio.inlineCompletionEnabled', configContainer.config.enableInlineCompletion !== false);
+  await vscode.commands.executeCommand('setContext', 'suggestio.autoAcceptEditsEnabled', configContainer.config.autoAcceptEdits);
 
   registerConfigHandler(context.subscriptions, configProvider, configContainer, eventBus, secretManager, httpClient);
 
@@ -202,7 +203,8 @@ export async function activate(context: vscode.ExtensionContext) {
       ignoreManager,
       workspaceScanner,
       commandExecutor,
-      commandValidator
+      commandValidator,
+      configContainer.config
     ),
     eventBus
   });
@@ -255,6 +257,6 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
 
-}
+  }
 
-export function deactivate() { }
+  export function deactivate() { }

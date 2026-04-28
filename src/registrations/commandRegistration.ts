@@ -96,6 +96,22 @@ export function registerCommands(
     })
   );
 
+  // Enables auto-accept edits by setting a VS Code context and notifying the extension via the event bus.
+  context.subscriptions.push(
+    vscode.commands.registerCommand('suggestio.enableAutoAcceptEdits', () => {
+      vscode.commands.executeCommand('setContext', 'suggestio.autoAcceptEditsEnabled', true);
+      eventBus.emit('autoAcceptEditsToggled', true);
+    })
+  );
+
+  // Disables auto-accept edits by setting a VS Code context and notifying the extension via the event bus.
+  context.subscriptions.push(
+    vscode.commands.registerCommand('suggestio.disableAutoAcceptEdits', () => {
+      vscode.commands.executeCommand('setContext', 'suggestio.autoAcceptEditsEnabled', false);
+      eventBus.emit('autoAcceptEditsToggled', false);
+    })
+  );
+
   // Allows the user to select an active completion profile from the configured profiles.
   context.subscriptions.push(
     vscode.commands.registerCommand('suggestio.selectCompletionProfile', async () => {

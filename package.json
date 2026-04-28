@@ -165,6 +165,16 @@
                 "icon": "$(eye-closed)"
             },
             {
+                "command": "suggestio.disableAutoAcceptEdits",
+                "title": "Suggestio: Disable Auto-Accept Edits",
+                "icon": "$(zap)"
+            },
+            {
+                "command": "suggestio.enableAutoAcceptEdits",
+                "title": "Suggestio: Enable Auto-Accept Edits",
+                "icon": "$(zap)"
+            },
+            {
                 "command": "suggestio.selectCompletionProfile",
                 "title": "Suggestio: Select Completion Profile",
                 "icon": "$(gear)"
@@ -176,6 +186,16 @@
                     "command": "suggestio.newChat",
                     "when": "view == suggestio.chat.view",
                     "group": "navigation@1"
+                },
+                {
+                    "command": "suggestio.disableAutoAcceptEdits",
+                    "when": "view == suggestio.chat.view && suggestio.autoAcceptEditsEnabled",
+                    "group": "navigation@1.5"
+                },
+                {
+                    "command": "suggestio.enableAutoAcceptEdits",
+                    "when": "view == suggestio.chat.view && !suggestio.autoAcceptEditsEnabled",
+                    "group": "navigation@1.5"
                 },
                 {
                     "command": "suggestio.disableInlineCompletion",

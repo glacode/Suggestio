@@ -593,6 +593,7 @@ export interface InitialState {
   completionProfiles?: string[];
   activeCompletionProfile?: string;
   profileMetadata?: ProfileMetadata[];
+  autoAcceptEdits?: boolean;
 }
 
 /**
@@ -1133,6 +1134,7 @@ export interface IUserConfirmationPayload {
 }
 export interface IAppEvents {
   'inlineCompletionToggled': boolean;
+  'autoAcceptEditsToggled': boolean;
   'chatProfileChanged': string;
   'completionProfileChanged': string;
   'agent:maxIterationsReached': { maxIterations: number };
@@ -1271,7 +1273,7 @@ export interface IToolDefinition {
     properties: Record<string, any>;
     /**
      * An array of property names that are mandatory for the LLM to provide.
-     * This follows the JSON Schema standard for tool definitions.
+     * This follows the JSON Schema can be easily seen in the tool definitions.
      */
     required?: string[];
   };
@@ -1285,6 +1287,13 @@ export interface IToolResult {
   content: string;
   /** Whether the execution was logically successful. */
   success: boolean;
+}
+
+/**
+ * Provides information about whether tool edits should be automatically accepted.
+ */
+export interface IAutoAcceptProvider {
+  readonly autoAcceptEdits: boolean;
 }
 
 /**
@@ -1410,6 +1419,7 @@ export interface IConfig extends IProjectConfig {
   maxAgentIterations: number;
   logLevel: string;
   enableInlineCompletion: boolean;
+  autoAcceptEdits: boolean;
   /**
    * Maximum length for tool results in characters before they are truncated.
    */

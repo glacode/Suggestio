@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { IToolImplementation, IToolDefinition, IToolResult, IEventBus, IUserConfirmationPayload, IToolConfirmationPayload } from '../types.js';
+import { IToolImplementation, IToolDefinition, IToolResult, IEventBus, IUserConfirmationPayload, IToolConfirmationPayload, IAutoAcceptProvider } from '../types.js';
 
 /**
  * Abstract base class for all tool implementations.
@@ -17,6 +17,11 @@ export abstract class BaseTool<T> implements IToolImplementation<T> {
      * The Zod schema used to validate the tool arguments at runtime.
      */
     abstract readonly schema: z.ZodType<T>;
+
+    /**
+     * Optional provider to check if tool edits should be automatically accepted.
+     */
+    protected autoAcceptProvider?: IAutoAcceptProvider;
 
     /**
      * The core logic of the tool.
@@ -41,6 +46,7 @@ export abstract class BaseTool<T> implements IToolImplementation<T> {
      * @param message The message to display to the user.
      * @param diffData Optional data for displaying a diff in the UI.
      * @param signal Optional AbortSignal for cancellation.
+     * @param options Optional configuration for the confirmation request.
      * @returns A promise that resolves to the user's decision ('allow' or 'deny').
      */
     protected async requestUserConfirmation(
@@ -48,8 +54,14 @@ export abstract class BaseTool<T> implements IToolImplementation<T> {
         eventBus: IEventBus,
         message: string,
         diffData?: IToolConfirmationPayload['diffData'],
-        signal?: AbortSignal
+        signal?: AbortSignal,
+        options?: { isEdit?: boolean }
     ): Promise<string> {
+        // Bypass confirmation if auto-accept is enabled for edits
+        if (options?.isEdit && this.autoAcceptProvider?.autoAcceptEdits) {
+            return 'allow';
+        }
+
         // We create the Promise FIRST to register the 'on' listener before emitting the request.
         // This prevents a race condition where the response might arrive (e.g., in tests or 
         // extremely fast UIs) before we've started listening for it.

@@ -52,6 +52,7 @@ class ConfigProcessor {
             maxRetries: CONFIG_DEFAULTS.MAX_RETRIES,
             initialDelay: CONFIG_DEFAULTS.INITIAL_DELAY,
             enableInlineCompletion: true,
+            autoAcceptEdits: CONFIG_DEFAULTS.AUTO_ACCEPT_EDITS,
         };
 
         // Apply overrides from standard VSCode extension settings
@@ -96,6 +97,12 @@ class ConfigProcessor {
             logger.info(CONFIG_LOGS.INLINE_COMPLETION_TOGGLED(enabled));
             config.enableInlineCompletion = enabled;
             logger.info(CONFIG_LOGS.CONFIG_UPDATED_INLINE(config.enableInlineCompletion));
+        });
+
+        eventBus.removeAllListeners('autoAcceptEditsToggled');
+        eventBus.on('autoAcceptEditsToggled', (enabled: boolean) => {
+            config.autoAcceptEdits = enabled;
+            logger.info(`Auto-accept edits toggled: ${enabled}`);
         });
 
         eventBus.removeAllListeners('completionProfileChanged');

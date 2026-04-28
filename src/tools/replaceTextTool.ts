@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { IWorkspaceProvider, IToolDefinition, IPathResolver, IFileContentReader, IFileContentWriter, IToolResult, IEventBus, IIgnoreManager } from '../types.js';
+import { IWorkspaceProvider, IToolDefinition, IPathResolver, IFileContentReader, IFileContentWriter, IToolResult, IEventBus, IIgnoreManager, IAutoAcceptProvider } from '../types.js';
 import { AGENT_MESSAGES } from '../constants/messages.js';
 import { BaseTool } from './baseTool.js';
 
@@ -54,9 +54,11 @@ export class ReplaceTextTool extends BaseTool<ReplaceTextArgs> {
         private fileWriter: IFileContentWriter,
         private pathResolver: IPathResolver,
         private eventBus: IEventBus,
-        private ignoreManager: IIgnoreManager
+        private ignoreManager: IIgnoreManager,
+        autoAcceptProvider?: IAutoAcceptProvider
     ) {
         super();
+        this.autoAcceptProvider = autoAcceptProvider;
     }
 
     formatMessage(args: ReplaceTextArgs): string {
@@ -124,7 +126,8 @@ export class ReplaceTextTool extends BaseTool<ReplaceTextArgs> {
                     newContent,
                     filePath: args.path
                 },
-                signal
+                signal,
+                { isEdit: true }
             );
 
             if (userDecision !== 'allow') {
