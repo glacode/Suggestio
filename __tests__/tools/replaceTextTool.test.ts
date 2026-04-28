@@ -1,6 +1,6 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { ReplaceTextTool } from "../../src/tools/replaceTextTool.js";
-import { IWorkspaceProvider, IPathResolver, IFileContentReader, IFileContentWriter, IEventBus, IIgnoreManager, IUserConfirmationPayload } from "../../src/types.js";
+import { IWorkspaceProvider, IPathResolver, IFileContentReader, IFileContentWriter, IEventBus, IIgnoreManager, IUserConfirmationPayload, IAutoAcceptProvider } from "../../src/types.js";
 import { AGENT_MESSAGES } from "../../src/constants/messages.js";
 import { createMockPathResolver, createMockFileContentReader, createMockWorkspaceProvider, createMockEventBus, createMockIgnoreManager, createMockFileContentWriter } from "../testUtils.js";
 
@@ -125,5 +125,25 @@ describe("ReplaceTextTool", () => {
         const result = await tool.execute({ path: "test.ts", old_string: "old", new_string: "new" });
         expect(result.success).toBe(false);
         expect(result.content).toBe(AGENT_MESSAGES.ERROR_PATH_IGNORED("test.ts"));
+    });
+
+    it("should bypass confirmation if autoAcceptEdits is enabled", async () => {
+        const filePath = "test.ts";
+        const oldContent = "line1\nline2\nline3";
+        const oldString = "line2";
+        const newString = "line2-replaced";
+        const expectedNewContent = "line1\nline2-replaced\nline3";
+        const toolCallId = "call1";
+        const autoAcceptProvider: IAutoAcceptProvider = { autoAcceptEdits: true };
+
+        fileReader.read.mockReturnValue(oldContent);
+
+        tool = new ReplaceTextTool(workspaceProvider, fileReader, fileWriter, pathResolver, eventBus, ignoreManager, autoAcceptProvider);
+
+        const result = await tool.execute({ path: filePath, old_string: oldString, new_string: newString }, undefined, toolCallId);
+
+        expect(eventBus.emit).not.toHaveBeenCalledWith("agent:requestConfirmation", expect.anything());
+        expect(fileWriter.write).toHaveBeenCalledWith(expect.stringContaining(filePath), expectedNewContent);
+        expect(result.success).toBe(true);
     });
 });
