@@ -266,9 +266,8 @@ export type WebviewMessage =
     /** The ID of the tool call. */
     toolCallId: string;
     /** The user's decision ('allow' or 'deny'). */
-    decision: 'allow' | 'deny';
-  }
-  | {
+    decision: 'allow' | 'deny' | 'always-allow';
+    }  | {
     /** User wants to edit an API key. */
     command: typeof WEBVIEW_COMMANDS.EDIT_API_KEY;
     /** The placeholder of the key to edit. */

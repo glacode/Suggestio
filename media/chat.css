@@ -459,7 +459,6 @@ html, body {
     max-width: 150px;
     text-align: center;
     white-space: nowrap;
-    overflow: hidden;
     text-overflow: ellipsis;
 }
 
@@ -790,4 +789,39 @@ body.overlay-open textarea#messageInput {
 .icon-button.delete-btn:hover {
     background: var(--vscode-errorForeground);
     color: white;
+}
+
+/* Custom Themed Tooltip */
+[data-tooltip] {
+    position: relative;
+}
+
+[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--vscode-editorHoverWidget-background, #252526);
+    color: var(--vscode-editorHoverWidget-foreground, #cccccc);
+    border: 1px solid var(--vscode-editorHoverWidget-border, #454545);
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 100;
+    pointer-events: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    
+    /* Delay and hidden by default */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.1s ease-in-out, visibility 0.1s ease-in-out;
+    transition-delay: 0s;
+}
+
+[data-tooltip]:hover::after {
+    opacity: 1;
+    visibility: visible;
+    transition-delay: 0.5s; /* 500ms delay before showing */
 }

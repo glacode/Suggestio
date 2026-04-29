@@ -70,7 +70,9 @@ export abstract class BaseTool<T> implements IToolImplementation<T> {
                 // We only care about the response for THIS specific tool call.
                 if (payload.toolCallId === toolCallId) {
                     disposable.dispose(); // Always clean up the listener once resolved.
-                    resolve(payload.decision);
+                    // 'always-allow' is treated as 'allow' for the tool execution logic.
+                    const decision = payload.decision === 'always-allow' ? 'allow' : payload.decision;
+                    resolve(decision);
                 }
             });
 

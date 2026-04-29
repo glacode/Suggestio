@@ -151,6 +151,7 @@ export class ConfirmationSegment extends MessageSegment {
             ` : ''}
             <div class="tool-confirmation-buttons">
                 <button class="tool-button tool-button-primary allow-btn">Allow</button>
+                ${payload.diffData ? `<button class="tool-button tool-button-secondary always-allow-btn" data-tooltip="Enable auto-accept for all edits in this session">Always Allow</button>` : ''}
                 <button class="tool-button tool-button-secondary deny-btn">Deny</button>
             </div>
         `;
@@ -158,6 +159,14 @@ export class ConfirmationSegment extends MessageSegment {
         this.element.querySelector('.allow-btn')?.addEventListener('click', () => {
             this.chatManager.confirmTool(this.toolCallId, 'allow');
         });
+        
+        const alwaysAllowBtn = this.element.querySelector('.always-allow-btn');
+        if (alwaysAllowBtn) {
+            alwaysAllowBtn.addEventListener('click', () => {
+                this.chatManager.confirmTool(this.toolCallId, 'always-allow');
+            });
+        }
+
         this.element.querySelector('.deny-btn')?.addEventListener('click', () => {
             this.chatManager.confirmTool(this.toolCallId, 'deny');
         });
@@ -835,7 +844,7 @@ export class ChatManager {
         }
     }
 
-    confirmTool(toolCallId: string, decision: 'allow' | 'deny') {
+    confirmTool(toolCallId: string, decision: 'allow' | 'deny' | 'always-allow') {
         const container = document.getElementById('confirm-' + toolCallId);
         if (container) {
             container.remove();
