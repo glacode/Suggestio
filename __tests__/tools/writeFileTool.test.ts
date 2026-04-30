@@ -63,6 +63,7 @@ describe("WriteFileTool", () => {
         fileReader.read.mockReturnValue("old content");
 
         // Mock eventBus to simulate user confirmation
+        // Capture the callback registered by the tool so we can trigger it later
         let userResponseCallback: (payload: IUserConfirmationPayload) => void;
         eventBus.on.mockImplementation((event: string, cb: any) => {
             if (event === "user:confirmationResponse") {
@@ -71,6 +72,7 @@ describe("WriteFileTool", () => {
             return { dispose: () => { } };
         });
 
+        // Simulating the user's decision
         eventBus.emit.mockImplementation((event: string, payload: any) => {
             if (event === 'agent:requestConfirmation' && payload.toolCallId === toolCallId) {
                 setImmediate(() => {
@@ -98,10 +100,13 @@ describe("WriteFileTool", () => {
         expect(result.content).toContain(`Successfully wrote ${filePath}`);
     });
 
-    it("should return error if user denies confirmation", async () => {
+    it("should proceed if user chooses 'always-allow'", async () => {
         const filePath = "test.ts";
+        const content = "new content";
         const toolCallId = "call1";
+        fileReader.read.mockReturnValue("old content");
 
+        // Capture the callback registered by the tool so we can trigger it later
         let userResponseCallback: (payload: IUserConfirmationPayload) => void;
         eventBus.on.mockImplementation((event: string, cb: any) => {
             if (event === "user:confirmationResponse") {
@@ -110,6 +115,38 @@ describe("WriteFileTool", () => {
             return { dispose: () => { } };
         });
 
+        // When the tool emits 'agent:requestConfirmation', we simulate the user clicking 'Always Allow'
+        eventBus.emit.mockImplementation((event: string, payload: any) => {
+            if (event === 'agent:requestConfirmation' && payload.toolCallId === toolCallId) {
+                setImmediate(() => {
+                    if (userResponseCallback) {
+                        userResponseCallback({ toolCallId, decision: 'always-allow' });
+                    }
+                });
+            }
+            return true;
+        });
+
+        const result = await tool.execute({ path: filePath, content }, undefined, toolCallId);
+
+        expect(result.success).toBe(true);
+        expect(fileWriter.write).toHaveBeenCalledWith(expect.stringContaining(filePath), content);
+    });
+
+    it("should return error if user denies confirmation", async () => {
+        const filePath = "test.ts";
+        const toolCallId = "call1";
+
+        // Capture the callback registered by the tool so we can trigger it later
+        let userResponseCallback: (payload: IUserConfirmationPayload) => void;
+        eventBus.on.mockImplementation((event: string, cb: any) => {
+            if (event === "user:confirmationResponse") {
+                userResponseCallback = cb;
+            }
+            return { dispose: () => { } };
+        });
+
+        // Simulating the user's decision
         eventBus.emit.mockImplementation((event: string, payload: any) => {
             if (event === 'agent:requestConfirmation' && payload.toolCallId === toolCallId) {
                 setImmediate(() => {

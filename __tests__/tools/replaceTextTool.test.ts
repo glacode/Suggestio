@@ -43,6 +43,7 @@ describe("ReplaceTextTool", () => {
 
         fileReader.read.mockReturnValue(oldContent);
 
+        // Capture the callback registered by the tool so we can trigger it later
         let userResponseCallback: (payload: IUserConfirmationPayload) => void;
         eventBus.on.mockImplementation((event: string, cb: any) => {
             if (event === "user:confirmationResponse") {
@@ -51,6 +52,7 @@ describe("ReplaceTextTool", () => {
             return { dispose: () => { } };
         });
 
+        // Simulating the user's decision
         eventBus.emit.mockImplementation((event: string, payload: any) => {
             if (event === 'agent:requestConfirmation' && payload.toolCallId === toolCallId) {
                 setImmediate(() => {
@@ -73,6 +75,43 @@ describe("ReplaceTextTool", () => {
                 filePath
             }
         }));
+    });
+
+    it("should proceed if user chooses 'always-allow'", async () => {
+        const filePath = "test.ts";
+        const oldContent = "line1\nline2\nline3";
+        const oldString = "line2";
+        const newString = "line2-replaced";
+        const expectedNewContent = "line1\nline2-replaced\nline3";
+        const toolCallId = "call1";
+
+        fileReader.read.mockReturnValue(oldContent);
+
+        // Capture the callback registered by the tool so we can trigger it later
+        let userResponseCallback: (payload: IUserConfirmationPayload) => void;
+        eventBus.on.mockImplementation((event: string, cb: any) => {
+            if (event === "user:confirmationResponse") {
+                userResponseCallback = cb;
+            }
+            return { dispose: () => { } };
+        });
+
+        // When the tool emits 'agent:requestConfirmation', we simulate the user clicking 'Always Allow'
+        eventBus.emit.mockImplementation((event: string, payload: any) => {
+            if (event === 'agent:requestConfirmation' && payload.toolCallId === toolCallId) {
+                setImmediate(() => {
+                    if (userResponseCallback) {
+                        userResponseCallback({ toolCallId, decision: 'always-allow' });
+                    }
+                });
+            }
+            return true;
+        });
+
+        const result = await tool.execute({ path: filePath, old_string: oldString, new_string: newString }, undefined, toolCallId);
+
+        expect(result.success).toBe(true);
+        expect(fileWriter.write).toHaveBeenCalledWith(expect.stringContaining(filePath), expectedNewContent);
     });
 
     it("should return error if old_string is not found", async () => {
