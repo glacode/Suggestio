@@ -73,6 +73,11 @@ function writeMockConfig(workspace: string) {
                 endpoint: "http://localhost:3001/v1/auto-accept/completions",
                 model: "test-model",
                 apiKey: "unused"
+            },
+            alwaysAllowProvider: {
+                endpoint: "http://localhost:3001/v1/always-allow/completions",
+                model: "test-model",
+                apiKey: "unused"
             }
         }
     };
@@ -232,6 +237,8 @@ function createMockServer(capturedRequests: any[]): Promise<Server> {
         let reasoningRetryCallCount = 0;
         let maxIterationsCallCount = 0;
         let maxIterationsReasoningCallCount = 0;
+        let alwaysAllowCallCount = 0;
+        let autoAcceptCallCount = 0;
 
         app.post('/v1/always-fail/completions', (req, res) => {
             capturedRequests.push({ endpoint: 'always-fail', body: req.body });
@@ -259,19 +266,84 @@ function createMockServer(capturedRequests: any[]): Promise<Server> {
 
         app.post('/v1/auto-accept/completions', (req, res) => {
             capturedRequests.push({ endpoint: 'auto-accept', body: req.body });
+            autoAcceptCallCount++;
             res.setHeader('Content-Type', 'text/event-stream');
-            writeSSEChunk(res, {
-                choices: [{
-                    delta: {
-                        tool_calls: [{
-                            index: 0,
-                            id: 'call_edit_auto',
-                            type: 'function',
-                            function: { name: 'write_file', arguments: '{"path":"auto.txt","content":"auto content"}' }
-                        }]
-                    }
-                }]
-            });
+            
+            if (autoAcceptCallCount === 1 || autoAcceptCallCount === 3) {
+                // Return tool call for user messages
+                writeSSEChunk(res, {
+                    choices: [{
+                        delta: {
+                            tool_calls: [{
+                                index: 0,
+                                id: `call_edit_auto_${autoAcceptCallCount}`,
+                                type: 'function',
+                                function: { name: 'write_file', arguments: '{"path":"auto.txt","content":"auto content"}' }
+                            }]
+                        }
+                    }]
+                });
+            } else {
+                // Return text for tool results or denied confirmations
+                writeSSEChunk(res, { choices: [{ delta: { content: 'Turn finished' } }] });
+            }
+            sendDone(res);
+        });
+
+        app.post('/v1/always-allow/completions', (req, res) => {
+            capturedRequests.push({ endpoint: 'always-allow', body: req.body });
+            alwaysAllowCallCount++;
+            res.setHeader('Content-Type', 'text/event-stream');
+            
+            if (alwaysAllowCallCount === 1) {
+                // First call (user message 1) -> Tool call 1
+                writeSSEChunk(res, {
+                    choices: [{
+                        delta: {
+                            tool_calls: [{
+                                index: 0,
+                                id: `call_replace_1`,
+                                type: 'function',
+                                function: { 
+                                    name: 'replace_text', 
+                                    arguments: JSON.stringify({
+                                        path: 'test.txt',
+                                        old_string: 'original',
+                                        new_string: 'modified'
+                                    })
+                                }
+                            }]
+                        }
+                    }]
+                });
+            } else if (alwaysAllowCallCount === 2) {
+                // Second call (tool result 1) -> Finish first turn
+                writeSSEChunk(res, { choices: [{ delta: { content: 'Finished turn 1' } }] });
+            } else if (alwaysAllowCallCount === 3) {
+                // Third call (user message 2) -> Tool call 2
+                writeSSEChunk(res, {
+                    choices: [{
+                        delta: {
+                            tool_calls: [{
+                                index: 0,
+                                id: `call_replace_2`,
+                                type: 'function',
+                                function: { 
+                                    name: 'replace_text', 
+                                    arguments: JSON.stringify({
+                                        path: 'test.txt',
+                                        old_string: 'modified',
+                                        new_string: 'final'
+                                    })
+                                }
+                            }]
+                        }
+                    }]
+                });
+            } else {
+                // Fourth call (tool result 2) -> Finish second turn
+                writeSSEChunk(res, { choices: [{ delta: { content: 'Finished turn 2' } }] });
+            }
             sendDone(res);
         });
 
@@ -1170,6 +1242,78 @@ test.describe('Chat E2E', () => {
         await disableBtn.click();
 
         await sendChatMessage(inner, 'Edit file again');
-        await expect(assistantMessage.locator('.tool-confirmation-container').last()).toBeVisible({ timeout: 15000 });
+        const finalConfirmation = assistantMessage.locator('.tool-confirmation-container').last();
+        await expect(finalConfirmation).toBeVisible({ timeout: 15000 });
+        
+        // Click Deny to finish the agent turn and avoid state leakage
+        await finalConfirmation.locator('button.deny-btn').click();
+        await expect(finalConfirmation).not.toBeVisible();
+    });
+
+    test('should bypass confirmation for subsequent replace_text calls after "Always Allow" is clicked', async () => {
+        // await openChatView(page);
+        const inner = await getChatFrames(page);
+
+        // 1. Pre-create the file to be edited
+        fs.writeFileSync(path.join(tempWorkspacePath, 'test.txt'), 'original text');
+
+        // 2. Switch to alwaysAllowProvider
+        await switchModel(inner, 'alwaysAllowProvider');
+        await clickNewChat(page);
+
+        // 3. Trigger the first replace_text tool call
+        await sendChatMessage(inner, 'Replace text in test.txt');
+
+        // 4. Assert the three buttons are displayed
+        const assistantMessage = inner.locator('.message.assistant').last();
+        const confirmation = assistantMessage.locator('.tool-confirmation-container');
+        await expect(confirmation).toBeVisible({ timeout: 15000 });
+        
+        const allowBtn = confirmation.locator('button.allow-btn');
+        const alwaysAllowBtn = confirmation.locator('button.always-allow-btn');
+        const denyBtn = confirmation.locator('button.deny-btn');
+        
+        await expect(allowBtn).toBeVisible();
+        await expect(alwaysAllowBtn).toBeVisible();
+        await expect(denyBtn).toBeVisible();
+
+        // 5. The user clicks "Always Allow"
+        await alwaysAllowBtn.click();
+
+        // 6. Assert the request container is removed
+        await expect(confirmation).not.toBeVisible();
+        
+        // Wait for the tool to complete successfully
+        const toolCall = assistantMessage.locator('.tool-call-container').last();
+        await expect(toolCall).toContainText('Successfully replaced text', { timeout: 10000 });
+
+        // Verify the file was actually changed on disk
+        const contentAfterFirst = fs.readFileSync(path.join(tempWorkspacePath, 'test.txt'), 'utf8');
+        expect(contentAfterFirst).toBe('modified text');
+
+        // Wait for the final content of the first turn to ensure input is re-enabled
+        await expect(assistantMessage).toContainText('Finished turn 1', { timeout: 10000 });
+        
+        const input = inner.locator('#messageInput');
+        await expect(input).toBeEnabled({ timeout: 10000 });
+
+        // 7. A second replace_text goes through without asking the user permission
+        await sendChatMessage(inner, 'Replace text again');
+        
+        const assistantMessage2 = inner.locator('.message.assistant').last();
+        const toolCall2 = assistantMessage2.locator('.tool-call-container').first();
+        await expect(toolCall2).toBeVisible({ timeout: 15000 });
+        await expect(toolCall2).toContainText('Replacing text in test.txt');
+
+        // Verify that NO confirmation container appears for the second call
+        const confirmation2 = assistantMessage2.locator('.tool-confirmation-container');
+        await expect(confirmation2).not.toBeVisible();
+        
+        // Verify success
+        await expect(toolCall2).toContainText('Successfully replaced text', { timeout: 10000 });
+
+        // Verify the file reached the final state on disk
+        const contentAfterSecond = fs.readFileSync(path.join(tempWorkspacePath, 'test.txt'), 'utf8');
+        expect(contentAfterSecond).toBe('final text');
     });
 });
