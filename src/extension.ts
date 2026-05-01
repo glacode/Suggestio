@@ -5,10 +5,11 @@ import { registerCompletionProvider } from './registrations/completionRegistrati
 import { registerCommands } from './registrations/commandRegistration.js';
 import { registerConfigHandler } from './registrations/configRegistration.js';
 import * as fs from 'fs';
+import { FileContentReader } from './utils/FileContentReader.js';
 import * as path from 'path';
 import { 
   IWorkspaceProvider, 
-  IFileContentReader, 
+  IFileReadProvider,
   IFileContentWriter,
   IConfigContainer, 
   IDirectoryReader, 
@@ -104,21 +105,12 @@ export async function activate(context: vscode.ExtensionContext) {
     mkdir: (path: string, options?: { recursive: boolean }) => fs.mkdirSync(path, options)
   };
 
-  const fileContentReader: IFileContentReader = {
-    read: (filePath: string, startLine?: number, endLine?: number) => {
-      if (fs.existsSync(filePath)) {
-        const content = fs.readFileSync(filePath, 'utf-8');
-        if (startLine === undefined && endLine === undefined) {
-          return content;
-        }
-        const lines = content.split(/\r?\n/);
-        const start = Math.max(0, (startLine || 1) - 1);
-        const end = endLine ? Math.min(lines.length, endLine) : lines.length;
-        return lines.slice(start, end).join('\n');
-      }
-      return undefined;
-    },
+  const nodeFileReadProvider: IFileReadProvider = {
+    existsSync: (path: string) => fs.existsSync(path),
+    readFileSync: (path: string, encoding: any) => fs.readFileSync(path, encoding).toString(),
   };
+
+  const fileContentReader = new FileContentReader(nodeFileReadProvider);
 
   const fileContentWriter: IFileContentWriter = {
     write: (filePath: string, content: string) => fs.writeFileSync(filePath, content)

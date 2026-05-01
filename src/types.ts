@@ -708,9 +708,19 @@ export interface IDocumentOpener {
 }
 
 /**
+ * Provides low-level read-only access to the file system.
+ * This allows for mocking the file system in tests without depending on the 'fs' module.
+ */
+export interface IFileReadProvider {
+  existsSync(path: string): boolean;
+  readFileSync(path: string, encoding: any): string;
+}
+
+/**
  * Provides a way to read file contents from the file system.
  */
 export interface IFileContentReader {
+
   /**
    * Reads the content of a file at the given path.
    * @param path The path of the file to read.
