@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { IWorkspaceProvider, IToolDefinition, IToolResult, IEventBus, ICommandExecutor, ICommandValidator } from '../types.js';
+import { IWorkspaceProvider, IToolDefinition, IToolResult, IEventBus, ICommandExecutor, ICommandValidator, ICommandAutoAcceptManager } from '../types.js';
 import { AGENT_MESSAGES } from '../constants/messages.js';
 import { BaseTool } from './baseTool.js';
 
@@ -35,7 +35,8 @@ export class RunCommandTool extends BaseTool<RunCommandArgs> {
         private workspaceProvider: IWorkspaceProvider,
         private commandExecutor: ICommandExecutor,
         private eventBus: IEventBus,
-        private validator: ICommandValidator
+        private validator: ICommandValidator,
+        private autoAcceptManager: ICommandAutoAcceptManager
     ) {
         super();
     }
@@ -50,8 +51,10 @@ export class RunCommandTool extends BaseTool<RunCommandArgs> {
             return { content: AGENT_MESSAGES.ERROR_NO_WORKSPACE, success: false };
         }
 
+        const command = args.command.trim();
+
         // 1. Security validation (Blacklist)
-        const validation = this.validator.validate(args.command);
+        const validation = this.validator.validate(command);
         if (!validation.allowed) {
             return { 
                 content: `Security Error: Command execution blocked. Reason: ${validation.reason || 'Prohibited pattern detected.'}`, 
@@ -59,23 +62,29 @@ export class RunCommandTool extends BaseTool<RunCommandArgs> {
             };
         }
 
-        // 2. Mandatory user confirmation for security
+        // 2. User confirmation (unless auto-accepted)
         if (toolCallId) {
-            const userDecision = await this.requestUserConfirmation(
-                toolCallId,
-                this.eventBus,
-                `Allow Suggestio to run command: "${args.command}"?`,
-                undefined,
-                signal
-            );
+            if (!this.autoAcceptManager.isAllowed(command)) {
+                const userDecision = await this.requestUserConfirmation(
+                    toolCallId,
+                    this.eventBus,
+                    `Allow Suggestio to run command: "${command}"?`,
+                    undefined,
+                    signal
+                );
 
-            if (userDecision !== 'allow') {
-                return { content: `Error: User denied permission to execute command: ${args.command}`, success: false };
+                if (userDecision === 'always-allow-command') {
+                    this.autoAcceptManager.allowCommand(command);
+                }
+
+                if (userDecision !== 'allow' && userDecision !== 'always-allow-command') {
+                    return { content: `Error: User denied permission to execute command: ${command}`, success: false };
+                }
             }
         }
 
         try {
-            const result = await this.commandExecutor.execute(args.command, { 
+            const result = await this.commandExecutor.execute(command, { 
                 cwd: rootPath, 
                 signal,
                 onStdout: (data) => {

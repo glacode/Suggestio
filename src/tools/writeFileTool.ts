@@ -105,7 +105,7 @@ export class WriteFileTool extends BaseTool<WriteFileArgs> {
                 { isEdit: true }
             );
 
-            if (userDecision !== 'allow') {
+            if (userDecision !== 'allow' && userDecision !== 'always-allow') {
                 return { content: `Error: User denied permission to write to file ${args.path}.`, success: false };
             }
         }

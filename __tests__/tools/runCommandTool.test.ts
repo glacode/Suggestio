@@ -1,6 +1,6 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { RunCommandTool } from '../../src/tools/runCommandTool.js';
-import { IWorkspaceProvider, ICommandExecutor, IEventBus, IUserConfirmationPayload, ICommandValidator } from '../../src/types.js';
+import { IWorkspaceProvider, ICommandExecutor, IEventBus, IUserConfirmationPayload, ICommandValidator, ICommandAutoAcceptManager } from '../../src/types.js';
 import { AGENT_MESSAGES } from '../../src/constants/messages.js';
 import { createMockWorkspaceProvider, createMockEventBus } from '../testUtils.js';
 
@@ -10,6 +10,7 @@ describe('RunCommandTool', () => {
     let mockCommandExecutor: jest.Mocked<ICommandExecutor>;
     let mockEventBus: jest.Mocked<IEventBus>;
     let mockValidator: jest.Mocked<ICommandValidator>;
+    let mockAutoAcceptManager: jest.Mocked<ICommandAutoAcceptManager>;
 
     beforeEach(() => {
         mockWorkspaceProvider = createMockWorkspaceProvider();
@@ -25,7 +26,13 @@ describe('RunCommandTool', () => {
             validate: jest.fn<ICommandValidator['validate']>().mockReturnValue({ allowed: true })
         };
 
-        tool = new RunCommandTool(mockWorkspaceProvider, mockCommandExecutor, mockEventBus, mockValidator);
+        mockAutoAcceptManager = {
+            allowCommand: jest.fn(),
+            isAllowed: jest.fn<(command: string) => boolean>().mockReturnValue(false),
+            clear: jest.fn(),
+        };
+
+        tool = new RunCommandTool(mockWorkspaceProvider, mockCommandExecutor, mockEventBus, mockValidator, mockAutoAcceptManager);
     });
 
     it('should return error if no workspace root', async () => {

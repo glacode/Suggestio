@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "@jest/globals";
 import { getTools } from "../../src/tools/index.js";
 import { ReadFileTool, WriteFileTool, ReplaceTextTool, ListFilesTool, GrepSearchTool, RunCommandTool } from "../../src/tools/index.js";
 import { createMockWorkspaceProvider, createMockFileContentReader, createMockFileContentWriter, createMockPathResolver, createMockEventBus, createMockIgnoreManager } from "../testUtils.js";
-import { ICommandExecutor, ICommandValidator, IWorkspaceScanner, IWorkspaceProvider, IFileContentReader, IFileContentWriter, IPathResolver, IEventBus, IIgnoreManager } from "../../src/types.js";
+import { ICommandExecutor, ICommandValidator, IWorkspaceScanner, IWorkspaceProvider, IFileContentReader, IFileContentWriter, IPathResolver, IEventBus, IIgnoreManager, ICommandAutoAcceptManager } from "../../src/types.js";
 import { jest } from "@jest/globals";
 
 describe("Tools Index", () => {
@@ -15,6 +15,7 @@ describe("Tools Index", () => {
     let workspaceScanner: jest.Mocked<IWorkspaceScanner>;
     let commandExecutor: jest.Mocked<ICommandExecutor>;
     let commandValidator: jest.Mocked<ICommandValidator>;
+    let autoAcceptManager: jest.Mocked<ICommandAutoAcceptManager>;
 
     beforeEach(() => {
         workspaceProvider = createMockWorkspaceProvider();
@@ -26,6 +27,11 @@ describe("Tools Index", () => {
         workspaceScanner = { scan: jest.fn<(dirPath: string, options: { recursive: boolean }) => Promise<string[]>>() };
         commandExecutor = { execute: jest.fn<ICommandExecutor["execute"]>() };
         commandValidator = { validate: jest.fn<ICommandValidator["validate"]>() };
+        autoAcceptManager = {
+            allowCommand: jest.fn(),
+            isAllowed: jest.fn(),
+            clear: jest.fn(),
+        };
     });
 
     it("should return all registered tools", () => {
@@ -39,7 +45,8 @@ describe("Tools Index", () => {
             workspaceScanner,
             commandExecutor,
             commandValidator,
-            { autoAcceptEdits: false }
+            { autoAcceptEdits: false },
+            autoAcceptManager
         );
 
         expect(tools).toHaveLength(6);
@@ -62,7 +69,8 @@ describe("Tools Index", () => {
             workspaceScanner,
             commandExecutor,
             commandValidator,
-            { autoAcceptEdits: false }
+            { autoAcceptEdits: false },
+            autoAcceptManager
         );
 
         const readFileTool = tools.find((t): t is ReadFileTool => t instanceof ReadFileTool);

@@ -40,6 +40,7 @@ import { EXTENSION_MESSAGES, EXTENSION_LOGS } from './constants/messages.js';
 import { DiffManager } from './utils/diffManager.js';
 import { NodeCommandExecutor } from './utils/commandExecutor.js';
 import { CommandBlacklistValidator } from './utils/commandValidator.js';
+import { CommandAutoAcceptManager } from './utils/commandAutoAcceptManager.js';
 
 export async function activate(context: vscode.ExtensionContext) {
   initLogger();
@@ -190,6 +191,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const workspaceScanner = new WorkspaceScanner(workspaceProvider, directoryReader, pathResolver, ignoreManager);
   const commandExecutor = new NodeCommandExecutor();
   const commandValidator = new CommandBlacklistValidator();
+  const autoAcceptManager = new CommandAutoAcceptManager();
 
   const agent = new Agent({
     config: configContainer.config,
@@ -204,7 +206,8 @@ export async function activate(context: vscode.ExtensionContext) {
       workspaceScanner,
       commandExecutor,
       commandValidator,
-      configContainer.config // Acts as IAutoAcceptProvider
+      configContainer.config, // Acts as IAutoAcceptProvider
+      autoAcceptManager
     ),
     eventBus
   });
@@ -253,7 +256,8 @@ export async function activate(context: vscode.ExtensionContext) {
     fileContentWriter,
     documentOpener,
     windowProvider,
-    secretManager
+    secretManager,
+    autoAcceptManager
   );
 
 

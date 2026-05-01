@@ -265,8 +265,8 @@ export type WebviewMessage =
     command: typeof WEBVIEW_COMMANDS.CONFIRM_TOOL_CALL;
     /** The ID of the tool call. */
     toolCallId: string;
-    /** The user's decision ('allow' or 'deny'). */
-    decision: 'allow' | 'deny' | 'always-allow';
+    /** The user's decision ('allow', 'deny', 'always-allow' or 'always-allow-command'). */
+    decision: 'allow' | 'deny' | 'always-allow' | 'always-allow-command';
     }  | {
     /** User wants to edit an API key. */
     command: typeof WEBVIEW_COMMANDS.EDIT_API_KEY;
@@ -1293,6 +1293,29 @@ export interface IToolResult {
  */
 export interface IAutoAcceptProvider {
   readonly autoAcceptEdits: boolean;
+}
+
+/**
+ * Manages the allow-list of commands that can be executed without user confirmation.
+ */
+export interface ICommandAutoAcceptManager {
+  /**
+   * Marks a specific command string as auto-acceptable for the current session.
+   * @param command The exact command string to allow.
+   */
+  allowCommand(command: string): void;
+
+  /**
+   * Checks if the given command string is currently auto-acceptable.
+   * @param command The command string to check.
+   * @returns True if the command is allowed, false otherwise.
+   */
+  isAllowed(command: string): boolean;
+
+  /**
+   * Clears all auto-accepted commands. Typically called at the start of a new session.
+   */
+  clear(): void;
 }
 
 /**

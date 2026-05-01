@@ -151,7 +151,7 @@ export class ConfirmationSegment extends MessageSegment {
             ` : ''}
             <div class="tool-confirmation-buttons">
                 <button class="tool-button tool-button-primary allow-btn">Allow</button>
-                ${payload.diffData ? `<button class="tool-button tool-button-secondary always-allow-btn" data-tooltip="Enable auto-accept for all edits in this session">Always Allow</button>` : ''}
+                ${payload.diffData || payload.toolName === 'run_command' ? `<button class="tool-button tool-button-secondary always-allow-btn" data-tooltip="${payload.diffData ? 'Enable auto-accept for all edits in this session' : 'Always allow this exact command in this session'}">Always Allow</button>` : ''}
                 <button class="tool-button tool-button-secondary deny-btn">Deny</button>
             </div>
         `;
@@ -163,7 +163,8 @@ export class ConfirmationSegment extends MessageSegment {
         const alwaysAllowBtn = this.element.querySelector('.always-allow-btn');
         if (alwaysAllowBtn) {
             alwaysAllowBtn.addEventListener('click', () => {
-                this.chatManager.confirmTool(this.toolCallId, 'always-allow');
+                const decision = payload.diffData ? 'always-allow' : (payload.toolName === 'run_command' ? 'always-allow-command' : 'always-allow');
+                this.chatManager.confirmTool(this.toolCallId, decision);
             });
         }
 
@@ -844,14 +845,14 @@ export class ChatManager {
         }
     }
 
-    confirmTool(toolCallId: string, decision: 'allow' | 'deny' | 'always-allow') {
+    confirmTool(toolCallId: string, decision: 'allow' | 'deny' | 'always-allow' | 'always-allow-command') {
         const container = document.getElementById('confirm-' + toolCallId);
         if (container) {
             container.remove();
         }
         
         // If user allowed, start the spinner on the tool call
-        if (decision === 'allow' && this.currentAssistantMessage) {
+        if ((decision === 'allow' || decision === 'always-allow' || decision === 'always-allow-command') && this.currentAssistantMessage) {
             const toolSegment = this.currentAssistantMessage.getToolCall(toolCallId);
             if (toolSegment) {
                 toolSegment.startSpinner();

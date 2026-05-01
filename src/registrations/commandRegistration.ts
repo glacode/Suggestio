@@ -8,7 +8,8 @@ import {
   IDirectoryCreator, 
   IFileContentWriter, 
   IWindowProvider, 
-  IDocumentOpener 
+  IDocumentOpener,
+  ICommandAutoAcceptManager
 } from '../types.js';
 import { handleUpdateApiKeyCommand, handleDeleteApiKeyCommand, SecretManager } from '../config/secretManager.js';
 import { extractApiKeyPlaceholders } from '../config/apiKeyPlaceholders.js';
@@ -30,7 +31,8 @@ export function registerCommands(
   fileWriter: IFileContentWriter,
   documentOpener: IDocumentOpener,
   windowProvider: IWindowProvider,
-  secretManager: SecretManager
+  secretManager: SecretManager,
+  autoAcceptManager: ICommandAutoAcceptManager
 ) {
   // Opens the global configuration file (config.json) in the editor for manual modification.
   context.subscriptions.push(
@@ -74,6 +76,7 @@ export function registerCommands(
   // Clears the current chat session and starts a new one.
   context.subscriptions.push(
     vscode.commands.registerCommand('suggestio.newChat', () => {
+      autoAcceptManager.clear();
       newChatCapable.newChat();
     })
   );
