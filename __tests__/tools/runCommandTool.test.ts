@@ -190,4 +190,96 @@ describe('RunCommandTool', () => {
             output: 'world'
         });
     });
+
+    it('should bypass confirmation if command is already allowed', async () => {
+        const toolCallId = 'test-call-id';
+        const command = 'npm test';
+        mockAutoAcceptManager.isAllowed.mockReturnValue(true);
+
+        mockCommandExecutor.execute.mockResolvedValue({
+            stdout: 'Tests passed',
+            stderr: '',
+            exitCode: 0
+        });
+
+        const result = await tool.execute({ command }, undefined, toolCallId);
+
+        expect(mockEventBus.emit).not.toHaveBeenCalledWith('agent:requestConfirmation', expect.anything());
+        expect(mockCommandExecutor.execute).toHaveBeenCalledWith(command, expect.objectContaining({ cwd: '/mock/root' }));
+        expect(result.success).toBe(true);
+    });
+
+    it('should grant auto-accept permission if user chooses "Always Allow"', async () => {
+        const toolCallId = 'test-call-id';
+        const command = 'npm test';
+        mockAutoAcceptManager.isAllowed.mockReturnValue(false);
+        
+        let userResponseCallback: (payload: IUserConfirmationPayload) => void;
+        mockEventBus.on.mockImplementation((event: string, callback: any) => {
+            if (event === 'user:confirmationResponse') {
+                userResponseCallback = callback;
+            }
+            return { dispose: jest.fn() };
+        });
+
+        mockEventBus.emit.mockImplementation((event: string, payload: any) => {
+            if (event === 'agent:requestConfirmation' && payload.toolCallId === toolCallId) {
+                setImmediate(() => {
+                    if (userResponseCallback) {
+                        userResponseCallback({ toolCallId, decision: 'always-allow-command' });
+                    }
+                });
+            }
+            return true;
+        });
+
+        mockCommandExecutor.execute.mockResolvedValue({
+            stdout: 'Tests passed',
+            stderr: '',
+            exitCode: 0
+        });
+
+        const result = await tool.execute({ command }, undefined, toolCallId);
+
+        expect(mockAutoAcceptManager.allowCommand).toHaveBeenCalledWith(command);
+        expect(mockCommandExecutor.execute).toHaveBeenCalled();
+        expect(result.success).toBe(true);
+    });
+
+    it('should still request confirmation for different commands even if one is allowed', async () => {
+        const toolCallId1 = 'call-1';
+        const toolCallId2 = 'call-2';
+        const cmd1 = 'npm test';
+        const cmd2 = 'npm run build';
+
+        mockAutoAcceptManager.isAllowed.mockImplementation((cmd) => cmd === cmd1);
+        mockCommandExecutor.execute.mockResolvedValue({ stdout: 'ok', stderr: '', exitCode: 0 });
+
+        // Call 1: Allowed
+        await tool.execute({ command: cmd1 }, undefined, toolCallId1);
+        expect(mockEventBus.emit).not.toHaveBeenCalledWith('agent:requestConfirmation', expect.objectContaining({ toolCallId: toolCallId1 }));
+
+        // Call 2: Not Allowed
+        // Setup response for call 2
+        let userResponseCallback: (payload: IUserConfirmationPayload) => void;
+        mockEventBus.on.mockImplementation((event: string, callback: any) => {
+            if (event === 'user:confirmationResponse') {
+                userResponseCallback = callback;
+            }
+            return { dispose: jest.fn() };
+        });
+        mockEventBus.emit.mockImplementation((event: string, payload: any) => {
+            if (event === 'agent:requestConfirmation' && payload.toolCallId === toolCallId2) {
+                setImmediate(() => {
+                    if (userResponseCallback) {
+                        userResponseCallback({ toolCallId: toolCallId2, decision: 'allow' });
+                    }
+                });
+            }
+            return true;
+        });
+
+        await tool.execute({ command: cmd2 }, undefined, toolCallId2);
+        expect(mockEventBus.emit).toHaveBeenCalledWith('agent:requestConfirmation', expect.objectContaining({ toolCallId: toolCallId2 }));
+    });
 });
