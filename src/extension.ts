@@ -105,9 +105,16 @@ export async function activate(context: vscode.ExtensionContext) {
   };
 
   const fileContentReader: IFileContentReader = {
-    read: (filePath: string) => {
+    read: (filePath: string, startLine?: number, endLine?: number) => {
       if (fs.existsSync(filePath)) {
-        return fs.readFileSync(filePath, 'utf-8');
+        const content = fs.readFileSync(filePath, 'utf-8');
+        if (startLine === undefined && endLine === undefined) {
+          return content;
+        }
+        const lines = content.split(/\r?\n/);
+        const start = Math.max(0, (startLine || 1) - 1);
+        const end = endLine ? Math.min(lines.length, endLine) : lines.length;
+        return lines.slice(start, end).join('\n');
       }
       return undefined;
     },

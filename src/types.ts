@@ -714,9 +714,11 @@ export interface IFileContentReader {
   /**
    * Reads the content of a file at the given path.
    * @param path The path of the file to read.
+   * @param startLine Optional start line (1-indexed).
+   * @param endLine Optional end line (1-indexed).
    * @returns The file content as a string, or undefined if the read failed.
    */
-  read(path: string): string | undefined;
+  read(path: string, startLine?: number, endLine?: number): string | undefined;
 }
 
 /**

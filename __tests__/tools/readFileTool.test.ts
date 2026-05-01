@@ -138,6 +138,46 @@ describe("ReadFileTool", () => {
         expect(result.content).toContain("User denied access");
     });
 
+    describe("Partial Reading", () => {
+        it("should pass start_line and end_line to the file reader", async () => {
+            const filePath = "src/test.ts";
+            const content = "sliced content";
+            const startLine = 10;
+            const endLine = 20;
+            fileReader.read.mockReturnValue(content);
+
+            const result = await tool.execute({ path: filePath, start_line: startLine, end_line: endLine });
+
+            expect(result.success).toBe(true);
+            expect(result.content).toBe(content);
+            expect(fileReader.read).toHaveBeenCalledWith(expect.any(String), startLine, endLine);
+        });
+
+        it("should handle missing start_line", async () => {
+            const filePath = "src/test.ts";
+            const content = "sliced content";
+            const endLine = 20;
+            fileReader.read.mockReturnValue(content);
+
+            const result = await tool.execute({ path: filePath, end_line: endLine });
+
+            expect(result.success).toBe(true);
+            expect(fileReader.read).toHaveBeenCalledWith(expect.any(String), undefined, endLine);
+        });
+
+        it("should handle missing end_line", async () => {
+            const filePath = "src/test.ts";
+            const content = "sliced content";
+            const startLine = 10;
+            fileReader.read.mockReturnValue(content);
+
+            const result = await tool.execute({ path: filePath, start_line: startLine });
+
+            expect(result.success).toBe(true);
+            expect(fileReader.read).toHaveBeenCalledWith(expect.any(String), startLine, undefined);
+        });
+    });
+
     describe("Security", () => {
         it("should prevent accessing parent directories", async () => {
             const result = await tool.execute({ path: "../outside.ts" });
@@ -171,9 +211,15 @@ describe("ReadFileTool", () => {
     });
 
     describe("formatMessage", () => {
-        it("should return a human-readable message", () => {
+        it("should return a human-readable message for full file read", () => {
             const message = tool.formatMessage({ path: "src/main.ts" });
             expect(message).toBe("Reading file src/main.ts");
         });
+
+        it("should return a human-readable message for partial file read", () => {
+            const message = tool.formatMessage({ path: "src/main.ts", start_line: 10, end_line: 20 });
+            expect(message).toBe("Reading lines 10 to 20 of file src/main.ts");
+        });
     });
+
 });

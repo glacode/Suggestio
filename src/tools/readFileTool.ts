@@ -5,6 +5,8 @@ import { BaseTool } from './baseTool.js';
 
 const ReadFileSchema = z.object({
     path: z.string().describe('The path of the file to read (relative to workspace root).'),
+    start_line: z.number().optional().describe('The line number to start reading from (1-indexed). Use this for large files to avoid exceeding context limits.'),
+    end_line: z.number().optional().describe('The line number to stop reading at (1-indexed). Use this for large files to avoid exceeding context limits.'),
 }).strict();
 
 type ReadFileArgs = z.infer<typeof ReadFileSchema>;
@@ -22,6 +24,14 @@ export class ReadFileTool extends BaseTool<ReadFileArgs> {
                 path: {
                     type: 'string',
                     description: 'The path of the file to read (relative to workspace root).',
+                },
+                start_line: {
+                    type: 'number',
+                    description: 'The line number to start reading from (1-indexed). Use this for large files to avoid exceeding context limits.',
+                },
+                end_line: {
+                    type: 'number',
+                    description: 'The line number to stop reading at (1-indexed). Use this for large files to avoid exceeding context limits.',
                 },
             },
             required: ['path'],
@@ -42,6 +52,9 @@ export class ReadFileTool extends BaseTool<ReadFileArgs> {
     }
 
     formatMessage(args: ReadFileArgs): string {
+        if (args.start_line || args.end_line) {
+            return `Reading lines ${args.start_line || 1} to ${args.end_line || 'end'} of file ${args.path}`;
+        }
         return `Reading file ${args.path}`;
     }
 
@@ -80,7 +93,7 @@ export class ReadFileTool extends BaseTool<ReadFileArgs> {
         }
 
         try {
-            const content = this.fileReader.read(resolvedPath);
+            const content = this.fileReader.read(resolvedPath, args.start_line, args.end_line);
             if (content === undefined) {
                 return { content: `Error: Failed to read file ${args.path}. Ensure the file exists and is accessible.`, success: false };
             }
