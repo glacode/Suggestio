@@ -78,6 +78,11 @@ function writeMockConfig(workspace: string) {
                 endpoint: "http://localhost:3001/v1/always-allow/completions",
                 model: "test-model",
                 apiKey: "unused"
+            },
+            runCommandProvider: {
+                endpoint: "http://localhost:3001/v1/run-command/completions",
+                model: "test-model",
+                apiKey: "unused"
             }
         }
     };
@@ -101,6 +106,8 @@ function sendDone(res: any) {
     res.write('data: [DONE]\n\n');
     res.end();
 }
+
+
 
 /**
  * Streams a response for the 'reasoning-model'.
@@ -239,6 +246,7 @@ function createMockServer(capturedRequests: any[]): Promise<Server> {
         let maxIterationsReasoningCallCount = 0;
         let alwaysAllowCallCount = 0;
         let autoAcceptCallCount = 0;
+        let runCommandCallCount = 0;
 
         app.post('/v1/always-fail/completions', (req, res) => {
             capturedRequests.push({ endpoint: 'always-fail', body: req.body });
@@ -270,7 +278,6 @@ function createMockServer(capturedRequests: any[]): Promise<Server> {
             res.setHeader('Content-Type', 'text/event-stream');
             
             if (autoAcceptCallCount === 1 || autoAcceptCallCount === 3) {
-                // Return tool call for user messages
                 writeSSEChunk(res, {
                     choices: [{
                         delta: {
@@ -284,8 +291,70 @@ function createMockServer(capturedRequests: any[]): Promise<Server> {
                     }]
                 });
             } else {
-                // Return text for tool results or denied confirmations
                 writeSSEChunk(res, { choices: [{ delta: { content: 'Turn finished' } }] });
+            }
+            sendDone(res);
+        });
+
+        app.post('/v1/run-command/completions', (req, res) => {
+            capturedRequests.push({ endpoint: 'run-command', body: req.body });
+            runCommandCallCount++;
+            res.setHeader('Content-Type', 'text/event-stream');
+
+            if (runCommandCallCount === 1) {
+                // First call (user message 1) -> Tool call 1: echo "test"
+                writeSSEChunk(res, {
+                    choices: [{
+                        delta: {
+                            tool_calls: [{
+                                index: 0,
+                                id: 'call_run_1',
+                                type: 'function',
+                                function: { name: 'run_command', arguments: JSON.stringify({ command: 'echo "test"' }) }
+                            }]
+                        }
+                    }]
+                });
+            } else if (runCommandCallCount === 2) {
+                // Second call (tool result 1) -> Finish first turn
+                writeSSEChunk(res, { choices: [{ delta: { content: 'Finished turn 1' } }] });
+            } else if (runCommandCallCount === 3) {
+                // Third call (user message 2) -> Tool call 2: echo "test" (same command)
+                writeSSEChunk(res, {
+                    choices: [{
+                        delta: {
+                            tool_calls: [{
+                                index: 0,
+                                id: 'call_run_2',
+                                type: 'function',
+                                function: { name: 'run_command', arguments: JSON.stringify({ command: 'echo "test"' }) }
+                            }]
+                        }
+                    }]
+                });
+            } else if (runCommandCallCount === 4) {
+                // Fourth call (tool result 2) -> Finish second turn
+                writeSSEChunk(res, { choices: [{ delta: { content: 'Finished turn 2' } }] });
+            } else if (runCommandCallCount === 5) {
+                // Fifth call (user message 3) -> Tool call 3: echo "test" --silent (different command)
+                writeSSEChunk(res, {
+                    choices: [{
+                        delta: {
+                            tool_calls: [{
+                                index: 0,
+                                id: 'call_run_3',
+                                type: 'function',
+                                function: { name: 'run_command', arguments: JSON.stringify({ command: 'echo "test" --silent' }) }
+                            }]
+                        }
+                    }]
+                });
+            } else if (runCommandCallCount === 6) {
+                // Sixth call (tool result 3) -> Finish third turn
+                writeSSEChunk(res, { choices: [{ delta: { content: 'Finished turn 3' } }] });
+            } else {
+                // Fallback: just finish
+                writeSSEChunk(res, { choices: [{ delta: { content: 'Done' } }] });
             }
             sendDone(res);
         });
@@ -1315,5 +1384,77 @@ test.describe('Chat E2E', () => {
         // Verify the file reached the final state on disk
         const contentAfterSecond = fs.readFileSync(path.join(tempWorkspacePath, 'test.txt'), 'utf8');
         expect(contentAfterSecond).toBe('final text');
+    });
+
+    test('should bypass confirmation for subsequent run_command calls after "Always Allow" is clicked', async () => {
+        // uncomment this if you want to run this test in isolation
+        await openChatView(page);
+
+        const inner = await getChatFrames(page);
+
+        // 1. Switch to runCommandProvider
+        await switchModel(inner, 'runCommandProvider');
+        await clickNewChat(page);
+
+        // 2. Trigger the first run_command tool call
+        await sendChatMessage(inner, 'Run first command');
+
+        // 3. Assert the three buttons are displayed
+        const assistantMessage = inner.locator('.message.assistant').last();
+        const confirmation = assistantMessage.locator('.tool-confirmation-container');
+        await expect(confirmation).toBeVisible({ timeout: 15000 });
+        
+        const allowBtn = confirmation.locator('button.allow-btn');
+        const alwaysAllowBtn = confirmation.locator('button.always-allow-btn');
+        const denyBtn = confirmation.locator('button.deny-btn');
+        
+        await expect(allowBtn).toBeVisible();
+        await expect(alwaysAllowBtn).toBeVisible();
+        await expect(denyBtn).toBeVisible();
+
+        // 4. The user clicks "Always Allow"
+        await alwaysAllowBtn.click();
+
+        // 5. Assert the request container is removed
+        await expect(confirmation).not.toBeVisible();
+        
+        // Wait for the tool to complete successfully
+        const toolCall = assistantMessage.locator('.tool-call-container').last();
+        await expect(toolCall).toContainText('Executing command: echo "test"', { timeout: 10000 });
+
+        // Wait for the final content of the turn to ensure input is re-enabled
+        await expect(assistantMessage).toContainText('Finished turn 1', { timeout: 10000 });
+        
+        const input = inner.locator('#messageInput');
+        await expect(input).toBeEnabled({ timeout: 10000 });
+
+        // 6. A second run_command with the SAME arguments goes through without asking
+        await sendChatMessage(inner, 'Run same command again');
+        
+        const assistantMessage2 = inner.locator('.message.assistant').last();
+        const toolCall2 = assistantMessage2.locator('.tool-call-container').first();
+        await expect(toolCall2).toBeVisible({ timeout: 15000 });
+        await expect(toolCall2).toContainText('Executing command: echo "test"');
+
+        // Verify that NO confirmation container appears
+        const confirmation2 = assistantMessage2.locator('.tool-confirmation-container');
+        await expect(confirmation2).not.toBeVisible();
+        
+        // Verify success - the command output should be "test"
+        await expect(toolCall2).toContainText('test', { timeout: 10000 });
+
+        // 7. A request for a DIFFERENT command requires user permission
+        await sendChatMessage(inner, 'Run silent command');
+        
+        const assistantMessage3 = inner.locator('.message.assistant').last();
+        const confirmation3 = assistantMessage3.locator('.tool-confirmation-container');
+        await expect(confirmation3).toBeVisible({ timeout: 15000 });
+        
+        // Click Allow
+        await confirmation3.locator('button.allow-btn').click();
+        await expect(confirmation3).not.toBeVisible();
+        
+        const toolCall3 = assistantMessage3.locator('.tool-call-container').last();
+        await expect(toolCall3).toContainText('Executing command: echo "test" --silent', { timeout: 10000 });
     });
 });
