@@ -5,13 +5,13 @@ import { describe, it, expect, beforeEach, jest, afterEach } from '@jest/globals
 import { ChatManager } from '../../src/webView/chat.js';
 import { InitialState } from '../../src/types.js';
 import { SettingsOverlay } from '../../src/webView/settingsOverlay.js';
+import { HistoryOverlay } from '../../src/webView/historyOverlay.js';
 import { MockWebviewApi, setupChatDom, createMockDomRect } from '../testUtils.js';
 import { WEBVIEW_COMMANDS, EXTENSION_EVENTS, EXTENSION_COMMANDS, MESSAGE_SENDERS } from '../../src/constants/protocol.js';
 
 describe('ChatManager Unit Tests', () => {
     let chatManager: ChatManager;
     let mockVscode: MockWebviewApi;
-    let settingsOverlay: SettingsOverlay;
 
     beforeEach(() => {
         jest.useFakeTimers();
@@ -42,8 +42,10 @@ describe('ChatManager Unit Tests', () => {
         });
 
         mockVscode = new MockWebviewApi();
-        settingsOverlay = new SettingsOverlay();
-        chatManager = new ChatManager(mockVscode, initialState, settingsOverlay);
+        const settingsOverlay = new SettingsOverlay();
+        const historyOverlay = new HistoryOverlay();
+        chatManager = new ChatManager(mockVscode, initialState, settingsOverlay, historyOverlay);
+
         chatManager.init();
     });
 

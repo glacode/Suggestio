@@ -1,13 +1,13 @@
 // registrations/commandRegistration.ts
 import * as vscode from 'vscode';
 import { editGlobalConfig } from '../config/editGlobalConfig.js';
-import { 
-  IConfig, 
-  IPathResolver, 
-  IDirectoryReader, 
-  IDirectoryCreator, 
-  IFileContentWriter, 
-  IWindowProvider, 
+import {
+  IConfig,
+  IPathResolver,
+  IDirectoryReader,
+  IDirectoryCreator,
+  IFileContentWriter,
+  IWindowProvider,
   IDocumentOpener,
   ICommandAutoAcceptManager
 } from '../types.js';
@@ -18,6 +18,7 @@ import { IEventBus } from '../utils/eventBus.js';
 interface INewChatCapable {
   newChat(): void;
   showSettings?: () => void;
+  showHistory?: () => void;
 }
 
 export function registerCommands(
@@ -149,6 +150,14 @@ export function registerCommands(
       if (selected) {
         eventBus.emit('completionProfileChanged', selected.label);
         windowProvider.showInformationMessage(`Inline completion profile set to: ${selected.label}`);
+      }
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('suggestio.showChatHistory', () => {
+      if (newChatCapable && typeof newChatCapable.showHistory === 'function') {
+        newChatCapable.showHistory();
       }
     })
   );

@@ -282,6 +282,16 @@ export type WebviewMessage =
   | {
     /** User wants to retry the last message. */
     command: typeof WEBVIEW_COMMANDS.RETRY_LAST_MESSAGE;
+  }
+  | {
+    /** User wants to retrieve the list of saved chat sessions. */
+    command: typeof WEBVIEW_COMMANDS.GET_SESSIONS;
+  }
+  | {
+    /** User wants to load a specific chat session. */
+    command: typeof WEBVIEW_COMMANDS.LOAD_SESSION;
+    /** The ID of the session to load. */
+    sessionId: string;
   };
 
 /**
@@ -454,10 +464,26 @@ export type MessageFromTheExtensionToTheWebview =
     command: typeof EXTENSION_COMMANDS.OPEN_SETTINGS;
   }
   | {
+    /** Instructs the webview to open the history overlay. */
+    command: typeof EXTENSION_COMMANDS.OPEN_HISTORY;
+  }
+  | {
     /** Updates the profile metadata displayed in settings overlay. */
     type: typeof EXTENSION_EVENTS.UPDATE_PROFILE_METADATA;
     /** Updated profile metadata. */
     metadata: ProfileMetadata[];
+  }
+  | {
+    /** Instructs the webview to load a specific chat history. */
+    type: typeof EXTENSION_EVENTS.CHAT_HISTORY_LOADED;
+    /** The chat history to load. */
+    history: ChatHistory;
+  }
+  | {
+    /** Provides a list of saved chat sessions to the webview. */
+    type: typeof EXTENSION_EVENTS.SESSIONS_LIST;
+    /** The list of session summaries. */
+    sessions: { id: string; title: string; timestamp: number }[];
   };
 
 /**
@@ -519,6 +545,32 @@ export interface IChatAgent {
 }
 
 /**
+ * Interface for workspace-specific chat history storage.
+ */
+export interface IWorkspaceChatHistoryStorage {
+  /**
+   * Loads all saved chat sessions from the workspace.
+   */
+  loadSessions(): IChatSession[];
+
+  /**
+   * Saves chat sessions to the workspace.
+   * @param sessions The sessions to save.
+   */
+  saveSessions(sessions: IChatSession[]): void;
+}
+
+/**
+ * Represents a single chat session for persistence.
+ */
+export interface IChatSession {
+  id: string;
+  title: string;
+  timestamp: number;
+  history: ChatHistory;
+}
+
+/**
  * `IChatHistoryManager` defines the interface for managing chat history.
  */
 export interface IChatHistoryManager {
@@ -538,6 +590,27 @@ export interface IChatHistoryManager {
    * @returns An array of chat messages.
    */
   getChatHistory(): ChatHistory;
+}
+
+/**
+ * `IPersistentChatHistoryManager` extends `IChatHistoryManager` with persistence capabilities.
+ */
+export interface IPersistentChatHistoryManager extends IChatHistoryManager {
+  /**
+   * Retrieves all saved chat sessions.
+   */
+  getSessions(): Promise<IChatSession[]>;
+
+  /**
+   * Loads a specific chat session by its ID.
+   * @param sessionId The ID of the session to load.
+   */
+  loadSession(sessionId: string): Promise<void>;
+
+  /**
+   * Starts a new chat session.
+   */
+  newSession(): void;
 }
 
 /**
@@ -694,6 +767,12 @@ export interface IWorkspaceProvider {
    * @returns The root URI, or undefined if no workspace is open.
    */
   rootUri(): IUriLike | undefined;
+
+  /**
+   * Returns a persistent storage path for the current workspace.
+   * This is managed by VS Code and is outside the workspace root.
+   */
+  storagePath(): string | undefined;
 }
 
 /**

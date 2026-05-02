@@ -178,6 +178,11 @@
                 "command": "suggestio.selectCompletionProfile",
                 "title": "Suggestio: Select Completion Profile",
                 "icon": "$(gear)"
+            },
+            {
+                "command": "suggestio.showChatHistory",
+                "title": "Suggestio: Show Chat History",
+                "icon": "$(history)"
             }
         ],
         "menus": {
@@ -186,6 +191,11 @@
                     "command": "suggestio.newChat",
                     "when": "view == suggestio.chat.view",
                     "group": "navigation@1"
+                },
+                {
+                    "command": "suggestio.showChatHistory",
+                    "when": "view == suggestio.chat.view",
+                    "group": "navigation@1.2"
                 },
                 {
                     "command": "suggestio.disableAutoAcceptEdits",

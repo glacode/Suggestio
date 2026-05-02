@@ -9,7 +9,7 @@ import type {
   IUriLike, // A type representing a URI (Uniform Resource Identifier), similar to a file path.
   ILlmProviderAccessor, // A type for accessing language model (LLM) profiles.
   IChatAgent, // A type for handling chat logic (sending/receiving messages).
-  IChatHistoryManager, // A type for managing chat history (e.g., clearing it).
+  IPersistentChatHistoryManager, // A type for managing persistent chat history.
   MessageFromTheExtensionToTheWebview, // A type for messages sent *to* the webview (e.g., AI responses).
   ChatRole,
   ChatHistory,
@@ -25,7 +25,7 @@ import {
   createMockVscodeApi,
   createMockWebview,
   createMockWebviewView,
-  createMockHistoryManager,
+  createMockPersistentHistoryManager,
   createMockUri,
   createMockFileContentReader,
   createMockDiffManager,
@@ -123,7 +123,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     };
 
     const recorded: ChatHistory = [];
-    const chatHistoryManager = createMockHistoryManager(recorded);
+    const chatHistoryManager = createMockPersistentHistoryManager(recorded);
 
     const { config, secretManager, httpClient } = createMocks();
 
@@ -225,10 +225,13 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     // Spyable chat history manager to capture added messages.
     const recorded: { role: ChatRole; content: string }[] = [];
-    const chatHistoryManager: IChatHistoryManager = {
+    const chatHistoryManager: IPersistentChatHistoryManager = {
       clearHistory: () => { },
       addMessage: (m) => recorded.push(m),
-      getChatHistory: () => recorded.slice()
+      getChatHistory: () => recorded.slice(),
+      getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
+      loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+      newSession: jest.fn<() => void>()
     };
 
     const eventBus = new EventBus();
@@ -316,12 +319,15 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     };
 
     let chatHistoryCleared = false;
-    const chatHistoryManager: IChatHistoryManager = {
+    const chatHistoryManager: IPersistentChatHistoryManager = {
       clearHistory: () => {
         chatHistoryCleared = true;
       },
       addMessage: () => { },
       getChatHistory: () => [],
+      getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
+      loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+      newSession: jest.fn<() => void>()
     };
 
     const eventBus = new EventBus();
@@ -419,12 +425,15 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       }
     };
 
-    const chatHistoryManager: IChatHistoryManager = {
+    const chatHistoryManager: IPersistentChatHistoryManager = {
       clearHistory: () => {
         /* not called */ // This should not be called.
       },
       addMessage: () => { },
       getChatHistory: () => [],
+      getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
+      loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+      newSession: jest.fn<() => void>()
     };
 
     const eventBus = new EventBus();
@@ -482,10 +491,13 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       }
     };
 
-    const chatHistoryManager: IChatHistoryManager = {
+    const chatHistoryManager: IPersistentChatHistoryManager = {
       clearHistory: () => { },
       addMessage: () => { },
-      getChatHistory: () => []
+      getChatHistory: () => [],
+      getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
+      loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+      newSession: jest.fn<() => void>()
     };
 
     const anonymizer: IAnonymizer = {
@@ -546,10 +558,13 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       }
     };
 
-    const chatHistoryManager: IChatHistoryManager = {
+    const chatHistoryManager: IPersistentChatHistoryManager = {
       clearHistory: () => { },
       addMessage: () => { },
-      getChatHistory: () => []
+      getChatHistory: () => [],
+      getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
+      loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+      newSession: jest.fn<() => void>()
     };
 
     // The anonymizer replaces 'SECRET' with 'ANONYMIZED'
@@ -629,10 +644,13 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       }
     };
 
-    const chatHistoryManager: IChatHistoryManager = {
+    const chatHistoryManager: IPersistentChatHistoryManager = {
       clearHistory: () => { },
       addMessage: () => { },
-      getChatHistory: () => []
+      getChatHistory: () => [],
+      getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
+      loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+      newSession: jest.fn<() => void>()
     };
 
     const { config, secretManager, httpClient } = createMocks();
@@ -678,11 +696,14 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const webview = createMockWebview(posted);
     const webviewView = createMockWebviewView(webview, 'X');
 
-    let historyCleared = false;
-    const chatHistoryManager: IChatHistoryManager = {
-      clearHistory: () => { historyCleared = true; },
+    let newSessionCalled = false;
+    const chatHistoryManager: IPersistentChatHistoryManager = {
+      clearHistory: () => { },
       addMessage: () => { },
-      getChatHistory: () => []
+      getChatHistory: () => [],
+      getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
+      loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+      newSession: () => { newSessionCalled = true; }
     };
 
     const { config, secretManager, httpClient } = createMocks();
@@ -705,13 +726,13 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     // Test newChat before resolveWebviewView (view is undefined)
     provider.newChat();
-    expect(historyCleared).toBe(true);
+    expect(newSessionCalled).toBe(true);
     expect(posted.length).toBe(0);
 
-    historyCleared = false;
+    newSessionCalled = false;
     await provider.resolveWebviewView(webviewView);
     provider.newChat();
-    expect(historyCleared).toBe(true);
+    expect(newSessionCalled).toBe(true);
     expect(posted).toContainEqual({ command: EXTENSION_COMMANDS.NEW_CHAT });
   });
 
@@ -731,7 +752,14 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileAccessor,
       chatAgent: { run: async () => { } },
-      chatHistoryManager: { clearHistory: () => { }, addMessage: () => { }, getChatHistory: () => [] },
+      chatHistoryManager: {
+        clearHistory: () => { },
+        addMessage: () => { },
+        getChatHistory: () => [],
+        getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
+        loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+        newSession: jest.fn<() => void>()
+      },
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
       vscodeApi,
@@ -780,7 +808,14 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileAccessor,
       chatAgent: { run: async () => { } },
-      chatHistoryManager: { clearHistory: () => { }, addMessage: () => { }, getChatHistory: () => [] },
+      chatHistoryManager: {
+        clearHistory: () => { },
+        addMessage: () => { },
+        getChatHistory: () => [],
+        getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
+        loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+        newSession: jest.fn<() => void>()
+      },
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
       vscodeApi,
@@ -831,7 +866,14 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileAccessor,
       chatAgent: { run: async () => { } },
-      chatHistoryManager: { clearHistory: () => { }, addMessage: () => { }, getChatHistory: () => [] },
+      chatHistoryManager: {
+        clearHistory: () => { },
+        addMessage: () => { },
+        getChatHistory: () => [],
+        getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
+        loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+        newSession: jest.fn<() => void>()
+      },
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
       vscodeApi,
@@ -869,7 +911,14 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileAccessor,
       chatAgent: { run: async () => { } },
-      chatHistoryManager: { clearHistory: () => { }, addMessage: () => { }, getChatHistory: () => [] },
+      chatHistoryManager: {
+        clearHistory: () => { },
+        addMessage: () => { },
+        getChatHistory: () => [],
+        getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
+        loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+        newSession: jest.fn<() => void>()
+      },
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
       vscodeApi,
@@ -911,7 +960,14 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileAccessor,
       chatAgent,
-      chatHistoryManager: { clearHistory: () => { }, addMessage: () => { }, getChatHistory: () => [] },
+      chatHistoryManager: {
+        clearHistory: () => { },
+        addMessage: () => { },
+        getChatHistory: () => [],
+        getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
+        loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+        newSession: jest.fn<() => void>()
+      },
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
       vscodeApi,
@@ -950,7 +1006,14 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileAccessor: { getProfiles: () => [], getActiveProfile: () => '' },
       chatAgent: { run: async () => { } },
-      chatHistoryManager: { clearHistory: () => { }, addMessage: () => { }, getChatHistory: () => [] },
+      chatHistoryManager: {
+        clearHistory: () => { },
+        addMessage: () => { },
+        getChatHistory: () => [],
+        getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
+        loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+        newSession: jest.fn<() => void>()
+      },
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
       vscodeApi,
@@ -1000,7 +1063,14 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileAccessor: { getProfiles: () => [], getActiveProfile: () => '' },
       chatAgent: { run: async () => { } },
-      chatHistoryManager: { clearHistory: () => { }, addMessage: () => { }, getChatHistory: () => [] },
+      chatHistoryManager: {
+        clearHistory: () => { },
+        addMessage: () => { },
+        getChatHistory: () => [],
+        getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
+        loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+        newSession: jest.fn<() => void>()
+      },
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
       vscodeApi,
@@ -1061,7 +1131,10 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       chatHistoryManager: {
         clearHistory: () => { },
         addMessage: () => { },
-        getChatHistory: () => []
+        getChatHistory: () => [],
+        getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
+        loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+        newSession: jest.fn<() => void>()
       },
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
@@ -1103,7 +1176,14 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileAccessor: { getProfiles: () => ['test-profile'], getActiveProfile: () => 'test-profile' },
       chatAgent: { run: async () => { } },
-      chatHistoryManager: { clearHistory: () => { }, addMessage: () => { }, getChatHistory: () => [] },
+      chatHistoryManager: {
+        clearHistory: () => { },
+        addMessage: () => { },
+        getChatHistory: () => [],
+        getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
+        loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+        newSession: jest.fn<() => void>()
+      },
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
       vscodeApi,

@@ -12,6 +12,8 @@ export const WEBVIEW_COMMANDS = {
     EDIT_API_KEY: 'editApiKey',
     DELETE_API_KEY: 'deleteApiKey',
     RETRY_LAST_MESSAGE: 'retryLastMessage',
+    GET_SESSIONS: 'getSessions',
+    LOAD_SESSION: 'loadSession',
 } as const;
 
 /**
@@ -20,6 +22,7 @@ export const WEBVIEW_COMMANDS = {
 export const EXTENSION_COMMANDS = {
     NEW_CHAT: 'newChat',
     OPEN_SETTINGS: 'openSettings',
+    OPEN_HISTORY: 'openHistory',
 } as const;
 
 /**
@@ -37,6 +40,7 @@ export const EXTENSION_EVENTS = {
     REQUEST_CONFIRMATION: 'agent:requestConfirmation',
     NOTIFICATION: 'notification',
     UPDATE_PROFILE_METADATA: 'updateProfileMetadata',
+    SESSIONS_LIST: 'sessionsList',
     /** Fired when the agent reaches a logical limit (like max iterations) and needs user permission to continue. */
     HALTED: 'halted',
 } as const;

@@ -6,7 +6,7 @@
 // and define the expected structure for various objects and functions used in the chat feature.
 import type {
     IChatAgent, // Defines the interface for handling chat logic (e.g., sending prompts to an LLM).
-    IChatHistoryManager, // Defines the interface for managing chat history (e.g., clearing it).
+    IPersistentChatHistoryManager, // Defines the interface for managing persistent chat history.
     GetChatWebviewContent, // A function type for generating the HTML content for the webview.
     ILlmProviderAccessor, // Defines the interface for accessing information about LLM providers (models).
     IExtensionContextMinimal, // A minimal representation of VS Code's `ExtensionContext`,
@@ -41,7 +41,7 @@ interface IChatWebviewViewProviderArgs {
     extensionContext: IExtensionContextMinimal; // The VS Code extension context, vital for managing extension resources.
     profileAccessor: ILlmProviderAccessor; // An accessor to retrieve available and active LLM profiles.
     chatAgent: IChatAgent; // The agent responsible for interacting with the LLM.
-    chatHistoryManager: IChatHistoryManager; // The manager responsible for chat history operations.
+    chatHistoryManager: IPersistentChatHistoryManager; // The manager responsible for persistent chat history operations.
     buildContext: IContextBuilder; // A builder to create contextual information for the AI prompt.
     getChatWebviewContent: GetChatWebviewContent; // A function that provides the HTML content for the webview.
     vscodeApi: IVscodeApiLocal; // The VS Code API instance, used here for `Uri` operations.
@@ -72,7 +72,7 @@ export class ChatWebviewViewProvider {
     // when the view is resolved. This allows the provider to interact with the webview.
     public _view?: IWebviewView;
     private readonly _chatAgent: IChatAgent; // Stores the handler for chat backend logic.
-    private readonly _chatHistoryManager: IChatHistoryManager; // Stores the chat history manager.
+    private readonly _chatHistoryManager: IPersistentChatHistoryManager; // Stores the chat history manager.
     private readonly _buildContext: IContextBuilder; // Stores the context builder instance.
     private readonly _extensionContext: IExtensionContextMinimal; // Stores the extension context.
     private readonly _profileAccessor: ILlmProviderAccessor; // Stores the profile accessor.
@@ -304,7 +304,7 @@ export class ChatWebviewViewProvider {
 
 
     public newChat() {
-        this._chatHistoryManager.clearHistory();
+        this._chatHistoryManager.newSession();
         if (this._view) {
             this._view.webview.postMessage({ command: EXTENSION_COMMANDS.NEW_CHAT });
         }
@@ -316,6 +316,15 @@ export class ChatWebviewViewProvider {
     public showSettings() {
         if (this._view) {
             this._view.webview.postMessage({ command: EXTENSION_COMMANDS.OPEN_SETTINGS });
+        }
+    }
+
+    /**
+     * Request the webview to open the history overlay.
+     */
+    public showHistory() {
+        if (this._view) {
+            this._view.webview.postMessage({ command: EXTENSION_COMMANDS.OPEN_HISTORY });
         }
     }
 
@@ -450,6 +459,22 @@ export class ChatWebviewViewProvider {
                 // Handle a message requesting to clear the chat history.
                 // Call the `clearHistory` method on the `chatHistoryManager`.
                 this._chatHistoryManager.clearHistory();
+            } else if (message.command === WEBVIEW_COMMANDS.GET_SESSIONS) {
+                const sessions = await this._chatHistoryManager.getSessions();
+                webviewView.webview.postMessage({
+                    type: EXTENSION_EVENTS.SESSIONS_LIST,
+                    sessions: sessions.map(s => ({
+                        id: s.id,
+                        title: s.title,
+                        timestamp: s.timestamp
+                    }))
+                });
+            } else if (message.command === WEBVIEW_COMMANDS.LOAD_SESSION) {
+                await this._chatHistoryManager.loadSession(message.sessionId);
+                webviewView.webview.postMessage({
+                    type: EXTENSION_EVENTS.CHAT_HISTORY_LOADED,
+                    history: this._chatHistoryManager.getChatHistory()
+                });
             } else if (message.command === WEBVIEW_COMMANDS.COMPLETION_PROFILE_CHANGED) {
                 // Handle a message from the webview indicating the user changed the
                 // completion profile in the settings overlay. Emit the existing

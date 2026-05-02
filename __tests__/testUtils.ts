@@ -30,7 +30,10 @@ import {
     IEventBus,
     IConfigProvider,
     IDiffManager,
-    IHttpClient
+    IHttpClient,
+    IPersistentChatHistoryManager,
+    IWorkspaceChatHistoryStorage,
+    IChatSession
 } from "../src/types.js"; import { ILogger } from "../src/log/logger.js";
 import { CONFIG_DEFAULTS } from "../src/constants/config.js";
 import { jest } from "@jest/globals";
@@ -176,10 +179,19 @@ export const createMockIgnoreManager = (): jest.Mocked<IIgnoreManager> => ({
     shouldIgnore: jest.fn<(filePath: string) => Promise<boolean>>().mockResolvedValue(false),
 });
 
-export const createMockHistoryManager = (recorded: ChatHistory = []): IChatHistoryManager => ({
-    clearHistory: () => { recorded.length = 0; },
-    addMessage: (m) => { recorded.push(m); },
-    getChatHistory: () => [...recorded]
+export const createMockHistoryManager = (recorded: ChatHistory = []): jest.Mocked<IChatHistoryManager> => ({
+    clearHistory: jest.fn(() => { recorded.length = 0; }),
+    addMessage: jest.fn((m: IChatMessage) => { recorded.push(m); }),
+    getChatHistory: jest.fn(() => [...recorded])
+});
+
+export const createMockPersistentHistoryManager = (recorded: ChatHistory = []): jest.Mocked<IPersistentChatHistoryManager> => ({
+    clearHistory: jest.fn(() => { recorded.length = 0; }),
+    addMessage: jest.fn((m: IChatMessage) => { recorded.push(m); }),
+    getChatHistory: jest.fn(() => [...recorded]),
+    getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
+    loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+    newSession: jest.fn<() => void>()
 });
 
 export const createMockDiffManager = (): jest.Mocked<IDiffManager> => ({
@@ -198,11 +210,13 @@ export const createMockWindowProvider = (): jest.Mocked<IWindowProvider> => ({
 export const createMockWorkspaceProvider = (): jest.Mocked<IWorkspaceProvider> => ({
     rootPath: jest.fn(),
     rootUri: jest.fn(),
+    storagePath: jest.fn(),
 });
 
 export const createMockWorkspaceProviderFull = (): jest.Mocked<IWorkspaceProviderFull> => ({
     rootPath: jest.fn(),
     rootUri: jest.fn(),
+    storagePath: jest.fn(),
     openTextDocument: jest.fn(),
 });
 
@@ -319,3 +333,7 @@ export function setupChatDom() {
         </div>
     `;
 }
+export const createMockWorkspaceChatHistoryStorage = (): jest.Mocked<IWorkspaceChatHistoryStorage> => ({
+    loadSessions: jest.fn<() => IChatSession[]>().mockReturnValue([]),
+    saveSessions: jest.fn()
+});

@@ -22,6 +22,8 @@ import {
   IVscodeApiLocal
 } from './types.js';
 import { ChatHistoryManager } from './chat/chatHistoryManager.js';
+import { WorkspaceChatHistoryStorage } from './chat/workspaceChatHistoryStorage.js';
+import { PersistentChatHistoryManager } from './chat/persistentChatHistoryManager.js';
 import { SecretManager } from './config/secretManager.js';
 import { configProcessor } from './config/configProcessor.js';
 import { CONFIG_DEFAULTS } from './constants/config.js';
@@ -77,7 +79,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
   const workspaceProvider: IWorkspaceProvider = {
     rootPath: () => getActiveWorkspaceUri()?.fsPath,
-    rootUri: () => getActiveWorkspaceUri()
+    rootUri: () => getActiveWorkspaceUri(),
+    storagePath: () => context.storageUri?.fsPath
   };
 
   const directoryReader: IDirectoryReader = {
@@ -179,8 +182,16 @@ export async function activate(context: vscode.ExtensionContext) {
 
   registerConfigHandler(context.subscriptions, configProvider, configContainer, eventBus, secretManager, httpClient);
 
-  const conversationHistory = new ChatHistoryManager();
-  const chatHistoryManager = conversationHistory;
+  const baseHistoryManager = new ChatHistoryManager();
+  const storage = new WorkspaceChatHistoryStorage(
+    workspaceProvider,
+    fileContentReader,
+    fileContentWriter,
+    pathResolver,
+    directoryCreator,
+    directoryReader
+  );
+  const chatHistoryManager = new PersistentChatHistoryManager(baseHistoryManager, storage);
 
   const documentOpener: IDocumentOpener = {
     openTextDocument: async (path: string) => await vscode.workspace.openTextDocument(path)
@@ -258,8 +269,6 @@ export async function activate(context: vscode.ExtensionContext) {
     secretManager,
     autoAcceptManager
   );
+}
 
-
-  }
-
-  export function deactivate() { }
+export function deactivate() { }

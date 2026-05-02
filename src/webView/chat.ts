@@ -1,5 +1,6 @@
 import { WEBVIEW_COMMANDS, EXTENSION_EVENTS, EXTENSION_COMMANDS, MESSAGE_SENDERS } from '../constants/protocol.js';
 import { SettingsOverlay } from './settingsOverlay.js';
+import { HistoryOverlay } from './historyOverlay.js';
 import type { IWebviewApi, InitialState } from '../types.js';
 
 // These are provided by the environment (main.ts)
@@ -486,11 +487,13 @@ export class ChatManager {
      * @param vscode The VS Code Webview API instance.
      * @param initialState The initial configuration data passed from the extension.
      * @param settingsOverlay The settings overlay manager.
+     * @param historyOverlay The history overlay manager.
      */
     constructor(
         private vscode: IWebviewApi,
         private initialState: InitialState,
-        private settingsOverlay: SettingsOverlay
+        private settingsOverlay: SettingsOverlay,
+        private historyOverlay: HistoryOverlay
     ) {}
 
     /**
@@ -526,16 +529,18 @@ export class ChatManager {
         });
 
         this.setupProfileSelector();
-        // Initialize settings overlay attached to the full webview (body)
+        // Initialize overlays attached to the full webview (body)
         try {
             const root = document.querySelector('.chat-container') || document.body;
             if (root instanceof HTMLElement) {
                 this.settingsOverlay.init(root);
+                this.historyOverlay.init(root);
             } else {
                 this.settingsOverlay.init(document.body);
+                this.historyOverlay.init(document.body);
             }
         } catch (e) {
-            console.warn('Failed to init settings overlay', e);
+            console.warn('Failed to init overlays', e);
         }
         this.setupMessageListener();
     }
@@ -615,7 +620,28 @@ export class ChatManager {
                         this.settingsOverlay.render(this.vscode, this.initialState);
                     } catch (e) {}
                     this.settingsOverlay.show();
+                    this.historyOverlay.hide();
                 }
+                return;
+            }
+            if (command === EXTENSION_COMMANDS.OPEN_HISTORY) {
+                if (this.historyOverlay.isVisible()) {
+                    this.historyOverlay.hide();
+                } else {
+                    this.vscode.postMessage({ command: WEBVIEW_COMMANDS.GET_SESSIONS });
+                    this.historyOverlay.show();
+                    this.settingsOverlay.hide();
+                }
+                return;
+            }
+
+            if (type === EXTENSION_EVENTS.SESSIONS_LIST) {
+                this.historyOverlay.render(this.vscode, event.data.sessions);
+                return;
+            }
+
+            if (type === EXTENSION_EVENTS.CHAT_HISTORY_LOADED) {
+                this.loadHistory(event.data.history);
                 return;
             }
 
@@ -823,6 +849,51 @@ export class ChatManager {
         }
         this.removeNotification();
         this.currentAssistantMessage = null;
+    }
+
+    loadHistory(history: any[]) {
+        this.newChat();
+        const emptyChatContent = document.getElementById('emptyChatContent');
+        if (emptyChatContent) {
+            emptyChatContent.style.display = 'none';
+        }
+
+        history.forEach(msg => {
+            if (msg.role === 'user') {
+                this.appendUserMessage(msg.content);
+            } else if (msg.role === 'assistant') {
+                const assistantMsg = new AssistantMessage(this, this.chatContainer);
+                
+                if (msg.reasoning) {
+                    assistantMsg.appendToken(msg.reasoning, 'reasoning');
+                }
+
+                if (msg.content) {
+                    assistantMsg.appendToken(msg.content, 'content');
+                }
+
+                if (msg.tool_calls) {
+                    msg.tool_calls.forEach((tc: any) => {
+                        assistantMsg.addToolCall({
+                            toolCallId: tc.id,
+                            toolName: tc.function.name,
+                            args: tc.function.arguments
+                        });
+                        // Find matching tool result
+                        const toolResult = history.find(m => m.role === 'tool' && m.tool_call_id === tc.id);
+                        if (toolResult) {
+                            assistantMsg.updateToolCall({
+                                toolCallId: tc.id,
+                                toolName: tc.function.name,
+                                success: true, // We assume success if it's in history for now
+                                result: toolResult.content
+                            });
+                        }
+                    });
+                }
+                assistantMsg.finish();
+            }
+        });
     }
 
     private showNotification(text: string) {
