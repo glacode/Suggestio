@@ -19,7 +19,8 @@ import {
   IPathResolver,
   IDocumentOpener,
   IConfigProvider,
-  IVscodeApiLocal
+  IVscodeApiLocal,
+  IFileDeleter
 } from './types.js';
 import { ChatHistoryManager } from './chat/chatHistoryManager.js';
 import { WorkspaceChatHistoryStorage } from './chat/workspaceChatHistoryStorage.js';
@@ -119,6 +120,10 @@ export async function activate(context: vscode.ExtensionContext) {
     write: (filePath: string, content: string) => fs.writeFileSync(filePath, content)
   };
 
+  const fileDeleter: IFileDeleter = {
+    delete: (filePath: string) => fs.unlinkSync(filePath)
+  };
+
   const windowProvider: IWindowProvider = {
     showErrorMessage: (message: string) => vscode.window.showErrorMessage(message),
     showInformationMessage: (message: string) => vscode.window.showInformationMessage(message),
@@ -189,7 +194,8 @@ export async function activate(context: vscode.ExtensionContext) {
     fileContentWriter,
     pathResolver,
     directoryCreator,
-    directoryReader
+    directoryReader,
+    fileDeleter
   );
   const chatHistoryManager = new PersistentChatHistoryManager(baseHistoryManager, storage);
 

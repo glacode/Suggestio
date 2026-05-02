@@ -31,13 +31,13 @@ describe("PersistentChatHistoryManager", () => {
         expect(mockHistoryManager.addMessage).toHaveBeenCalledWith(message);
         
         // Save should not be called immediately
-        expect(mockStorage.saveSessions).not.toHaveBeenCalled();
+        expect(mockStorage.saveSession).not.toHaveBeenCalled();
 
         // Fast-forward time
         mockHistoryManager.getChatHistory.mockReturnValue([message]);
         jest.advanceTimersByTime(2000);
 
-        expect(mockStorage.saveSessions).toHaveBeenCalled();
+        expect(mockStorage.saveSession).toHaveBeenCalled();
     });
 
     it("should generate a title from the first user message", () => {
@@ -50,12 +50,10 @@ describe("PersistentChatHistoryManager", () => {
         persistentManager.addMessage(history[0]);
         jest.advanceTimersByTime(2000);
 
-        expect(mockStorage.saveSessions).toHaveBeenCalledWith(
-            expect.arrayContaining([
-                expect.objectContaining({
-                    title: "This is a very long message th..."
-                })
-            ])
+        expect(mockStorage.saveSession).toHaveBeenCalledWith(
+            expect.objectContaining({
+                title: "This is a very long message th..."
+            })
         );
     });
 
@@ -65,7 +63,7 @@ describe("PersistentChatHistoryManager", () => {
         
         jest.advanceTimersByTime(2000);
         // Save should NOT be called if history is empty (based on our implementation)
-        expect(mockStorage.saveSessions).not.toHaveBeenCalled();
+        expect(mockStorage.saveSession).not.toHaveBeenCalled();
     });
 
     it("should load a specific session", async () => {

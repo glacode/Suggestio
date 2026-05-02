@@ -20,8 +20,8 @@ export class PersistentChatHistoryManager implements IPersistentChatHistoryManag
         private readonly historyManager: IChatHistoryManager,
         private readonly storage: IWorkspaceChatHistoryStorage
     ) {
-        this.sessions = this.storage.loadSessions();
         this.currentSessionId = this.generateId();
+        this.sessions = this.storage.loadSessions();
     }
 
     public addMessage(message: IChatMessage): void {
@@ -67,30 +67,20 @@ export class PersistentChatHistoryManager implements IPersistentChatHistoryManag
     private save(): void {
         const history = this.historyManager.getChatHistory();
         if (history.length === 0) {
-            // Optional: could remove current session if it becomes empty, 
-            // but usually we just don't update it in the persisted list if it's already gone.
-            // For now, let's keep it simple.
             return;
         }
 
         const title = this.generateTitle(history);
-        const existingSessionIndex = this.sessions.findIndex(s => s.id === this.currentSessionId);
 
         const session: IChatSession = {
             id: this.currentSessionId,
             title,
-            timestamp: Date.now(),
+            timestamp: parseInt(this.currentSessionId),
             history
         };
 
-        if (existingSessionIndex !== -1) {
-            this.sessions[existingSessionIndex] = session;
-        } else {
-            this.sessions.push(session);
-        }
-
-        this.storage.saveSessions(this.sessions);
-        // Refresh session list after save
+        this.storage.saveSession(session);
+        // Refresh local cache
         this.sessions = this.storage.loadSessions();
     }
 
@@ -104,6 +94,6 @@ export class PersistentChatHistoryManager implements IPersistentChatHistoryManag
     }
 
     private generateId(): string {
-        return Date.now().toString() + '-' + Math.random().toString(36).substring(2, 9);
+        return Date.now().toString();
     }
 }

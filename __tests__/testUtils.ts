@@ -33,7 +33,8 @@ import {
     IHttpClient,
     IPersistentChatHistoryManager,
     IWorkspaceChatHistoryStorage,
-    IChatSession
+    IChatSession,
+    IFileDeleter
 } from "../src/types.js"; import { ILogger } from "../src/log/logger.js";
 import { CONFIG_DEFAULTS } from "../src/constants/config.js";
 import { jest } from "@jest/globals";
@@ -335,5 +336,9 @@ export function setupChatDom() {
 }
 export const createMockWorkspaceChatHistoryStorage = (): jest.Mocked<IWorkspaceChatHistoryStorage> => ({
     loadSessions: jest.fn<() => IChatSession[]>().mockReturnValue([]),
-    saveSessions: jest.fn()
+    saveSession: jest.fn()
+});
+
+export const createMockFileDeleter = (): jest.Mocked<IFileDeleter> => ({
+    delete: jest.fn()
 });

@@ -545,19 +545,31 @@ export interface IChatAgent {
 }
 
 /**
+ * Interface for deleting files from the file system.
+ */
+export interface IFileDeleter {
+  /**
+   * Deletes a file at the specified path.
+   * @param filePath The absolute path to the file to delete.
+   */
+  delete(filePath: string): void;
+}
+
+/**
  * Interface for workspace-specific chat history storage.
  */
 export interface IWorkspaceChatHistoryStorage {
   /**
-   * Loads all saved chat sessions from the workspace.
+   * Loads all saved chat sessions from the workspace storage.
+   * @returns An array of chat sessions, sorted by timestamp (newest first).
    */
   loadSessions(): IChatSession[];
 
   /**
-   * Saves chat sessions to the workspace.
-   * @param sessions The sessions to save.
+   * Saves a single chat session to the workspace storage.
+   * @param session The chat session to save.
    */
-  saveSessions(sessions: IChatSession[]): void;
+  saveSession(session: IChatSession): void;
 }
 
 /**
