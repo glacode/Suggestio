@@ -63,10 +63,10 @@
       "model": "qwen3-coder:480b-cloud",
       "apiKey": "${OLLAMA_API_KEY}"
     },
-    "ollama-qwen3.5:397b": {
-      "endpoint": "https://ollama.com/v1/chat/completions",
-      "model": "qwen3.5:397b-cloud",
-      "apiKey": "${OLLAMA_API_KEY}"
+    "mistral-medium-3-5": {
+      "endpoint": "https://api.mistral.ai/v1/chat/completions",
+      "model": "mistral-medium-3-5",
+      "apiKey": "${MISTRAL_API_KEY}"
     },
     "mistral-devstral-2512": {
       "endpoint": "https://api.mistral.ai/v1/chat/completions",
