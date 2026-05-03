@@ -24,9 +24,7 @@ import type {
     IToolConfirmationPayload,
     IDiffManager,
     IConfig,
-    IHttpClient,
-    IWebviewViewResolveContext,
-    ICancellationToken
+    IHttpClient
 } from '../types.js';
 // Importing the `eventBus`, a custom mechanism for different parts of the extension
 // to communicate by emitting and listening for events.
@@ -213,9 +211,7 @@ export class ChatWebviewViewProvider {
      * @param webviewView The `IWebviewView` object representing the VS Code chat sidebar panel.
      */
     public async resolveWebviewView(
-        webviewView: IWebviewView,
-        _context: IWebviewViewResolveContext,
-        _token: ICancellationToken,
+        webviewView: IWebviewView
     ) {
         this._view = webviewView; // Store the provided webviewView for later access.
 
