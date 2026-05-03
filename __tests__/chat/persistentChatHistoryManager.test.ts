@@ -24,19 +24,22 @@ describe("PersistentChatHistoryManager", () => {
         expect(mockStorage.loadSessions).toHaveBeenCalled();
     });
 
-    it("should schedule save when a message is added", () => {
+    it("should NOT save when a message is added (now turn-based)", () => {
         const message: IChatMessage = { role: "user", content: "Hello" };
         persistentManager.addMessage(message);
 
         expect(mockHistoryManager.addMessage).toHaveBeenCalledWith(message);
         
-        // Save should not be called immediately
-        expect(mockStorage.saveSession).not.toHaveBeenCalled();
-
-        // Fast-forward time
-        mockHistoryManager.getChatHistory.mockReturnValue([message]);
+        // Save should not be called or scheduled
         jest.advanceTimersByTime(2000);
+        expect(mockStorage.saveSession).not.toHaveBeenCalled();
+    });
 
+    it("should save when persistCurrentSession is called", () => {
+        const message: IChatMessage = { role: "user", content: "Hello" };
+        mockHistoryManager.getChatHistory.mockReturnValue([message]);
+        
+        persistentManager.persistCurrentSession();
         expect(mockStorage.saveSession).toHaveBeenCalled();
     });
 
@@ -47,8 +50,7 @@ describe("PersistentChatHistoryManager", () => {
         ];
         mockHistoryManager.getChatHistory.mockReturnValue(history);
 
-        persistentManager.addMessage(history[0]);
-        jest.advanceTimersByTime(2000);
+        persistentManager.persistCurrentSession();
 
         expect(mockStorage.saveSession).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -60,10 +62,6 @@ describe("PersistentChatHistoryManager", () => {
     it("should handle clearing history", () => {
         persistentManager.clearHistory();
         expect(mockHistoryManager.clearHistory).toHaveBeenCalled();
-        
-        jest.advanceTimersByTime(2000);
-        // Save should NOT be called if history is empty (based on our implementation)
-        expect(mockStorage.saveSession).not.toHaveBeenCalled();
     });
 
     it("should load a specific session", async () => {

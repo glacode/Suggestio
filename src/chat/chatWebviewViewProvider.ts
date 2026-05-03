@@ -24,7 +24,9 @@ import type {
     IToolConfirmationPayload,
     IDiffManager,
     IConfig,
-    IHttpClient
+    IHttpClient,
+    IWebviewViewResolveContext,
+    ICancellationToken
 } from '../types.js';
 // Importing the `eventBus`, a custom mechanism for different parts of the extension
 // to communicate by emitting and listening for events.
@@ -210,7 +212,11 @@ export class ChatWebviewViewProvider {
      *
      * @param webviewView The `IWebviewView` object representing the VS Code chat sidebar panel.
      */
-    public async resolveWebviewView(webviewView: IWebviewView) {
+    public async resolveWebviewView(
+        webviewView: IWebviewView,
+        _context: IWebviewViewResolveContext,
+        _token: ICancellationToken,
+    ) {
         this._view = webviewView; // Store the provided webviewView for later access.
 
         // Sets the title of the webview sidebar panel. By setting it to an empty string,
@@ -358,6 +364,11 @@ export class ChatWebviewViewProvider {
         // Call the agent to run the logic loop.
         await this._chatAgent.run(prompt, this._abortController!.signal);
 
+        // Turn complete: Save the session
+        // There's no need to add this for an error or user abort, since in both cases
+        // we get here after agent.run() so this single statement is always hit
+        this._chatHistoryManager.persistCurrentSession();
+
         // Always send completion to reset UI state
         this._sendCompletionMessage();
     }
@@ -414,6 +425,9 @@ export class ChatWebviewViewProvider {
                     this._abortController = new AbortController();
 
                     this._chatHistoryManager.addMessage({ role: 'user', content: message.text });
+                    // Save user message immediately
+                    this._chatHistoryManager.persistCurrentSession();
+
                     await this._processAgentRun();
                 } catch (error) {
                     this._handleAgentError(error, webviewView);

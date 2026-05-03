@@ -8,13 +8,11 @@ import {
 } from '../types.js';
 
 /**
- * Manages chat history with persistence and debounced auto-save.
+ * Manages chat history with manual persistence support.
  */
 export class PersistentChatHistoryManager implements IPersistentChatHistoryManager {
     private currentSessionId: string;
     private sessions: IChatSession[] = [];
-    private saveTimeout: NodeJS.Timeout | null = null;
-    private readonly DEBOUNCE_MS = 2000;
 
     constructor(
         private readonly historyManager: IChatHistoryManager,
@@ -26,7 +24,6 @@ export class PersistentChatHistoryManager implements IPersistentChatHistoryManag
 
     public addMessage(message: IChatMessage): void {
         this.historyManager.addMessage(message);
-        this.scheduleSave();
     }
 
     public getChatHistory(): ChatHistory {
@@ -35,7 +32,6 @@ export class PersistentChatHistoryManager implements IPersistentChatHistoryManag
 
     public clearHistory(): void {
         this.historyManager.clearHistory();
-        this.scheduleSave();
     }
 
     public async getSessions(): Promise<IChatSession[]> {
@@ -57,14 +53,10 @@ export class PersistentChatHistoryManager implements IPersistentChatHistoryManag
         this.historyManager.clearHistory();
     }
 
-    private scheduleSave(): void {
-        if (this.saveTimeout) {
-            clearTimeout(this.saveTimeout);
-        }
-        this.saveTimeout = setTimeout(() => this.save(), this.DEBOUNCE_MS);
-    }
-
-    private save(): void {
+    /**
+     * Persists the current session to the storage.
+     */
+    public persistCurrentSession(): void {
         const history = this.historyManager.getChatHistory();
         if (history.length === 0) {
             return;

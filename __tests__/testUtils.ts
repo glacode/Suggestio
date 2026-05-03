@@ -33,9 +33,10 @@ import {
     IHttpClient,
     IPersistentChatHistoryManager,
     IWorkspaceChatHistoryStorage,
-    IChatSession,
-    IFileDeleter
-} from "../src/types.js"; import { ILogger } from "../src/log/logger.js";
+    IFileDeleter,
+    IExtensionContextMinimal
+} from "../src/types.js";
+import { ILogger } from "../src/log/logger.js";
 import { CONFIG_DEFAULTS } from "../src/constants/config.js";
 import { jest } from "@jest/globals";
 import * as path from 'path';
@@ -82,7 +83,6 @@ export const createMockVscodeApi = (
     Uri: {
         joinPath: joinPathImpl,
         parse: jest.fn((s: string) => {
-            // Simulate normalization (e.g. ensuring it looks like a canonical URI string)
             const normalized = s.startsWith('suggestio-diff:/') ? s : s.replace('suggestio-diff:', 'suggestio-diff:/');
             return { fsPath: s, toString: () => normalized };
         })
@@ -98,9 +98,6 @@ export const createMockVscodeApi = (
     }
 });
 
-/**
- * A manual mock implementation of the VS Code Webview API.
- */
 export class MockWebviewApi implements IWebviewApi {
     public messages: WebviewMessage[] = [];
     private state: any = undefined;
@@ -190,9 +187,10 @@ export const createMockPersistentHistoryManager = (recorded: ChatHistory = []): 
     clearHistory: jest.fn(() => { recorded.length = 0; }),
     addMessage: jest.fn((m: IChatMessage) => { recorded.push(m); }),
     getChatHistory: jest.fn(() => [...recorded]),
-    getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
-    loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-    newSession: jest.fn<() => void>()
+    getSessions: jest.fn<IPersistentChatHistoryManager["getSessions"]>().mockResolvedValue([]),
+    loadSession: jest.fn<IPersistentChatHistoryManager["loadSession"]>().mockResolvedValue(undefined),
+    newSession: jest.fn<IPersistentChatHistoryManager["newSession"]>(),
+    persistCurrentSession: jest.fn<IPersistentChatHistoryManager["persistCurrentSession"]>()
 });
 
 export const createMockDiffManager = (): jest.Mocked<IDiffManager> => ({
@@ -289,10 +287,6 @@ export const createDefaultConfig = (overrides: Partial<IConfig> = {}): IConfig =
     ...overrides
 });
 
-/**
- * Creates a mock DOMRect object that satisfies the DOMRect interface.
- * We return a plain object that implements all required properties to avoid 'as' assertions.
- */
 export function createMockDomRect(overrides: Partial<DOMRect> = {}): DOMRect {
     return {
         top: 0,
@@ -308,9 +302,6 @@ export function createMockDomRect(overrides: Partial<DOMRect> = {}): DOMRect {
     };
 }
 
-/**
- * Sets up a minimal DOM required for the Chat UI to initialize.
- */
 export function setupChatDom() {
     document.body.innerHTML = `
         <div class="chat-container">
@@ -334,11 +325,36 @@ export function setupChatDom() {
         </div>
     `;
 }
+
 export const createMockWorkspaceChatHistoryStorage = (): jest.Mocked<IWorkspaceChatHistoryStorage> => ({
-    loadSessions: jest.fn<() => IChatSession[]>().mockReturnValue([]),
-    saveSession: jest.fn()
+    loadSessions: jest.fn<IWorkspaceChatHistoryStorage["loadSessions"]>().mockReturnValue([]),
+    saveSession: jest.fn<IWorkspaceChatHistoryStorage["saveSession"]>()
 });
 
 export const createMockFileDeleter = (): jest.Mocked<IFileDeleter> => ({
     delete: jest.fn()
+});
+
+export interface IMockWebviewViewResolveContext<T = any> {
+    readonly state: T | undefined;
+}
+
+export interface IMockCancellationToken {
+    readonly isCancellationRequested: boolean;
+    onCancellationRequested: (listener: (e: any) => any) => IDisposable;
+}
+
+export const createMockWebviewViewResolveContext = <T = any>(): IMockWebviewViewResolveContext<T> => ({
+    state: undefined
+});
+
+export const createMockCancellationToken = (): IMockCancellationToken => ({
+    isCancellationRequested: false,
+    onCancellationRequested: jest.fn(() => ({ dispose: () => { } }))
+});
+
+export const createMockExtensionContextMinimal = (overrides: Partial<IExtensionContextMinimal> = {}): IExtensionContextMinimal => ({
+    extensionUri: createMockUri('/path/to/extension'),
+    globalStorageUri: createMockUri('/path/to/globalStorage'),
+    ...overrides
 });

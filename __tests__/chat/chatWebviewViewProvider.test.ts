@@ -29,7 +29,9 @@ import {
   createMockUri,
   createMockFileContentReader,
   createMockDiffManager,
-  createDefaultConfig
+  createDefaultConfig,
+  createMockWebviewViewResolveContext,
+  createMockCancellationToken
 } from '../testUtils.js';
 import { CONFIG_DEFAULTS } from '../../src/constants/config.js';
 import { configProcessor, type ISecretManager } from '../../src/config/configProcessor.js';
@@ -149,7 +151,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // ********************************************************************************
     //  Call `resolveWebviewView` which is the method VS Code calls to initialize the webview.
     // ********************************************************************************
-    await webViewViewProvider.resolveWebviewView(webviewView);
+    await webViewViewProvider.resolveWebviewView(webviewView, createMockWebviewViewResolveContext(), createMockCancellationToken());
 
     // ********************************************************************************
     //  Assertions: Verify that the webview and its options are set up correctly.
@@ -231,7 +233,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       getChatHistory: () => recorded.slice(),
       getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
       loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-      newSession: jest.fn<() => void>()
+      newSession: jest.fn<() => void>(),
+      persistCurrentSession: jest.fn()
     };
 
     const eventBus = new EventBus();
@@ -277,7 +280,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       httpClient
     });
 
-    await provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView, createMockWebviewViewResolveContext(), createMockCancellationToken());
 
     if (webview.__handler) {
       await webview.__handler({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' });
@@ -327,7 +330,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       getChatHistory: () => [],
       getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
       loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-      newSession: jest.fn<() => void>()
+      newSession: jest.fn<() => void>(),
+      persistCurrentSession: jest.fn()
     };
 
     const eventBus = new EventBus();
@@ -353,7 +357,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       httpClient
     });
 
-    await provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView, createMockWebviewViewResolveContext(), createMockCancellationToken());
 
     // ********************************************************************************
     //  Listen to the `chatProfileChanged` event on the global event bus.
@@ -433,7 +437,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       getChatHistory: () => [],
       getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
       loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-      newSession: jest.fn<() => void>()
+      newSession: jest.fn<() => void>(),
+      persistCurrentSession: jest.fn()
     };
 
     const eventBus = new EventBus();
@@ -459,7 +464,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       httpClient
     });
 
-    await provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView, createMockWebviewViewResolveContext(), createMockCancellationToken());
 
     // ********************************************************************************
     //  Simulate sending an unknown command from the webview.
@@ -497,7 +502,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       getChatHistory: () => [],
       getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
       loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-      newSession: jest.fn<() => void>()
+      newSession: jest.fn<() => void>(),
+      persistCurrentSession: jest.fn()
     };
 
     const anonymizer: IAnonymizer = {
@@ -530,7 +536,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       httpClient
     });
 
-    await provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView, createMockWebviewViewResolveContext(), createMockCancellationToken());
 
     if (webview.__handler) {
       await webview.__handler({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' });
@@ -564,7 +570,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       getChatHistory: () => [],
       getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
       loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-      newSession: jest.fn<() => void>()
+      newSession: jest.fn<() => void>(),
+      persistCurrentSession: jest.fn()
     };
 
     // The anonymizer replaces 'SECRET' with 'ANONYMIZED'
@@ -599,7 +606,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       httpClient
     });
 
-    await provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView, createMockWebviewViewResolveContext(), createMockCancellationToken());
 
     if (webview.__handler) {
       await webview.__handler({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' });
@@ -650,7 +657,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       getChatHistory: () => [],
       getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
       loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-      newSession: jest.fn<() => void>()
+      newSession: jest.fn<() => void>(),
+      persistCurrentSession: jest.fn()
     };
 
     const { config, secretManager, httpClient } = createMocks();
@@ -671,7 +679,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       httpClient
     });
 
-    await provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView, createMockWebviewViewResolveContext(), createMockCancellationToken());
 
     if (webview.__handler) {
       await webview.__handler({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' });
@@ -697,14 +705,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const webviewView = createMockWebviewView(webview, 'X');
 
     let newSessionCalled = false;
-    const chatHistoryManager: IPersistentChatHistoryManager = {
-      clearHistory: () => { },
-      addMessage: () => { },
-      getChatHistory: () => [],
-      getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
-      loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-      newSession: () => { newSessionCalled = true; }
-    };
+    const chatHistoryManager = createMockPersistentHistoryManager();
+    chatHistoryManager.newSession.mockImplementation(() => { newSessionCalled = true; });
 
     const { config, secretManager, httpClient } = createMocks();
 
@@ -730,7 +732,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     expect(posted.length).toBe(0);
 
     newSessionCalled = false;
-    await provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView, createMockWebviewViewResolveContext(), createMockCancellationToken());
     provider.newChat();
     expect(newSessionCalled).toBe(true);
     expect(posted).toContainEqual({ command: EXTENSION_COMMANDS.NEW_CHAT });
@@ -752,14 +754,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileAccessor,
       chatAgent: { run: async () => { } },
-      chatHistoryManager: {
-        clearHistory: () => { },
-        addMessage: () => { },
-        getChatHistory: () => [],
-        getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
-        loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-        newSession: jest.fn<() => void>()
-      },
+      chatHistoryManager: createMockPersistentHistoryManager(),
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
       vscodeApi,
@@ -771,7 +766,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       httpClient
     });
 
-    await provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView, createMockWebviewViewResolveContext(), createMockCancellationToken());
 
     // 1. First trigger a confirmation request to populate the active diffs map
     const toolCallId = 'call-123';
@@ -808,14 +803,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileAccessor,
       chatAgent: { run: async () => { } },
-      chatHistoryManager: {
-        clearHistory: () => { },
-        addMessage: () => { },
-        getChatHistory: () => [],
-        getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
-        loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-        newSession: jest.fn<() => void>()
-      },
+      chatHistoryManager: createMockPersistentHistoryManager(),
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
       vscodeApi,
@@ -827,7 +815,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       httpClient
     });
 
-    await provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView, createMockWebviewViewResolveContext(), createMockCancellationToken());
 
     // 1. First trigger a confirmation request to populate the active diffs map
     const toolCallId = 'call-deny-test';
@@ -866,14 +854,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileAccessor,
       chatAgent: { run: async () => { } },
-      chatHistoryManager: {
-        clearHistory: () => { },
-        addMessage: () => { },
-        getChatHistory: () => [],
-        getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
-        loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-        newSession: jest.fn<() => void>()
-      },
+      chatHistoryManager: createMockPersistentHistoryManager(),
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
       vscodeApi,
@@ -889,7 +870,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     eventBus.emit('agent:maxIterationsReached', { maxIterations: CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS });
     expect(posted.length).toBe(0);
 
-    await provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView, createMockWebviewViewResolveContext(), createMockCancellationToken());
     eventBus.emit('agent:maxIterationsReached', { maxIterations: 10 });
     expect(posted.length).toBe(1);
     const lastPosted = posted[0];
@@ -911,14 +892,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileAccessor,
       chatAgent: { run: async () => { } },
-      chatHistoryManager: {
-        clearHistory: () => { },
-        addMessage: () => { },
-        getChatHistory: () => [],
-        getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
-        loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-        newSession: jest.fn<() => void>()
-      },
+      chatHistoryManager: createMockPersistentHistoryManager(),
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
       vscodeApi,
@@ -930,7 +904,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       httpClient
     });
 
-    await provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView, createMockWebviewViewResolveContext(), createMockCancellationToken());
     if (webview.__handler) {
       await webview.__handler({ command: WEBVIEW_COMMANDS.CANCEL_REQUEST });
     }
@@ -960,14 +934,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileAccessor,
       chatAgent,
-      chatHistoryManager: {
-        clearHistory: () => { },
-        addMessage: () => { },
-        getChatHistory: () => [],
-        getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
-        loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-        newSession: jest.fn<() => void>()
-      },
+      chatHistoryManager: createMockPersistentHistoryManager(),
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
       vscodeApi,
@@ -979,7 +946,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       httpClient
     });
 
-    await provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView, createMockWebviewViewResolveContext(), createMockCancellationToken());
 
     if (webview.__handler) {
       await webview.__handler({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' });
@@ -1006,14 +973,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileAccessor: { getProfiles: () => [], getActiveProfile: () => '' },
       chatAgent: { run: async () => { } },
-      chatHistoryManager: {
-        clearHistory: () => { },
-        addMessage: () => { },
-        getChatHistory: () => [],
-        getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
-        loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-        newSession: jest.fn<() => void>()
-      },
+      chatHistoryManager: createMockPersistentHistoryManager(),
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
       vscodeApi,
@@ -1025,7 +985,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       httpClient
     });
 
-    await provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView, createMockWebviewViewResolveContext(), createMockCancellationToken());
 
     const toolCallId = 'call-123';
     const toolName = 'testTool';
@@ -1063,14 +1023,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileAccessor: { getProfiles: () => [], getActiveProfile: () => '' },
       chatAgent: { run: async () => { } },
-      chatHistoryManager: {
-        clearHistory: () => { },
-        addMessage: () => { },
-        getChatHistory: () => [],
-        getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
-        loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-        newSession: jest.fn<() => void>()
-      },
+      chatHistoryManager: createMockPersistentHistoryManager(),
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
       vscodeApi,
@@ -1082,7 +1035,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       httpClient
     });
 
-    await provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView, createMockWebviewViewResolveContext(), createMockCancellationToken());
 
     const toolCallId = 'call-123';
     const toolName = 'testTool';
@@ -1128,14 +1081,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
           return Promise.resolve();
         }
       },
-      chatHistoryManager: {
-        clearHistory: () => { },
-        addMessage: () => { },
-        getChatHistory: () => [],
-        getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
-        loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-        newSession: jest.fn<() => void>()
-      },
+      chatHistoryManager: createMockPersistentHistoryManager(),
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
       vscodeApi,
@@ -1147,7 +1093,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       httpClient
     });
 
-    await provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView, createMockWebviewViewResolveContext(), createMockCancellationToken());
     if (webview.__handler) {
       await webview.__handler({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' });
     }
@@ -1176,14 +1122,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileAccessor: { getProfiles: () => ['test-profile'], getActiveProfile: () => 'test-profile' },
       chatAgent: { run: async () => { } },
-      chatHistoryManager: {
-        clearHistory: () => { },
-        addMessage: () => { },
-        getChatHistory: () => [],
-        getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
-        loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-        newSession: jest.fn<() => void>()
-      },
+      chatHistoryManager: createMockPersistentHistoryManager(),
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
       vscodeApi,
@@ -1197,7 +1136,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     const webview = createMockWebview();
     const webviewView = createMockWebviewView(webview, 'X');
-    await provider.resolveWebviewView(webviewView);
+    await provider.resolveWebviewView(webviewView, createMockWebviewViewResolveContext(), createMockCancellationToken());
 
     const updateProvidersSpy = jest.spyOn(configProcessor, 'updateProviders');
 

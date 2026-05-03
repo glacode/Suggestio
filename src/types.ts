@@ -623,6 +623,11 @@ export interface IPersistentChatHistoryManager extends IChatHistoryManager {
    * Starts a new chat session.
    */
   newSession(): void;
+
+  /**
+   * Manually persists the current active session to storage.
+   */
+  persistCurrentSession(): void;
 }
 
 /**
@@ -1571,4 +1576,7 @@ export interface ISecretStorage {
 
 export interface SecretContext {
   secrets: ISecretStorage;
+}
+export interface IWebviewViewResolveContext<T = any> {
+  readonly state: T | undefined;
 }
