@@ -37,7 +37,7 @@ describe("Agent Max Iterations", () => {
         const provider: jest.Mocked<ILlmProvider> = {
              query: jest.fn(),
              queryStream: jest.fn(async () => {
-                 return response;
+                 return [response];
              })
         };
 
@@ -81,7 +81,7 @@ describe("Agent Max Iterations", () => {
         const provider: jest.Mocked<ILlmProvider> = {
              query: jest.fn(),
              queryStream: jest.fn(async () => {
-                 return response;
+                 return [response];
              })
         };
 

@@ -116,7 +116,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
 
     expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "Hello", type: "content" });
     expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: " World", type: "content" });
-    expect(response).toEqual({ role: "assistant", content: "Hello World", tool_calls: undefined, reasoning: undefined });
+    expect(response).toHaveLength(1);
+    expect(response[0]).toEqual({ role: "assistant", content: "Hello World", tool_calls: undefined, reasoning: undefined });
   });
 
   it("should handle tools in query", async () => {
@@ -191,9 +192,11 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
 
       const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer, eventBus: mockEventBus, maxRetries: 0, initialDelay: 0 });
       const prompt = new TestPrompt([{ role: "user", content: "this is a secret" }]);
-      await provider.queryStream(prompt);
+      const response = await provider.queryStream(prompt);
       expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "ok, I will keep the ", type: "content" });
       expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "secret safe", type: "content" });
+      expect(response).toHaveLength(1);
+      expect(response[0].content).toBe("ok, I will keep the secret safe");
     });
 
     it("should deanonymize the reasoning from query", async () => {
@@ -219,9 +222,12 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
 
       const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, anonymizer, eventBus: mockEventBus, maxRetries: 0, initialDelay: 0 });
       const prompt = new TestPrompt([{ role: "user", content: "this is a secret" }]);
-      await provider.queryStream(prompt);
+      const response = await provider.queryStream(prompt);
       expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "I am thinking about ", type: "reasoning" });
       expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "secret", type: "reasoning" });
+      expect(response).toHaveLength(2);
+      expect(response[0].reasoning).toBe("I am thinking about secret");
+      expect(response[1].content).toBe("ok");
     });
   });
 
@@ -245,9 +251,10 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
     });
     const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
     const response = await provider.queryStream(prompt);
-    expect(response?.tool_calls).toHaveLength(1);
-    expect(response?.tool_calls?.[0].function.name).toBe("test_tool");
-    expect(response?.tool_calls?.[0].function.arguments).toBe('{"arg":"val"}');
+    expect(response).toHaveLength(1);
+    expect(response[0].tool_calls).toHaveLength(1);
+    expect(response[0].tool_calls?.[0].function.name).toBe("test_tool");
+    expect(response[0].tool_calls?.[0].function.arguments).toBe('{"arg":"val"}');
   });
 
   it("should correctly parse and preserve 'extra_content' (Gemini thought_signature) in streaming responses", async () => {
@@ -270,11 +277,11 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       initialDelay: 0
     });
     const prompt = new TestPrompt([{ role: "user", content: "list files" }]);
-    const result = await provider.queryStream(prompt);
+    const results = await provider.queryStream(prompt);
 
-    expect(result).not.toBeNull();
-    expect(result?.tool_calls).toBeDefined();
-    expect(result?.tool_calls?.[0].extra_content).toEqual({
+    expect(results).toHaveLength(1);
+    expect(results[0].tool_calls).toBeDefined();
+    expect(results[0].tool_calls?.[0].extra_content).toEqual({
       google: { thought_signature: thoughtSignature }
     });
 
@@ -285,7 +292,7 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
 
     const prompt2 = new TestPrompt([
       { role: "user", content: "list files" },
-      result!
+      ...results
     ]);
     await provider.queryStream(prompt2);
 
@@ -399,8 +406,9 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       initialDelay: 0
     });
     const response = await provider.queryStream(new TestPrompt([]));
-    expect(response?.tool_calls).toBeDefined();
-    expect(response?.tool_calls?.[0].id).toBe("call_1");
+    expect(response).toHaveLength(1);
+    expect(response[0].tool_calls).toBeDefined();
+    expect(response[0].tool_calls?.[0].id).toBe("call_1");
   });
 
   it("should reset tool call when a new ID arrives for the same index", async () => {
@@ -424,10 +432,11 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
     const response = await provider.queryStream(new TestPrompt([]));
     
     // It should have the content of the LAST tool call for that index, not merged
-    expect(response?.tool_calls).toHaveLength(1);
-    expect(response?.tool_calls?.[0].id).toBe("call_2");
-    expect(response?.tool_calls?.[0].function.name).toBe("list_files");
-    expect(response?.tool_calls?.[0].function.arguments).toBe('{"directory":"B"}');
+    expect(response).toHaveLength(1);
+    expect(response[0].tool_calls).toHaveLength(1);
+    expect(response[0].tool_calls?.[0].id).toBe("call_2");
+    expect(response[0].tool_calls?.[0].function.name).toBe("list_files");
+    expect(response[0].tool_calls?.[0].function.arguments).toBe('{"directory":"B"}');
   });
 
   it("should handle streaming deanonymization with buffered tokens", async () => {
@@ -622,7 +631,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       initialDelay: 0
     });
     const response = await provider.queryStream(new TestPrompt([]));
-    expect(response?.tool_calls?.[0].id).toBe("call_1_updated");
+    expect(response).toHaveLength(1);
+    expect(response[0].tool_calls?.[0].id).toBe("call_1_updated");
   });
 
   it("should handle multiple tool call updates for the same index", async () => {
@@ -645,7 +655,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       initialDelay: 0
     });
     const response = await provider.queryStream(new TestPrompt([]));
-    expect(response?.tool_calls?.[0].function.arguments).toBe('{"a":1,"b":2}');
+    expect(response).toHaveLength(1);
+    expect(response[0].tool_calls?.[0].function.arguments).toBe('{"a":1,"b":2}');
   });
 
   it("should handle empty content in handleContentDelta", async () => {
@@ -667,7 +678,7 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       initialDelay: 0
     });
     const response = await provider.queryStream(new TestPrompt([]));
-    expect(response?.content).toBe("");
+    expect(response).toHaveLength(0);
   });
 
   it("should throw an error for queryStream on API error", async () => {
@@ -705,7 +716,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       initialDelay: 0
     });
     const response = await provider.queryStream(new TestPrompt([]));
-    expect(response?.content).toBe("ok");
+    expect(response).toHaveLength(1);
+    expect(response[0].content).toBe("ok");
   });
 
   it("should handle non-user messages and tool_call_id in prepareMessages", async () => {
@@ -753,7 +765,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       initialDelay: 0
     });
     const response = await provider.queryStream(new TestPrompt([]));
-    expect(response?.content).toBe("ok");
+    expect(response).toHaveLength(1);
+    expect(response[0].content).toBe("ok");
   });
   
   it("should skip chunks with wrong data prefix", async () => {
@@ -775,7 +788,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       initialDelay: 0
     });
     const response = await provider.queryStream(new TestPrompt([]));
-    expect(response?.content).toBe("ok");
+    expect(response).toHaveLength(1);
+    expect(response[0].content).toBe("ok");
   });
 
   it("should handle error object without message or code", async () => {
@@ -813,8 +827,9 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       initialDelay: 0
     });
     const response = await provider.queryStream(new TestPrompt([]));
-    expect(response?.tool_calls?.[0].function.name).toBe("");
-    expect(response?.tool_calls?.[0].function.arguments).toBe("");
+    expect(response).toHaveLength(1);
+    expect(response[0].tool_calls?.[0].function.name).toBe("");
+    expect(response[0].tool_calls?.[0].function.arguments).toBe("");
   });
 
   it("should handle reasoning tokens in queryStream", async () => {
@@ -839,7 +854,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
 
     expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "I am thinking", type: "reasoning" });
     expect(mockEventBus.emit).toHaveBeenCalledWith('agent:token', { token: "Hello", type: "content" });
-    expect(response?.reasoning).toBe("I am thinking");
-    expect(response?.content).toBe("Hello");
+    expect(response).toHaveLength(2);
+    expect(response[0].reasoning).toBe("I am thinking");
+    expect(response[1].content).toBe("Hello");
   });
 });

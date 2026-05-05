@@ -247,7 +247,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
         query: async () => null,
         queryStream: async () => {
           eventBus.emit('agent:token', { token: 'x', type: 'content' });
-          return Promise.resolve(null);
+          return Promise.resolve([]);
         }
       }
     });

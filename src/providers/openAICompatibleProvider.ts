@@ -430,46 +430,77 @@ export class OpenAICompatibleProvider implements ILlmProvider {
    * 
    * @param prompt - The prompt to be sent.
    * @param tools - Optional tools available for the model to use.
-   * @returns A promise resolving to the final consolidated assistant's message.
+   * @returns A promise resolving to an array of consolidated assistant's messages.
    */
   async queryStream(
     prompt: IPrompt,
     tools?: IToolDefinition[],
     signal?: AbortSignal
-  ): Promise<IChatMessage | null> {
+  ): Promise<IChatMessage[]> {
     const body = this.createRequestBody(prompt, tools, true);
     this.logger.debug(`OpenAI Request Body: ${JSON.stringify(body, null, 2)}`);
 
     const response = await this.performPostWithRetry(body, signal);
 
     this.logger.info(LLM_LOGS.RECEIVING_STREAM);
-    const result = await this.parseStream(response);
-    this.logger.debug(`Consolidated content length: ${result.content.length}`);
-    if (result.reasoning) {
-      this.logger.debug(`Consolidated reasoning length: ${result.reasoning.length}`);
-    }
-    return result;
+    const results = await this.parseStream(response);
+    this.logger.debug(`Number of discrete messages: ${results.length}`);
+    return results;
   }
 
   /**
    * Parses the Server-Sent Events (SSE) stream from the provider's response.
    * 
    * @param response - The IHttpResponse object containing the body stream.
-   * @returns A promise resolving to the complete assistant's message after the stream ends.
+   * @returns A promise resolving to the array of assistant's messages after the stream ends.
    * @throws Error if the response body is missing.
    */
   private async parseStream(
     response: IHttpResponse
-  ): Promise<IChatMessage> {
+  ): Promise<IChatMessage[]> {
     if (!response.body) {
       throw new Error(LLM_MESSAGES.RESPONSE_BODY_NULL);
     }
 
     const contentDeanonymizer = this.anonymizer?.createStreamingDeanonymizer();
     const reasoningDeanonymizer = this.anonymizer?.createStreamingDeanonymizer();
-    let fullContent = "";
-    let fullReasoning = "";
-    const toolCalls: ToolCall[] = [];
+    
+    let currentReasoning = "";
+    let currentContent = "";
+    let currentToolCalls: ToolCall[] = [];
+    const flushedMessages: IChatMessage[] = [];
+    let currentPhase: 'none' | 'reasoning' | 'content' | 'tool_calls' = 'none';
+
+    const flushCurrentMessage = () => {
+        if (currentPhase === 'none') { return; }
+
+        let messageToPush: IChatMessage | null = null;
+
+        if (currentPhase === 'reasoning') {
+            const flushed = this.flushDeanonymizer(reasoningDeanonymizer, 'reasoning');
+            const totalReasoning = currentReasoning + flushed;
+            if (totalReasoning) {
+                messageToPush = { role: 'assistant', content: '', reasoning: totalReasoning };
+            }
+            currentReasoning = "";
+        } else if (currentPhase === 'content') {
+            const flushed = this.flushDeanonymizer(contentDeanonymizer, 'content');
+            const totalContent = currentContent + flushed;
+            if (totalContent) {
+                messageToPush = { role: 'assistant', content: totalContent };
+            }
+            currentContent = "";
+        } else if (currentPhase === 'tool_calls' && currentToolCalls.length > 0) {
+            messageToPush = { role: 'assistant', content: '', tool_calls: currentToolCalls };
+            currentToolCalls = [];
+        }
+
+        if (messageToPush) {
+            flushedMessages.push(messageToPush);
+        }
+        currentPhase = 'none';
+    };
+
     let buffer = "";
 
     for await (const chunk of response.body) {
@@ -479,29 +510,84 @@ export class OpenAICompatibleProvider implements ILlmProvider {
       buffer = newBuffer;
 
       for (const line of lines) {
-        const deltaResult = this.processLine(
-          line,
-          toolCalls,
-          contentDeanonymizer,
-          reasoningDeanonymizer
-        );
-
-        if (deltaResult === null) {
-          this.logger.debug(LLM_LOGS.STREAM_DONE);
-          fullContent += this.flushDeanonymizer(contentDeanonymizer, 'content');
-          fullReasoning += this.flushDeanonymizer(reasoningDeanonymizer, 'reasoning');
-          return this.createAssistantMessage(fullContent, fullReasoning, toolCalls);
+        if (!line.startsWith("data: ")) {
+          continue;
         }
 
-        fullContent += deltaResult.content;
-        fullReasoning += deltaResult.reasoning;
+        const data = line.substring(6).trim();
+        this.logger.debug(LLM_LOGS.STREAM_DATA_RECEIVED(data));
+        if (data === "[DONE]") {
+          this.logger.debug(LLM_LOGS.STREAM_DONE);
+          flushCurrentMessage();
+          return flushedMessages;
+        }
+
+        try {
+          const rawJson = JSON.parse(data);
+          const result = OpenAIStreamChunkSchema.safeParse(rawJson);
+          if (!result.success) {
+            this.logger.error(LLM_MESSAGES.MALFORMED_RESPONSE(`${result.error.message}. Chunk: ${data}`));
+            continue;
+          }
+          const json = result.data;
+          const choice = json.choices?.[0];
+          const delta = choice?.delta;
+
+          if (choice?.finish_reason) {
+            this.logger.debug(LLM_LOGS.STREAM_FINISH_REASON(choice.finish_reason));
+          }
+
+          if (!delta) {
+            continue;
+          }
+
+          // 1. Detect tool calls delta
+          if (delta.tool_calls) {
+              if (currentPhase !== 'tool_calls') {
+                  flushCurrentMessage();
+                  currentPhase = 'tool_calls';
+              }
+              this.handleToolCallsDelta(delta, currentToolCalls);
+          }
+
+          // 2. Detect reasoning/content delta
+          const { content, reasoning } = this.handleContentDelta(delta, contentDeanonymizer, reasoningDeanonymizer);
+          
+          const hasReasoning = !!(delta.reasoning || delta.reasoning_content);
+          const hasContent = delta.content !== undefined && delta.content !== null;
+          const isNonEmptyContent = content.length > 0;
+
+          if (hasReasoning) {
+              if (currentPhase !== 'reasoning') {
+                  flushCurrentMessage();
+                  currentPhase = 'reasoning';
+              }
+              currentReasoning += reasoning;
+          }
+
+          if (hasContent) {
+              // Only transition to content if:
+              // 1. Content is actually non-empty
+              // 2. OR we aren't in reasoning phase (handles explicit empty content at start or end)
+              // 3. AND we didn't just handle reasoning in this SAME chunk (avoids immediate flip-flop)
+              if (isNonEmptyContent || (currentPhase !== 'reasoning' && !hasReasoning)) {
+                  if (currentPhase !== 'content') {
+                      flushCurrentMessage();
+                      currentPhase = 'content';
+                  }
+                  currentContent += content;
+              }
+          }
+
+        } catch (e) {
+          this.logger.error(LLM_MESSAGES.PARSE_CHUNK_ERROR(data));
+        }
       }
     }
 
     this.logger.info(LLM_LOGS.STREAM_FINISHED);
-    fullContent += this.flushDeanonymizer(contentDeanonymizer, 'content');
-    fullReasoning += this.flushDeanonymizer(reasoningDeanonymizer, 'reasoning');
-    return this.createAssistantMessage(fullContent, fullReasoning, toolCalls);
+    flushCurrentMessage();
+    return flushedMessages;
   }
 
   /**
@@ -519,57 +605,6 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     const lines = currentBuffer.split("\n");
     const newBuffer = lines.pop() || "";
     return { lines, newBuffer };
-  }
-
-  /**
-   * Processes a single line from the SSE stream.
-   * 
-   * @param line - The line to process.
-   * @param toolCalls - Array to accumulate tool calls.
-   * @param streamingDeanonymizer - The streaming deanonymizer instance, if any.
-   * @returns The content and reasoning deltas, or null if the stream has finished ([DONE]).
-   */
-  private processLine(
-    line: string,
-    toolCalls: ToolCall[],
-    contentDeanonymizer: IStreamingDeanonymizer | undefined,
-    reasoningDeanonymizer: IStreamingDeanonymizer | undefined
-  ): { content: string; reasoning: string } | null {
-    if (!line.startsWith("data: ")) {
-      return { content: "", reasoning: "" };
-    }
-
-    const data = line.substring(6).trim();
-    this.logger.debug(LLM_LOGS.STREAM_DATA_RECEIVED(data));
-    if (data === "[DONE]") {
-      return null;
-    }
-
-    try {
-      const rawJson = JSON.parse(data);
-      const result = OpenAIStreamChunkSchema.safeParse(rawJson);
-      if (!result.success) {
-        this.logger.error(LLM_MESSAGES.MALFORMED_RESPONSE(`${result.error.message}. Chunk: ${data}`));
-        return { content: "", reasoning: "" };
-      }
-      const json = result.data;
-      const choice = json.choices?.[0];
-      const delta = choice?.delta;
-
-      if (choice?.finish_reason) {
-        this.logger.debug(LLM_LOGS.STREAM_FINISH_REASON(choice.finish_reason));
-      }
-
-      if (!delta) {
-        return { content: "", reasoning: "" };
-      }
-
-      this.handleToolCallsDelta(delta, toolCalls);
-      return this.handleContentDelta(delta, contentDeanonymizer, reasoningDeanonymizer);
-    } catch (e) {
-      this.logger.error(LLM_MESSAGES.PARSE_CHUNK_ERROR(data));
-      return { content: "", reasoning: "" };
-    }
   }
 
   /**
@@ -737,26 +772,5 @@ export class OpenAICompatibleProvider implements ILlmProvider {
       }
     }
     return "";
-  }
-
-  /**
-   * Creates the final ChatMessage object for the assistant's response.
-   * 
-   * @param content - The consolidated content of the message.
-   * @param reasoning - The consolidated reasoning of the message.
-   * @param toolCalls - The array of tool calls generated by the model.
-   * @returns A ChatMessage object.
-   */
-  private createAssistantMessage(
-    content: string,
-    reasoning: string,
-    toolCalls: ToolCall[]
-  ): IChatMessage {
-    return {
-      role: "assistant",
-      content,
-      reasoning: reasoning || undefined,
-      tool_calls: toolCalls.length > 0 ? toolCalls : undefined,
-    };
   }
 }

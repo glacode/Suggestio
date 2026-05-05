@@ -36,7 +36,7 @@ describe("Agent Max Iterations Event", () => {
         const provider: jest.Mocked<ILlmProvider> = {
              query: jest.fn(),
              queryStream: jest.fn(async () => {
-                 return response;
+                 return [response];
              })
         };
 
@@ -68,11 +68,11 @@ describe("Agent Max Iterations Event", () => {
     });
 
     it("does NOT emit agent:maxIterationsReached when finished before limit", async () => {
-        // Returns null to stop
+        // Returns empty array to stop
         const provider: jest.Mocked<ILlmProvider> = {
              query: jest.fn(),
              queryStream: jest.fn(async () => {
-                 return null;
+                 return [];
              })
         };
 

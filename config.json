@@ -78,6 +78,16 @@
       "model": "labs-devstral-small-2512",
       "apiKey": "${MISTRAL_API_KEY}"
     },
+    "openrouter-minimax-m2.5": {
+      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+      "model": "minimax/minimax-m2.5:free",
+      "apiKey": "${OPENROUTER_API_KEY}"
+    },
+    "openrouter-glm-4.5-air": {
+      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+      "model": "z-ai/glm-4.5-air:free",
+      "apiKey": "${OPENROUTER_API_KEY}"
+    },
     "openrouter-arcee-ai-trinity": {
       "endpoint": "https://openrouter.ai/api/v1/chat/completions",
       "model": "arcee-ai/trinity-large-preview:free",

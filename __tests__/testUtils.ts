@@ -51,16 +51,19 @@ export class FakeProvider implements ILlmProvider {
         return this.getNextResponse();
     }
 
-    async queryStream(_prompt: IPrompt, _tools?: IToolDefinition[], signal?: AbortSignal): Promise<IChatMessage | null> {
+    async queryStream(_prompt: IPrompt, _tools?: IToolDefinition[], signal?: AbortSignal): Promise<IChatMessage[]> {
         if (signal?.aborted) { throw new Error("Aborted"); }
         const response = this.getNextResponse();
-        if (response && response.content && this.eventBus) {
-            this.eventBus.emit('agent:token', { token: response.content, type: 'content' });
+        if (response) {
+            if (response.content && this.eventBus) {
+                this.eventBus.emit('agent:token', { token: response.content, type: 'content' });
+            }
+            if (response.reasoning && this.eventBus) {
+                this.eventBus.emit('agent:token', { token: response.reasoning, type: 'reasoning' });
+            }
+            return [response];
         }
-        if (response && response.reasoning && this.eventBus) {
-            this.eventBus.emit('agent:token', { token: response.reasoning, type: 'reasoning' });
-        }
-        return response || null;
+        return [];
     }
 
     private getNextResponse(): IChatMessage | null {
@@ -154,7 +157,7 @@ export const createMockHttpClient = (): jest.Mocked<IHttpClient> => ({
 
 export const createMockProvider = (): jest.Mocked<ILlmProvider> => ({
     query: jest.fn<(prompt: any, tools?: any, signal?: any) => Promise<IChatMessage | null>>(),
-    queryStream: jest.fn<(prompt: any, tools?: any, signal?: any) => Promise<IChatMessage | null>>(),
+    queryStream: jest.fn<(prompt: any, tools?: any, signal?: any) => Promise<IChatMessage[]>>(),
 });
 
 export const createMockEventBus = (): jest.Mocked<IEventBus> => ({

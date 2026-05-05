@@ -54,20 +54,26 @@ export class Agent implements IChatAgent {
             iterations++;
             this.logger.info(AGENT_LOGS.ITERATION_START(iterations, maxIterations));
 
-            const response: IChatMessage | null = await this.queryLLM(currentPrompt, toolDefinitions, signal);
+            const responses: IChatMessage[] = await this.queryLLM(currentPrompt, toolDefinitions, signal);
 
-            if (!response) {
+            if (responses.length === 0) {
                 this.logger.warn(AGENT_LOGS.NO_RESPONSE_RECEIVED);
                 break;
             }
 
             this.logger.debug(AGENT_LOGS.RESPONSE_RECEIVED);
-            this.chatHistoryManager.addMessage(response);
+            
+            let hasToolCalls = false;
+            for (const response of responses) {
+                this.chatHistoryManager.addMessage(response);
+                if (this.shouldProcessToolCalls(response)) {
+                    this.logger.info(AGENT_LOGS.TOOL_CALLS_RECEIVED(response.tool_calls!.length));
+                    await this.processToolCalls(response.tool_calls!, signal);
+                    hasToolCalls = true;
+                }
+            }
 
-            if (this.shouldProcessToolCalls(response)) {
-                this.logger.info(AGENT_LOGS.TOOL_CALLS_RECEIVED(response.tool_calls!.length));
-                await this.processToolCalls(response.tool_calls!, signal);
-
+            if (hasToolCalls) {
                 // After tool results are added, we need to query the LLM again to get the final answer.
                 // We create a new prompt with the updated history.
                 currentPrompt = this.createFollowUpPrompt(currentPrompt.context);
@@ -75,7 +81,8 @@ export class Agent implements IChatAgent {
                 continue;
             }
 
-            this.logger.debug(AGENT_LOGS.TEXT_RESPONSE_RECEIVED(response.content?.length || 0));
+            const totalContentLength = responses.reduce((acc, r) => acc + (r.content?.length || 0), 0);
+            this.logger.debug(AGENT_LOGS.TEXT_RESPONSE_RECEIVED(totalContentLength));
             // No tool calls, we are done.
             break;
         }
@@ -89,7 +96,7 @@ export class Agent implements IChatAgent {
     /**
      * Queries the LLM provider for a response.
      */
-    private async queryLLM(prompt: IPrompt, toolDefinitions: any[], signal?: AbortSignal): Promise<IChatMessage | null> {
+    private async queryLLM(prompt: IPrompt, toolDefinitions: any[], signal?: AbortSignal): Promise<IChatMessage[]> {
         return await this.config.llmProviderForChat!.queryStream(
             prompt,
             toolDefinitions.length > 0 ? toolDefinitions : undefined,

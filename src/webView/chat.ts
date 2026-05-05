@@ -860,21 +860,27 @@ export class ChatManager {
 
         history.forEach(msg => {
             if (msg.role === 'user') {
+                if (this.currentAssistantMessage) {
+                    this.currentAssistantMessage.finish();
+                    this.currentAssistantMessage = null;
+                }
                 this.appendUserMessage(msg.content);
             } else if (msg.role === 'assistant') {
-                const assistantMsg = new AssistantMessage(this, this.chatContainer);
+                if (!this.currentAssistantMessage) {
+                    this.currentAssistantMessage = new AssistantMessage(this, this.chatContainer);
+                }
                 
                 if (msg.reasoning) {
-                    assistantMsg.appendToken(msg.reasoning, 'reasoning');
+                    this.currentAssistantMessage.appendToken(msg.reasoning, 'reasoning');
                 }
 
                 if (msg.content) {
-                    assistantMsg.appendToken(msg.content, 'content');
+                    this.currentAssistantMessage.appendToken(msg.content, 'content');
                 }
 
                 if (msg.tool_calls) {
                     msg.tool_calls.forEach((tc: any) => {
-                        assistantMsg.addToolCall({
+                        this.currentAssistantMessage!.addToolCall({
                             toolCallId: tc.id,
                             toolName: tc.function.name,
                             args: tc.function.arguments
@@ -882,7 +888,7 @@ export class ChatManager {
                         // Find matching tool result
                         const toolResult = history.find(m => m.role === 'tool' && m.tool_call_id === tc.id);
                         if (toolResult) {
-                            assistantMsg.updateToolCall({
+                            this.currentAssistantMessage!.updateToolCall({
                                 toolCallId: tc.id,
                                 toolName: tc.function.name,
                                 success: true, // We assume success if it's in history for now
@@ -891,9 +897,13 @@ export class ChatManager {
                         }
                     });
                 }
-                assistantMsg.finish();
             }
         });
+
+        if (this.currentAssistantMessage) {
+            this.currentAssistantMessage.finish();
+            this.currentAssistantMessage = null;
+        }
     }
 
     private showNotification(text: string) {

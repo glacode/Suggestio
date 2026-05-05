@@ -55,7 +55,7 @@ export class GeminiProvider implements ILlmProvider {
     return { role: "assistant", content };
   }
 
-  async queryStream(prompt: IPrompt, _tools?: any, signal?: AbortSignal): Promise<IChatMessage | null> {
+  async queryStream(prompt: IPrompt, _tools?: any, signal?: AbortSignal): Promise<IChatMessage[]> {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:streamGenerateContent?key=${this.apiKey}&alt=sse`;
 
     const body = {
@@ -133,7 +133,7 @@ export class GeminiProvider implements ILlmProvider {
       }
     }
 
-    return { role: "assistant", content: fullContent };
+    return [{ role: "assistant", content: fullContent }];
   }
 
   private formatConversation(conversation: IChatMessage[]): { role: string; parts: { text: string }[] }[] {

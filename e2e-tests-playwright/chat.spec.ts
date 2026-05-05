@@ -114,7 +114,15 @@ function sendDone(res: any) {
  * This model simulates a multi-turn reasoning process, interleaved with tool calls.
  */
 function streamReasoningModel(res: any, messages: any[]) {
-    const turnIndex = messages.filter((m: any) => m.role === 'assistant').length;
+    let runs = 0;
+    let lastRole = '';
+    for (const m of messages) {
+        if (m.role === 'assistant' && lastRole !== 'assistant') {
+            runs++;
+        }
+        lastRole = m.role;
+    }
+    const turnIndex = runs;
     const allParts = [
         // Turn 1a: Initial reasoning and nested tool request (list_files)
         [
@@ -781,6 +789,7 @@ test.describe('Chat E2E', () => {
     });
 
     test('should handle switching to a reasoning model and processing interleaved tokens correctly', async () => {
+        // await openChatView(page);
         const inner = await getChatFrames(page);
 
         // Switch to the reasoning profile
@@ -1388,7 +1397,7 @@ test.describe('Chat E2E', () => {
 
     test('should bypass confirmation for subsequent run_command calls after "Always Allow" is clicked', async () => {
         // uncomment this if you want to run this test in isolation
-        await openChatView(page);
+        // await openChatView(page);
 
         const inner = await getChatFrames(page);
 

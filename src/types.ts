@@ -1495,7 +1495,7 @@ export interface IHttpClient {
 // --------------------------------------------------------------------------------
 export interface ILlmProvider {
   query(prompt: IPrompt, tools?: IToolDefinition[], signal?: AbortSignal): Promise<IChatMessage | null>;
-  queryStream(prompt: IPrompt, tools?: IToolDefinition[], signal?: AbortSignal): Promise<IChatMessage | null>;
+  queryStream(prompt: IPrompt, tools?: IToolDefinition[], signal?: AbortSignal): Promise<IChatMessage[]>;
 }
 
 // --------------------------------------------------------------------------------
