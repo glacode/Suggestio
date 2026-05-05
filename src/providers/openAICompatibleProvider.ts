@@ -541,16 +541,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
             continue;
           }
 
-          // 1. Detect tool calls delta
-          if (delta.tool_calls) {
-              if (currentPhase !== 'tool_calls') {
-                  flushCurrentMessage();
-                  currentPhase = 'tool_calls';
-              }
-              this.handleToolCallsDelta(delta, currentToolCalls);
-          }
-
-          // 2. Detect reasoning/content delta
+          // 1. Detect reasoning/content delta
           const { content, reasoning } = this.handleContentDelta(delta, contentDeanonymizer, reasoningDeanonymizer);
           
           const hasReasoning = !!(delta.reasoning || delta.reasoning_content);
@@ -577,6 +568,15 @@ export class OpenAICompatibleProvider implements ILlmProvider {
                   }
                   currentContent += content;
               }
+          }
+
+          // 2. Detect tool calls delta
+          if (delta.tool_calls) {
+              if (currentPhase !== 'tool_calls') {
+                  flushCurrentMessage();
+                  currentPhase = 'tool_calls';
+              }
+              this.handleToolCallsDelta(delta, currentToolCalls);
           }
 
         } catch (e) {

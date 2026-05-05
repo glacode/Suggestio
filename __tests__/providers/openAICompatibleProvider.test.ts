@@ -858,4 +858,31 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
     expect(response[0].reasoning).toBe("I am thinking");
     expect(response[1].content).toBe("Hello");
   });
+
+  it("should correctly interleave final token and tool call in the same chunk", async () => {
+    mockHttpClient.post.mockResolvedValue(createMockResponse({
+      body: createStream([
+        'data: {"choices":[{"delta":{"reasoning":"Final thought.","tool_calls":[{"id":"call_1","type":"function","function":{"name":"tool"}}]}}]}\n\n',
+        'data: [DONE]\n\n'
+      ])
+    }));
+
+    const provider = new OpenAICompatibleProvider({
+      httpClient: mockHttpClient,
+      endpoint,
+      apiKey,
+      model,
+      eventBus: mockEventBus,
+      maxRetries: 0,
+      initialDelay: 0
+    });
+    
+    const response = await provider.queryStream(new TestPrompt([]));
+
+    // Expected: 2 messages (Reasoning + Tool), NOT 3 (Reasoning + Tool + Empty Content/Reasoning)
+    expect(response).toHaveLength(2);
+    expect(response[0].reasoning).toBe("Final thought.");
+    expect(response[1].tool_calls).toBeDefined();
+    expect(response[1].tool_calls?.[0].id).toBe("call_1");
+  });
 });
