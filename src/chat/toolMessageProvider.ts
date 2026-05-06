@@ -1,9 +1,9 @@
-import { IToolImplementation, IToolUiOptions, ChatHistory, IToolMessageProvider } from '../types.js';
+import { IToolImplementation, IToolUiOptions, ChatHistory, IToolUiProvider } from '../types.js';
 
 /**
- * Default implementation of IToolMessageProvider that uses tool implementations.
+ * Default implementation of IToolUiProvider that uses tool implementations.
  */
-export class ToolMessageProvider implements IToolMessageProvider {
+export class ToolUiProvider implements IToolUiProvider {
     constructor(private readonly tools: IToolImplementation<any>[]) {}
 
     /**

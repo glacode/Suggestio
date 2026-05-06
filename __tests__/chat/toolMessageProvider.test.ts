@@ -1,9 +1,9 @@
 import { describe, it, expect } from "@jest/globals";
-import { ToolMessageProvider } from "../../src/chat/toolMessageProvider.js";
+import { ToolUiProvider } from "../../src/chat/toolMessageProvider.js";
 import { IToolImplementation, ChatHistory } from "../../src/types.js";
 import { z } from "zod";
 
-describe("ToolMessageProvider", () => {
+describe("ToolUiProvider", () => {
     const mockTool: IToolImplementation<any> = {
         definition: {
             name: "testTool",
@@ -16,7 +16,7 @@ describe("ToolMessageProvider", () => {
         execute: async () => ({ content: "result", success: true })
     };
 
-    const provider = new ToolMessageProvider([mockTool]);
+    const provider = new ToolUiProvider([mockTool]);
 
     it("getToolUI returns formatted message and uiOptions", () => {
         const result = provider.getToolUI("testTool", JSON.stringify({ arg1: "val1" }));

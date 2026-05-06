@@ -1231,7 +1231,7 @@ export interface IToolConfirmationPayload {
 /**
  * Interface for a service that provides human-readable messages and UI options for tool calls.
  */
-export interface IToolMessageProvider {
+export interface IToolUiProvider {
   /**
    * Formats a descriptive message and provides UI options for a tool call.
    * @param toolName The name of the tool.

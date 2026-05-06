@@ -30,7 +30,7 @@ import { configProcessor } from './config/configProcessor.js';
 import { CONFIG_DEFAULTS } from './constants/config.js';
 import { Agent } from './agent/agent.js';
 import { ChatWebviewViewProvider } from './chat/chatWebviewViewProvider.js';
-import { ToolMessageProvider } from './chat/toolMessageProvider.js';
+import { ToolUiProvider } from './chat/toolMessageProvider.js';
 import { getTools } from './tools/index.js';
 import { WorkspaceScanner } from './utils/workspaceScanner.js';
 import { ContextBuilder } from './chat/context.js';
@@ -224,7 +224,7 @@ export async function activate(context: vscode.ExtensionContext) {
     autoAcceptManager
   );
 
-  const toolMessageProvider = new ToolMessageProvider(tools);
+  const toolUiProvider = new ToolUiProvider(tools);
 
   const agent = new Agent({
     config: configContainer.config,
@@ -258,7 +258,7 @@ export async function activate(context: vscode.ExtensionContext) {
     config: configContainer.config,
     secretManager,
     httpClient: new NodeFetchClient(),
-    toolMessageProvider
+    toolUiProvider
   });
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(ChatWebviewViewProvider.viewType, chatWebviewViewProvider, {
