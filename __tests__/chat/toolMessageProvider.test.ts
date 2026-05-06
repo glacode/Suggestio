@@ -1,5 +1,5 @@
 import { describe, it, expect } from "@jest/globals";
-import { ToolUiProvider } from "../../src/chat/toolMessageProvider.js";
+import { ToolUiProvider } from "../../src/chat/toolUiProvider.js";
 import { IToolImplementation, ChatHistory } from "../../src/types.js";
 import { z } from "zod";
 

@@ -30,7 +30,7 @@ import { configProcessor } from './config/configProcessor.js';
 import { CONFIG_DEFAULTS } from './constants/config.js';
 import { Agent } from './agent/agent.js';
 import { ChatWebviewViewProvider } from './chat/chatWebviewViewProvider.js';
-import { ToolUiProvider } from './chat/toolMessageProvider.js';
+import { ToolUiProvider } from './chat/toolUiProvider.js';
 import { getTools } from './tools/index.js';
 import { WorkspaceScanner } from './utils/workspaceScanner.js';
 import { ContextBuilder } from './chat/context.js';
