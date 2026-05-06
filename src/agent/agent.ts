@@ -143,32 +143,14 @@ export class Agent implements IChatAgent {
     private async runTool(tool: IToolImplementation, toolCall: ToolCall, signal?: AbortSignal): Promise<void> {
         this.logger.info(AGENT_LOGS.EXECUTING_TOOL(toolCall.function.name));
         
-        let displayMessage: string | undefined;
-        let parsedArgs: any;
-
-        try {
-            parsedArgs = JSON.parse(toolCall.function.arguments);
-            if (tool.formatMessage) {
-                displayMessage = tool.formatMessage(parsedArgs);
-            }
-        } catch (e) {
-            // If parsing or formatting fails, we just don't provide a displayMessage
-        }
-
         this.eventBus.emit('agent:toolStart', {
             toolCallId: toolCall.id,
             toolName: toolCall.function.name,
-            displayMessage,
             args: toolCall.function.arguments,
-            // Pass UI hints from the tool implementation to the frontend.
-            uiOptions: tool.uiOptions,
         });
 
         try {
-            if (!parsedArgs) {
-                parsedArgs = JSON.parse(toolCall.function.arguments);
-            }
-
+            const parsedArgs = JSON.parse(toolCall.function.arguments);
             const validationResult = tool.schema.safeParse(parsedArgs);
             if (!validationResult.success) {
                 const errorDetails = validationResult.error.issues.map(issue => `${issue.path.join('.')}: ${issue.message}`).join(', ');
@@ -177,9 +159,9 @@ export class Agent implements IChatAgent {
                 return;
             }
             // Use the validated/transformed data
-            parsedArgs = validationResult.data;
+            const validatedArgs = validationResult.data;
 
-            const { content, success } = await tool.execute(parsedArgs, signal, toolCall.id);
+            const { content, success } = await tool.execute(validatedArgs, signal, toolCall.id);
             this.recordToolResult(toolCall.id, toolCall.function.name, content, success);
         } catch (e: any) {
             this.handleToolError(toolCall.id, toolCall.function.name, e);
@@ -194,7 +176,6 @@ export class Agent implements IChatAgent {
         this.eventBus.emit('agent:toolStart', {
             toolCallId: toolCall.id,
             toolName: toolCall.function.name,
-            displayMessage: undefined,
             args: toolCall.function.arguments
         });
         this.recordToolResult(toolCall.id, toolCall.function.name, AGENT_MESSAGES.ERROR_TOOL_NOT_FOUND(toolCall.function.name), false);

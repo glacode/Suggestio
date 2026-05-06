@@ -883,7 +883,9 @@ export class ChatManager {
                         this.currentAssistantMessage!.addToolCall({
                             toolCallId: tc.id,
                             toolName: tc.function.name,
-                            args: tc.function.arguments
+                            args: tc.function.arguments,
+                            displayMessage: tc.displayMessage,
+                            uiOptions: tc.uiOptions
                         });
                         // Find matching tool result
                         const toolResult = history.find(m => m.role === 'tool' && m.tool_call_id === tc.id);
@@ -892,7 +894,8 @@ export class ChatManager {
                                 toolCallId: tc.id,
                                 toolName: tc.function.name,
                                 success: true, // We assume success if it's in history for now
-                                result: toolResult.content
+                                result: toolResult.content,
+                                customMessage: tc.displayMessage
                             });
                         }
                     });

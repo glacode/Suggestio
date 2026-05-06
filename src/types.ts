@@ -1202,10 +1202,7 @@ export interface ILogEventPayload {
 export interface IToolCallEventPayload {
   toolCallId: string;
   toolName: string;
-  displayMessage?: string;
   args: string;
-  /** Internal metadata to guide the frontend rendering. */
-  uiOptions?: IToolUiOptions;
 }
 
 export interface IToolResultEventPayload {
@@ -1229,6 +1226,27 @@ export interface IToolConfirmationPayload {
     newContent: string;
     filePath: string;
   };
+}
+
+/**
+ * Interface for a service that provides human-readable messages and UI options for tool calls.
+ */
+export interface IToolMessageProvider {
+  /**
+   * Formats a descriptive message and provides UI options for a tool call.
+   * @param toolName The name of the tool.
+   * @param args The arguments passed to the tool as a JSON string.
+   * @returns An object containing the display message and UI options.
+   */
+  getToolUI(toolName: string, args: string): { displayMessage?: string; uiOptions?: IToolUiOptions };
+
+  /**
+   * Enriches a chat history with tool display messages and UI options.
+   * This is useful for preparing history for the webview without persisting UI data.
+   * @param history The chat history to enrich.
+   * @returns A new enriched chat history.
+   */
+  enrichHistory(history: ChatHistory): any[];
 }
 
 /**

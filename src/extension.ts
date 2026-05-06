@@ -30,6 +30,7 @@ import { configProcessor } from './config/configProcessor.js';
 import { CONFIG_DEFAULTS } from './constants/config.js';
 import { Agent } from './agent/agent.js';
 import { ChatWebviewViewProvider } from './chat/chatWebviewViewProvider.js';
+import { ToolMessageProvider } from './chat/toolMessageProvider.js';
 import { getTools } from './tools/index.js';
 import { WorkspaceScanner } from './utils/workspaceScanner.js';
 import { ContextBuilder } from './chat/context.js';
@@ -209,22 +210,26 @@ export async function activate(context: vscode.ExtensionContext) {
   const commandValidator = new CommandBlacklistValidator();
   const autoAcceptManager = new CommandAutoAcceptManager();
 
+  const tools = getTools(
+    workspaceProvider,
+    fileContentReader,
+    fileContentWriter,
+    pathResolver,
+    eventBus,
+    ignoreManager,
+    workspaceScanner,
+    commandExecutor,
+    commandValidator,
+    configContainer.config, // Acts as IAutoAcceptProvider
+    autoAcceptManager
+  );
+
+  const toolMessageProvider = new ToolMessageProvider(tools);
+
   const agent = new Agent({
     config: configContainer.config,
     chatHistoryManager,
-    tools: getTools(
-      workspaceProvider,
-      fileContentReader,
-      fileContentWriter,
-      pathResolver,
-      eventBus,
-      ignoreManager,
-      workspaceScanner,
-      commandExecutor,
-      commandValidator,
-      configContainer.config, // Acts as IAutoAcceptProvider
-      autoAcceptManager
-    ),
+    tools,
     eventBus
   });
   const providerAccessor = {
@@ -252,7 +257,8 @@ export async function activate(context: vscode.ExtensionContext) {
     anonymizer: configContainer.config.anonymizerInstance,
     config: configContainer.config,
     secretManager,
-    httpClient: new NodeFetchClient()
+    httpClient: new NodeFetchClient(),
+    toolMessageProvider
   });
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(ChatWebviewViewProvider.viewType, chatWebviewViewProvider, {

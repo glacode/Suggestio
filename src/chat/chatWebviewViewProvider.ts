@@ -24,7 +24,8 @@ import type {
     IToolConfirmationPayload,
     IDiffManager,
     IConfig,
-    IHttpClient
+    IHttpClient,
+    IToolMessageProvider
 } from '../types.js';
 // Importing the `eventBus`, a custom mechanism for different parts of the extension
 // to communicate by emitting and listening for events.
@@ -52,6 +53,7 @@ interface IChatWebviewViewProviderArgs {
     config: IConfig;
     secretManager: ISecretManager;
     httpClient: IHttpClient;
+    toolMessageProvider: IToolMessageProvider;
 }
 
 /**
@@ -85,6 +87,7 @@ export class ChatWebviewViewProvider {
     private readonly _config: IConfig;
     private readonly _secretManager: ISecretManager;
     private readonly _httpClient: IHttpClient;
+    private readonly _toolMessageProvider: IToolMessageProvider;
     private _abortController?: AbortController; // For cancelling ongoing LLM requests
     
     // Store active diff data keyed by toolCallId to handle 'viewDiff' commands
@@ -96,7 +99,7 @@ export class ChatWebviewViewProvider {
      * The constructor initializes the `ChatWebviewViewProvider` with its dependencies.
      * These dependencies are typically passed from `extension.ts` during activation.
      */
-    constructor({ extensionContext, profileAccessor, chatAgent, chatHistoryManager, buildContext, getChatWebviewContent, vscodeApi, fileReader, eventBus, diffManager, anonymizer, config, secretManager, httpClient }: IChatWebviewViewProviderArgs) {
+    constructor({ extensionContext, profileAccessor, chatAgent, chatHistoryManager, buildContext, getChatWebviewContent, vscodeApi, fileReader, eventBus, diffManager, anonymizer, config, secretManager, httpClient, toolMessageProvider }: IChatWebviewViewProviderArgs) {
         this._extensionContext = extensionContext;
         this._profileAccessor = profileAccessor;
         this._chatAgent = chatAgent;
@@ -111,6 +114,7 @@ export class ChatWebviewViewProvider {
         this._config = config;
         this._secretManager = secretManager;
         this._httpClient = httpClient;
+        this._toolMessageProvider = toolMessageProvider;
         this.logger = createEventLogger(eventBus);
 
         this._eventBus.on('agent:maxIterationsReached', (payload: { maxIterations: number }) => {
@@ -140,15 +144,16 @@ export class ChatWebviewViewProvider {
 
         this._eventBus.on('agent:toolStart', (payload: IToolCallEventPayload) => {
             if (this._view) {
+                const { displayMessage, uiOptions } = this._toolMessageProvider.getToolUI(payload.toolName, payload.args);
                 this._view.webview.postMessage({
                     sender: MESSAGE_SENDERS.ASSISTANT,
                     type: EXTENSION_EVENTS.TOOL_START,
                     toolCallId: payload.toolCallId,
                     toolName: payload.toolName,
-                    displayMessage: payload.displayMessage,
+                    displayMessage,
                     args: payload.args,
                     // Forward internal UI hints to the webview.
-                    uiOptions: payload.uiOptions
+                    uiOptions
                 });
             }
         });
@@ -481,9 +486,10 @@ export class ChatWebviewViewProvider {
                 });
             } else if (message.command === WEBVIEW_COMMANDS.LOAD_SESSION) {
                 await this._chatHistoryManager.loadSession(message.sessionId);
+                const enrichedHistory = this._toolMessageProvider.enrichHistory(this._chatHistoryManager.getChatHistory());
                 webviewView.webview.postMessage({
                     type: EXTENSION_EVENTS.CHAT_HISTORY_LOADED,
-                    history: this._chatHistoryManager.getChatHistory()
+                    history: enrichedHistory
                 });
             } else if (message.command === WEBVIEW_COMMANDS.COMPLETION_PROFILE_CHANGED) {
                 // Handle a message from the webview indicating the user changed the

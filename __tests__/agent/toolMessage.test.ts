@@ -25,7 +25,7 @@ describe("Agent Tool Message Formatting", () => {
         mockEventBus = createMockEventBus();
     });
 
-    it("uses custom formatMessage when available", async () => {
+    it("emits raw tool info without formatting", async () => {
         const toolCall: ToolCall = {
             id: "call_1",
             type: "function",
@@ -67,14 +67,15 @@ describe("Agent Tool Message Formatting", () => {
 
         await agent.run(mockPrompt);
 
-        expect(mockTool.formatMessage).toHaveBeenCalledWith({ arg1: "value1" });
-        expect(mockEventBus.emit).toHaveBeenCalledWith('agent:toolStart', expect.objectContaining({
+        expect(mockTool.formatMessage).not.toHaveBeenCalled();
+        expect(mockEventBus.emit).toHaveBeenCalledWith('agent:toolStart', {
+            toolCallId: "call_1",
             toolName: "customTool",
-            displayMessage: "Custom message for value1"
-        }));
+            args: JSON.stringify({ arg1: "value1" })
+        });
     });
 
-    it("falls back to undefined displayMessage when formatMessage is not provided", async () => {
+    it("emits toolStart for tools without formatMessage", async () => {
         const toolCall: ToolCall = {
             id: "call_2",
             type: "function",
@@ -115,9 +116,10 @@ describe("Agent Tool Message Formatting", () => {
 
         await agent.run(mockPrompt);
 
-        expect(mockEventBus.emit).toHaveBeenCalledWith('agent:toolStart', expect.objectContaining({
+        expect(mockEventBus.emit).toHaveBeenCalledWith('agent:toolStart', {
+            toolCallId: "call_2",
             toolName: "fallbackTool",
-            displayMessage: undefined
-        }));
+            args: "{}"
+        });
     });
 });
