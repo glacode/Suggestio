@@ -1,9 +1,9 @@
-import { ChatHistory, IPrompt } from "../../types.js";
+import { IChatMessage, IPrompt } from "../../types.js";
 
 export class UserPrompt implements IPrompt {
   constructor(private prompt: string) { }
 
-  generateChatHistory(): ChatHistory {
+  generateChatHistory(): IChatMessage[] {
     return [{ role: "user", content: this.prompt }];
   }
 }

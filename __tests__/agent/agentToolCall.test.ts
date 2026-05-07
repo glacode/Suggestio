@@ -1,13 +1,13 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
-import { IChatHistoryManager, IChatMessage, IPrompt, ChatHistory, IToolImplementation, ToolCall, IEventBus } from "../../src/types.js";
+import { IChatHistoryManager, IChatMessage, IPrompt, IStoredChatMessage, IToolImplementation, ToolCall, IEventBus } from "../../src/types.js";
 import { FakeProvider, createDefaultConfig, createMockProfileConfig, createMockEventBus } from "../testUtils.js";
 import { AGENT_MESSAGES } from "../../src/constants/messages.js";
 import { z } from "zod";
 
 describe("ChatResponder Tool Calling Integration", () => {
     let mockChatHistoryManager: IChatHistoryManager;
-    let mockChatHistory: ChatHistory;
+    let mockChatHistory: IStoredChatMessage[];
     let mockPrompt: IPrompt;
     let mockEventBus: jest.Mocked<IEventBus>;
 
@@ -97,7 +97,7 @@ describe("ChatResponder Tool Calling Integration", () => {
 
         // Verify history updates
         expect(mockChatHistoryManager.addMessage).toHaveBeenCalledTimes(3);
-        
+
         expect(mockChatHistory[0]).toEqual(expect.objectContaining({ role: "assistant", content: "" }));
         expect(mockChatHistory[1]).toEqual({
             role: "tool",

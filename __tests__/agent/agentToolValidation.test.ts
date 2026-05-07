@@ -1,7 +1,7 @@
 import { Agent } from "../../src/agent/agent.js";
 import { IToolImplementation, IToolDefinition } from "../../src/types.js";
 import { z } from "zod";
-import { jest } from "@jest/globals";
+import { expect, jest } from "@jest/globals";
 import { createMockEventBus, createMockHistoryManager, createDefaultConfig, FakeProvider } from "../testUtils.js";
 
 describe("Agent Tool Argument Validation", () => {

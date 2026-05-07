@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { OpenAICompatibleProvider } from "../../src/providers/openAICompatibleProvider.js";
-import { ChatHistory, IChatMessage, IStoredChatMessage, IAnonymizer, IPrompt, IHttpClient, IHttpResponse, IToolDefinition, IEventBus, IConfig } from "../../src/types.js";
+import { IChatMessage, IStoredChatMessage, IAnonymizer, IPrompt, IHttpClient, IHttpResponse, IToolDefinition, IEventBus, IConfig } from "../../src/types.js";
 import { SimpleWordAnonymizer } from "../../src/anonymizer/simpleWordAnonymizer.js";
 import { ShannonEntropyCalculator } from "../../src/utils/shannonEntropyCalculator.js";
 import { createMockEventBus, createDefaultConfig } from "../testUtils.js";
@@ -23,7 +23,7 @@ function createAnonymizer(anonymizerOverrides: Partial<IConfig['anonymizer']> = 
 
 class TestPrompt implements IPrompt {
   constructor(private messages: IChatMessage[]) { }
-  generateChatHistory(): ChatHistory { return this.messages; }
+  generateChatHistory(): IChatMessage[] { return this.messages; }
 }
 
 function createMockResponse(options: {

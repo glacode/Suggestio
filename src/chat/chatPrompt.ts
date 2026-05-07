@@ -1,4 +1,4 @@
-import { ChatHistory, IChatMessage, IPrompt } from "../types.js";
+import { IStoredChatMessage, IChatMessage, IPrompt } from "../types.js";
 import { SYSTEM_PROMPTS } from "../constants/prompts.js";
 
 const SYSTEM_PROMPT: IChatMessage = {
@@ -18,7 +18,7 @@ const SYSTEM_PROMPT: IChatMessage = {
 export class ChatPrompt implements IPrompt {
   public readonly context?: string;
 
-  constructor(private conversation: ChatHistory, context?: string) {
+  constructor(private conversation: IStoredChatMessage[], context?: string) {
     this.context = context;
     // The spec says 'Typically, a conversation is formatted with a system message first,
     // followed by alternating user and assistant messages.' So we merge the system prompt

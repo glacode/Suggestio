@@ -12,10 +12,11 @@ import type {
   IPersistentChatHistoryManager, // A type for managing persistent chat history.
   MessageFromTheExtensionToTheWebview, // A type for messages sent *to* the webview (e.g., AI responses).
   ChatRole,
-  ChatHistory,
   IPrompt,
   IAnonymizer,
-  IToolUiProvider
+  IToolUiProvider,
+  IChatMessage,
+  IStoredChatMessage
 } from '../../src/types.js';
 import { SYSTEM_PROMPTS } from '../../src/constants/prompts.js';
 import { WEBVIEW_COMMANDS, EXTENSION_COMMANDS, EXTENSION_EVENTS, MESSAGE_SENDERS } from '../../src/constants/protocol.js';
@@ -57,7 +58,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     };
     const toolUiProvider: IToolUiProvider = {
       getToolUI: jest.fn<any>().mockReturnValue({ displayMessage: 'formatted-message', uiOptions: {} }),
-      enrichHistory: jest.fn<any>().mockImplementation((history: ChatHistory) => history)
+      enrichHistory: jest.fn<any>().mockImplementation((history: IChatMessage[]) => history)
     };
     return { config, secretManager, httpClient, toolUiProvider };
   };
@@ -127,7 +128,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       return `HTML for ${args.initialState.profiles.join(',')}`; // Return a custom HTML string based on profiles.
     };
 
-    const recorded: ChatHistory = [];
+    const recorded: IStoredChatMessage[] = [];
     const chatHistoryManager = createMockPersistentHistoryManager(recorded);
 
     const { config, secretManager, httpClient, toolUiProvider } = createMocks();
@@ -211,7 +212,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     // Expect only one prompt to have been processed.
     expect(promptsSent.length).toBe(1);
-    const chatHistory: ChatHistory = promptsSent[0].generateChatHistory();
+    const chatHistory: IChatMessage[] = promptsSent[0].generateChatHistory();
     expect(chatHistory.length).toBe(2);
 
     expect(chatHistory[0]).toEqual({ role: 'system', content: `${SYSTEM_PROMPTS.AGENT}` });

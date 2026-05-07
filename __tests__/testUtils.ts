@@ -15,7 +15,7 @@ import {
     IIgnoreManager,
     IConfig,
     IChatHistoryManager,
-    ChatHistory,
+    IStoredChatMessage,
     IProfileConfig,
     IWindowProvider,
     IWorkspaceProvider,
@@ -180,13 +180,13 @@ export const createMockIgnoreManager = (): jest.Mocked<IIgnoreManager> => ({
     shouldIgnore: jest.fn<(filePath: string) => Promise<boolean>>().mockResolvedValue(false),
 });
 
-export const createMockHistoryManager = (recorded: ChatHistory = []): jest.Mocked<IChatHistoryManager> => ({
+export const createMockHistoryManager = (recorded: IStoredChatMessage[] = []): jest.Mocked<IChatHistoryManager> => ({
     clearHistory: jest.fn(() => { recorded.length = 0; }),
     addMessage: jest.fn((m: IChatMessage) => { recorded.push(m); }),
     getChatHistory: jest.fn(() => [...recorded])
 });
 
-export const createMockPersistentHistoryManager = (recorded: ChatHistory = []): jest.Mocked<IPersistentChatHistoryManager> => ({
+export const createMockPersistentHistoryManager = (recorded: IStoredChatMessage[] = []): jest.Mocked<IPersistentChatHistoryManager> => ({
     clearHistory: jest.fn(() => { recorded.length = 0; }),
     addMessage: jest.fn((m: IChatMessage) => { recorded.push(m); }),
     getChatHistory: jest.fn(() => [...recorded]),

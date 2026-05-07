@@ -1,6 +1,6 @@
 import { describe, it, expect } from "@jest/globals";
 import { ToolUiProvider } from "../../src/chat/toolUiProvider.js";
-import { IToolImplementation, ChatHistory } from "../../src/types.js";
+import { IToolImplementation, IChatMessage } from "../../src/types.js";
 import { z } from "zod";
 
 describe("ToolUiProvider", () => {
@@ -40,7 +40,7 @@ describe("ToolUiProvider", () => {
     });
 
     it("enrichHistory adds displayMessage and uiOptions to assistant tool calls", () => {
-        const history: ChatHistory = [
+        const history: IChatMessage[] = [
             { role: "user", content: "hello" },
             {
                 role: "assistant",
@@ -67,7 +67,7 @@ describe("ToolUiProvider", () => {
     });
 
     it("enrichHistory leaves other messages untouched", () => {
-        const history: ChatHistory = [
+        const history: IChatMessage[] = [
             { role: "user", content: "hello" },
             { role: "assistant", content: "hi" }
         ];

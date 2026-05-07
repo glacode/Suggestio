@@ -1,4 +1,4 @@
-import { IToolImplementation, IToolUiOptions, ChatHistory, IToolUiProvider } from '../types.js';
+import { IToolImplementation, IToolUiOptions, IToolUiProvider, IChatMessage } from '../types.js';
 
 /**
  * Default implementation of IToolUiProvider that uses tool implementations.
@@ -35,7 +35,7 @@ export class ToolUiProvider implements IToolUiProvider {
      * Enriches a chat history with tool display messages and UI options.
      * Returns a deep copy with enriched tool calls.
      */
-    enrichHistory(history: ChatHistory): any[] {
+    enrichHistory(history: IChatMessage[]): any[] {
         return history.map(msg => {
             if (msg.role === 'assistant' && msg.tool_calls) {
                 return {

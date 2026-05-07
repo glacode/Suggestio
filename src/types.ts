@@ -477,7 +477,7 @@ export type MessageFromTheExtensionToTheWebview =
     /** Instructs the webview to load a specific chat history. */
     type: typeof EXTENSION_EVENTS.CHAT_HISTORY_LOADED;
     /** The chat history to load. */
-    history: ChatHistory;
+    history: IStoredChatMessage[];
   }
   | {
     /** Provides a list of saved chat sessions to the webview. */
@@ -516,11 +516,6 @@ export interface IStoredChatMessage extends IChatMessage {
   /** Extension-specific metadata that is persisted but NOT sent to the LLM. */
   metadata?: IMessageMetadata;
 }
-
-/**
- * Represents the full history of a chat conversation.
- */
-export type ChatHistory = IStoredChatMessage[];
 
 /**
  * The `IPrompt` interface defines a contract for objects responsible for generating
@@ -596,7 +591,7 @@ export interface IChatSession {
   id: string;
   title: string;
   timestamp: number;
-  history: ChatHistory;
+  history: IStoredChatMessage[];
 }
 
 /**
@@ -618,7 +613,7 @@ export interface IChatHistoryManager {
    * Retrieves the current chat history.
    * @returns An array of chat messages.
    */
-  getChatHistory(): ChatHistory;
+  getChatHistory(): IStoredChatMessage[];
 }
 
 /**
@@ -1263,7 +1258,7 @@ export interface IToolUiProvider {
    * @param history The chat history to enrich.
    * @returns A new enriched chat history.
    */
-  enrichHistory(history: ChatHistory): any[];
+  enrichHistory(history: IChatMessage[]): any[];
 }
 
 /**

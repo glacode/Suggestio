@@ -1,11 +1,11 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
-import { IChatHistoryManager, IChatMessage, IPrompt, ChatHistory, IEventBus } from "../../src/types.js";
+import { IChatHistoryManager, IChatMessage, IPrompt, IStoredChatMessage, IEventBus } from "../../src/types.js";
 import { createDefaultConfig, createMockProfileConfig, FakeProvider, createMockEventBus } from "../testUtils.js";
 
 describe("Agent (Integration) simple tests", () => {
     let mockChatHistoryManager: IChatHistoryManager;
-    let mockChatHistory: ChatHistory;
+    let mockChatHistory: IStoredChatMessage[];
     let mockPrompt: IPrompt;
     let mockEventBus: jest.Mocked<IEventBus>;
 

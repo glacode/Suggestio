@@ -1,6 +1,5 @@
 import { 
     IStoredChatMessage, 
-    ChatHistory, 
     IPersistentChatHistoryManager, 
     IChatSession,
     IChatHistoryManager,
@@ -26,7 +25,7 @@ export class PersistentChatHistoryManager implements IPersistentChatHistoryManag
         this.historyManager.addMessage(message);
     }
 
-    public getChatHistory(): ChatHistory {
+    public getChatHistory(): IStoredChatMessage[] {
         return this.historyManager.getChatHistory();
     }
 
@@ -76,7 +75,7 @@ export class PersistentChatHistoryManager implements IPersistentChatHistoryManag
         this.sessions = this.storage.loadSessions();
     }
 
-    private generateTitle(history: ChatHistory): string {
+    private generateTitle(history: IStoredChatMessage[]): string {
         const firstUserMessage = history.find(m => m.role === 'user');
         if (!firstUserMessage) {
             return 'New Chat';
