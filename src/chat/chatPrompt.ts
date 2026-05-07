@@ -40,9 +40,10 @@ export class ChatPrompt implements IPrompt {
   }
 
   /**
-   * Generates the final chat history, including system and context messages,
-   * ready to be sent to the Language Model.
-   * @returns The prepared chat history.
+   * Generates a sanitized version of the chat history, removing any 
+   * local-only metadata (e.g., tool call success/failure status) 
+   * to ensure no internal extension state is leaked to the LLM.
+   * @returns An array of standard IChatMessage objects ready for LLM consumption.
    */
   generateChatHistory(): IChatMessage[] {
     return this.conversation.map(({ metadata, ...rest }) => rest);
