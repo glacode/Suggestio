@@ -204,7 +204,8 @@ export class Agent implements IChatAgent {
         this.chatHistoryManager.addMessage({
             role: 'tool',
             content: truncatedContent,
-            tool_call_id: toolCallId
+            tool_call_id: toolCallId,
+            metadata: { toolCallSuccess: success }
         });
     }
 

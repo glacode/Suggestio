@@ -1,5 +1,5 @@
 import { 
-    IChatMessage, 
+    IStoredChatMessage, 
     ChatHistory, 
     IPersistentChatHistoryManager, 
     IChatSession,
@@ -22,7 +22,7 @@ export class PersistentChatHistoryManager implements IPersistentChatHistoryManag
         this.sessions = this.storage.loadSessions();
     }
 
-    public addMessage(message: IChatMessage): void {
+    public addMessage(message: IStoredChatMessage): void {
         this.historyManager.addMessage(message);
     }
 

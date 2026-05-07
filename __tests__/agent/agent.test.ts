@@ -265,12 +265,14 @@ describe("Agent", () => {
         expect(mockChatHistory[1]).toEqual({
             role: "tool",
             content: "Result A",
-            tool_call_id: "call_A"
+            tool_call_id: "call_A",
+            metadata: { toolCallSuccess: true }
         });
         expect(mockChatHistory[2]).toEqual({
             role: "tool",
             content: "Result B",
-            tool_call_id: "call_B"
+            tool_call_id: "call_B",
+            metadata: { toolCallSuccess: true }
         });
         expect(mockChatHistory[3]).toEqual(finalResponse);
     });
@@ -346,13 +348,15 @@ describe("Agent", () => {
         expect(mockChatHistory[1]).toEqual({
             role: "tool",
             content: "Result 1",
-            tool_call_id: "call_1"
+            tool_call_id: "call_1",
+            metadata: { toolCallSuccess: true }
         });
         expect(mockChatHistory[2]).toEqual(response2);
         expect(mockChatHistory[3]).toEqual({
             role: "tool",
             content: "Result 2",
-            tool_call_id: "call_2"
+            tool_call_id: "call_2",
+            metadata: { toolCallSuccess: true }
         });
         expect(mockChatHistory[4]).toEqual(finalResponse);
     });

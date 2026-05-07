@@ -102,7 +102,8 @@ describe("ChatResponder Tool Calling Integration", () => {
         expect(mockChatHistory[1]).toEqual({
             role: "tool",
             content: "12:00 PM",
-            tool_call_id: "call_123"
+            tool_call_id: "call_123",
+            metadata: { toolCallSuccess: true }
         });
         expect(mockChatHistory[2]).toEqual(expect.objectContaining({ role: "assistant", content: "It is 12:00 PM" }));
     });

@@ -501,9 +501,26 @@ export interface IEntropyCalculator {
 }
 
 /**
+ * Local-only metadata for a message, used for UI state and extension logic.
+ * This is persisted to history but NOT sent to the LLM.
+ */
+export interface IMessageMetadata {
+  /** Whether the tool execution was successful (for role: 'tool'). */
+  toolCallSuccess?: boolean;
+}
+
+/**
+ * Represents a chat message as it is stored in the local history.
+ */
+export interface IStoredChatMessage extends IChatMessage {
+  /** Extension-specific metadata that is persisted but NOT sent to the LLM. */
+  metadata?: IMessageMetadata;
+}
+
+/**
  * Represents the full history of a chat conversation.
  */
-export type ChatHistory = IChatMessage[];
+export type ChatHistory = IStoredChatMessage[];
 
 /**
  * The `IPrompt` interface defines a contract for objects responsible for generating
@@ -516,9 +533,9 @@ export type ChatHistory = IChatMessage[];
 export interface IPrompt {
   /**
    * Generates the chat history array to be sent to the LLM.
-   * @returns The constructed chat history.
+   * @returns The constructed chat history, sanitized of local metadata.
    */
-  generateChatHistory(): ChatHistory;
+  generateChatHistory(): IChatMessage[];
 
   /**
    * The additional context used when building the system prompt.
@@ -595,7 +612,7 @@ export interface IChatHistoryManager {
    * Adds a new message to the chat history.
    * @param message The message to add.
    */
-  addMessage(message: IChatMessage): void;
+  addMessage(message: IStoredChatMessage): void;
 
   /**
    * Retrieves the current chat history.

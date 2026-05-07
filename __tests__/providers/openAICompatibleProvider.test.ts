@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { OpenAICompatibleProvider } from "../../src/providers/openAICompatibleProvider.js";
-import { ChatHistory, IChatMessage, IAnonymizer, IPrompt, IHttpClient, IHttpResponse, IToolDefinition, IEventBus, IConfig } from "../../src/types.js";
+import { ChatHistory, IChatMessage, IStoredChatMessage, IAnonymizer, IPrompt, IHttpClient, IHttpResponse, IToolDefinition, IEventBus, IConfig } from "../../src/types.js";
 import { SimpleWordAnonymizer } from "../../src/anonymizer/simpleWordAnonymizer.js";
 import { ShannonEntropyCalculator } from "../../src/utils/shannonEntropyCalculator.js";
 import { createMockEventBus, createDefaultConfig } from "../testUtils.js";
@@ -143,6 +143,41 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
     const body = JSON.parse(callArgs.body);
     expect(body.tools).toHaveLength(1);
     expect(body.tools[0].function.name).toBe("test_tool");
+  });
+
+  it("should strip metadata from messages before sending to LLM", async () => {
+    mockHttpClient.post.mockResolvedValue(createMockResponse({
+      json: { choices: [{ message: { content: "ok" } }] }
+    }));
+
+    const provider = new OpenAICompatibleProvider({
+      httpClient: mockHttpClient,
+      endpoint,
+      apiKey,
+      model,
+      eventBus: mockEventBus,
+      maxRetries: 0,
+      initialDelay: 0
+    });
+
+    const message: IStoredChatMessage = {
+      role: "tool",
+      content: "result",
+      tool_call_id: "123",
+      metadata: { toolCallSuccess: true }  // should be removed
+    };
+    const prompt = new TestPrompt([message]);
+
+    await provider.query(prompt);
+
+    const callArgs = mockHttpClient.post.mock.calls[0][1];
+    const body = JSON.parse(callArgs.body);
+    expect(body.messages[0]).not.toHaveProperty('metadata');
+    expect(body.messages[0]).toEqual({
+        role: "tool",
+        content: "result",
+        tool_call_id: "123"
+    });
   });
 
   describe("with anonymizer", () => {

@@ -893,7 +893,7 @@ export class ChatManager {
                             this.currentAssistantMessage!.updateToolCall({
                                 toolCallId: tc.id,
                                 toolName: tc.function.name,
-                                success: true, // We assume success if it's in history for now
+                                success: toolResult.metadata?.toolCallSuccess ?? true,
                                 result: toolResult.content,
                                 customMessage: tc.displayMessage
                             });
