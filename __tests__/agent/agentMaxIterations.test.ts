@@ -1,13 +1,13 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
-import { IChatHistoryManager, IChatMessage, IPrompt, IToolImplementation, ToolCall, ILlmProvider, IEventBus } from "../../src/types.js";
+import { IChatHistoryManager, IChatMessage, IPrompt, IToolImplementation, ToolCall, ILlmProvider, IEventBus, IStoredChatMessage } from "../../src/types.js";
 import { CONFIG_DEFAULTS } from "../../src/constants/config.js";
 import { createMockHistoryManager, createDefaultConfig, createMockEventBus } from "../testUtils.js";
 import { z } from "zod";
 
 describe("Agent Max Iterations", () => {
     let mockChatHistoryManager: IChatHistoryManager;
-    let mockChatHistory: IChatMessage[];
+    let mockChatHistory: IStoredChatMessage[];
     let mockPrompt: IPrompt;
     let mockEventBus: jest.Mocked<IEventBus>;
 

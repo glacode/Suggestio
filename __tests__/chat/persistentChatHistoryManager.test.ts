@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, expect, jest, afterEach } from "@jest/globals";
 import { PersistentChatHistoryManager } from "../../src/chat/persistentChatHistoryManager.js";
-import { IChatHistoryManager, IChatSession, IChatMessage, IWorkspaceChatHistoryStorage } from "../../src/types.js";
+import { IChatHistoryManager, IChatSession, IChatMessage, IWorkspaceChatHistoryStorage, IStoredChatMessage } from "../../src/types.js";
 import { createMockHistoryManager, createMockWorkspaceChatHistoryStorage } from "../testUtils.js";
 
 describe("PersistentChatHistoryManager", () => {
@@ -36,7 +36,7 @@ describe("PersistentChatHistoryManager", () => {
     });
 
     it("should save when persistCurrentSession is called", () => {
-        const message: IChatMessage = { role: "user", content: "Hello" };
+        const message: IStoredChatMessage = { role: "user", content: "Hello" };
         mockHistoryManager.getChatHistory.mockReturnValue([message]);
         
         persistentManager.persistCurrentSession();
@@ -44,7 +44,7 @@ describe("PersistentChatHistoryManager", () => {
     });
 
     it("should generate a title from the first user message", () => {
-        const history: IChatMessage[] = [
+        const history: IStoredChatMessage[] = [
             { role: "user", content: "This is a very long message that should be truncated" },
             { role: "assistant", content: "OK" }
         ];

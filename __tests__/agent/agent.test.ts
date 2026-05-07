@@ -1,13 +1,13 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
-import { IChatHistoryManager, IChatMessage, IPrompt, IToolImplementation, ToolCall, IEventBus, ILogEventPayload } from "../../src/types.js";
+import { IChatHistoryManager, IChatMessage, IPrompt, IToolImplementation, ToolCall, IEventBus, ILogEventPayload, IStoredChatMessage } from "../../src/types.js";
 import { FakeProvider, createMockHistoryManager, createDefaultConfig, createMockEventBus } from "../testUtils.js";
 import { AGENT_MESSAGES } from "../../src/constants/messages.js";
 import { z } from "zod";
 
 describe("Agent", () => {
     let mockChatHistoryManager: IChatHistoryManager;
-    let mockChatHistory: IChatMessage[];
+    let mockChatHistory: IStoredChatMessage[];
     let mockPrompt: IPrompt;
     let mockEventBus: jest.Mocked<IEventBus>;
 
