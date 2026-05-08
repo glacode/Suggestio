@@ -9,9 +9,7 @@ import type {
   IUriLike, // A type representing a URI (Uniform Resource Identifier), similar to a file path.
   ILlmProviderAccessor, // A type for accessing language model (LLM) profiles.
   IChatAgent, // A type for handling chat logic (sending/receiving messages).
-  IPersistentChatHistoryManager, // A type for managing persistent chat history.
   MessageFromTheExtensionToTheWebview, // A type for messages sent *to* the webview (e.g., AI responses).
-  ChatRole,
   IPrompt,
   IAnonymizer,
   IToolUiProvider,
@@ -231,16 +229,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const webviewView = createMockWebviewView(webview, 'X');
 
     // Spyable chat history manager to capture added messages.
-    const recorded: { role: ChatRole; content: string }[] = [];
-    const chatHistoryManager: IPersistentChatHistoryManager = {
-      clearHistory: () => { },
-      addMessage: (m) => recorded.push(m),
-      getChatHistory: () => recorded.slice(),
-      getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
-      loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-      newSession: jest.fn<() => void>(),
-      persistCurrentSession: jest.fn()
-    };
+    const recorded: IStoredChatMessage[] = [];
+    const chatHistoryManager = createMockPersistentHistoryManager(recorded);
 
     const eventBus = new EventBus();
 
@@ -327,18 +317,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       }
     };
 
-    let chatHistoryCleared = false;
-    const chatHistoryManager: IPersistentChatHistoryManager = {
-      clearHistory: () => {
-        chatHistoryCleared = true;
-      },
-      addMessage: () => { },
-      getChatHistory: () => [],
-      getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
-      loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-      newSession: jest.fn<() => void>(),
-      persistCurrentSession: jest.fn()
-    };
+    const chatHistoryManager = createMockPersistentHistoryManager();
 
     const eventBus = new EventBus();
 
@@ -390,7 +369,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       await webview.__handler({ command: WEBVIEW_COMMANDS.CLEAR_HISTORY });
     }
     // Expect that the `clearHistory` method on our fake `chatHistoryManager` was called.
-    expect(chatHistoryCleared).toBe(true);
+    expect(chatHistoryManager.clearHistory).toHaveBeenCalled();
 
     // ********************************************************************************
     //  Simulate a 'sendMessage' command which is expected to trigger an error.
@@ -436,17 +415,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       }
     };
 
-    const chatHistoryManager: IPersistentChatHistoryManager = {
-      clearHistory: () => {
-        /* not called */ // This should not be called.
-      },
-      addMessage: () => { },
-      getChatHistory: () => [],
-      getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
-      loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-      newSession: jest.fn<() => void>(),
-      persistCurrentSession: jest.fn()
-    };
+    const chatHistoryManager = createMockPersistentHistoryManager();
 
     const eventBus = new EventBus();
 
@@ -504,15 +473,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       }
     };
 
-    const chatHistoryManager: IPersistentChatHistoryManager = {
-      clearHistory: () => { },
-      addMessage: () => { },
-      getChatHistory: () => [],
-      getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
-      loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-      newSession: jest.fn<() => void>(),
-      persistCurrentSession: jest.fn()
-    };
+    const chatHistoryManager = createMockPersistentHistoryManager();
 
     const anonymizer: IAnonymizer = {
       anonymize: (text: string) => text.replace('SECRET', 'ANONYMIZED'),
@@ -573,15 +534,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       }
     };
 
-    const chatHistoryManager: IPersistentChatHistoryManager = {
-      clearHistory: () => { },
-      addMessage: () => { },
-      getChatHistory: () => [],
-      getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
-      loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-      newSession: jest.fn<() => void>(),
-      persistCurrentSession: jest.fn()
-    };
+    const chatHistoryManager = createMockPersistentHistoryManager();
 
     // The anonymizer replaces 'SECRET' with 'ANONYMIZED'
     const anonymizer: IAnonymizer = {
@@ -661,15 +614,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       }
     };
 
-    const chatHistoryManager: IPersistentChatHistoryManager = {
-      clearHistory: () => { },
-      addMessage: () => { },
-      getChatHistory: () => [],
-      getSessions: jest.fn<() => Promise<any>>().mockResolvedValue([]),
-      loadSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-      newSession: jest.fn<() => void>(),
-      persistCurrentSession: jest.fn()
-    };
+    const chatHistoryManager = createMockPersistentHistoryManager();
 
     const { config, secretManager, httpClient, toolUiProvider } = createMocks();
 
