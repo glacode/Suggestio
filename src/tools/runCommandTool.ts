@@ -84,6 +84,11 @@ export class RunCommandTool extends BaseTool<RunCommandArgs> {
         }
 
         try {
+            // Notify the UI that the command is actually starting now.
+            if (toolCallId) {
+                this.eventBus.emit('agent:toolExecutionStarted', { toolCallId });
+            }
+
             const result = await this.commandExecutor.execute(command, { 
                 cwd: rootPath, 
                 signal,

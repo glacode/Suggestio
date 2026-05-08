@@ -59,6 +59,8 @@ export abstract class BaseTool<T> implements IToolImplementation<T> {
     ): Promise<string> {
         // Bypass confirmation if auto-accept is enabled for edits
         if (options?.isEdit && this.autoAcceptProvider?.autoAcceptEdits) {
+            // Notify the UI that the tool is starting immediately since we are bypassing confirmation.
+            eventBus.emit('agent:toolExecutionStarted', { toolCallId });
             return 'allow';
         }
 
@@ -93,6 +95,13 @@ export abstract class BaseTool<T> implements IToolImplementation<T> {
         });
 
         // Finally, we wait for either the user's decision or a cancellation signal.
-        return await userDecisionPromise;
+        const decision = await userDecisionPromise;
+
+        // If the tool was allowed to run, notify the UI to start the spinner.
+        if (decision === 'allow' || decision === 'always-allow' || decision === 'always-allow-command') {
+            eventBus.emit('agent:toolExecutionStarted', { toolCallId });
+        }
+
+        return decision;
     }
 }

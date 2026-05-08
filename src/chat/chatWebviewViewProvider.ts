@@ -189,6 +189,17 @@ export class ChatWebviewViewProvider {
             this._sendNotification(payload.text);
         });
 
+        this._eventBus.on('agent:toolExecutionStarted', (payload: { toolCallId: string }) => {
+            // Forward the tool start event to the webview to trigger the spinner.
+            if (this._view) {
+                this._view.webview.postMessage({
+                    sender: MESSAGE_SENDERS.ASSISTANT,
+                    type: EXTENSION_EVENTS.TOOL_STARTED,
+                    toolCallId: payload.toolCallId
+                });
+            }
+        });
+
         this._eventBus.on('agent:requestConfirmation', (payload: IToolConfirmationPayload) => {
             // Store diff data if present
             if (payload.diffData) {

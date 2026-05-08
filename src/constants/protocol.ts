@@ -35,6 +35,8 @@ export const EXTENSION_EVENTS = {
     ERROR: 'error',
     ANONYMIZATION: 'anonymization',
     TOOL_START: 'agent:toolStart',
+    /** Fired when a tool officially begins execution (after confirmation/auto-accept). Used to trigger the spinner. */
+    TOOL_STARTED: 'toolStarted',
     TOOL_OUTPUT: 'agent:toolOutput',
     TOOL_END: 'agent:toolEnd',
     REQUEST_CONFIRMATION: 'agent:requestConfirmation',

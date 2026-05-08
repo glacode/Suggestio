@@ -408,6 +408,14 @@ export type MessageFromTheExtensionToTheWebview =
   | {
     /** Indicates the message comes from the AI assistant. */
     sender: typeof MESSAGE_SENDERS.ASSISTANT;
+    /** Signals that a tool has officially started executing. */
+    type: typeof EXTENSION_EVENTS.TOOL_STARTED;
+    /** The ID of the tool call. */
+    toolCallId: string;
+  }
+  | {
+    /** Indicates the message comes from the AI assistant. */
+    sender: typeof MESSAGE_SENDERS.ASSISTANT;
     /** Signals a request for user confirmation before executing a tool. */
     type: typeof EXTENSION_EVENTS.REQUEST_CONFIRMATION;
     /** The ID of the tool call. */
@@ -1278,6 +1286,7 @@ export interface IAppEvents {
   'anonymization': IAnonymizationEventPayload;
   'agent:token': ITokenEventPayload;
   'agent:toolStart': IToolCallEventPayload;
+  'agent:toolExecutionStarted': { toolCallId: string };
   'agent:toolOutput': IToolOutputEventPayload;
   'agent:toolEnd': IToolResultEventPayload;
   /**

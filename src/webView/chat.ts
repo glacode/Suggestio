@@ -679,6 +679,14 @@ export class ChatManager {
                         this.currentAssistantMessage = new AssistantMessage(this, this.chatContainer);
                     }
                     this.currentAssistantMessage.addToolCall(event.data);
+                } else if (type === EXTENSION_EVENTS.TOOL_STARTED) {
+                    // Trigger the spinner when the backend confirms the tool has officially started executing.
+                    if (this.currentAssistantMessage) {
+                        const toolSegment = this.currentAssistantMessage.getToolCall(event.data.toolCallId);
+                        if (toolSegment) {
+                            toolSegment.startSpinner();
+                        }
+                    }
                 } else if (type === EXTENSION_EVENTS.TOOL_OUTPUT) {
                     if (this.currentAssistantMessage) {
                         this.currentAssistantMessage.appendToolOutput(event.data);
@@ -933,14 +941,6 @@ export class ChatManager {
         const container = document.getElementById('confirm-' + toolCallId);
         if (container) {
             container.remove();
-        }
-        
-        // If user allowed, start the spinner on the tool call
-        if ((decision === 'allow' || decision === 'always-allow' || decision === 'always-allow-command') && this.currentAssistantMessage) {
-            const toolSegment = this.currentAssistantMessage.getToolCall(toolCallId);
-            if (toolSegment) {
-                toolSegment.startSpinner();
-            }
         }
         
         this.vscode.postMessage({ command: WEBVIEW_COMMANDS.CONFIRM_TOOL_CALL, toolCallId, decision });
