@@ -599,7 +599,7 @@ function createMockServer(capturedRequests: any[]): Promise<Server> {
 async function openChatView(page: Page) {
     await page.keyboard.press('Control+Shift+P');
     await page.waitForTimeout(500);
-    await page.keyboard.type('Suggestio: Focus on Chat View', { delay: 50 });
+    await page.keyboard.type('Suggestio: Focus on Chat View', { delay: 10 });
     await page.waitForTimeout(500);
     await page.keyboard.press('Enter');
 
@@ -622,7 +622,7 @@ async function sendChatMessage(innerFrame: ReturnType<Page["frameLocator"]>, mes
     await input.click();  // this is needed only the secont turn onwards
     await input.waitFor({ state: 'visible' });
 
-    await input.page().keyboard.type(message, { delay: 50 });
+    await input.page().keyboard.type(message, { delay: 10 });
     const sendBtn = innerFrame.locator('.send-icon');
     await sendBtn.click();
 
