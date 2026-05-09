@@ -242,6 +242,11 @@
                     "default": 30,
                     "description": "Maximum number of iterations the agent can perform for a single request."
                 },
+                "suggestio.maxSavedChatSessions": {
+                    "type": "number",
+                    "default": 3,
+                    "description": "Maximum number of chat sessions to keep in the history."
+                },
                 "suggestio.enableInlineCompletion": {
                     "type": "boolean",
                     "default": true,

@@ -7,7 +7,8 @@ import type {
     IDirectoryCreator,
     IDirectoryReader,
     IWorkspaceChatHistoryStorage,
-    IFileDeleter
+    IFileDeleter,
+    IConfig
 } from '../types.js';
 
 /**
@@ -16,7 +17,6 @@ import type {
  */
 export class WorkspaceChatHistoryStorage implements IWorkspaceChatHistoryStorage {
     private readonly STORAGE_DIR_NAME = 'chatSessions';
-    private readonly MAX_SESSIONS = 3;
 
     constructor(
         private readonly workspaceProvider: IWorkspaceProvider,
@@ -25,7 +25,8 @@ export class WorkspaceChatHistoryStorage implements IWorkspaceChatHistoryStorage
         private readonly pathResolver: IPathResolver,
         private readonly directoryCreator: IDirectoryCreator,
         private readonly directoryReader: IDirectoryReader,
-        private readonly fileDeleter: IFileDeleter
+        private readonly fileDeleter: IFileDeleter,
+        private readonly config: IConfig
     ) {}
 
     /**
@@ -113,12 +114,12 @@ export class WorkspaceChatHistoryStorage implements IWorkspaceChatHistoryStorage
                 path: this.pathResolver.join(storageDir, f)
             }));
 
-        if (jsonFiles.length > this.MAX_SESSIONS) {
+        if (jsonFiles.length > this.config.maxSavedChatSessions) {
             // Since filenames ARE timestamps, we sort by name descending to get newest first
             jsonFiles.sort((a, b) => b.name.localeCompare(a.name));
 
             // Delete files beyond the limit
-            const toDelete = jsonFiles.slice(this.MAX_SESSIONS);
+            const toDelete = jsonFiles.slice(this.config.maxSavedChatSessions);
             for (const fileInfo of toDelete) {
                 try {
                     this.fileDeleter.delete(fileInfo.path);

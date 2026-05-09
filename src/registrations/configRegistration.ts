@@ -25,6 +25,7 @@ export function registerConfigHandler(
         const newEnableInlineCompletion = configProvider.getEnableInlineCompletion();
         const newMaxRetries = configProvider.getMaxRetries();
         const newInitialDelay = configProvider.getInitialDelay();
+        const newMaxSavedChatSessions = configProvider.getMaxSavedChatSessions();
 
         eventBus.emit('log', { level: 'info', message: CONFIG_LOGS.CONFIGURATION_CHANGED(newLogLevel, newMaxAgentIterations) });
 
@@ -38,6 +39,7 @@ export function registerConfigHandler(
           configContainer.config.enableInlineCompletion = newEnableInlineCompletion;
           configContainer.config.maxRetries = newMaxRetries;
           configContainer.config.initialDelay = newInitialDelay;
+          configContainer.config.maxSavedChatSessions = newMaxSavedChatSessions;
           if (newAnonymizerEnabled !== undefined) {
             configContainer.config.anonymizer.enabled = newAnonymizerEnabled;
           }

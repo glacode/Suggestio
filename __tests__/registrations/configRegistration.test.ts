@@ -51,6 +51,7 @@ describe('registerConfigHandler', () => {
     mockConfigProvider.getEnableInlineCompletion.mockReturnValue(true);
     mockConfigProvider.getMaxRetries.mockReturnValue(5);
     mockConfigProvider.getInitialDelay.mockReturnValue(1000);
+    mockConfigProvider.getMaxSavedChatSessions.mockReturnValue(CONFIG_DEFAULTS.MAX_SAVED_CHAT_SESSIONS);
   });
 
   it('should register a configuration change listener', () => {
@@ -64,6 +65,7 @@ describe('registerConfigHandler', () => {
     mockConfigProvider.getMaxAgentIterations.mockReturnValue(10);
     mockConfigProvider.getMaxRetries.mockReturnValue(3);
     mockConfigProvider.getInitialDelay.mockReturnValue(500);
+    mockConfigProvider.getMaxSavedChatSessions.mockReturnValue(5);
 
     registerConfigHandler(mockSubscriptions, mockConfigProvider, configContainer, mockEventBus, mockSecretManager, mockHttpClient);
 
@@ -77,6 +79,7 @@ describe('registerConfigHandler', () => {
     expect(configContainer.config.maxAgentIterations).toBe(10);
     expect(configContainer.config.maxRetries).toBe(3);
     expect(configContainer.config.initialDelay).toBe(500);
+    expect(configContainer.config.maxSavedChatSessions).toBe(5);
     expect(mockEventBus.emit).toHaveBeenCalledWith('log', expect.objectContaining({
       level: 'info',
       message: expect.stringContaining('Configuration changed')

@@ -142,6 +142,7 @@ export async function activate(context: vscode.ExtensionContext) {
     getEnableInlineCompletion: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<boolean>('enableInlineCompletion', true),
     getMaxRetries: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<number>('llm.maxRetries', CONFIG_DEFAULTS.MAX_RETRIES),
     getInitialDelay: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<number>('llm.initialDelay', CONFIG_DEFAULTS.INITIAL_DELAY),
+    getMaxSavedChatSessions: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<number>('maxSavedChatSessions', CONFIG_DEFAULTS.MAX_SAVED_CHAT_SESSIONS),
     onDidChangeConfiguration: (listener) => vscode.workspace.onDidChangeConfiguration(listener)
   };
 
@@ -170,7 +171,8 @@ export async function activate(context: vscode.ExtensionContext) {
     logLevel: logLevel,
     enableInlineCompletion: vsCodeConfig.get<boolean>('enableInlineCompletion', true),
     maxRetries: vsCodeConfig.get<number>('llm.maxRetries', CONFIG_DEFAULTS.MAX_RETRIES),
-    initialDelay: vsCodeConfig.get<number>('llm.initialDelay', CONFIG_DEFAULTS.INITIAL_DELAY)
+    initialDelay: vsCodeConfig.get<number>('llm.initialDelay', CONFIG_DEFAULTS.INITIAL_DELAY),
+    maxSavedChatSessions: vsCodeConfig.get<number>('maxSavedChatSessions', CONFIG_DEFAULTS.MAX_SAVED_CHAT_SESSIONS)
   };
 
   const anonymizerEnabled = vsCodeConfig.get<boolean | undefined>('experimental.anonymizer.enabled');
@@ -196,7 +198,8 @@ export async function activate(context: vscode.ExtensionContext) {
     pathResolver,
     directoryCreator,
     directoryReader,
-    fileDeleter
+    fileDeleter,
+    configContainer.config
   );
   const chatHistoryManager = new PersistentChatHistoryManager(baseHistoryManager, storage);
 

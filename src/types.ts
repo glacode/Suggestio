@@ -993,6 +993,11 @@ export interface IConfigProvider {
   getInitialDelay(): number;
 
   /**
+   * Retrieves the maximum number of chat sessions to keep in history.
+   */
+  getMaxSavedChatSessions(): number;
+
+  /**
    * Fired when the configuration changes.
    * @param listener The function to call when the configuration changes.
    * @returns A disposable to unsubscribe from the event.
@@ -1612,6 +1617,10 @@ export interface IConfig extends IProjectConfig {
   logLevel: string;
   enableInlineCompletion: boolean;
   autoAcceptEdits: boolean;
+  /**
+   * Maximum number of chat sessions to keep in history.
+   */
+  maxSavedChatSessions: number;
   /**
    * Maximum length for tool results in characters before they are truncated.
    */

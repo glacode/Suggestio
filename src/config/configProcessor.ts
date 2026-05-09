@@ -53,6 +53,7 @@ class ConfigProcessor {
             initialDelay: CONFIG_DEFAULTS.INITIAL_DELAY,
             enableInlineCompletion: true,
             autoAcceptEdits: CONFIG_DEFAULTS.AUTO_ACCEPT_EDITS,
+            maxSavedChatSessions: CONFIG_DEFAULTS.MAX_SAVED_CHAT_SESSIONS,
         };
 
         // Apply overrides from standard VSCode extension settings

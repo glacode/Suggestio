@@ -267,6 +267,7 @@ export const createMockConfigProvider = (): jest.Mocked<IConfigProvider> => ({
     getEnableInlineCompletion: jest.fn<() => boolean>(),
     getMaxRetries: jest.fn<() => number>(),
     getInitialDelay: jest.fn<() => number>(),
+    getMaxSavedChatSessions: jest.fn<() => number>(),
     onDidChangeConfiguration: jest.fn<any>(),
 });
 
@@ -286,6 +287,7 @@ export const createDefaultConfig = (overrides: Partial<IConfig> = {}): IConfig =
     toolResultMaxLength: CONFIG_DEFAULTS.TOOL_RESULT_MAX_LENGTH,
     maxRetries: CONFIG_DEFAULTS.MAX_RETRIES,
     initialDelay: CONFIG_DEFAULTS.INITIAL_DELAY,
+    maxSavedChatSessions: CONFIG_DEFAULTS.MAX_SAVED_CHAT_SESSIONS,
     autoAcceptEdits: false,
     ...overrides
 });

@@ -9,4 +9,6 @@ export const CONFIG_DEFAULTS = {
     INITIAL_DELAY: 1000,
     /** Default session-only auto-accept edits setting. */
     AUTO_ACCEPT_EDITS: false,
+    /** Default maximum number of chat sessions to keep. */
+    MAX_SAVED_CHAT_SESSIONS: 3,
 } as const;
