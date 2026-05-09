@@ -698,7 +698,7 @@ test.describe('Chat E2E', () => {
         const result = await launchVscode(tempWorkspacePath, {
             'suggestio.experimental.anonymizer.enabled': true,
             'suggestio.maxAgentIterations': 10,
-            'suggestio.llm.initialDelay': 100,
+            'suggestio.llm.initialDelay': 500,
             'suggestio.llm.maxRetries': 3
         });
         electronApp = result.electronApp;
