@@ -1530,8 +1530,31 @@ export interface IHttpClient {
 }
 
 // --------------------------------------------------------------------------------
-//  LLM Provider Types
+// LLM Provider Types
 // --------------------------------------------------------------------------------
+/**
+ * Represents processed reasoning and content tokens from a model delta.
+ */
+export interface IReasoningDelta {
+    /** The extracted and cleaned content token. */
+    content?: string;
+    /** The extracted and cleaned reasoning token. */
+    reasoning?: string;
+}
+
+/**
+ * Interface for processing reasoning and content tokens from LLM deltas.
+ * Different models use different ways to signal reasoning (e.g., standard fields vs tags).
+ */
+export interface IReasoningProcessor {
+    /**
+     * Processes a delta object to extract and clean content and reasoning tokens.
+     * @param delta The delta object from the LLM response.
+     * @returns An object containing the processed tokens.
+     */
+    process(delta: any): IReasoningDelta;
+}
+
 export interface ILlmProvider {
   query(prompt: IPrompt, tools?: IToolDefinition[], signal?: AbortSignal): Promise<IChatMessage | null>;
   queryStream(prompt: IPrompt, tools?: IToolDefinition[], signal?: AbortSignal): Promise<IChatMessage[]>;

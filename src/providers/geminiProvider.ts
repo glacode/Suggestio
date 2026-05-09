@@ -1,5 +1,5 @@
 import fetch from "node-fetch";
-import { IChatMessage , IPrompt, ILlmProvider } from "../types.js";
+import { IChatMessage, IPrompt, ILlmProvider, IToolDefinition } from "../types.js";
 import { IEventBus } from "../utils/eventBus.js";
 import { LLM_MESSAGES, LLM_LOGS } from "../constants/messages.js";
 import { createEventLogger } from "../log/eventLogger.js";
@@ -50,12 +50,12 @@ export class GeminiProvider implements ILlmProvider {
 
     const content = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
     if (content === undefined) {
-        return null;
+      return null;
     }
     return { role: "assistant", content };
   }
 
-  async queryStream(prompt: IPrompt, _tools?: any, signal?: AbortSignal): Promise<IChatMessage[]> {
+  async queryStream(prompt: IPrompt, _tools?: IToolDefinition[], signal?: AbortSignal): Promise<IChatMessage[]> {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:streamGenerateContent?key=${this.apiKey}&alt=sse`;
 
     const body = {
