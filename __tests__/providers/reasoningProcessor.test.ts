@@ -59,6 +59,33 @@ describe('StandardReasoningProcessor', () => {
         expect(result).toEqual({ content: 'Hello', reasoning: 'Thinking' });
     });
 
+    it('should handle fragmented tags across multiple process calls', () => {
+        // Reset processor by creating a new one to ensure clean state
+        const p = new StandardReasoningProcessor();
+        
+        // Fragmented <thought>
+        expect(p.process({ content: '<' })).toEqual({ content: '' });
+        expect(p.process({ content: 'thought>' })).toEqual({ content: '' });
+        expect(p.process({ content: 'Hello' })).toEqual({ content: 'Hello' });
+
+        // Fragmented </thought>
+        expect(p.process({ content: '<' })).toEqual({ content: '' });
+        expect(p.process({ content: '/thought' })).toEqual({ content: '' });
+        expect(p.process({ content: '>' })).toEqual({ content: '' });
+        expect(p.process({ content: ' World' })).toEqual({ content: ' World' });
+    });
+
+    it('should not strip non-matching tags', () => {
+        const p = new StandardReasoningProcessor();
+        expect(p.process({ content: '<' })).toEqual({ content: '' });
+        expect(p.process({ content: 'b>Bold' })).toEqual({ content: '<b>Bold' });
+    });
+
+    it('should handle multiple complete tags in one chunk', () => {
+        const p = new StandardReasoningProcessor();
+        expect(p.process({ content: '<thought>Internal</thought>Visible' })).toEqual({ content: 'InternalVisible' });
+    });
+
     it('should handle empty delta', () => {
         const delta = {};
         const result = processor.process(delta);

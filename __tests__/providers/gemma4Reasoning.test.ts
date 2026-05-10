@@ -94,4 +94,51 @@ describe("Gemma4 Reasoning Support", () => {
     expect(response[1].tool_calls?.[0].function.name).toBe("list_files");
     expect(response[1].tool_calls?.[0].extra_content?.google?.thought_signature).toBeDefined();
   });
+
+  it("should strip fragmented tags even if they leak into content", async () => {
+    // Data from the user's latest report
+    mockHttpClient.post.mockResolvedValue(createMockResponse({
+      body: createStream([
+        'data: {"choices":[{"delta":{"content":"<","role":"assistant"},"index":0}]}\n\n',
+        'data: {"choices":[{"delta":{"content":"thought>\\nIn `taskManager.test.ts`, there are 5","role":"assistant"},"index":0}]}\n\n',
+        'data: [DONE]\n\n'
+      ])
+    }));
+
+    const provider = new OpenAICompatibleProvider({
+      httpClient: mockHttpClient,
+      endpoint,
+      apiKey,
+      model,
+      eventBus: mockEventBus,
+      maxRetries: 0,
+      initialDelay: 0
+    });
+    
+    const response = await provider.queryStream(new TestPrompt([]));
+
+    // Verify content tokens were emitted without tags
+    const contentTokens = mockEventBus.emit.mock.calls
+        .filter(call => {
+            const isTokenEvent = call[0] === 'agent:token';
+            const payload = call[1];
+            return isTokenEvent && payload && typeof payload === 'object' && 'type' in payload && payload.type === 'content';
+        })
+        .map(call => {
+            const payload = call[1];
+            if (payload && typeof payload === 'object' && 'token' in payload && typeof payload.token === 'string') {
+                return payload.token;
+            }
+            return "";
+        });
+    
+    const combinedContent = contentTokens.join('');
+    expect(combinedContent).toContain("In `taskManager.test.ts`,"); 
+    expect(combinedContent).not.toContain("<thought>");
+    expect(combinedContent).not.toContain("<"); 
+
+    expect(response).toHaveLength(1);
+    expect(response[0].content).toContain("In `taskManager.test.ts`,");
+    expect(response[0].content).not.toContain("<thought>");
+  });
 });
