@@ -247,21 +247,18 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     conversation: IChatMessage[]
   ): IChatMessage[] {
     return conversation.map((message) => {
-      const role = message.role;
-
       let content = message.content;
       if (this.anonymizer && message.role === "user") {
         content = this.anonymizer.anonymize(message.content);
       }
 
-      const msg: IChatMessage = {
-        role,
-        content,
-        reasoning: message.reasoning,
-        tool_calls: message.tool_calls,
-        tool_call_id: message.tool_call_id
-      };
-      return msg;
+      // Use reasoning processor to format the message for history
+      // (e.g., merging reasoning into content for models that expect tags).
+      // This is a transient transformation that doesn't affect storage or UI.
+      return this.reasoningProcessor.prepareHistoryMessage({
+          ...message,
+          content
+      });
     });
   }
 

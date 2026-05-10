@@ -50,4 +50,28 @@ export class StandardReasoningProcessor implements IReasoningProcessor {
             .replace(/<thought>/g, "")
             .replace(/<\/thought>/g, "");
     }
+
+    /**
+     * Formats a chat message for inclusion in the conversation history sent to the LLM.
+     * Wraps reasoning in <thought> tags and merges it into content, as most
+     * OpenAI-compatible APIs do not support a separate reasoning field in the input.
+     * @param message The internal chat message.
+     * @returns A message object formatted for the LLM provider.
+     */
+    prepareHistoryMessage(message: any): any {
+        const { role, content, reasoning, tool_calls, tool_call_id } = message;
+        let finalContent = content || "";
+
+        if (reasoning && role === 'assistant') {
+            // Merge reasoning into content using tags for LLM context
+            finalContent = `<thought>\n${reasoning}\n</thought>\n${finalContent}`;
+        }
+
+        return {
+            role,
+            content: finalContent,
+            tool_calls,
+            tool_call_id
+        };
+    }
 }

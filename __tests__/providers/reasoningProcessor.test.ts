@@ -64,4 +64,51 @@ describe('StandardReasoningProcessor', () => {
         const result = processor.process(delta);
         expect(result).toEqual({ content: undefined, reasoning: undefined });
     });
+
+    describe('prepareHistoryMessage', () => {
+        it('should merge reasoning into content with tags for assistant messages', () => {
+            const message = { 
+                role: 'assistant' as const, 
+                content: 'The answer is 42.', 
+                reasoning: 'Calculating 6 * 7' 
+            };
+            const result = processor.prepareHistoryMessage(message);
+            expect(result.content).toBe('<thought>\nCalculating 6 * 7\n</thought>\nThe answer is 42.');
+            expect(result.role).toBe('assistant');
+            expect(result.reasoning).toBeUndefined(); // Should be removed from output
+        });
+
+        it('should not merge reasoning for non-assistant messages (sanity check)', () => {
+            const message = { 
+                role: 'user' as const, 
+                content: 'Hello', 
+                reasoning: 'Some internal state' 
+            };
+            const result = processor.prepareHistoryMessage(message);
+            expect(result.content).toBe('Hello');
+            expect(result.reasoning).toBeUndefined();
+        });
+
+        it('should handle assistant messages without reasoning', () => {
+            const message = { 
+                role: 'assistant' as const, 
+                content: 'No reasoning here' 
+            };
+            const result = processor.prepareHistoryMessage(message);
+            expect(result.content).toBe('No reasoning here');
+        });
+
+        it('should preserve tool calls and other fields', () => {
+            const message = { 
+                role: 'assistant' as const, 
+                content: '', 
+                reasoning: 'I need to list files',
+                tool_calls: [{ id: '1', type: 'function', function: { name: 'list', arguments: '{}' } }]
+            };
+            const result = processor.prepareHistoryMessage(message);
+            expect(result.content).toContain('<thought>\nI need to list files\n</thought>');
+            expect(result.tool_calls).toHaveLength(1);
+            expect(result.tool_calls[0].id).toBe('1');
+        });
+    });
 });

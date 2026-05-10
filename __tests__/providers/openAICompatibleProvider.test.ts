@@ -920,4 +920,28 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
     expect(response[1].tool_calls).toBeDefined();
     expect(response[1].tool_calls?.[0].id).toBe("call_1");
   });
+
+  it("should format history with merged reasoning in prepareMessages", async () => {
+    const prompt = new TestPrompt([
+      { role: 'user', content: 'Hello' },
+      { role: 'assistant', content: 'I am thinking...', reasoning: 'Finding best response' }
+    ]);
+    
+    mockHttpClient.post.mockResolvedValue(createMockResponse({
+      body: createStream(['data: {"choices":[{"delta":{"content":"Hi"}}]}\n\n', 'data: [DONE]\n\n'])
+    }));
+
+    const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus, maxRetries: 0, initialDelay: 0 });
+    await provider.queryStream(prompt);
+
+    // Verify the request body sent to the API
+    const requestBody = JSON.parse(mockHttpClient.post.mock.calls[0][1].body);
+    const messages = requestBody.messages;
+
+    expect(messages[0].role).toBe('user');
+    expect(messages[1].role).toBe('assistant');
+    expect(messages[1].content).toContain('<thought>\nFinding best response\n</thought>');
+    expect(messages[1].content).toContain('I am thinking...');
+    expect(messages[1].reasoning).toBeUndefined(); // Crucial: reasoning field is gone from final API call
+  });
 });

@@ -1083,6 +1083,7 @@ test.describe('Chat E2E', () => {
     });
 
     test('should show continue button when max iterations reached and successfully continue with clean history', async () => {
+        // await openChatView(page);
         const inner = await getChatFrames(page);
 
         // 1. Switch to the max-iterations profile and start a new chat
@@ -1152,6 +1153,7 @@ test.describe('Chat E2E', () => {
     });
 
     test('should preserve and continue reasoning bubble when reaching max iterations and clicking continue', async () => {
+        // await openChatView(page);
         const inner = await getChatFrames(page);
 
         // 1. Switch to the max-iterations-reasoning profile and start a new chat
@@ -1215,9 +1217,17 @@ test.describe('Chat E2E', () => {
         )).toBe(true);
         
         // Verify we have multiple reasoning steps in history
-        const assistantMessagesWithReasoning = lastRequest.messages.filter((m: any) => m.role === 'assistant' && m.reasoning);
-        expect(assistantMessagesWithReasoning.length).toBeGreaterThan(5);
-        expect(assistantMessagesWithReasoning.some((m: any) => m.reasoning.includes('Thinking turn 2'))).toBe(true);
+        // They are now merged into content via <thought> tags
+        const assistantMessagesWithMergedReasoning = lastRequest.messages.filter((m: any) => 
+            m.role === 'assistant' && 
+            typeof m.content === 'string' && 
+            m.content.includes('<thought>')
+        );
+        expect(assistantMessagesWithMergedReasoning.length).toBeGreaterThan(5);
+        expect(assistantMessagesWithMergedReasoning.some((m: any) => m.content.includes('Thinking turn 2'))).toBe(true);
+        
+        // Also verify that the reasoning field itself is NOT present in the messages sent to LLM
+        expect(lastRequest.messages.every((m: any) => m.reasoning === undefined)).toBe(true);
     });
 
     test('should remove retry button and error message when user sends a new message after failure', async () => {

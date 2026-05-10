@@ -1558,6 +1558,15 @@ export interface IReasoningProcessor {
      * @returns An object containing the processed tokens.
      */
     process(delta: any): IReasoningDelta;
+
+    /**
+     * Formats a chat message for inclusion in the conversation history sent to the LLM.
+     * This allows the processor to re-inject reasoning (e.g., using tags) if the model
+     * doesn't support a native reasoning field in the input messages.
+     * @param message The internal chat message.
+     * @returns A message object formatted for the specific LLM provider.
+     */
+    prepareHistoryMessage(message: IChatMessage): any;
 }
 
 export interface ILlmProvider {
