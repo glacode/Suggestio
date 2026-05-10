@@ -1606,10 +1606,17 @@ export interface IProjectConfig extends IAnonymizerConfigHolder {
   anonymizer: IAnonymizerConfig;
 }
 
+export interface IStorageConfig {
+  /**
+   * Maximum number of chat sessions to keep in history.
+   */
+  maxSavedChatSessions: number;
+}
+
 /**
  * Represents the merged, runtime configuration used by the extension.
  */
-export interface IConfig extends IProjectConfig {
+export interface IConfig extends IProjectConfig, IStorageConfig {
   anonymizerInstance?: IAnonymizer;
   llmProviderForInlineCompletion?: ILlmProvider;
   llmProviderForChat?: ILlmProvider;
@@ -1617,10 +1624,6 @@ export interface IConfig extends IProjectConfig {
   logLevel: string;
   enableInlineCompletion: boolean;
   autoAcceptEdits: boolean;
-  /**
-   * Maximum number of chat sessions to keep in history.
-   */
-  maxSavedChatSessions: number;
   /**
    * Maximum length for tool results in characters before they are truncated.
    */

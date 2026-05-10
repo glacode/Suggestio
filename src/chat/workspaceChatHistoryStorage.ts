@@ -8,7 +8,7 @@ import type {
     IDirectoryReader,
     IWorkspaceChatHistoryStorage,
     IFileDeleter,
-    IConfig
+    IStorageConfig
 } from '../types.js';
 
 /**
@@ -26,7 +26,7 @@ export class WorkspaceChatHistoryStorage implements IWorkspaceChatHistoryStorage
         private readonly directoryCreator: IDirectoryCreator,
         private readonly directoryReader: IDirectoryReader,
         private readonly fileDeleter: IFileDeleter,
-        private readonly config: IConfig
+        private readonly config: IStorageConfig
     ) {}
 
     /**
