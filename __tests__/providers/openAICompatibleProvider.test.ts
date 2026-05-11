@@ -320,7 +320,7 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
       google: { thought_signature: thoughtSignature }
     });
 
-    // Verify it is preserved and re-sent when querying again with the result in history
+    // Verify it is stripped when re-sent when querying again with the result in history
     mockHttpClient.post.mockResolvedValue(createMockResponse({
       body: createStream(['data: {"choices":[{"delta":{"content":"final response"}}]}\n\n', 'data: [DONE]\n\n'])
     }));
@@ -335,9 +335,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
     const lastCallArgs = mockHttpClient.post.mock.calls[1];
     const body = JSON.parse(lastCallArgs[1].body);
     const assistantMessage = body.messages.find((m: any) => m.role === "assistant");
-    expect(assistantMessage.tool_calls[0].extra_content).toEqual({
-      google: { thought_signature: thoughtSignature }
-    });
+    // It should be stripped to avoid 422 errors and context pollution
+    expect(assistantMessage.tool_calls[0].extra_content).toBeUndefined();
   });
 
   it("should skip malformed stream chunks", async () => {

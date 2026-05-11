@@ -125,17 +125,23 @@ describe('StandardReasoningProcessor', () => {
             expect(result.content).toBe('No reasoning here');
         });
 
-        it('should preserve tool calls and other fields', () => {
+        it('should preserve tool calls and other fields, but strip extra_content', () => {
             const message = { 
                 role: 'assistant' as const, 
                 content: '', 
                 reasoning: 'I need to list files',
-                tool_calls: [{ id: '1', type: 'function', function: { name: 'list', arguments: '{}' } }]
+                tool_calls: [{ 
+                    id: '1', 
+                    type: 'function', 
+                    function: { name: 'list', arguments: '{}' },
+                    extra_content: { google: { thought_signature: 'abc' } }
+                }]
             };
             const result = processor.prepareHistoryMessage(message);
             expect(result.content).toContain('<thought>\nI need to list files\n</thought>');
             expect(result.tool_calls).toHaveLength(1);
             expect(result.tool_calls[0].id).toBe('1');
+            expect(result.tool_calls[0].extra_content).toBeUndefined();
         });
     });
 });

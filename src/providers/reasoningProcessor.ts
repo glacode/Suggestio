@@ -106,10 +106,18 @@ export class StandardReasoningProcessor implements IReasoningProcessor {
             finalContent = `<thought>\n${reasoning}\n</thought>\n${finalContent}`;
         }
 
+        // Strip extra_content from tool_calls to ensure compatibility with standard OpenAI APIs
+        // and reduce context pollution.
+        const cleanedToolCalls = tool_calls?.map((tc: any) => ({
+            id: tc.id,
+            type: tc.type,
+            function: tc.function,
+        }));
+
         return {
             role,
             content: finalContent,
-            tool_calls,
+            tool_calls: cleanedToolCalls,
             tool_call_id
         };
     }
