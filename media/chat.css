@@ -37,8 +37,8 @@ html, body {
 }
 
 .user {
-    background: var(--vscode-editorWidget-background);
-    border: 1px solid var(--vscode-editorWidget-border);
+    background: var(--vscode-button-secondaryBackground);
+    border: 1px solid var(--vscode-button-secondaryHoverBackground);
     align-self: flex-end;
 }
 
