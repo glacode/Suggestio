@@ -444,6 +444,7 @@ html, body {
 
 .tool-confirmation-buttons {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     margin-top: 10px;
     justify-content: center;
@@ -460,6 +461,7 @@ html, body {
     text-align: center;
     white-space: nowrap;
     text-overflow: ellipsis;
+    overflow: hidden;
 }
 
 .tool-button-primary {
