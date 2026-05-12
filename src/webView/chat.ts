@@ -333,6 +333,9 @@ export class AssistantMessage {
         if (segment) {
             segment.update(payload);
         }
+
+        // Surgically remove any confirmation UI associated with this tool call.
+        this.removeConfirmations(payload.toolCallId);
     }
 
     addConfirmation(payload: any) {
@@ -347,6 +350,30 @@ export class AssistantMessage {
         segment.element.scrollIntoView();
     }
 
+    /**
+     * Surgically removes confirmation segments from this message.
+     * @param toolCallId Optional. If provided, only removes the confirmation for that specific tool call.
+     *                   If omitted, removes ALL confirmation segments from the message.
+     */
+    private removeConfirmations(toolCallId?: string) {
+        // Helper function to filter a segments array (handles recursion for ReasoningSegments)
+        const filterSegments = (segments: MessageSegment[]): MessageSegment[] => {
+            return segments.filter(s => {
+                if (s instanceof ConfirmationSegment) {
+                    if (!toolCallId || s.toolCallId === toolCallId) {
+                        s.element.remove();
+                        return false;
+                    }
+                } else if (s instanceof ReasoningSegment) {
+                    s.internalSegments = filterSegments(s.internalSegments);
+                }
+                return true;
+            });
+        };
+
+        this.segments = filterSegments(this.segments);
+    }
+
     getToolCall(toolCallId: string): ToolCallSegment | undefined {
         return this.toolCalls.get(toolCallId);
     }
@@ -358,6 +385,9 @@ export class AssistantMessage {
         if (this.indicator) {
             this.indicator.remove();
         }
+
+        // Clean up confirmations if an error occurred
+        this.removeConfirmations();
 
         const errorContainer = document.createElement('div');
         errorContainer.className = 'error-container';
@@ -392,6 +422,9 @@ export class AssistantMessage {
         if (this.indicator) {
             this.indicator.remove();
         }
+
+        // Clean up confirmations if agent halted
+        this.removeConfirmations();
 
         const haltedContainer = document.createElement('div');
         haltedContainer.className = 'halted-container';
@@ -452,6 +485,9 @@ export class AssistantMessage {
         if (this.indicator) {
             this.indicator.remove();
         }
+
+        // Clean up any lingering confirmation segments when the turn finishes.
+        this.removeConfirmations();
         
         const hasContent = this.segments.some(s => {
             if (s instanceof ContentSegment) {
