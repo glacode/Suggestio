@@ -98,7 +98,7 @@ export abstract class BaseTool<T> implements IToolImplementation<T> {
         const decision = await userDecisionPromise;
 
         // If the tool was allowed to run, notify the UI to start the spinner.
-        if (decision === 'allow' || decision === 'always-allow' || decision === 'always-allow-command') {
+        if (decision === 'allow' || decision === 'always-allow-edit' || decision === 'always-allow-command') {
             eventBus.emit('agent:toolExecutionStarted', { toolCallId });
         }
 

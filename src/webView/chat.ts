@@ -1,7 +1,7 @@
 import { WEBVIEW_COMMANDS, EXTENSION_EVENTS, EXTENSION_COMMANDS, MESSAGE_SENDERS } from '../constants/protocol.js';
 import { SettingsOverlay } from './settingsOverlay.js';
 import { HistoryOverlay } from './historyOverlay.js';
-import type { IWebviewApi, InitialState } from '../types.js';
+import type { IWebviewApi, InitialState, ToolCallDecision } from '../types.js';
 
 // These are provided by the environment (main.ts)
 declare const window: Window & { 
@@ -164,7 +164,7 @@ export class ConfirmationSegment extends MessageSegment {
         const alwaysAllowBtn = this.element.querySelector('.always-allow-btn');
         if (alwaysAllowBtn) {
             alwaysAllowBtn.addEventListener('click', () => {
-                const decision = payload.diffData ? 'always-allow' : (payload.toolName === 'run_command' ? 'always-allow-command' : 'always-allow');
+                const decision: ToolCallDecision = payload.diffData ? 'always-allow-edit' : (payload.toolName === 'run_command' ? 'always-allow-command' : 'always-allow-edit');
                 this.chatManager.confirmTool(this.toolCallId, decision);
             });
         }
@@ -937,7 +937,7 @@ export class ChatManager {
         }
     }
 
-    confirmTool(toolCallId: string, decision: 'allow' | 'deny' | 'always-allow' | 'always-allow-command') {
+    confirmTool(toolCallId: string, decision: ToolCallDecision) {
         const container = document.getElementById('confirm-' + toolCallId);
         if (container) {
             container.remove();

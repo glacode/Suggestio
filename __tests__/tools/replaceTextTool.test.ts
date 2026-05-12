@@ -77,7 +77,7 @@ describe("ReplaceTextTool", () => {
         }));
     });
 
-    it("should proceed if user chooses 'always-allow'", async () => {
+    it("should proceed if user chooses 'always-allow-edit'", async () => {
         const filePath = "test.ts";
         const oldContent = "line1\nline2\nline3";
         const oldString = "line2";
@@ -101,7 +101,7 @@ describe("ReplaceTextTool", () => {
             if (event === 'agent:requestConfirmation' && payload.toolCallId === toolCallId) {
                 setImmediate(() => {
                     if (userResponseCallback) {
-                        userResponseCallback({ toolCallId, decision: 'always-allow' });
+                        userResponseCallback({ toolCallId, decision: 'always-allow-edit' });
                     }
                 });
             }

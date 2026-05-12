@@ -74,8 +74,8 @@ function writeMockConfig(workspace: string) {
                 model: "test-model",
                 apiKey: "unused"
             },
-            alwaysAllowProvider: {
-                endpoint: "http://localhost:3001/v1/always-allow/completions",
+            alwaysAllowEditProvider: {
+                endpoint: "http://localhost:3001/v1/always-allow-edit/completions",
                 model: "test-model",
                 apiKey: "unused"
             },
@@ -367,8 +367,8 @@ function createMockServer(capturedRequests: any[]): Promise<Server> {
             sendDone(res);
         });
 
-        app.post('/v1/always-allow/completions', (req, res) => {
-            capturedRequests.push({ endpoint: 'always-allow', body: req.body });
+        app.post('/v1/always-allow-edit/completions', (req, res) => {
+            capturedRequests.push({ endpoint: 'always-allow-edit', body: req.body });
             alwaysAllowCallCount++;
             res.setHeader('Content-Type', 'text/event-stream');
             
@@ -1345,8 +1345,8 @@ test.describe('Chat E2E', () => {
         // 1. Pre-create the file to be edited
         fs.writeFileSync(path.join(tempWorkspacePath, 'test.txt'), 'original text');
 
-        // 2. Switch to alwaysAllowProvider
-        await switchModel(inner, 'alwaysAllowProvider');
+        // 2. Switch to alwaysAllowEditProvider
+        await switchModel(inner, 'alwaysAllowEditProvider');
         await clickNewChat(page);
 
         // 3. Trigger the first replace_text tool call

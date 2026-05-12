@@ -130,7 +130,7 @@ export class ReplaceTextTool extends BaseTool<ReplaceTextArgs> {
                 { isEdit: true }
             );
 
-            if (userDecision !== 'allow' && userDecision !== 'always-allow') {
+            if (userDecision !== 'allow' && userDecision !== 'always-allow-edit') {
                 return { content: `Error: User denied permission to replace text in ${args.path}.`, success: false };
             }
         }

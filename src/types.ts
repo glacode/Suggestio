@@ -224,6 +224,11 @@ import { WEBVIEW_COMMANDS, EXTENSION_COMMANDS, EXTENSION_EVENTS, MESSAGE_SENDERS
 // --------------------------------------------------------------------------------
 
 /**
+ * `ToolCallDecision` defines the possible responses from a user when a tool call requires confirmation.
+ */
+export type ToolCallDecision = 'allow' | 'deny' | 'always-allow-edit' | 'always-allow-command';
+
+/**
  * `WebviewMessage` defines the types of messages that can be sent *from* the webview
  * (frontend) to the extension (backend). This is used for user interactions.
  */
@@ -265,8 +270,8 @@ export type WebviewMessage =
     command: typeof WEBVIEW_COMMANDS.CONFIRM_TOOL_CALL;
     /** The ID of the tool call. */
     toolCallId: string;
-    /** The user's decision ('allow', 'deny', 'always-allow' or 'always-allow-command'). */
-    decision: 'allow' | 'deny' | 'always-allow' | 'always-allow-command';
+    /** The user's decision. */
+    decision: ToolCallDecision;
     }  | {
     /** User wants to edit an API key. */
     command: typeof WEBVIEW_COMMANDS.EDIT_API_KEY;
@@ -1276,11 +1281,10 @@ export interface IToolUiProvider {
 
 /**
  * Payload for the user's response to a tool confirmation request.
- * The 'decision' field is a string to allow for future options like 'allow_session'.
  */
 export interface IUserConfirmationPayload {
   toolCallId: string;
-  decision: 'allow' | 'deny' | string;
+  decision: ToolCallDecision;
 }
 export interface IAppEvents {
   'inlineCompletionToggled': boolean;

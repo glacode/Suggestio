@@ -458,7 +458,7 @@ export class ChatWebviewViewProvider {
                     this._abortController.abort();
                 }
             } else if (message.command === WEBVIEW_COMMANDS.CONFIRM_TOOL_CALL) {
-                if (message.decision === 'always-allow') {
+                if (message.decision === 'always-allow-edit') {
                     await this._vscodeApi.commands.executeCommand('suggestio.enableAutoAcceptEdits');
                 }
                 if (message.decision === 'deny') {

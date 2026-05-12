@@ -100,11 +100,10 @@ describe("WriteFileTool", () => {
         expect(result.content).toContain(`Successfully wrote ${filePath}`);
     });
 
-    it("should proceed if user chooses 'always-allow'", async () => {
+    it("should proceed if user chooses 'always-allow-edit'", async () => {
         const filePath = "test.ts";
         const content = "new content";
         const toolCallId = "call1";
-        fileReader.read.mockReturnValue("old content");
 
         // Capture the callback registered by the tool so we can trigger it later
         let userResponseCallback: (payload: IUserConfirmationPayload) => void;
@@ -120,7 +119,7 @@ describe("WriteFileTool", () => {
             if (event === 'agent:requestConfirmation' && payload.toolCallId === toolCallId) {
                 setImmediate(() => {
                     if (userResponseCallback) {
-                        userResponseCallback({ toolCallId, decision: 'always-allow' });
+                        userResponseCallback({ toolCallId, decision: 'always-allow-edit' });
                     }
                 });
             }
@@ -161,7 +160,7 @@ describe("WriteFileTool", () => {
         const result = await tool.execute({ path: filePath, content: "new" }, undefined, toolCallId);
 
         expect(result.success).toBe(false);
-        expect(result.content).toContain(`User denied permission to write to file ${filePath}`);
+        expect(result.content).toContain(`User denied permission to write to ${filePath}`);
         expect(fileWriter.write).not.toHaveBeenCalled();
     });
 
