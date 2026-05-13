@@ -1591,6 +1591,13 @@ export interface IProfileConfig {
   type?: "openai-compatible" | "gemini"; // defaults to openai-compatible
   /** Whether the model supports tool calling. If not specified, defaults to true. */
   supportsTools?: boolean;
+  /**
+   * Whether to exclude this model from the chat interface. If not specified, defaults to false.
+   * This is particularly useful for models where the free tier might be too restrictive for
+   * reliable chat usage—for instance, if the context window is too small or the Tokens Per
+   * Minute (TPM) limit is too low—while still being adequate for single-turn inline completions.
+   */
+  excludeFromChat?: boolean;
 }
 
 export interface IAnonymizerConfig {

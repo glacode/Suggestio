@@ -174,4 +174,14 @@ class ConfigProcessor {
     }
 }
 
+/**
+ * Returns a list of profile identifiers that are eligible for the chat interface.
+ * Profiles are excluded if they explicitly disable tools or are explicitly marked for exclusion.
+ */
+export function getChatProfileIds(profiles: Record<string, IProfileConfig>): string[] {
+    return Object.entries(profiles)
+        .filter(([_, profile]) => profile.supportsTools !== false && profile.excludeFromChat !== true)
+        .map(([id]) => id);
+}
+
 export const configProcessor = new ConfigProcessor();

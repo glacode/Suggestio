@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import { configProcessor, ISecretManager } from '../../src/config/configProcessor.js';
+import { configProcessor, ISecretManager, getChatProfileIds } from '../../src/config/configProcessor.js';
 import { IConfigContainer } from '../../src/types.js';
 import { EventBus } from '../../src/utils/eventBus.js';
 import { NodeFetchClient } from '../../src/utils/httpClient.js';
@@ -38,6 +38,22 @@ describe('ConfigProcessor', () => {
       const provider = configContainer.config.profiles.provider1;
       expect(provider.resolvedApiKey).toBe('my-key');
       expect(provider.apiKeyPlaceholder).toBeUndefined();
+    });
+
+    it('preserves excludeFromChat property', async () => {
+      const rawJson = JSON.stringify({
+        activeChatProfile: 'provider1',
+        profiles: {
+          provider1: { model: 'gpt-4', apiKey: 'key', excludeFromChat: true },
+          provider2: { model: 'gpt-4', apiKey: 'key', excludeFromChat: false }
+        },
+        anonymizer: { enabled: false, words: [] }
+      });
+
+      const configContainer = await configProcessor.processConfig(rawJson, mockISecretManager, eventBus, httpClient);
+
+      expect(configContainer.config.profiles.provider1.excludeFromChat).toBe(true);
+      expect(configContainer.config.profiles.provider2.excludeFromChat).toBe(false);
     });
 
     it('resolves a placeholder from environment variable', async () => {
@@ -200,6 +216,49 @@ describe('ConfigProcessor', () => {
       });
       const configContainer = await configProcessor.processConfig(rawJson, mockISecretManager, eventBus, httpClient);
       expect(configContainer.config.profiles.missingP).toBeUndefined();
+    });
+  });
+
+  describe('getChatProfileIds', () => {
+    it('should include profiles that have neither supportsTools nor excludeFromChat set', () => {
+      const profiles: any = {
+        'p1': { model: 'm1', apiKey: 'k1' }
+      };
+      const result = getChatProfileIds(profiles);
+      expect(result).toContain('p1');
+    });
+
+    it('should exclude profiles where supportsTools is explicitly false', () => {
+      const profiles: any = {
+        'p1': { model: 'm1', apiKey: 'k1', supportsTools: false }
+      };
+      const result = getChatProfileIds(profiles);
+      expect(result).not.toContain('p1');
+    });
+
+    it('should exclude profiles where excludeFromChat is explicitly true', () => {
+      const profiles: any = {
+        'p1': { model: 'm1', apiKey: 'k1', excludeFromChat: true }
+      };
+      const result = getChatProfileIds(profiles);
+      expect(result).not.toContain('p1');
+    });
+
+    it('should include profiles where supportsTools is true and excludeFromChat is false', () => {
+      const profiles: any = {
+        'p1': { model: 'm1', apiKey: 'k1', supportsTools: true, excludeFromChat: false }
+      };
+      const result = getChatProfileIds(profiles);
+      expect(result).toContain('p1');
+    });
+
+    it('should exclude if either condition is met', () => {
+      const profiles: any = {
+        'p1': { model: 'm1', apiKey: 'k1', supportsTools: false, excludeFromChat: false },
+        'p2': { model: 'm2', apiKey: 'k2', supportsTools: true, excludeFromChat: true }
+      };
+      const result = getChatProfileIds(profiles);
+      expect(result).toHaveLength(0);
     });
   });
 

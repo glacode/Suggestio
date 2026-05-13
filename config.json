@@ -36,12 +36,14 @@
     "groq-gpt-oss-120b": {
       "endpoint": "https://api.groq.com/openai/v1/chat/completions",
       "model": "openai/gpt-oss-120b",
-      "apiKey": "${GROQ_API_KEY}"
+      "apiKey": "${GROQ_API_KEY}",
+      "excludeFromChat": true
     },
     "groq-llama370": {
       "endpoint": "https://api.groq.com/openai/v1/chat/completions",
       "model": "llama-3.3-70b-versatile",
-      "apiKey": "${GROQ_API_KEY}"
+      "apiKey": "${GROQ_API_KEY}",
+      "supportsTools": false
     },
     "ollama-devstral": {
       "endpoint": "https://ollama.com/v1/chat/completions",
@@ -78,6 +80,11 @@
       "model": "labs-devstral-small-2512",
       "apiKey": "${MISTRAL_API_KEY}"
     },
+    "openrouter-ring-2.6-1t": {
+      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+      "model": "inclusionai/ring-2.6-1t:free",
+      "apiKey": "${OPENROUTER_API_KEY}"
+    },
     "openrouter-minimax-m2.5": {
       "endpoint": "https://openrouter.ai/api/v1/chat/completions",
       "model": "minimax/minimax-m2.5:free",
@@ -86,11 +93,6 @@
     "openrouter-glm-4.5-air": {
       "endpoint": "https://openrouter.ai/api/v1/chat/completions",
       "model": "z-ai/glm-4.5-air:free",
-      "apiKey": "${OPENROUTER_API_KEY}"
-    },
-    "openrouter-arcee-ai-trinity": {
-      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
-      "model": "arcee-ai/trinity-large-preview:free",
       "apiKey": "${OPENROUTER_API_KEY}"
     },
     "hf-lama38": {

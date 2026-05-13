@@ -44,6 +44,11 @@
             "type": "boolean",
             "default": true,
             "description": "Whether the model supports tool calling. If not specified, defaults to true."
+          },
+          "excludeFromChat": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether to exclude this model from the chat interface. This is useful for models where the free tier is too restrictive for chat (e.g., very small context windows or low Tokens Per Minute/TPM limits) but remains useful for inline completions."
           }
         },
         "required": ["model", "apiKey"]

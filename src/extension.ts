@@ -26,7 +26,7 @@ import { ChatHistoryManager } from './chat/chatHistoryManager.js';
 import { WorkspaceChatHistoryStorage } from './chat/workspaceChatHistoryStorage.js';
 import { PersistentChatHistoryManager } from './chat/persistentChatHistoryManager.js';
 import { SecretManager } from './config/secretManager.js';
-import { configProcessor } from './config/configProcessor.js';
+import { configProcessor, getChatProfileIds } from './config/configProcessor.js';
 import { CONFIG_DEFAULTS } from './constants/config.js';
 import { Agent } from './agent/agent.js';
 import { ChatWebviewViewProvider } from './chat/chatWebviewViewProvider.js';
@@ -236,11 +236,7 @@ export async function activate(context: vscode.ExtensionContext) {
     eventBus
   });
   const providerAccessor = {
-    getProfiles: () => Object.entries(configContainer.config.profiles)
-      // Filter out profiles that explicitly do not support tools.
-      // If supportsTools is undefined, we assume it supports tools (default).
-      .filter(([_, profile]) => profile.supportsTools !== false)
-      .map(([id]) => id),
+    getProfiles: () => getChatProfileIds(configContainer.config.profiles),
     getActiveProfile: () => configContainer.config.activeChatProfile,
     getCompletionProfiles: () => Object.entries(configContainer.config.profiles).map(([id]) => id),
     getCompletionActiveProfile: () => configContainer.config.activeCompletionProfile || configContainer.config.activeChatProfile
