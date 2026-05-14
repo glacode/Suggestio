@@ -35,7 +35,7 @@ describe('Config Hierarchy', () => {
       anonymizer: { enabled: false, words: [] }
     });
 
-    const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, mockISecretManager, eventBus, httpClient);
+    const configContainer: IConfigContainer = await configProcessor.processConfig({ default: rawJson }, mockISecretManager, eventBus, httpClient);
 
     // It should NOT be 10 or false, but the defaults
     expect(configContainer.config.maxAgentIterations).toBe(CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS);
@@ -56,7 +56,7 @@ describe('Config Hierarchy', () => {
       logLevel: 'Debug'
     };
 
-    const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, mockISecretManager, eventBus, httpClient, overrides);
+    const configContainer: IConfigContainer = await configProcessor.processConfig({ default: rawJson }, mockISecretManager, eventBus, httpClient, overrides);
 
     expect(configContainer.config.maxAgentIterations).toBe(50);
     expect(configContainer.config.logLevel).toBe('Debug');
@@ -75,9 +75,49 @@ describe('Config Hierarchy', () => {
       anonymizer: { enabled: true }
     };
 
-    const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, mockISecretManager, eventBus, httpClient, overrides);
+    const configContainer: IConfigContainer = await configProcessor.processConfig({ default: rawJson }, mockISecretManager, eventBus, httpClient, overrides);
 
     expect(configContainer.config.anonymizer.enabled).toBe(true);
     expect(configContainer.config.anonymizer.words).toEqual(['json-word']); // Words from JSON preserved
+  });
+
+  it('should correctly merge two layers of configuration', async () => {
+    const defaultRaw = JSON.stringify({
+      activeChatProfile: 'defaultP',
+      profiles: {
+        'defaultP': { model: 'm-default', apiKey: 'k-default' },
+        'sharedP': { model: 'm-default-shared', apiKey: 'k-default-shared' }
+      },
+      anonymizer: { enabled: false, words: ['nonsense'] }
+    });
+
+    const workspaceRaw = JSON.stringify({
+      activeChatProfile: 'workspaceP',
+      profiles: {
+        'workspaceP': { model: 'm-workspace', apiKey: 'k-workspace' },
+        'sharedP': { model: 'm-workspace-shared', apiKey: 'k-workspace-shared' }
+      },
+      anonymizer: { words: ['workspace-word'] }
+    });
+
+    const configs = {
+      default: defaultRaw,
+      workspace: workspaceRaw
+    };
+
+    const configContainer = await configProcessor.processConfig(configs, mockISecretManager, eventBus, httpClient);
+    const config = configContainer.config;
+
+    // Profiles merge
+    expect(config.profiles['defaultP']).toBeDefined();
+    expect(config.profiles['workspaceP']).toBeDefined();
+    expect(config.profiles['sharedP'].model).toBe('m-workspace-shared'); // Workspace overwrites default
+
+    // activeChatProfile merge (Workspace wins)
+    expect(config.activeChatProfile).toBe('workspaceP');
+
+    // Anonymizer words merge (Workspace replaces default)
+    expect(config.anonymizer.words).toEqual(['workspace-word']);
+    expect(config.anonymizer.words).not.toContain('nonsense');
   });
 });

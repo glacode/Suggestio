@@ -1662,6 +1662,16 @@ export interface IConfigContainer {
   config: IConfig;
 }
 
+/**
+ * Container for raw configuration strings from different layers.
+ */
+export interface IRawConfigs {
+  /** Built-in default configuration. */
+  default: string;
+  /** Project-specific workspace configuration. */
+  workspace?: string;
+}
+
 export interface ISecretStorage {
   get(key: string): Promise<string | undefined>;
   store(key: string, value: string): Promise<void>;

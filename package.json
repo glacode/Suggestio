@@ -267,6 +267,7 @@
                 "suggestio.experimental.anonymizer.enabled": {
                     "type": "boolean",
                     "default": false,
+                    "scope": "application",
                     "description": "Enable experimental code anonymization to prevent sensitive information from being sent to LLMs."
                 },
                 "suggestio.llm.maxRetries": {
@@ -278,6 +279,62 @@
                     "type": "number",
                     "default": 1000,
                     "description": "Initial delay in milliseconds for exponential backoff during retries."
+                },
+                "suggestio.profiles": {
+                    "type": "object",
+                    "scope": "application",
+                    "description": "Configuration for LLM profiles. Each key is a profile name, and the value is its configuration.",
+                    "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                            "model": {
+                                "type": "string",
+                                "description": "The name of the model to use (e.g., 'gpt-4', 'gemini-pro')."
+                            },
+                            "endpoint": {
+                                "type": "string",
+                                "description": "The API endpoint URL (required for OpenAI-compatible profiles)."
+                            },
+                            "apiKey": {
+                                "type": "string",
+                                "description": "The API key for the profile. Can be a literal string or a placeholder like '${MY_ENV_VAR}'."
+                            },
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "openai-compatible",
+                                    "gemini"
+                                ],
+                                "default": "openai-compatible",
+                                "description": "The type of provider."
+                            },
+                            "supportsTools": {
+                                "type": "boolean",
+                                "default": true,
+                                "description": "Whether the model supports tool calling."
+                            },
+                            "excludeFromChat": {
+                                "type": "boolean",
+                                "default": false,
+                                "description": "Whether to exclude this model from the chat interface."
+                            }
+                        },
+                        "required": [
+                            "model",
+                            "apiKey"
+                        ]
+                    },
+                    "default": {}
+                },
+                "suggestio.activeChatProfile": {
+                    "type": "string",
+                    "scope": "application",
+                    "description": "The ID of the profile currently active for chat."
+                },
+                "suggestio.activeCompletionProfile": {
+                    "type": "string",
+                    "scope": "application",
+                    "description": "The ID of the profile currently active for inline completion."
                 }
             }
         }

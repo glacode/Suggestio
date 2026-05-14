@@ -24,12 +24,16 @@ describe('readConfig', () => {
         mockPathResolver = createMockPathResolver();
     });
 
-    it('should read the workspace config if it exists', async () => {
+    it('should read both config layers if they exist', async () => {
         mockWorkspaceProvider.rootPath.mockReturnValue('/path/to/workspace');
         mockDirectoryProvider.exists.mockReturnValue(true);
-        mockFileProvider.read.mockReturnValue('{}');
+        mockFileProvider.read.mockImplementation((path) => {
+            if (path.includes('extension')) { return '{"layer": "default"}'; }
+            if (path.includes('workspace')) { return '{"layer": "workspace"}'; }
+            return '{}';
+        });
 
-        await readConfig(
+        const configs = await readConfig(
             mockContext,
             mockWorkspaceProvider,
             mockFileProvider,
@@ -38,15 +42,16 @@ describe('readConfig', () => {
             mockPathResolver
         );
 
-        expect(mockFileProvider.read).toHaveBeenCalledWith('/path/to/workspace/suggestio.config.json');
+        expect(configs.default).toBe('{"layer": "default"}');
+        expect(configs.workspace).toBe('{"layer": "workspace"}');
     });
 
-    it('should read the global config if the workspace config does not exist', async () => {
+    it('should return empty workspace if it does not exist', async () => {
         mockWorkspaceProvider.rootPath.mockReturnValue('/path/to/workspace');
-        mockDirectoryProvider.exists.mockImplementation((path) => path === '/path/to/globalStorage/config.json');
-        mockFileProvider.read.mockReturnValue('{}');
+        mockDirectoryProvider.exists.mockImplementation((path) => path.includes('extension'));
+        mockFileProvider.read.mockReturnValue('{"layer": "default"}');
 
-        await readConfig(
+        const configs = await readConfig(
             mockContext,
             mockWorkspaceProvider,
             mockFileProvider,
@@ -55,34 +60,18 @@ describe('readConfig', () => {
             mockPathResolver
         );
 
-        expect(mockFileProvider.read).toHaveBeenCalledWith('/path/to/globalStorage/config.json');
+        expect(configs.default).toBe('{"layer": "default"}');
+        expect(configs.workspace).toBeUndefined();
     });
 
-    it('should read the default config if no other config exists', async () => {
-        mockWorkspaceProvider.rootPath.mockReturnValue(undefined);
-        mockDirectoryProvider.exists.mockReturnValue(false);
-        mockFileProvider.read.mockReturnValue('{}');
-
-        await readConfig(
-            mockContext,
-            mockWorkspaceProvider,
-            mockFileProvider,
-            mockDirectoryProvider,
-            mockWindowProvider,
-            mockPathResolver
-        );
-
-        expect(mockFileProvider.read).toHaveBeenCalledWith('/path/to/extension/config.json');
-    });
-
-    it('should return a default config if reading the file fails', async () => {
+    it('should return a fallback default config if reading the default file fails', async () => {
         mockWorkspaceProvider.rootPath.mockReturnValue(undefined);
         mockDirectoryProvider.exists.mockReturnValue(true);
         mockFileProvider.read.mockImplementation(() => {
             throw new Error('Failed to read file');
         });
 
-        const config = await readConfig(
+        const configs = await readConfig(
             mockContext,
             mockWorkspaceProvider,
             mockFileProvider,
@@ -91,11 +80,10 @@ describe('readConfig', () => {
             mockPathResolver
         );
 
-        expect(JSON.parse(config)).toEqual({
-            activeProvider: '',
-            providers: {},
+        expect(JSON.parse(configs.default)).toEqual({
+            profiles: {},
             anonymizer: { enabled: false, words: [] }
         });
-        expect(mockWindowProvider.showErrorMessage).toHaveBeenCalledWith('Failed to load config.json: Error: Failed to read file');
+        expect(mockWindowProvider.showErrorMessage).toHaveBeenCalledWith(expect.stringContaining('Default config: Error: Failed to read file'));
     });
 });

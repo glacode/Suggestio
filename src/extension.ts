@@ -17,7 +17,6 @@ import {
   IAnonymizationEventPayload, 
   IWindowProvider, 
   IPathResolver,
-  IDocumentOpener,
   IConfigProvider,
   IVscodeApiLocal,
   IFileDeleter
@@ -152,7 +151,7 @@ export async function activate(context: vscode.ExtensionContext) {
     delete: async (key: string) => await context.secrets.delete(key)
   }, windowProvider);
 
-  const rawJson = await readConfig(
+  const rawConfigs = await readConfig(
     context,
     workspaceProvider,
     fileContentReader,
@@ -172,7 +171,10 @@ export async function activate(context: vscode.ExtensionContext) {
     enableInlineCompletion: vsCodeConfig.get<boolean>('enableInlineCompletion', true),
     maxRetries: vsCodeConfig.get<number>('llm.maxRetries', CONFIG_DEFAULTS.MAX_RETRIES),
     initialDelay: vsCodeConfig.get<number>('llm.initialDelay', CONFIG_DEFAULTS.INITIAL_DELAY),
-    maxSavedChatSessions: vsCodeConfig.get<number>('maxSavedChatSessions', CONFIG_DEFAULTS.MAX_SAVED_CHAT_SESSIONS)
+    maxSavedChatSessions: vsCodeConfig.get<number>('maxSavedChatSessions', CONFIG_DEFAULTS.MAX_SAVED_CHAT_SESSIONS),
+    profiles: vsCodeConfig.get<object>('profiles'),
+    activeChatProfile: vsCodeConfig.get<string>('activeChatProfile'),
+    activeCompletionProfile: vsCodeConfig.get<string>('activeCompletionProfile')
   };
 
   const anonymizerEnabled = vsCodeConfig.get<boolean | undefined>('experimental.anonymizer.enabled');
@@ -183,7 +185,7 @@ export async function activate(context: vscode.ExtensionContext) {
   }
 
   const httpClient = new NodeFetchClient();
-  const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, secretManager, eventBus, httpClient, overrides);
+  const configContainer: IConfigContainer = await configProcessor.processConfig(rawConfigs, secretManager, eventBus, httpClient, overrides);
   // Initialize UI context for toggles
   await vscode.commands.executeCommand('setContext', 'suggestio.inlineCompletionEnabled', configContainer.config.enableInlineCompletion !== false);
   await vscode.commands.executeCommand('setContext', 'suggestio.autoAcceptEditsEnabled', configContainer.config.autoAcceptEdits);
@@ -202,10 +204,6 @@ export async function activate(context: vscode.ExtensionContext) {
     configContainer.config
   );
   const chatHistoryManager = new PersistentChatHistoryManager(baseHistoryManager, storage);
-
-  const documentOpener: IDocumentOpener = {
-    openTextDocument: async (path: string) => await vscode.workspace.openTextDocument(path)
-  };
 
   const ignoreManager = new IgnoreManager(workspaceProvider, fileContentReader, pathResolver);
   const workspaceScanner = new WorkspaceScanner(workspaceProvider, directoryReader, pathResolver, ignoreManager);
@@ -271,11 +269,6 @@ export async function activate(context: vscode.ExtensionContext) {
     configContainer.config,
     chatWebviewViewProvider,
     eventBus,
-    pathResolver,
-    directoryReader,
-    directoryCreator,
-    fileContentWriter,
-    documentOpener,
     windowProvider,
     secretManager,
     autoAcceptManager

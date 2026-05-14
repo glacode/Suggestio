@@ -1,6 +1,6 @@
 import { getAnonymizer } from '../anonymizer/anonymizer.js';
 import { getLlmProvider } from '../providers/providerFactory.js';
-import { IConfig, IConfigContainer, IProfileConfig, IHttpClient, IProjectConfig } from '../types.js';
+import { IConfig, IConfigContainer, IProfileConfig, IHttpClient, IProjectConfig, IRawConfigs } from '../types.js';
 import { IEventBus } from '../utils/eventBus.js';
 import { createEventLogger } from '../log/eventLogger.js';
 import { CONFIG_LOGS } from '../constants/messages.js';
@@ -20,32 +20,29 @@ class ConfigProcessor {
     constructor() { }
 
     /**
-     * Process raw config JSON and resolves API keys using a secret manager.
-     * @param rawJson The raw JSON string from the configuration file.
+     * Process raw config JSON from multiple layers and resolves API keys using a secret manager.
+     * Merging order: Default < Global < Workspace < Overrides.
+     * @param rawConfigs The raw JSON strings from different configuration layers.
      * @param secretManager The secret manager to resolve API keys.
      * @param eventBus The event bus for communication between components.
      * @param httpClient The HTTP client for provider initialization.
      * @param overrides Optional partial configuration from standard VSCode extension settings.
      */
     public async processConfig(
-        rawJson: string,
+        rawConfigs: IRawConfigs,
         secretManager: ISecretManager,
         eventBus: IEventBus,
         httpClient: IHttpClient,
         overrides?: any
     ): Promise<IConfigContainer> {
-        const projectConfig: IProjectConfig = JSON.parse(rawJson);
+        // 1. Load layers
+        const defaultConfig: IProjectConfig = JSON.parse(rawConfigs.default);
+        const workspaceConfig: Partial<IProjectConfig> = rawConfigs.workspace ? JSON.parse(rawConfigs.workspace) : {};
 
-        // Ensure anonymizer section exists and has a default 'enabled' state
-        if (!projectConfig.anonymizer) {
-            projectConfig.anonymizer = { enabled: false, words: [] };
-        } else if (projectConfig.anonymizer.enabled === undefined) {
-            projectConfig.anonymizer.enabled = false;
-        }
-
-        // Initialize merged runtime config with project data and defaults
+        // 2. Perform merge
+        // Base config with defaults
         const config: IConfig = {
-            ...projectConfig,
+            ...defaultConfig,
             maxAgentIterations: CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS,
             logLevel: CONFIG_DEFAULTS.LOG_LEVEL,
             toolResultMaxLength: CONFIG_DEFAULTS.TOOL_RESULT_MAX_LENGTH,
@@ -56,12 +53,66 @@ class ConfigProcessor {
             maxSavedChatSessions: CONFIG_DEFAULTS.MAX_SAVED_CHAT_SESSIONS,
         };
 
-        // Apply overrides from standard VSCode extension settings
+        // Ensure anonymizer section exists
+        if (!config.anonymizer) {
+            config.anonymizer = { enabled: false, words: [] };
+        } else if (config.anonymizer.enabled === undefined) {
+            config.anonymizer.enabled = false;
+        }
+        if (!config.anonymizer.words) {
+            config.anonymizer.words = [];
+        }
+
+        // Merge profiles (shallow merge of objects)
+        config.profiles = {
+            ...defaultConfig.profiles,
+            ...(workspaceConfig.profiles || {})
+        };
+
+        // Merge top-level settings
+        if (workspaceConfig.activeChatProfile) { config.activeChatProfile = workspaceConfig.activeChatProfile; }
+        if (workspaceConfig.activeCompletionProfile) { config.activeCompletionProfile = workspaceConfig.activeCompletionProfile; }
+
+        // Merge Anonymizer
+        const mergeAnonymizer = (target: any, source: any) => {
+            if (!source) { return; }
+            if (source.enabled !== undefined) { target.enabled = source.enabled; }
+            if (source.sensitiveData) { target.sensitiveData = { ...target.sensitiveData, ...source.sensitiveData }; }
+            // If the higher layer provides 'words', it REPLACES the lower layer's words.
+            // This prevents mixing built-in examples with real user data.
+            if (source.words && Array.isArray(source.words) && source.words.length > 0) { 
+                target.words = [...source.words]; 
+            }
+        };
+
+        mergeAnonymizer(config.anonymizer, workspaceConfig.anonymizer);
+
+        // 3. Apply overrides from standard VSCode extension settings
+        // These overrides (User settings) take precedence over Default, but Workspace config wins over User settings.
         if (overrides) {
-            const { anonymizer, ...rest } = overrides;
+            const { anonymizer, profiles, activeChatProfile, activeCompletionProfile, ...rest } = overrides;
+            
+            // Standard settings apply over Default
             Object.assign(config, rest);
+            
+            if (profiles) {
+                config.profiles = { ...config.profiles, ...profiles };
+            }
+            if (activeChatProfile) { config.activeChatProfile = activeChatProfile; }
+            if (activeCompletionProfile) { config.activeCompletionProfile = activeCompletionProfile; }
+
             if (anonymizer) {
-                config.anonymizer = { ...config.anonymizer, ...anonymizer };
+                mergeAnonymizer(config.anonymizer, anonymizer);
+            }
+
+            // RE-APPLY Workspace settings because they should win over Global VS Code settings
+            if (workspaceConfig.profiles) {
+                config.profiles = { ...config.profiles, ...workspaceConfig.profiles };
+            }
+            if (workspaceConfig.activeChatProfile) { config.activeChatProfile = workspaceConfig.activeChatProfile; }
+            if (workspaceConfig.activeCompletionProfile) { config.activeCompletionProfile = workspaceConfig.activeCompletionProfile; }
+            if (workspaceConfig.anonymizer) {
+                mergeAnonymizer(config.anonymizer, workspaceConfig.anonymizer);
             }
         }
 

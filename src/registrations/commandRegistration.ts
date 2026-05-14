@@ -1,14 +1,8 @@
 // registrations/commandRegistration.ts
 import * as vscode from 'vscode';
-import { editGlobalConfig } from '../config/editGlobalConfig.js';
 import {
   IConfig,
-  IPathResolver,
-  IDirectoryReader,
-  IDirectoryCreator,
-  IFileContentWriter,
   IWindowProvider,
-  IDocumentOpener,
   ICommandAutoAcceptManager
 } from '../types.js';
 import { handleUpdateApiKeyCommand, handleDeleteApiKeyCommand, SecretManager } from '../config/secretManager.js';
@@ -26,28 +20,14 @@ export function registerCommands(
   config: IConfig,
   newChatCapable: INewChatCapable,
   eventBus: IEventBus,
-  pathResolver: IPathResolver,
-  directoryReader: IDirectoryReader,
-  directoryCreator: IDirectoryCreator,
-  fileWriter: IFileContentWriter,
-  documentOpener: IDocumentOpener,
   windowProvider: IWindowProvider,
   secretManager: SecretManager,
   autoAcceptManager: ICommandAutoAcceptManager
 ) {
-  // Opens the global configuration file (config.json) in the editor for manual modification.
+  // Opens the standard VS Code Settings UI, filtered to Suggestio settings.
   context.subscriptions.push(
     vscode.commands.registerCommand("suggestio.editGlobalConfig", () =>
-      editGlobalConfig(
-        context,
-        config,
-        pathResolver,
-        directoryReader,
-        directoryCreator,
-        fileWriter,
-        documentOpener,
-        windowProvider
-      )
+      vscode.commands.executeCommand('workbench.action.openSettings', 'suggestio')
     )
   );
 

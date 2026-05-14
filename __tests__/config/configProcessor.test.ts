@@ -33,7 +33,7 @@ describe('ConfigProcessor', () => {
         anonymizer: { enabled: false, words: [] }
       });
 
-      const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, mockISecretManager, eventBus, httpClient);
+      const configContainer: IConfigContainer = await configProcessor.processConfig({ default: rawJson }, mockISecretManager, eventBus, httpClient);
 
       const provider = configContainer.config.profiles.provider1;
       expect(provider.resolvedApiKey).toBe('my-key');
@@ -50,7 +50,7 @@ describe('ConfigProcessor', () => {
         anonymizer: { enabled: false, words: [] }
       });
 
-      const configContainer = await configProcessor.processConfig(rawJson, mockISecretManager, eventBus, httpClient);
+      const configContainer = await configProcessor.processConfig({ default: rawJson }, mockISecretManager, eventBus, httpClient);
 
       expect(configContainer.config.profiles.provider1.excludeFromChat).toBe(true);
       expect(configContainer.config.profiles.provider2.excludeFromChat).toBe(false);
@@ -66,7 +66,7 @@ describe('ConfigProcessor', () => {
         anonymizer: { enabled: false, words: [] }
       });
 
-      const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, mockISecretManager, eventBus, httpClient);
+      const configContainer: IConfigContainer = await configProcessor.processConfig({ default: rawJson }, mockISecretManager, eventBus, httpClient);
 
       const provider = configContainer.config.profiles.provider1;
       expect(provider.resolvedApiKey).toBe('env-secret');
@@ -82,7 +82,7 @@ describe('ConfigProcessor', () => {
         anonymizer: { enabled: false, words: [] }
       });
 
-      const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, mockISecretManager, eventBus, httpClient);
+      const configContainer: IConfigContainer = await configProcessor.processConfig({ default: rawJson }, mockISecretManager, eventBus, httpClient);
 
       const provider = configContainer.config.profiles.provider1;
       expect(provider.resolvedApiKey).toBe('secret-for-TEST_KEY');
@@ -100,7 +100,7 @@ describe('ConfigProcessor', () => {
         anonymizer: { enabled: false, words: [] }
       });
 
-      const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, mockISecretManager, eventBus, httpClient);
+      const configContainer: IConfigContainer = await configProcessor.processConfig({ default: rawJson }, mockISecretManager, eventBus, httpClient);
       
       // Reset mocks to check subsequent call
       jest.clearAllMocks();
@@ -119,7 +119,7 @@ describe('ConfigProcessor', () => {
         anonymizer: { enabled: false, words: [] }
       });
 
-      const configContainer: IConfigContainer = await configProcessor.processConfig(rawJson, mockISecretManager, eventBus, httpClient);
+      const configContainer: IConfigContainer = await configProcessor.processConfig({ default: rawJson }, mockISecretManager, eventBus, httpClient);
 
       const provider = configContainer.config.profiles.provider1;
       expect(provider.resolvedApiKey).toBe('');
@@ -134,7 +134,7 @@ describe('ConfigProcessor', () => {
           provider1: { endpoint: 'https://api.example.com', model: 'gpt-4', apiKey: 'key' }
         }
       });
-      const configContainer = await configProcessor.processConfig(rawJson, mockISecretManager, eventBus, httpClient);
+      const configContainer = await configProcessor.processConfig({ default: rawJson }, mockISecretManager, eventBus, httpClient);
       expect(configContainer.config.anonymizer).toEqual({ enabled: false, words: [] });
     });
 
@@ -146,7 +146,7 @@ describe('ConfigProcessor', () => {
         },
         anonymizer: { words: ['test'] }
       });
-      const configContainer = await configProcessor.processConfig(rawJson, mockISecretManager, eventBus, httpClient);
+      const configContainer = await configProcessor.processConfig({ default: rawJson }, mockISecretManager, eventBus, httpClient);
       expect(configContainer.config.anonymizer.enabled).toBe(false);
       expect(configContainer.config.anonymizer.words).toEqual(['test']);
     });
@@ -163,7 +163,7 @@ describe('ConfigProcessor', () => {
         maxAgentIterations: 50,
         anonymizer: { enabled: true }
       };
-      const configContainer = await configProcessor.processConfig(rawJson, mockISecretManager, eventBus, httpClient, overrides);
+      const configContainer = await configProcessor.processConfig({ default: rawJson }, mockISecretManager, eventBus, httpClient, overrides);
       expect(configContainer.config.maxAgentIterations).toBe(50);
       expect(configContainer.config.anonymizer.enabled).toBe(true);
     });
@@ -178,7 +178,7 @@ describe('ConfigProcessor', () => {
         },
         anonymizer: { enabled: false, words: [] }
       });
-      const configContainer = await configProcessor.processConfig(rawJson, mockISecretManager, eventBus, httpClient);
+      const configContainer = await configProcessor.processConfig({ default: rawJson }, mockISecretManager, eventBus, httpClient);
       expect(configContainer.config.profiles.chatP.resolvedApiKey).toBe('chat-key');
       expect(configContainer.config.profiles.compP.resolvedApiKey).toBe('comp-key');
     });
@@ -191,7 +191,7 @@ describe('ConfigProcessor', () => {
         },
         anonymizer: { enabled: false, words: [] }
       });
-      const configContainer = await configProcessor.processConfig(rawJson, mockISecretManager, eventBus, httpClient);
+      const configContainer = await configProcessor.processConfig({ default: rawJson }, mockISecretManager, eventBus, httpClient);
       expect(configContainer.config.profiles.provider1.resolvedApiKey).toBeUndefined();
     });
 
@@ -201,7 +201,7 @@ describe('ConfigProcessor', () => {
         profiles: {},
         anonymizer: { enabled: false, words: [] }
       });
-      const configContainer = await configProcessor.processConfig(rawJson, mockISecretManager, eventBus, httpClient);
+      const configContainer = await configProcessor.processConfig({ default: rawJson }, mockISecretManager, eventBus, httpClient);
       expect(configContainer.config.activeChatProfile).toBe('missing');
     });
 
@@ -214,7 +214,7 @@ describe('ConfigProcessor', () => {
         },
         anonymizer: { enabled: false, words: [] }
       });
-      const configContainer = await configProcessor.processConfig(rawJson, mockISecretManager, eventBus, httpClient);
+      const configContainer = await configProcessor.processConfig({ default: rawJson }, mockISecretManager, eventBus, httpClient);
       expect(configContainer.config.profiles.missingP).toBeUndefined();
     });
   });
@@ -274,7 +274,7 @@ describe('ConfigProcessor', () => {
         },
         anonymizer: { enabled: false, words: [] }
       });
-      configContainer = await configProcessor.processConfig(rawJson, mockISecretManager, eventBus, httpClient);
+      configContainer = await configProcessor.processConfig({ default: rawJson }, mockISecretManager, eventBus, httpClient);
     });
 
     it('updates active chat profile on chatProfileChanged event', async () => {

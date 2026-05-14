@@ -35,7 +35,11 @@ function writeMockConfig(workspace: string) {
             }
         },
         anonymizer: {
-            words: ["john", "doe"]
+            words: ["john", "doe"],
+            sensitiveData: {
+                allowedEntropy: 0.85,
+                minLength: 10000 // Effectively disable entropy-based anonymization for predictable test mapping
+            }
         }
     };
     fs.writeFileSync(
