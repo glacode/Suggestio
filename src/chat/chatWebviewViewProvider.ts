@@ -15,8 +15,7 @@ import type {
     IFileContentReader, // Defines the interface for reading file contents.
     IWebviewView, // Defines the interface for a VS Code `WebviewView`, which is a container for the webview.
     WebviewMessage, // Defines the structure of messages sent from the webview to the extension.
-    IContextBuilder, // Defines the interface for building context strings to be used as additional information in prompts.
-    IAnonymizer,
+    IContextBuilder,
     ITokenEventPayload,
     IToolCallEventPayload,
     IToolOutputEventPayload,
@@ -49,7 +48,6 @@ interface IChatWebviewViewProviderArgs {
     fileReader: IFileContentReader;
     eventBus: IEventBus;
     diffManager: IDiffManager;
-    anonymizer?: IAnonymizer;
     config: IConfig;
     secretManager: ISecretManager;
     httpClient: IHttpClient;
@@ -83,7 +81,6 @@ export class ChatWebviewViewProvider {
     private readonly _fileReader: IFileContentReader;
     private readonly _eventBus: IEventBus;
     private readonly _diffManager: IDiffManager;
-    private readonly _anonymizer?: IAnonymizer;
     private readonly _config: IConfig;
     private readonly _secretManager: ISecretManager;
     private readonly _httpClient: IHttpClient;
@@ -99,7 +96,7 @@ export class ChatWebviewViewProvider {
      * The constructor initializes the `ChatWebviewViewProvider` with its dependencies.
      * These dependencies are typically passed from `extension.ts` during activation.
      */
-    constructor({ extensionContext, profileAccessor, chatAgent, chatHistoryManager, buildContext, getChatWebviewContent, vscodeApi, fileReader, eventBus, diffManager, anonymizer, config, secretManager, httpClient, toolUiProvider }: IChatWebviewViewProviderArgs) {
+    constructor({ extensionContext, profileAccessor, chatAgent, chatHistoryManager, buildContext, getChatWebviewContent, vscodeApi, fileReader, eventBus, diffManager, config, secretManager, httpClient, toolUiProvider }: IChatWebviewViewProviderArgs) {
         this._extensionContext = extensionContext;
         this._profileAccessor = profileAccessor;
         this._chatAgent = chatAgent;
@@ -110,7 +107,6 @@ export class ChatWebviewViewProvider {
         this._fileReader = fileReader;
         this._eventBus = eventBus;
         this._diffManager = diffManager;
-        this._anonymizer = anonymizer;
         this._config = config;
         this._secretManager = secretManager;
         this._httpClient = httpClient;
@@ -368,8 +364,11 @@ export class ChatWebviewViewProvider {
 
     private async _processAgentRun() {
         let context = await this._buildContext.buildContext();
-        if (this._anonymizer) {
-            context = this._anonymizer.anonymize(context);
+        
+        // Use the latest instance from config to ensure live updates (e.g. re-enabling) are reflected
+        const anonymizer = this._config.anonymizerInstance;
+        if (anonymizer) {
+            context = anonymizer.anonymize(context);
         }
         const prompt = new ChatPrompt(this._chatHistoryManager.getChatHistory(), context);
         

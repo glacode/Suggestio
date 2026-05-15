@@ -44,6 +44,8 @@ export const EXTENSION_MESSAGES = {
 export const EXTENSION_LOGS = {
     ACTIVATE: 'Suggestio: Activate',
     ANONYMIZED: (original: string, placeholder: string, type: string) => `[Anonymizer] Anonymized '${original}' to '${placeholder}' (Reason: ${type})`,
+    ANONYMIZER_INITIALIZED: (enabled: boolean, words: number, entropy: number | string, minLength: number | string) => 
+        `[Anonymizer] Initialized: ${enabled ? 'Enabled' : 'Disabled'}, Words: ${words}, Entropy: ${entropy}, MinLength: ${minLength}`,
     DIRECTORY_READ_ERROR: (path: string, error: any) => `Error reading directory ${path}: ${error}`,
 } as const;
 
@@ -61,7 +63,8 @@ export const CONFIG_MESSAGES = {
 } as const;
 
 export const CONFIG_LOGS = {
-    CONFIGURATION_CHANGED: (level: string, iterations: number) => `Configuration changed. New log level: ${level}, Max iterations: ${iterations}`,
+    CONFIGURATION_CHANGED: (level: string, iterations: number, anonymizer: boolean, inline: boolean) => 
+        `Configuration changed. Log level: ${level}, Max iterations: ${iterations}, Anonymizer: ${anonymizer ? 'Enabled' : 'Disabled'}, Inline Completion: ${inline ? 'Enabled' : 'Disabled'}`,
     CHAT_PROFILE_CHANGED: (profileId: string) => `chatProfileChanged event received for profile: ${profileId}`,
     COMPLETION_PROFILE_CHANGED: (profileId: string) => `completionProfileChanged event received for profile: ${profileId}`,
     INLINE_COMPLETION_TOGGLED: (enabled: boolean) => `inlineCompletionToggled event received: ${enabled}`,

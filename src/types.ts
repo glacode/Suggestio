@@ -983,6 +983,21 @@ export interface IConfigProvider {
   getAnonymizerEnabled(): boolean | undefined;
 
   /**
+   * Retrieves the list of experimental anonymizer words.
+   */
+  getAnonymizerWords(): string[] | undefined;
+
+  /**
+   * Retrieves the allowed entropy threshold for anonymization.
+   */
+  getAnonymizerEntropy(): number | undefined;
+
+  /**
+   * Retrieves the minimum length for entropy-based anonymization.
+   */
+  getAnonymizerMinLength(): number | undefined;
+
+  /**
    * Retrieves if inline completion is enabled.
    */
   getEnableInlineCompletion(): boolean;

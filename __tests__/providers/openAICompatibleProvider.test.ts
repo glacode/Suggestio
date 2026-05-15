@@ -6,6 +6,7 @@ import { ShannonEntropyCalculator } from "../../src/utils/shannonEntropyCalculat
 import { createMockEventBus, createDefaultConfig } from "../testUtils.js";
 
 const entropyCalculator = new ShannonEntropyCalculator();
+const eventBus: IEventBus = createMockEventBus();
 
 /**
  * DRY helper to create a SimpleWordAnonymizer with a specific configuration for testing.
@@ -18,7 +19,7 @@ function createAnonymizer(anonymizerOverrides: Partial<IConfig['anonymizer']> = 
           ...anonymizerOverrides
       }
   });
-  return new SimpleWordAnonymizer({ config, entropyCalculator });
+  return new SimpleWordAnonymizer({ config, entropyCalculator, eventBus });
 }
 
 class TestPrompt implements IPrompt {

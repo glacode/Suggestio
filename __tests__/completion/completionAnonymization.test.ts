@@ -24,7 +24,7 @@ function createAnonymizer(anonymizerOverrides: Partial<IConfig['anonymizer']> = 
             ...anonymizerOverrides
         }
     });
-    return new SimpleWordAnonymizer({ config, entropyCalculator });
+    return new SimpleWordAnonymizer({ config, entropyCalculator, eventBus });
 }
 
 interface MockRequestBody {

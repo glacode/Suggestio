@@ -22,12 +22,18 @@ export function registerConfigHandler(
         const newLogLevel = configProvider.getLogLevel();
         const newMaxAgentIterations = configProvider.getMaxAgentIterations();
         const newAnonymizerEnabled = configProvider.getAnonymizerEnabled();
+        const newAnonymizerWords = configProvider.getAnonymizerWords();
+        const newAnonymizerEntropy = configProvider.getAnonymizerEntropy();
+        const newAnonymizerMinLength = configProvider.getAnonymizerMinLength();
         const newEnableInlineCompletion = configProvider.getEnableInlineCompletion();
         const newMaxRetries = configProvider.getMaxRetries();
         const newInitialDelay = configProvider.getInitialDelay();
         const newMaxSavedChatSessions = configProvider.getMaxSavedChatSessions();
 
-        eventBus.emit('log', { level: 'info', message: CONFIG_LOGS.CONFIGURATION_CHANGED(newLogLevel, newMaxAgentIterations) });
+        eventBus.emit('log', { 
+            level: 'info', 
+            message: CONFIG_LOGS.CONFIGURATION_CHANGED(newLogLevel, newMaxAgentIterations, !!newAnonymizerEnabled, newEnableInlineCompletion) 
+        });
 
         // Update logger live
         defaultLogger.setLogLevel(parseLogLevel(newLogLevel));
@@ -42,6 +48,16 @@ export function registerConfigHandler(
           configContainer.config.maxSavedChatSessions = newMaxSavedChatSessions;
           if (newAnonymizerEnabled !== undefined) {
             configContainer.config.anonymizer.enabled = newAnonymizerEnabled;
+          }
+          if (newAnonymizerWords !== undefined) {
+            configContainer.config.anonymizer.words = newAnonymizerWords;
+          }
+          if (newAnonymizerEntropy !== undefined || newAnonymizerMinLength !== undefined) {
+            configContainer.config.anonymizer.sensitiveData = {
+              ...configContainer.config.anonymizer.sensitiveData,
+              allowedEntropy: newAnonymizerEntropy ?? configContainer.config.anonymizer.sensitiveData?.allowedEntropy ?? 0.85,
+              minLength: newAnonymizerMinLength ?? configContainer.config.anonymizer.sensitiveData?.minLength ?? 10
+            };
           }
 
           // Refresh provider instances with new settings

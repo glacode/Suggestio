@@ -1,7 +1,9 @@
-import { IAnonymizer, IStreamingDeanonymizer, IAnonymizationNotifier, IEntropyCalculator, IAnonymizerConfigHolder } from "../types.js";
+import { IAnonymizer, IStreamingDeanonymizer, IAnonymizationNotifier, IEntropyCalculator, IAnonymizerConfigHolder, IEventBus } from "../types.js";
 import { isLikeIdentifier } from "./isLikeIdentifier.js";
 import { isLikePath } from "./isLikePath.js";
 import { matchesWellKnownSecret } from "./matchesWellKnownSecret.js";
+import { createEventLogger } from "../log/eventLogger.js";
+import { EXTENSION_LOGS } from "../constants/messages.js";
 
 /**
  * Arguments for the SimpleWordAnonymizer constructor.
@@ -13,6 +15,8 @@ export interface ISimpleWordAnonymizerArgs {
     entropyCalculator: IEntropyCalculator;
     /** Optional notifier to receive events when anonymization occurs. */
     notifier?: IAnonymizationNotifier;
+    /** The event bus for logging. */
+    eventBus: IEventBus;
 }
 
 export class SimpleWordAnonymizer implements IAnonymizer {
@@ -23,6 +27,7 @@ export class SimpleWordAnonymizer implements IAnonymizer {
     private config: IAnonymizerConfigHolder;
     private entropyCalculator: IEntropyCalculator;
     private notifier?: IAnonymizationNotifier;
+    private logger: ReturnType<typeof createEventLogger>;
 
     /**
      * Creates an instance of SimpleWordAnonymizer.
@@ -31,11 +36,21 @@ export class SimpleWordAnonymizer implements IAnonymizer {
     constructor({
         config,
         entropyCalculator,
-        notifier
+        notifier,
+        eventBus
     }: ISimpleWordAnonymizerArgs) {
         this.config = config;
         this.entropyCalculator = entropyCalculator;
         this.notifier = notifier;
+        this.logger = createEventLogger(eventBus);
+
+        const { enabled, words, sensitiveData } = this.config.anonymizer || {};
+        this.logger.info(EXTENSION_LOGS.ANONYMIZER_INITIALIZED(
+            !!enabled, 
+            words?.length || 0, 
+            sensitiveData?.allowedEntropy || 'default', 
+            sensitiveData?.minLength || 'default'
+        ));
     }
 
     private anonymizeEntropy(text: string): string {

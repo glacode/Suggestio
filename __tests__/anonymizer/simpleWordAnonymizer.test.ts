@@ -3,6 +3,7 @@ import { SimpleWordAnonymizer } from '../../src/anonymizer/simpleWordAnonymizer.
 import { IAnonymizationNotifier, IConfig } from '../../src/types.js';
 import { ShannonEntropyCalculator } from '../../src/utils/shannonEntropyCalculator.js';
 import { createDefaultConfig } from '../testUtils.js';
+import { EventBus } from '../../src/utils/eventBus.js';
 
 class MockNotifier implements IAnonymizationNotifier {
     public notifications: { original: string; placeholder: string; type: 'word' | 'entropy' }[] = [];
@@ -25,7 +26,8 @@ function createAnonymizer(anonymizerOverrides: Partial<IConfig['anonymizer']> = 
             ...anonymizerOverrides
         }
     });
-    return new SimpleWordAnonymizer({ config, entropyCalculator, notifier });
+    const eventBus = new EventBus();
+    return new SimpleWordAnonymizer({ config, entropyCalculator, notifier, eventBus });
 }
 
 describe('SimpleWordAnonymizer', () => {

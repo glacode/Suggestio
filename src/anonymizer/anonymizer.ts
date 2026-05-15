@@ -11,6 +11,7 @@ export function getAnonymizer(config: IAnonymizerConfigHolder, eventBus: IEventB
   return new SimpleWordAnonymizer({
     config,
     entropyCalculator,
-    notifier
+    notifier,
+    eventBus
   });
 }

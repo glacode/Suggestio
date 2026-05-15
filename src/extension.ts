@@ -138,6 +138,9 @@ export async function activate(context: vscode.ExtensionContext) {
     getLogLevel: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<string>('logLevel', CONFIG_DEFAULTS.LOG_LEVEL),
     getMaxAgentIterations: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<number>('maxAgentIterations', CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS),
     getAnonymizerEnabled: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<boolean | undefined>('experimental.anonymizer.enabled'),
+    getAnonymizerWords: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<string[]>('experimental.anonymizer.words'),
+    getAnonymizerEntropy: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<number>('experimental.anonymizer.sensitiveData.allowedEntropy'),
+    getAnonymizerMinLength: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<number>('experimental.anonymizer.sensitiveData.minLength'),
     getEnableInlineCompletion: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<boolean>('enableInlineCompletion', true),
     getMaxRetries: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<number>('llm.maxRetries', CONFIG_DEFAULTS.MAX_RETRIES),
     getInitialDelay: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<number>('llm.initialDelay', CONFIG_DEFAULTS.INITIAL_DELAY),
@@ -178,9 +181,18 @@ export async function activate(context: vscode.ExtensionContext) {
   };
 
   const anonymizerEnabled = vsCodeConfig.get<boolean | undefined>('experimental.anonymizer.enabled');
-  if (anonymizerEnabled !== undefined) {
+  const anonymizerWords = vsCodeConfig.get<string[] | undefined>('experimental.anonymizer.words');
+  const anonymizerEntropy = vsCodeConfig.get<number | undefined>('experimental.anonymizer.sensitiveData.allowedEntropy');
+  const anonymizerMinLength = vsCodeConfig.get<number | undefined>('experimental.anonymizer.sensitiveData.minLength');
+  
+  if (anonymizerEnabled !== undefined || anonymizerWords !== undefined || anonymizerEntropy !== undefined || anonymizerMinLength !== undefined) {
     overrides.anonymizer = {
-      enabled: anonymizerEnabled
+      enabled: anonymizerEnabled,
+      words: anonymizerWords,
+      sensitiveData: {
+        allowedEntropy: anonymizerEntropy,
+        minLength: anonymizerMinLength
+      }
     };
   }
 
@@ -251,7 +263,6 @@ export async function activate(context: vscode.ExtensionContext) {
     fileReader: fileContentReader,
     eventBus,
     diffManager,
-    anonymizer: configContainer.config.anonymizerInstance,
     config: configContainer.config,
     secretManager,
     httpClient: new NodeFetchClient(),

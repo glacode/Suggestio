@@ -215,9 +215,8 @@ class ConfigProcessor {
             await this.resolveAPIKeyInMemory(profiles[targetCompletionProfileId], secretManager, forcePrompt);
         }
 
-        if (!config.anonymizerInstance) {
-            config.anonymizerInstance = getAnonymizer(config, eventBus);
-        }
+        // Always refresh the anonymizer instance to pick up live configuration changes (e.g. re-enabling)
+        config.anonymizerInstance = getAnonymizer(config, eventBus);
 
         // Initialize providers
         config.llmProviderForChat = getLlmProvider(config, httpClient, eventBus, config.anonymizerInstance, activeChatProfile) ?? undefined;

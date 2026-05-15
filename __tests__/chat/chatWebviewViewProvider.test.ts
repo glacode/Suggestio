@@ -11,7 +11,6 @@ import type {
   IChatAgent, // A type for handling chat logic (sending/receiving messages).
   MessageFromTheExtensionToTheWebview, // A type for messages sent *to* the webview (e.g., AI responses).
   IPrompt,
-  IAnonymizer,
   IToolUiProvider,
   IChatMessage,
   IStoredChatMessage
@@ -475,7 +474,10 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     const chatHistoryManager = createMockPersistentHistoryManager();
 
-    const anonymizer: IAnonymizer = {
+    const eventBus = new EventBus();
+
+    const { config, secretManager, httpClient, toolUiProvider } = createMocks();
+    config.anonymizerInstance = {
       anonymize: (text: string) => text.replace('SECRET', 'ANONYMIZED'),
       deanonymize: (text: string) => text,
       createStreamingDeanonymizer: () => ({
@@ -483,10 +485,6 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
         flush: () => ''
       })
     };
-
-    const eventBus = new EventBus();
-
-    const { config, secretManager, httpClient, toolUiProvider } = createMocks();
 
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
@@ -499,7 +497,6 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       fileReader: createMockFileContentReader(),
       eventBus,
       diffManager: createMockDiffManager(),
-      anonymizer,
       config,
       secretManager,
       httpClient,
@@ -536,8 +533,9 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     const chatHistoryManager = createMockPersistentHistoryManager();
 
-    // The anonymizer replaces 'SECRET' with 'ANONYMIZED'
-    const anonymizer: IAnonymizer = {
+    const eventBus = new EventBus();
+    const { config, secretManager, httpClient, toolUiProvider } = createMocks();
+    config.anonymizerInstance = {
       anonymize: (text: string) => text.replace('SECRET', 'ANONYMIZED'),
       deanonymize: (text: string) => text,
       createStreamingDeanonymizer: () => ({
@@ -545,9 +543,6 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
         flush: () => ''
       })
     };
-
-    const eventBus = new EventBus();
-    const { config, secretManager, httpClient, toolUiProvider } = createMocks();
 
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
@@ -562,7 +557,6 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       fileReader: createMockFileContentReader(),
       eventBus,
       diffManager: createMockDiffManager(),
-      anonymizer,
       config,
       secretManager,
       httpClient,

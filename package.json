@@ -270,6 +270,27 @@
                     "scope": "application",
                     "description": "Enable experimental code anonymization to prevent sensitive information from being sent to LLMs."
                 },
+                "suggestio.experimental.anonymizer.words": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "default": [],
+                    "scope": "application",
+                    "description": "Experimental: List of specific words or identifiers to always anonymize."
+                },
+                "suggestio.experimental.anonymizer.sensitiveData.allowedEntropy": {
+                    "type": "number",
+                    "default": 0.85,
+                    "scope": "application",
+                    "description": "Experimental: Threshold for Shannon entropy detection. Words with higher entropy will be anonymized."
+                },
+                "suggestio.experimental.anonymizer.sensitiveData.minLength": {
+                    "type": "number",
+                    "default": 10,
+                    "scope": "application",
+                    "description": "Experimental: Minimum length of a word to be considered for entropy-based anonymization."
+                },
                 "suggestio.llm.maxRetries": {
                     "type": "number",
                     "default": 5,
