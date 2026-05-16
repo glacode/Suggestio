@@ -80,6 +80,11 @@
       "model": "labs-devstral-small-2512",
       "apiKey": "${MISTRAL_API_KEY}"
     },
+    "openrouter-deepseek-v4-flash:free": {
+      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+      "model": "deepseek/deepseek-v4-flash:free",
+      "apiKey": "${OPENROUTER_API_KEY}"
+    },
     "openrouter-ring-2.6-1t": {
       "endpoint": "https://openrouter.ai/api/v1/chat/completions",
       "model": "inclusionai/ring-2.6-1t:free",
@@ -136,20 +141,6 @@
       "endpoint": "https://httpstat.us/500",
       "model": "use-just-for-testing-retry-logic",
       "apiKey": "none"
-    }
-  },
-  "anonymizer": {
-    "words": [
-      "john",
-      "doe",
-      "john.doe@example.com",
-      "192.168.1.1",
-      "<social_security_number>",
-      "<street_address>"
-    ],
-    "sensitiveData": {
-      "allowedEntropy": 0.85,
-      "minLength": 10
     }
   }
 }

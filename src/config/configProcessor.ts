@@ -55,12 +55,27 @@ class ConfigProcessor {
 
         // Ensure anonymizer section exists
         if (!config.anonymizer) {
-            config.anonymizer = { enabled: false, words: [] };
-        } else if (config.anonymizer.enabled === undefined) {
-            config.anonymizer.enabled = false;
-        }
-        if (!config.anonymizer.words) {
-            config.anonymizer.words = [];
+            config.anonymizer = { 
+                enabled: false, 
+                words: [],
+                sensitiveData: { 
+                    allowedEntropy: CONFIG_DEFAULTS.ANONYMIZER_ALLOWED_ENTROPY, 
+                    minLength: CONFIG_DEFAULTS.ANONYMIZER_MIN_LENGTH 
+                }
+            };
+        } else {
+            if (config.anonymizer.enabled === undefined) {
+                config.anonymizer.enabled = false;
+            }
+            if (!config.anonymizer.words) {
+                config.anonymizer.words = [];
+            }
+            if (!config.anonymizer.sensitiveData) {
+                config.anonymizer.sensitiveData = { 
+                    allowedEntropy: CONFIG_DEFAULTS.ANONYMIZER_ALLOWED_ENTROPY, 
+                    minLength: CONFIG_DEFAULTS.ANONYMIZER_MIN_LENGTH 
+                };
+            }
         }
 
         // Merge profiles (shallow merge of objects)
@@ -77,7 +92,17 @@ class ConfigProcessor {
         const mergeAnonymizer = (target: any, source: any) => {
             if (!source) { return; }
             if (source.enabled !== undefined) { target.enabled = source.enabled; }
-            if (source.sensitiveData) { target.sensitiveData = { ...target.sensitiveData, ...source.sensitiveData }; }
+            
+            if (source.sensitiveData) {
+                if (!target.sensitiveData) { target.sensitiveData = {}; }
+                if (source.sensitiveData.allowedEntropy !== undefined) {
+                    target.sensitiveData.allowedEntropy = source.sensitiveData.allowedEntropy;
+                }
+                if (source.sensitiveData.minLength !== undefined) {
+                    target.sensitiveData.minLength = source.sensitiveData.minLength;
+                }
+            }
+            
             // If the higher layer provides 'words', it REPLACES the lower layer's words.
             // This prevents mixing built-in examples with real user data.
             if (source.words && Array.isArray(source.words) && source.words.length > 0) { 

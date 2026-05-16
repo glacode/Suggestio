@@ -11,4 +11,8 @@ export const CONFIG_DEFAULTS = {
     AUTO_ACCEPT_EDITS: false,
     /** Default maximum number of chat sessions to keep. */
     MAX_SAVED_CHAT_SESSIONS: 3,
+    /** Default Shannon entropy threshold for anonymization. */
+    ANONYMIZER_ALLOWED_ENTROPY: 0.85,
+    /** Default minimum length for entropy-based anonymization. */
+    ANONYMIZER_MIN_LENGTH: 10,
 } as const;

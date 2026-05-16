@@ -1,6 +1,7 @@
 import { IConfigContainer, IConfigProvider, IDisposable, IEventBus, IHttpClient } from '../types.js';
 import { defaultLogger, parseLogLevel } from '../log/logger.js';
 import { CONFIG_LOGS } from '../constants/messages.js';
+import { CONFIG_DEFAULTS } from '../constants/config.js';
 import { configProcessor, ISecretManager } from '../config/configProcessor.js';
 
 /**
@@ -55,8 +56,8 @@ export function registerConfigHandler(
           if (newAnonymizerEntropy !== undefined || newAnonymizerMinLength !== undefined) {
             configContainer.config.anonymizer.sensitiveData = {
               ...configContainer.config.anonymizer.sensitiveData,
-              allowedEntropy: newAnonymizerEntropy ?? configContainer.config.anonymizer.sensitiveData?.allowedEntropy ?? 0.85,
-              minLength: newAnonymizerMinLength ?? configContainer.config.anonymizer.sensitiveData?.minLength ?? 10
+              allowedEntropy: newAnonymizerEntropy ?? configContainer.config.anonymizer.sensitiveData?.allowedEntropy ?? CONFIG_DEFAULTS.ANONYMIZER_ALLOWED_ENTROPY,
+              minLength: newAnonymizerMinLength ?? configContainer.config.anonymizer.sensitiveData?.minLength ?? CONFIG_DEFAULTS.ANONYMIZER_MIN_LENGTH
             };
           }
 

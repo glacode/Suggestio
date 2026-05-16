@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { configProcessor, ISecretManager, getChatProfileIds } from '../../src/config/configProcessor.js';
+import { CONFIG_DEFAULTS } from '../../src/constants/config.js';
 import { IConfigContainer } from '../../src/types.js';
 import { EventBus } from '../../src/utils/eventBus.js';
 import { NodeFetchClient } from '../../src/utils/httpClient.js';
@@ -135,7 +136,14 @@ describe('ConfigProcessor', () => {
         }
       });
       const configContainer = await configProcessor.processConfig({ default: rawJson }, mockISecretManager, eventBus, httpClient);
-      expect(configContainer.config.anonymizer).toEqual({ enabled: false, words: [] });
+      expect(configContainer.config.anonymizer).toEqual({ 
+        enabled: false, 
+        words: [],
+        sensitiveData: { 
+          allowedEntropy: CONFIG_DEFAULTS.ANONYMIZER_ALLOWED_ENTROPY, 
+          minLength: CONFIG_DEFAULTS.ANONYMIZER_MIN_LENGTH 
+        }
+      });
     });
 
     it('handles anonymizer section missing enabled flag', async () => {
