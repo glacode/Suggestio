@@ -35,12 +35,47 @@ class ConfigProcessor {
         httpClient: IHttpClient,
         overrides?: any
     ): Promise<IConfigContainer> {
-        // 1. Load layers
+        // 1. Load and merge layers into a final config object
+        const config = this.parseAndMergeConfigs(rawConfigs, overrides);
+
+        const logger = createEventLogger(eventBus);
+
+        // 2. Register event listeners for live updates to this specific config instance
+        this.registerEventListeners(config, eventBus, secretManager, httpClient, logger);
+
+        // 3. Resolve keys for active profiles and initialize providers
+        await this.updateProviders(config, eventBus, secretManager, httpClient);
+
+        return { config };
+    }
+
+    /**
+     * Orchestrates the merging of raw configuration sources into a single IConfig object.
+     * Precedence: Default < Overrides (User) < Workspace.
+     */
+    private parseAndMergeConfigs(rawConfigs: IRawConfigs, overrides?: any): IConfig {
         const defaultConfig: IProjectConfig = JSON.parse(rawConfigs.default);
         const workspaceConfig: Partial<IProjectConfig> = rawConfigs.workspace ? JSON.parse(rawConfigs.workspace) : {};
 
-        // 2. Perform merge
-        // Base config with defaults
+        // Initialize the config object with defaults
+        const config = this.initializeBaseConfig(defaultConfig);
+        
+        // Apply Workspace settings first
+        this.applyWorkspaceConfig(config, workspaceConfig);
+
+        // If User overrides exist, apply them. 
+        // Note: Workspace settings must win over User overrides, so they are re-applied inside applyOverrides.
+        if (overrides) {
+            this.applyOverrides(config, overrides, workspaceConfig);
+        }
+
+        return config;
+    }
+
+    /**
+     * Creates the initial configuration object based on default settings.
+     */
+    private initializeBaseConfig(defaultConfig: IProjectConfig): IConfig {
         const config: IConfig = {
             ...defaultConfig,
             maxAgentIterations: CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS,
@@ -53,7 +88,15 @@ class ConfigProcessor {
             maxSavedChatSessions: CONFIG_DEFAULTS.MAX_SAVED_CHAT_SESSIONS,
         };
 
-        // Ensure anonymizer section exists
+        this.ensureAnonymizerDefaults(config);
+        
+        return config;
+    }
+
+    /**
+     * Ensures the anonymizer section is properly initialized with default values.
+     */
+    private ensureAnonymizerDefaults(config: IConfig): void {
         if (!config.anonymizer) {
             config.anonymizer = { 
                 enabled: false, 
@@ -77,78 +120,74 @@ class ConfigProcessor {
                 };
             }
         }
+    }
+
+    /**
+     * Applies settings from the workspace configuration layer.
+     */
+    private applyWorkspaceConfig(config: IConfig, workspaceConfig: Partial<IProjectConfig>): void {
+        if (!workspaceConfig) { return; }
 
         // Merge profiles (shallow merge of objects)
-        config.profiles = {
-            ...defaultConfig.profiles,
-            ...(workspaceConfig.profiles || {})
-        };
+        if (workspaceConfig.profiles) {
+            config.profiles = {
+                ...config.profiles,
+                ...workspaceConfig.profiles
+            };
+        }
 
         // Merge top-level settings
         if (workspaceConfig.activeChatProfile) { config.activeChatProfile = workspaceConfig.activeChatProfile; }
         if (workspaceConfig.activeCompletionProfile) { config.activeCompletionProfile = workspaceConfig.activeCompletionProfile; }
 
-        // Merge Anonymizer
-        const mergeAnonymizer = (target: any, source: any) => {
-            if (!source) { return; }
-            if (source.enabled !== undefined) { target.enabled = source.enabled; }
-            
-            if (source.sensitiveData) {
-                if (!target.sensitiveData) { target.sensitiveData = {}; }
-                if (source.sensitiveData.allowedEntropy !== undefined) {
-                    target.sensitiveData.allowedEntropy = source.sensitiveData.allowedEntropy;
-                }
-                if (source.sensitiveData.minLength !== undefined) {
-                    target.sensitiveData.minLength = source.sensitiveData.minLength;
-                }
-            }
-            
-            // If the higher layer provides 'words', it REPLACES the lower layer's words.
-            // This prevents mixing built-in examples with real user data.
-            if (source.words && Array.isArray(source.words) && source.words.length > 0) { 
-                target.words = [...source.words]; 
-            }
-        };
+        // Merge Anonymizer settings
+        this.mergeAnonymizer(config.anonymizer, workspaceConfig.anonymizer);
+    }
 
-        mergeAnonymizer(config.anonymizer, workspaceConfig.anonymizer);
+    /**
+     * Applies overrides from User settings and ensures Workspace settings maintain priority.
+     */
+    private applyOverrides(config: IConfig, overrides: any, workspaceConfig: Partial<IProjectConfig>): void {
+        const { anonymizer, profiles, activeChatProfile, activeCompletionProfile, ...rest } = overrides;
+        
+        // 1. Standard settings apply over Default
+        Object.assign(config, rest);
+        
+        if (profiles) {
+            config.profiles = { ...config.profiles, ...profiles };
+        }
+        if (activeChatProfile) { config.activeChatProfile = activeChatProfile; }
+        if (activeCompletionProfile) { config.activeCompletionProfile = activeCompletionProfile; }
 
-        // 3. Apply overrides from standard VSCode extension settings
-        // These overrides (User settings) take precedence over Default, but Workspace config wins over User settings.
-        if (overrides) {
-            const { anonymizer, profiles, activeChatProfile, activeCompletionProfile, ...rest } = overrides;
-            
-            // Standard settings apply over Default
-            Object.assign(config, rest);
-            
-            if (profiles) {
-                config.profiles = { ...config.profiles, ...profiles };
-            }
-            if (activeChatProfile) { config.activeChatProfile = activeChatProfile; }
-            if (activeCompletionProfile) { config.activeCompletionProfile = activeCompletionProfile; }
-
-            if (anonymizer) {
-                mergeAnonymizer(config.anonymizer, anonymizer);
-            }
-
-            // RE-APPLY Workspace settings because they should win over Global VS Code settings
-            if (workspaceConfig.profiles) {
-                config.profiles = { ...config.profiles, ...workspaceConfig.profiles };
-            }
-            if (workspaceConfig.activeChatProfile) { config.activeChatProfile = workspaceConfig.activeChatProfile; }
-            if (workspaceConfig.activeCompletionProfile) { config.activeCompletionProfile = workspaceConfig.activeCompletionProfile; }
-            if (workspaceConfig.anonymizer) {
-                mergeAnonymizer(config.anonymizer, workspaceConfig.anonymizer);
-            }
+        if (anonymizer) {
+            this.mergeAnonymizer(config.anonymizer, anonymizer);
         }
 
-        const logger = createEventLogger(eventBus);
+        // 2. RE-APPLY Workspace settings because they MUST win over Global User settings
+        this.applyWorkspaceConfig(config, workspaceConfig);
+    }
 
-        // Register event listeners for live updates to this specific config instance
-        this.registerEventListeners(config, eventBus, secretManager, httpClient, logger);
-
-        await this.updateProviders(config, eventBus, secretManager, httpClient);
-
-        return { config };
+    /**
+     * Specialized merge logic for the anonymizer configuration.
+     */
+    private mergeAnonymizer(target: any, source: any): void {
+        if (!source) { return; }
+        if (source.enabled !== undefined) { target.enabled = source.enabled; }
+        
+        if (source.sensitiveData) {
+            if (!target.sensitiveData) { target.sensitiveData = {}; }
+            if (source.sensitiveData.allowedEntropy !== undefined) {
+                target.sensitiveData.allowedEntropy = source.sensitiveData.allowedEntropy;
+            }
+            if (source.sensitiveData.minLength !== undefined) {
+                target.sensitiveData.minLength = source.sensitiveData.minLength;
+            }
+        }
+        
+        // If the higher layer provides 'words', it REPLACES the lower layer's words.
+        if (source.words && Array.isArray(source.words) && source.words.length > 0) { 
+            target.words = [...source.words]; 
+        }
     }
 
     private registerEventListeners(
@@ -220,11 +259,12 @@ class ConfigProcessor {
         }
     }
 
-    public async updateProviders(
+    /**
+     * Resolve API keys for currently active profiles.
+     */
+    private async resolveActiveProfileKeys(
         config: IConfig,
-        eventBus: IEventBus,
         secretManager: ISecretManager,
-        httpClient: IHttpClient,
         forcePrompt: boolean = false
     ) {
         const { activeChatProfile, activeCompletionProfile, profiles } = config;
@@ -239,13 +279,36 @@ class ConfigProcessor {
         if (targetCompletionProfileId && targetCompletionProfileId !== activeChatProfile && profiles?.[targetCompletionProfileId]) {
             await this.resolveAPIKeyInMemory(profiles[targetCompletionProfileId], secretManager, forcePrompt);
         }
+    }
 
-        // Always refresh the anonymizer instance to pick up live configuration changes (e.g. re-enabling)
+    /**
+     * Initialize the anonymizer and LLM provider instances.
+     */
+    private initializeProviders(
+        config: IConfig,
+        eventBus: IEventBus,
+        httpClient: IHttpClient
+    ) {
+        // Always refresh the anonymizer instance to pick up live configuration changes
         config.anonymizerInstance = getAnonymizer(config, eventBus);
+
+        const { activeChatProfile, activeCompletionProfile } = config;
+        const targetCompletionProfileId = activeCompletionProfile || activeChatProfile;
 
         // Initialize providers
         config.llmProviderForChat = getLlmProvider(config, httpClient, eventBus, config.anonymizerInstance, activeChatProfile) ?? undefined;
         config.llmProviderForInlineCompletion = getLlmProvider(config, httpClient, eventBus, config.anonymizerInstance, targetCompletionProfileId) ?? undefined;
+    }
+
+    public async updateProviders(
+        config: IConfig,
+        eventBus: IEventBus,
+        secretManager: ISecretManager,
+        httpClient: IHttpClient,
+        forcePrompt: boolean = false
+    ) {
+        await this.resolveActiveProfileKeys(config, secretManager, forcePrompt);
+        this.initializeProviders(config, eventBus, httpClient);
     }
 }
 
