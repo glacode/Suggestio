@@ -117,7 +117,7 @@
       "model": "z-ai/glm4.7",
       "apiKey": "${NVIDIA_API_KEY}"
     },
-    "step-3.5-flash": {
+    "nvidia-step-3.5-flash": {
       "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
       "model": "stepfun-ai/step-3.5-flash",
       "apiKey": "${NVIDIA_API_KEY}"
