@@ -108,5 +108,5 @@
       "description": "Maximum number of chat sessions to keep in the history."
       }
       },
-      "required": ["activeChatProfile", "profiles", "anonymizer"]
+      "required": ["activeChatProfile", "profiles"]
       }
