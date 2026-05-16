@@ -1,6 +1,6 @@
 import { getAnonymizer } from '../anonymizer/anonymizer.js';
 import { getLlmProvider } from '../providers/providerFactory.js';
-import { IConfig, IConfigContainer, IProfileConfig, IHttpClient, IProjectConfig, IRawConfigs } from '../types.js';
+import { IConfig, IConfigContainer, IProfileConfig, IHttpClient, IProjectConfig, IRawConfigs, IUserSettings } from '../types.js';
 import { IEventBus } from '../utils/eventBus.js';
 import { createEventLogger } from '../log/eventLogger.js';
 import { CONFIG_LOGS } from '../constants/messages.js';
@@ -26,17 +26,17 @@ class ConfigProcessor {
      * @param secretManager The secret manager to resolve API keys.
      * @param eventBus The event bus for communication between components.
      * @param httpClient The HTTP client for provider initialization.
-     * @param overrides Optional partial configuration from standard VSCode extension settings.
+     * @param userSettings Optional partial configuration from standard VSCode extension settings.
      */
     public async processConfig(
         rawConfigs: IRawConfigs,
         secretManager: ISecretManager,
         eventBus: IEventBus,
         httpClient: IHttpClient,
-        overrides?: any
+        userSettings?: IUserSettings
     ): Promise<IConfigContainer> {
         // 1. Load and merge layers into a final config object
-        const config = this.parseAndMergeConfigs(rawConfigs, overrides);
+        const config = this.parseAndMergeConfigs(rawConfigs, userSettings);
 
         const logger = createEventLogger(eventBus);
 
@@ -53,7 +53,7 @@ class ConfigProcessor {
      * Orchestrates the merging of raw configuration sources into a single IConfig object.
      * Precedence: Default < Overrides (User) < Workspace.
      */
-    private parseAndMergeConfigs(rawConfigs: IRawConfigs, overrides?: any): IConfig {
+    private parseAndMergeConfigs(rawConfigs: IRawConfigs, userSettings?: IUserSettings): IConfig {
         const defaultConfig: IProjectConfig = JSON.parse(rawConfigs.default);
         const workspaceConfig: Partial<IProjectConfig> = rawConfigs.workspace ? JSON.parse(rawConfigs.workspace) : {};
 
@@ -65,8 +65,8 @@ class ConfigProcessor {
 
         // If User overrides exist, apply them. 
         // Note: Workspace settings must win over User overrides, so they are re-applied inside applyOverrides.
-        if (overrides) {
-            this.applyOverrides(config, overrides, workspaceConfig);
+        if (userSettings) {
+            this.applyOverrides(config, userSettings, workspaceConfig);
         }
 
         return config;
@@ -147,8 +147,8 @@ class ConfigProcessor {
     /**
      * Applies overrides from User settings and ensures Workspace settings maintain priority.
      */
-    private applyOverrides(config: IConfig, overrides: any, workspaceConfig: Partial<IProjectConfig>): void {
-        const { anonymizer, profiles, activeChatProfile, activeCompletionProfile, ...rest } = overrides;
+    private applyOverrides(config: IConfig, userSettings: IUserSettings, workspaceConfig: Partial<IProjectConfig>): void {
+        const { anonymizer, profiles, activeChatProfile, activeCompletionProfile, ...rest } = userSettings;
         
         // 1. Standard settings apply over Default
         Object.assign(config, rest);

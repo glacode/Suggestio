@@ -19,7 +19,9 @@ import {
   IPathResolver,
   IConfigProvider,
   IVscodeApiLocal,
-  IFileDeleter
+  IFileDeleter,
+  IUserSettings,
+  IProfileConfig
 } from './types.js';
 import { ChatHistoryManager } from './chat/chatHistoryManager.js';
 import { WorkspaceChatHistoryStorage } from './chat/workspaceChatHistoryStorage.js';
@@ -168,14 +170,14 @@ export async function activate(context: vscode.ExtensionContext) {
   const logLevel = vsCodeConfig.get<string>('logLevel', CONFIG_DEFAULTS.LOG_LEVEL);
   defaultLogger.setLogLevel(parseLogLevel(logLevel));
 
-  const overrides: any = {
+  const userSettings: IUserSettings = {
     maxAgentIterations: vsCodeConfig.get<number>('maxAgentIterations', CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS),
     logLevel: logLevel,
     enableInlineCompletion: vsCodeConfig.get<boolean>('enableInlineCompletion', true),
     maxRetries: vsCodeConfig.get<number>('llm.maxRetries', CONFIG_DEFAULTS.MAX_RETRIES),
     initialDelay: vsCodeConfig.get<number>('llm.initialDelay', CONFIG_DEFAULTS.INITIAL_DELAY),
     maxSavedChatSessions: vsCodeConfig.get<number>('maxSavedChatSessions', CONFIG_DEFAULTS.MAX_SAVED_CHAT_SESSIONS),
-    profiles: vsCodeConfig.get<object>('profiles'),
+    profiles: vsCodeConfig.get<Record<string, IProfileConfig>>('profiles'),
     activeChatProfile: vsCodeConfig.get<string>('activeChatProfile'),
     activeCompletionProfile: vsCodeConfig.get<string>('activeCompletionProfile')
   };
@@ -186,7 +188,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const anonymizerMinLength = vsCodeConfig.get<number | undefined>('experimental.anonymizer.sensitiveData.minLength');
   
   if (anonymizerEnabled !== undefined || anonymizerWords !== undefined || anonymizerEntropy !== undefined || anonymizerMinLength !== undefined) {
-    overrides.anonymizer = {
+    userSettings.anonymizer = {
       enabled: anonymizerEnabled,
       words: anonymizerWords,
       sensitiveData: {
@@ -197,7 +199,7 @@ export async function activate(context: vscode.ExtensionContext) {
   }
 
   const httpClient = new NodeFetchClient();
-  const configContainer: IConfigContainer = await configProcessor.processConfig(rawConfigs, secretManager, eventBus, httpClient, overrides);
+  const configContainer: IConfigContainer = await configProcessor.processConfig(rawConfigs, secretManager, eventBus, httpClient, userSettings);
   // Initialize UI context for toggles
   await vscode.commands.executeCommand('setContext', 'suggestio.inlineCompletionEnabled', configContainer.config.enableInlineCompletion !== false);
   await vscode.commands.executeCommand('setContext', 'suggestio.autoAcceptEditsEnabled', configContainer.config.autoAcceptEdits);

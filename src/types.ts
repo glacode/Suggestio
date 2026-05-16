@@ -1678,6 +1678,35 @@ export interface IConfigContainer {
 }
 
 /**
+ * Represents the user-defined overrides provided via VS Code settings.
+ * These settings take precedence over defaults but are superseded by workspace configuration.
+ */
+export interface IUserSettings {
+  maxAgentIterations?: number;
+  logLevel?: string;
+  enableInlineCompletion?: boolean;
+  maxRetries?: number;
+  initialDelay?: number;
+  maxSavedChatSessions?: number;
+  profiles?: Record<string, IProfileConfig>;
+  activeChatProfile?: string;
+  activeCompletionProfile?: string;
+  anonymizer?: IAnonymizerUserSettings;
+}
+
+/**
+ * User-definable settings for the anonymizer.
+ */
+export interface IAnonymizerUserSettings {
+  enabled?: boolean;
+  words?: string[];
+  sensitiveData?: {
+    allowedEntropy?: number;
+    minLength?: number;
+  };
+}
+
+/**
  * Container for raw configuration strings from different layers.
  */
 export interface IRawConfigs {
