@@ -1710,7 +1710,7 @@ export interface IConfigContainer {
  * automatically merge User and Workspace settings, with Workspace settings prevailing.
  * Precedence: Default < VS Code Settings < Workspace JSON File.
  */
-export interface IUserSettings {
+export interface IVSCodeSettings {
   maxAgentIterations?: number;
   logLevel?: string;
   enableInlineCompletion?: boolean;

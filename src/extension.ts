@@ -20,7 +20,7 @@ import {
   IConfigProvider,
   IVscodeApiLocal,
   IFileDeleter,
-  IUserSettings,
+  IVSCodeSettings,
   IProfileConfig
 } from './types.js';
 import { ChatHistoryManager } from './chat/chatHistoryManager.js';
@@ -177,7 +177,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const logLevel = vsCodeConfig.get<string>('logLevel', CONFIG_DEFAULTS.LOG_LEVEL);
   defaultLogger.setLogLevel(parseLogLevel(logLevel));
 
-  const vsCodeSettings: IUserSettings = {
+  const vsCodeSettings: IVSCodeSettings = {
     maxAgentIterations: vsCodeConfig.get<number>('maxAgentIterations', CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS),
     logLevel: logLevel,
     enableInlineCompletion: vsCodeConfig.get<boolean>('enableInlineCompletion', true),

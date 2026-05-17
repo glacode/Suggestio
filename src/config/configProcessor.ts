@@ -1,6 +1,6 @@
 import { getAnonymizer } from '../anonymizer/anonymizer.js';
 import { getLlmProvider } from '../providers/providerFactory.js';
-import { IConfig, IConfigContainer, IProfileConfig, IHttpClient, IProjectConfig, IRawConfigs, IUserSettings } from '../types.js';
+import { IConfig, IConfigContainer, IProfileConfig, IHttpClient, IProjectConfig, IRawConfigs, IVSCodeSettings } from '../types.js';
 import { IEventBus } from '../utils/eventBus.js';
 import { createEventLogger } from '../log/eventLogger.js';
 import { CONFIG_LOGS } from '../constants/messages.js';
@@ -33,7 +33,7 @@ class ConfigProcessor {
         secretManager: ISecretManager,
         eventBus: IEventBus,
         httpClient: IHttpClient,
-        vsCodeSettings?: IUserSettings
+        vsCodeSettings?: IVSCodeSettings
     ): Promise<IConfigContainer> {
         // 1. Load and merge layers into a final config object
         const config = this.parseAndMergeConfigs(rawConfigs, vsCodeSettings);
@@ -59,9 +59,9 @@ class ConfigProcessor {
      * 
      * Precedence: Default < VS Code Settings < Project Config.
      */
-    private parseAndMergeConfigs(rawConfigs: IRawConfigs, vsCodeSettings?: IUserSettings): IConfig {
+    private parseAndMergeConfigs(rawConfigs: IRawConfigs, vsCodeSettings?: IVSCodeSettings): IConfig {
         const defaultConfig: IProjectConfig = JSON.parse(rawConfigs.default);
-        const projectConfig: Partial<IProjectConfig> = rawConfigs.workspaceJsonConfigFile 
+        const workspaceJsonConfigFile: Partial<IProjectConfig> = rawConfigs.workspaceJsonConfigFile 
             ? JSON.parse(rawConfigs.workspaceJsonConfigFile) 
             : {};
 
@@ -70,10 +70,10 @@ class ConfigProcessor {
         
         if (vsCodeSettings) {
             // Apply VS Code settings first, then Project config to ensure the file wins.
-            this.applyOverrides(config, vsCodeSettings, projectConfig);
+            this.applyOverrides(config, vsCodeSettings, workspaceJsonConfigFile);
         } else {
             // Apply Project config directly if no VS Code overrides exist.
-            this.applyWorkspaceConfig(config, projectConfig);
+            this.applyWorkspaceConfig(config, workspaceJsonConfigFile);
         }
 
         return config;
@@ -154,7 +154,7 @@ class ConfigProcessor {
     /**
      * Applies overrides from VS Code settings and ensures Project Config file maintains priority.
      */
-    private applyOverrides(config: IConfig, vsCodeSettings: IUserSettings, projectConfig: Partial<IProjectConfig>): void {
+    private applyOverrides(config: IConfig, vsCodeSettings: IVSCodeSettings, workspaceJsonConfigFile: Partial<IProjectConfig>): void {
         const { anonymizer, profiles, activeChatProfile, activeCompletionProfile, ...rest } = vsCodeSettings;
         
         // 1. VS Code settings apply over Default
@@ -171,7 +171,7 @@ class ConfigProcessor {
         }
 
         // 2. RE-APPLY Project Config because it MUST win over VS Code settings
-        this.applyWorkspaceConfig(config, projectConfig);
+        this.applyWorkspaceConfig(config, workspaceJsonConfigFile);
     }
 
     /**
