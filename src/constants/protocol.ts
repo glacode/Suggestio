@@ -14,6 +14,7 @@ export const WEBVIEW_COMMANDS = {
     RETRY_LAST_MESSAGE: 'retryLastMessage',
     GET_SESSIONS: 'getSessions',
     LOAD_SESSION: 'loadSession',
+    ADD_PROFILE: 'addProfile',
 } as const;
 
 /**

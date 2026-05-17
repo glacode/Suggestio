@@ -1,41 +1,43 @@
 import {
-    IChatMessage,
-    ILlmProvider,
-    IPrompt,
-    IToolDefinition,
-    IUriLike,
-    IVscodeApiLocal,
-    IWebview,
-    IWebviewView,
-    IDisposable,
-    MessageFromTheExtensionToTheWebview,
-    WebviewMessage,
-    IWebviewApi,
-    ITextDocument,
-    IIgnoreManager,
-    IConfig,
-    IChatHistoryManager,
-    IStoredChatMessage,
-    IProfileConfig,
-    IWindowProvider,
-    IWorkspaceProvider,
-    IFileContentReader,
-    IFileContentWriter,
-    IDirectoryReader,
-    IDirectoryCreator,
-    IPathResolver,
-    IFileContentProvider,
-    IDirectoryProvider,
-    IWorkspaceProviderFull,
-    IEventBus,
-    IConfigProvider,
-    IDiffManager,
-    IHttpClient,
-    IPersistentChatHistoryManager,
-    IWorkspaceChatHistoryStorage,
-    IFileDeleter,
-    IExtensionContextMinimal
+  IChatMessage,
+  ILlmProvider,
+  IPrompt,
+  IToolDefinition,
+  IUriLike,
+  IVscodeApiLocal,
+  IWebview,
+  IWebviewView,
+  IDisposable,
+  MessageFromTheExtensionToTheWebview,
+  WebviewMessage,
+  IWebviewApi,
+  ITextDocument,
+  IIgnoreManager,
+  IConfig,
+  IChatHistoryManager,
+  IStoredChatMessage,
+  IProfileConfig,
+  IWindowProvider,
+  IWorkspaceProvider,
+  IFileContentReader,
+  IFileContentWriter,
+  IDirectoryReader,
+  IDirectoryCreator,
+  IPathResolver,
+  IFileContentProvider,
+  IDirectoryProvider,
+  IWorkspaceProviderFull,
+  IEventBus,
+  IConfigProvider,
+  IDiffManager,
+  IHttpClient,
+  IPersistentChatHistoryManager,
+  IWorkspaceChatHistoryStorage,
+  IFileDeleter,
+  IExtensionContextMinimal,
+  IToolUiProvider
 } from "../src/types.js";
+import { ISecretManager } from "../src/config/configProcessor.js";
 import { ILogger } from "../src/log/logger.js";
 import { CONFIG_DEFAULTS } from "../src/constants/config.js";
 import { jest } from "@jest/globals";
@@ -271,6 +273,10 @@ export const createMockConfigProvider = (): jest.Mocked<IConfigProvider> => ({
     getMaxRetries: jest.fn<() => number>(),
     getInitialDelay: jest.fn<() => number>(),
     getMaxSavedChatSessions: jest.fn<() => number>(),
+    getProfiles: jest.fn<() => Record<string, any>>(),
+    getActiveChatProfile: jest.fn<() => string | undefined>(),
+    getActiveCompletionProfile: jest.fn<() => string | undefined>(),
+    updateConfig: jest.fn<(key: string, value: any, global: boolean) => Promise<void>>(),
     onDidChangeConfiguration: jest.fn<any>(),
 });
 
@@ -359,6 +365,18 @@ export const createMockWebviewViewResolveContext = <T = any>(): IMockWebviewView
 export const createMockCancellationToken = (): IMockCancellationToken => ({
     isCancellationRequested: false,
     onCancellationRequested: jest.fn(() => ({ dispose: () => { } }))
+});
+
+export const createMockSecretManager = (): jest.Mocked<ISecretManager> => ({
+    getOrRequestAPIKey: jest.fn<any>().mockResolvedValue('resolved-key'),
+    getSecret: jest.fn<any>().mockResolvedValue('resolved-key'),
+    updateAPIKey: jest.fn<any>().mockResolvedValue(undefined),
+    deleteSecret: jest.fn<any>().mockResolvedValue(undefined),
+});
+
+export const createMockToolUiProvider = (): jest.Mocked<IToolUiProvider> => ({
+    getToolUI: jest.fn<any>().mockReturnValue({ displayMessage: 'formatted-message', uiOptions: {} }),
+    enrichHistory: jest.fn<any>().mockImplementation((history: IChatMessage[]) => history)
 });
 
 export const createMockExtensionContextMinimal = (overrides: Partial<IExtensionContextMinimal> = {}): IExtensionContextMinimal => ({

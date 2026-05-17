@@ -11,7 +11,6 @@ import type {
   IChatAgent, // A type for handling chat logic (sending/receiving messages).
   MessageFromTheExtensionToTheWebview, // A type for messages sent *to* the webview (e.g., AI responses).
   IPrompt,
-  IToolUiProvider,
   IChatMessage,
   IStoredChatMessage
 } from '../../src/types.js';
@@ -28,11 +27,14 @@ import {
   createMockUri,
   createMockFileContentReader,
   createMockDiffManager,
-  createDefaultConfig
+  createDefaultConfig,
+  createMockSecretManager,
+  createMockHttpClient,
+  createMockToolUiProvider,
+  createMockConfigProvider
 } from '../testUtils.js';
 import { CONFIG_DEFAULTS } from '../../src/constants/config.js';
-import { configProcessor, type ISecretManager } from '../../src/config/configProcessor.js';
-import type { IHttpClient } from '../../src/types.js';
+import { configProcessor } from '../../src/config/configProcessor.js';
 import { jest } from '@jest/globals';
 
 // `describe` is used to group tests. Here, we're testing the `ChatWebviewViewProvider`.
@@ -43,21 +45,11 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
   const createMocks = () => {
     const config = createDefaultConfig();
-    const secretManager: ISecretManager = {
-      getOrRequestAPIKey: jest.fn<any>().mockResolvedValue('resolved-key'),
-      getSecret: jest.fn<any>().mockResolvedValue('resolved-key'),
-      updateAPIKey: jest.fn<any>().mockResolvedValue(undefined),
-      deleteSecret: jest.fn<any>().mockResolvedValue(undefined),
-    };
-
-    const httpClient: IHttpClient = {
-      post: jest.fn<any>()
-    };
-    const toolUiProvider: IToolUiProvider = {
-      getToolUI: jest.fn<any>().mockReturnValue({ displayMessage: 'formatted-message', uiOptions: {} }),
-      enrichHistory: jest.fn<any>().mockImplementation((history: IChatMessage[]) => history)
-    };
-    return { config, secretManager, httpClient, toolUiProvider };
+    const configProvider = createMockConfigProvider();
+    const secretManager = createMockSecretManager();
+    const httpClient = createMockHttpClient();
+    const toolUiProvider = createMockToolUiProvider();
+    return { config, configProvider, secretManager, httpClient, toolUiProvider };
   };
 
   // `it` defines a single test case. This one checks if the webview is set up correctly,
@@ -128,7 +120,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const recorded: IStoredChatMessage[] = [];
     const chatHistoryManager = createMockPersistentHistoryManager(recorded);
 
-    const { config, secretManager, httpClient, toolUiProvider } = createMocks();
+    const { config, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
 
     // ********************************************************************************
     //  Instantiate the ChatWebviewViewProvider with all our fake dependencies.
@@ -145,6 +137,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       eventBus,
       diffManager: createMockDiffManager(),
       config,
+      configProvider,
       secretManager,
       httpClient,
       toolUiProvider
@@ -233,22 +226,16 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     const eventBus = new EventBus();
 
-    // Minimal config with a fake llm provider that immediately completes.
-    const config = createDefaultConfig({
-      activeChatProfile: 'p',
-      profiles: {
-        'p': { model: 'm', apiKey: 'k' }
-      },
-      llmProviderForChat: {
+    const { config, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
+    config.activeChatProfile = 'p';
+    config.profiles = { 'p': { model: 'm', apiKey: 'k' } };
+    config.llmProviderForChat = {
         query: async () => null,
         queryStream: async () => {
           eventBus.emit('agent:token', { token: 'x', type: 'content' });
           return Promise.resolve([]);
         }
-      }
-    });
-
-    const { secretManager, httpClient, toolUiProvider } = createMocks();
+    };
 
     // Use the real Agent which currently adds the (context+message) to history.
     const { Agent } = await import('../../src/agent/agent.js');
@@ -270,6 +257,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       eventBus,
       diffManager: createMockDiffManager(),
       config,
+      configProvider,
       secretManager,
       httpClient,
       toolUiProvider
@@ -320,7 +308,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     const eventBus = new EventBus();
 
-    const { config, secretManager, httpClient, toolUiProvider } = createMocks();
+    const { config, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
 
     // ********************************************************************************
     //  Instantiate and resolve the `ChatWebviewViewProvider`.
@@ -337,6 +325,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       eventBus,
       diffManager: createMockDiffManager(),
       config,
+      configProvider,
       secretManager,
       httpClient,
       toolUiProvider
@@ -418,7 +407,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     const eventBus = new EventBus();
 
-    const { config, secretManager, httpClient, toolUiProvider } = createMocks();
+    const { config, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
 
     // ********************************************************************************
     //  Instantiate and resolve the `ChatWebviewViewProvider`.
@@ -435,6 +424,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       eventBus,
       diffManager: createMockDiffManager(),
       config,
+      configProvider,
       secretManager,
       httpClient,
       toolUiProvider
@@ -476,7 +466,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     const eventBus = new EventBus();
 
-    const { config, secretManager, httpClient, toolUiProvider } = createMocks();
+    const { config, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
     config.anonymizerInstance = {
       anonymize: (text: string) => text.replace('SECRET', 'ANONYMIZED'),
       deanonymize: (text: string) => text,
@@ -498,6 +488,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       eventBus,
       diffManager: createMockDiffManager(),
       config,
+      configProvider,
       secretManager,
       httpClient,
       toolUiProvider
@@ -534,7 +525,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const chatHistoryManager = createMockPersistentHistoryManager();
 
     const eventBus = new EventBus();
-    const { config, secretManager, httpClient, toolUiProvider } = createMocks();
+    const { config, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
     config.anonymizerInstance = {
       anonymize: (text: string) => text.replace('SECRET', 'ANONYMIZED'),
       deanonymize: (text: string) => text,
@@ -558,6 +549,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       eventBus,
       diffManager: createMockDiffManager(),
       config,
+      configProvider,
       secretManager,
       httpClient,
       toolUiProvider
@@ -610,7 +602,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     const chatHistoryManager = createMockPersistentHistoryManager();
 
-    const { config, secretManager, httpClient, toolUiProvider } = createMocks();
+    const { config, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
 
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
@@ -624,6 +616,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       eventBus,
       diffManager: createMockDiffManager(),
       config,
+      configProvider,
       secretManager,
       httpClient,
       toolUiProvider
@@ -658,7 +651,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const chatHistoryManager = createMockPersistentHistoryManager();
     chatHistoryManager.newSession.mockImplementation(() => { newSessionCalled = true; });
 
-    const { config, secretManager, httpClient, toolUiProvider } = createMocks();
+    const { config, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
 
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
@@ -672,6 +665,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       eventBus: new EventBus(),
       diffManager: createMockDiffManager(),
       config,
+      configProvider,
       secretManager,
       httpClient,
       toolUiProvider
@@ -699,7 +693,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const webview = createMockWebview();
     const webviewView = createMockWebviewView(webview, 'X');
 
-    const { config, secretManager, httpClient, toolUiProvider } = createMocks();
+    const { config, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
 
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
@@ -713,6 +707,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       eventBus,
       diffManager,
       config,
+      configProvider,
       secretManager,
       httpClient,
       toolUiProvider
@@ -749,7 +744,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const webview = createMockWebview();
     const webviewView = createMockWebviewView(webview, 'X');
 
-    const { config, secretManager, httpClient, toolUiProvider } = createMocks();
+    const { config, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
 
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
@@ -763,6 +758,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       eventBus,
       diffManager,
       config,
+      configProvider,
       secretManager,
       httpClient,
       toolUiProvider
@@ -801,7 +797,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     const eventBus = new EventBus();
     
-    const { config, secretManager, httpClient, toolUiProvider } = createMocks();
+    const { config, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
 
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
@@ -815,6 +811,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       eventBus,
       diffManager: createMockDiffManager(),
       config,
+      configProvider,
       secretManager,
       httpClient,
       toolUiProvider
@@ -840,7 +837,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const webview = createMockWebview();
     const webviewView = createMockWebviewView(webview, 'X');
 
-    const { config, secretManager, httpClient, toolUiProvider } = createMocks();
+    const { config, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
 
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
@@ -854,6 +851,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       eventBus: new EventBus(),
       diffManager: createMockDiffManager(),
       config,
+      configProvider,
       secretManager,
       httpClient,
       toolUiProvider
@@ -883,7 +881,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       }
     };
 
-    const { config, secretManager, httpClient, toolUiProvider } = createMocks();
+    const { config, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
 
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
@@ -897,6 +895,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       eventBus,
       diffManager: createMockDiffManager(),
       config,
+      configProvider,
       secretManager,
       httpClient,
       toolUiProvider
@@ -923,7 +922,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const webview = createMockWebview(posted);
     const webviewView = createMockWebviewView(webview, 'X');
 
-    const { config, secretManager, httpClient, toolUiProvider } = createMocks();
+    const { config, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
 
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
@@ -937,6 +936,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       eventBus,
       diffManager: createMockDiffManager(),
       config,
+      configProvider,
       secretManager,
       httpClient,
       toolUiProvider
@@ -974,7 +974,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const webview = createMockWebview(posted);
     const webviewView = createMockWebviewView(webview, 'X');
 
-    const { config, secretManager, httpClient, toolUiProvider } = createMocks();
+    const { config, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
 
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
@@ -988,6 +988,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       eventBus,
       diffManager: createMockDiffManager(),
       config,
+      configProvider,
       secretManager,
       httpClient,
       toolUiProvider
@@ -1026,7 +1027,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     const eventBus = new EventBus();
 
-    const { config, secretManager, httpClient, toolUiProvider } = createMocks();
+    const { config, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
 
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
@@ -1046,6 +1047,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       eventBus,
       diffManager: createMockDiffManager(),
       config,
+      configProvider,
       secretManager,
       httpClient,
       toolUiProvider
@@ -1063,18 +1065,16 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const extensionUri = createMockUri('/ext');
     const vscodeApi = createMockVscodeApi();
     const eventBus = new EventBus();
-    const config = createDefaultConfig({
-      activeChatProfile: 'test-profile',
-      profiles: {
+    const { config, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
+    config.activeChatProfile = 'test-profile';
+    config.profiles = {
         'test-profile': {
           model: 'test-model',
           apiKey: '${TEST_KEY}',
           apiKeyPlaceholder: 'TEST_KEY'
           // resolvedApiKey is missing
         }
-      }
-    });
-    const { secretManager, httpClient, toolUiProvider } = createMocks();
+    };
 
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
@@ -1088,6 +1088,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       eventBus,
       diffManager: createMockDiffManager(),
       config,
+      configProvider,
       secretManager,
       httpClient,
       toolUiProvider

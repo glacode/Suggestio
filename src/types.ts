@@ -297,6 +297,12 @@ export type WebviewMessage =
     command: typeof WEBVIEW_COMMANDS.LOAD_SESSION;
     /** The ID of the session to load. */
     sessionId: string;
+  }
+  | {
+    /** User wants to add a new custom profile. */
+    command: typeof WEBVIEW_COMMANDS.ADD_PROFILE;
+    /** The configuration for the new profile. */
+    profile: IProfileConfig & { id: string };
   };
 
 /**
@@ -691,6 +697,7 @@ export interface ILlmProviderAccessor {
 export interface ProfileMetadata {
   id: string;
   model: string;
+  endpoint: string;
   needsApiKey: boolean;
   hasApiKey: boolean;
   apiKeyPlaceholder?: string;
@@ -1016,6 +1023,26 @@ export interface IConfigProvider {
    * Retrieves the maximum number of chat sessions to keep in history.
    */
   getMaxSavedChatSessions(): number;
+
+  /**
+   * Retrieves the custom profiles defined in VS Code settings.
+   */
+  getProfiles(): Record<string, any>;
+
+  /**
+   * Retrieves the active chat profile ID from VS Code settings.
+   */
+  getActiveChatProfile(): string | undefined;
+
+  /**
+   * Retrieves the active completion profile ID from VS Code settings.
+   */
+  getActiveCompletionProfile(): string | undefined;
+
+  /**
+   * Updates a configuration setting.
+   */
+  updateConfig(key: string, value: any, global: boolean): Promise<void>;
 
   /**
    * Fired when the configuration changes.

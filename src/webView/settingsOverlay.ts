@@ -1,6 +1,7 @@
 // Settings overlay module
 import { WEBVIEW_COMMANDS } from '../constants/protocol.js';
 import type { IWebviewApi, InitialState } from '../types.js';
+import { EditLlmProfile } from './editLlmProfile.js';
 
 const EDIT_ICON_HTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
 const DELETE_ICON_HTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>';
@@ -11,6 +12,28 @@ const DELETE_ICON_HTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="
 export class SettingsOverlay {
     private overlayRoot: HTMLDivElement | null = null;
     private doneButton: HTMLButtonElement | null = null;
+    private editProfile: EditLlmProfile;
+    private currentView: 'list' | 'edit' = 'list';
+    private vscode: IWebviewApi | null = null;
+    private state: InitialState | null = null;
+
+    constructor() {
+        this.editProfile = new EditLlmProfile(() => this.showList());
+    }
+
+    private showList() {
+        this.currentView = 'list';
+        if (this.vscode && this.state) {
+            this.render(this.vscode, this.state);
+        }
+    }
+
+    private showEdit() {
+        this.currentView = 'edit';
+        if (this.vscode && this.state) {
+            this.render(this.vscode, this.state);
+        }
+    }
 
     /**
      * Initializes the overlay and appends it to the container.
@@ -80,6 +103,8 @@ export class SettingsOverlay {
      * Renders profile settings with API key management.
      */
     public render(vscode: IWebviewApi, state: InitialState) {
+        this.vscode = vscode;
+        this.state = state;
         if (!this.overlayRoot) {
             return;
         }
@@ -89,6 +114,18 @@ export class SettingsOverlay {
         }
 
         body.innerHTML = '';
+
+        if (this.currentView === 'edit') {
+            this.editProfile.render(body, vscode);
+            return;
+        }
+
+        // List View
+        const topActions = document.createElement('div');
+        topActions.className = 'add-profile-btn-container';
+        topActions.innerHTML = `<button id="topAddProfileBtn" class="settings-done">+ Add Custom Profile</button>`;
+        topActions.querySelector('#topAddProfileBtn')?.addEventListener('click', () => this.showEdit());
+        body.appendChild(topActions);
 
         const section = document.createElement('div');
         section.className = 'settings-section';

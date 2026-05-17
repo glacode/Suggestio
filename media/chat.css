@@ -793,6 +793,67 @@ body.overlay-open textarea#messageInput {
     color: white;
 }
 
+/* Form Styles */
+.edit-profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 4px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.settings-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--vscode-foreground);
+    opacity: 0.8;
+}
+
+.settings-input {
+    width: 100%;
+    background: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    border: 1px solid var(--vscode-input-border);
+    padding: 6px 8px;
+    border-radius: 2px;
+    font-family: inherit;
+    font-size: 13px;
+}
+
+.settings-input:focus {
+    border-color: var(--vscode-focusBorder);
+    outline: none;
+}
+
+.settings-input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.form-actions-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.add-profile-btn-container {
+    margin-bottom: 16px;
+}
+
+.settings-done.secondary {
+    background: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+}
+
+.settings-done.secondary:hover {
+    background: var(--vscode-button-secondaryHoverBackground);
+}
+
 /* Custom Themed Tooltip */
 [data-tooltip] {
     position: relative;

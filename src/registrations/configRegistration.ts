@@ -31,6 +31,10 @@ export function registerConfigHandler(
         const newInitialDelay = configProvider.getInitialDelay();
         const newMaxSavedChatSessions = configProvider.getMaxSavedChatSessions();
 
+        const newProfiles = configProvider.getProfiles();
+        const newActiveChatProfile = configProvider.getActiveChatProfile();
+        const newActiveCompletionProfile = configProvider.getActiveCompletionProfile();
+
         eventBus.emit('log', { 
             level: 'info', 
             message: CONFIG_LOGS.CONFIGURATION_CHANGED(newLogLevel, newMaxAgentIterations, !!newAnonymizerEnabled, newEnableInlineCompletion) 
@@ -47,6 +51,18 @@ export function registerConfigHandler(
           configContainer.config.maxRetries = newMaxRetries;
           configContainer.config.initialDelay = newInitialDelay;
           configContainer.config.maxSavedChatSessions = newMaxSavedChatSessions;
+
+          if (newProfiles) {
+            // Update profiles list. We keep the base ones and apply overrides.
+            configContainer.config.profiles = { ...configContainer.config.profiles, ...newProfiles };
+          }
+          if (newActiveChatProfile) {
+            configContainer.config.activeChatProfile = newActiveChatProfile;
+          }
+          if (newActiveCompletionProfile) {
+            configContainer.config.activeCompletionProfile = newActiveCompletionProfile;
+          }
+
           if (newAnonymizerEnabled !== undefined) {
             configContainer.config.anonymizer.enabled = newAnonymizerEnabled;
           }

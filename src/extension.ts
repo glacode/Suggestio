@@ -147,6 +147,13 @@ export async function activate(context: vscode.ExtensionContext) {
     getMaxRetries: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<number>('llm.maxRetries', CONFIG_DEFAULTS.MAX_RETRIES),
     getInitialDelay: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<number>('llm.initialDelay', CONFIG_DEFAULTS.INITIAL_DELAY),
     getMaxSavedChatSessions: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<number>('maxSavedChatSessions', CONFIG_DEFAULTS.MAX_SAVED_CHAT_SESSIONS),
+    getProfiles: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<Record<string, any>>('profiles') || {},
+    getActiveChatProfile: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<string>('activeChatProfile'),
+    getActiveCompletionProfile: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<string>('activeCompletionProfile'),
+    updateConfig: async (key: string, value: any, global: boolean) => {
+      const config = vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri());
+      await config.update(key, value, global ? vscode.ConfigurationTarget.Global : vscode.ConfigurationTarget.Workspace);
+    },
     onDidChangeConfiguration: (listener) => vscode.workspace.onDidChangeConfiguration(listener)
   };
 
@@ -266,6 +273,7 @@ export async function activate(context: vscode.ExtensionContext) {
     eventBus,
     diffManager,
     config: configContainer.config,
+    configProvider,
     secretManager,
     httpClient: new NodeFetchClient(),
     toolUiProvider

@@ -23,6 +23,7 @@ import type {
     IToolConfirmationPayload,
     IDiffManager,
     IConfig,
+    IConfigProvider,
     IHttpClient,
     IToolUiProvider
 } from '../types.js';
@@ -49,6 +50,7 @@ interface IChatWebviewViewProviderArgs {
     eventBus: IEventBus;
     diffManager: IDiffManager;
     config: IConfig;
+    configProvider: IConfigProvider;
     secretManager: ISecretManager;
     httpClient: IHttpClient;
     toolUiProvider: IToolUiProvider;
@@ -82,6 +84,7 @@ export class ChatWebviewViewProvider {
     private readonly _eventBus: IEventBus;
     private readonly _diffManager: IDiffManager;
     private readonly _config: IConfig;
+    private readonly _configProvider: IConfigProvider;
     private readonly _secretManager: ISecretManager;
     private readonly _httpClient: IHttpClient;
     private readonly _toolUiProvider: IToolUiProvider;
@@ -96,7 +99,7 @@ export class ChatWebviewViewProvider {
      * The constructor initializes the `ChatWebviewViewProvider` with its dependencies.
      * These dependencies are typically passed from `extension.ts` during activation.
      */
-    constructor({ extensionContext, profileAccessor, chatAgent, chatHistoryManager, buildContext, getChatWebviewContent, vscodeApi, fileReader, eventBus, diffManager, config, secretManager, httpClient, toolUiProvider }: IChatWebviewViewProviderArgs) {
+    constructor({ extensionContext, profileAccessor, chatAgent, chatHistoryManager, buildContext, getChatWebviewContent, vscodeApi, fileReader, eventBus, diffManager, config, configProvider, secretManager, httpClient, toolUiProvider }: IChatWebviewViewProviderArgs) {
         this._extensionContext = extensionContext;
         this._profileAccessor = profileAccessor;
         this._chatAgent = chatAgent;
@@ -108,6 +111,7 @@ export class ChatWebviewViewProvider {
         this._eventBus = eventBus;
         this._diffManager = diffManager;
         this._config = config;
+        this._configProvider = configProvider;
         this._secretManager = secretManager;
         this._httpClient = httpClient;
         this._toolUiProvider = toolUiProvider;
@@ -307,6 +311,7 @@ export class ChatWebviewViewProvider {
             return {
                 id,
                 model: profile?.model || '',
+                endpoint: profile?.endpoint || '',
                 needsApiKey: !!placeholder,
                 hasApiKey,
                 apiKeyPlaceholder: placeholder,
@@ -480,6 +485,8 @@ export class ChatWebviewViewProvider {
                 // Emit a 'chatProfileChanged' event on the global event bus, allowing other parts
                 // of the extension to react to this change.
                 this._eventBus.emit('chatProfileChanged', message.model);
+                // Persist the choice to global settings
+                this._configProvider.updateConfig('activeChatProfile', message.model, true);
             } else if (message.command === WEBVIEW_COMMANDS.CLEAR_HISTORY) {
                 // Handle a message requesting to clear the chat history.
                 // Call the `clearHistory` method on the `chatHistoryManager`.
@@ -506,6 +513,8 @@ export class ChatWebviewViewProvider {
                 // completion profile in the settings overlay. Emit the existing
                 // 'completionProfileChanged' event so configProcessor picks it up.
                 this._eventBus.emit('completionProfileChanged', message.model);
+                // Persist the choice to global settings
+                this._configProvider.updateConfig('activeCompletionProfile', message.model, true);
 
                 // Trigger live update of the settings overlay
                 const completionProfiles = typeof this._profileAccessor.getCompletionProfiles === 'function' ? this._profileAccessor.getCompletionProfiles()! : this._profileAccessor.getProfiles();
@@ -533,6 +542,16 @@ export class ChatWebviewViewProvider {
                     type: EXTENSION_EVENTS.UPDATE_PROFILE_METADATA,
                     metadata: updatedMetadata
                 });
+            } else if (message.command === WEBVIEW_COMMANDS.ADD_PROFILE) {
+                const currentProfiles = this._configProvider.getProfiles();
+                const { id, ...profileData } = message.profile;
+                currentProfiles[id] = profileData;
+                await this._configProvider.updateConfig('profiles', currentProfiles, true);
+
+                // Refresh UI
+                const completionProfiles = typeof this._profileAccessor.getCompletionProfiles === 'function' ? this._profileAccessor.getCompletionProfiles()! : this._profileAccessor.getProfiles();
+                const metadata = await this._getProfileMetadata(completionProfiles, this._profileAccessor.getActiveProfile(), this._profileAccessor.getCompletionActiveProfile?.() || this._config.activeCompletionProfile || this._profileAccessor.getActiveProfile());
+                this._view?.webview.postMessage({ type: EXTENSION_EVENTS.UPDATE_PROFILE_METADATA, metadata });
             }
         });
     }
