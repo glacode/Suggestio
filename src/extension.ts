@@ -177,7 +177,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const logLevel = vsCodeConfig.get<string>('logLevel', CONFIG_DEFAULTS.LOG_LEVEL);
   defaultLogger.setLogLevel(parseLogLevel(logLevel));
 
-  const userSettings: IUserSettings = {
+  const vsCodeSettings: IUserSettings = {
     maxAgentIterations: vsCodeConfig.get<number>('maxAgentIterations', CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS),
     logLevel: logLevel,
     enableInlineCompletion: vsCodeConfig.get<boolean>('enableInlineCompletion', true),
@@ -195,7 +195,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const anonymizerMinLength = vsCodeConfig.get<number | undefined>('experimental.anonymizer.sensitiveData.minLength');
   
   if (anonymizerEnabled !== undefined || anonymizerWords !== undefined || anonymizerEntropy !== undefined || anonymizerMinLength !== undefined) {
-    userSettings.anonymizer = {
+    vsCodeSettings.anonymizer = {
       enabled: anonymizerEnabled,
       words: anonymizerWords,
       sensitiveData: {
@@ -206,7 +206,7 @@ export async function activate(context: vscode.ExtensionContext) {
   }
 
   const httpClient = new NodeFetchClient();
-  const configContainer: IConfigContainer = await configProcessor.processConfig(rawConfigs, secretManager, eventBus, httpClient, userSettings);
+  const configContainer: IConfigContainer = await configProcessor.processConfig(rawConfigs, secretManager, eventBus, httpClient, vsCodeSettings);
   // Initialize UI context for toggles
   await vscode.commands.executeCommand('setContext', 'suggestio.inlineCompletionEnabled', configContainer.config.enableInlineCompletion !== false);
   await vscode.commands.executeCommand('setContext', 'suggestio.autoAcceptEditsEnabled', configContainer.config.autoAcceptEdits);

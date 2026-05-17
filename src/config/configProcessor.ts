@@ -33,10 +33,10 @@ class ConfigProcessor {
         secretManager: ISecretManager,
         eventBus: IEventBus,
         httpClient: IHttpClient,
-        userSettings?: IUserSettings
+        vsCodeSettings?: IUserSettings
     ): Promise<IConfigContainer> {
         // 1. Load and merge layers into a final config object
-        const config = this.parseAndMergeConfigs(rawConfigs, userSettings);
+        const config = this.parseAndMergeConfigs(rawConfigs, vsCodeSettings);
 
         const logger = createEventLogger(eventBus);
 
@@ -51,22 +51,29 @@ class ConfigProcessor {
 
     /**
      * Orchestrates the merging of raw configuration sources into a single IConfig object.
-     * Precedence: Default < Overrides (User) < Workspace.
+     * 
+     * Precedence Order:
+     * 1. Default (Bundled config.json)
+     * 2. VS Code Settings (User & Workspace levels, merged by VS Code API)
+     * 3. Project Config (suggestio.config.json in workspace root)
+     * 
+     * Precedence: Default < VS Code Settings < Project Config.
      */
-    private parseAndMergeConfigs(rawConfigs: IRawConfigs, userSettings?: IUserSettings): IConfig {
+    private parseAndMergeConfigs(rawConfigs: IRawConfigs, vsCodeSettings?: IUserSettings): IConfig {
         const defaultConfig: IProjectConfig = JSON.parse(rawConfigs.default);
-        const workspaceConfig: Partial<IProjectConfig> = rawConfigs.workspace ? JSON.parse(rawConfigs.workspace) : {};
+        const projectConfig: Partial<IProjectConfig> = rawConfigs.workspaceJsonConfigFile 
+            ? JSON.parse(rawConfigs.workspaceJsonConfigFile) 
+            : {};
 
         // Initialize the config object with defaults
         const config = this.initializeBaseConfig(defaultConfig);
         
-        // Apply Workspace settings first
-        this.applyWorkspaceConfig(config, workspaceConfig);
-
-        // If User overrides exist, apply them. 
-        // Note: Workspace settings must win over User overrides, so they are re-applied inside applyOverrides.
-        if (userSettings) {
-            this.applyOverrides(config, userSettings, workspaceConfig);
+        if (vsCodeSettings) {
+            // Apply VS Code settings first, then Project config to ensure the file wins.
+            this.applyOverrides(config, vsCodeSettings, projectConfig);
+        } else {
+            // Apply Project config directly if no VS Code overrides exist.
+            this.applyWorkspaceConfig(config, projectConfig);
         }
 
         return config;
@@ -145,12 +152,12 @@ class ConfigProcessor {
     }
 
     /**
-     * Applies overrides from User settings and ensures Workspace settings maintain priority.
+     * Applies overrides from VS Code settings and ensures Project Config file maintains priority.
      */
-    private applyOverrides(config: IConfig, userSettings: IUserSettings, workspaceConfig: Partial<IProjectConfig>): void {
-        const { anonymizer, profiles, activeChatProfile, activeCompletionProfile, ...rest } = userSettings;
+    private applyOverrides(config: IConfig, vsCodeSettings: IUserSettings, projectConfig: Partial<IProjectConfig>): void {
+        const { anonymizer, profiles, activeChatProfile, activeCompletionProfile, ...rest } = vsCodeSettings;
         
-        // 1. Standard settings apply over Default
+        // 1. VS Code settings apply over Default
         Object.assign(config, rest);
         
         if (profiles) {
@@ -163,8 +170,8 @@ class ConfigProcessor {
             this.mergeAnonymizer(config.anonymizer, anonymizer);
         }
 
-        // 2. RE-APPLY Workspace settings because they MUST win over Global User settings
-        this.applyWorkspaceConfig(config, workspaceConfig);
+        // 2. RE-APPLY Project Config because it MUST win over VS Code settings
+        this.applyWorkspaceConfig(config, projectConfig);
     }
 
     /**

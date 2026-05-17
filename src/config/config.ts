@@ -80,7 +80,7 @@ export async function readConfig(
     const workspacePath = getWorkspaceConfigPath(workspaceProvider, pathResolver);
     if (workspacePath && directoryProvider.exists(workspacePath)) {
         try {
-            configs.workspace = fileProvider.read(workspacePath);
+            configs.workspaceJsonConfigFile = fileProvider.read(workspacePath);
         } catch (err) {
             windowProvider.showErrorMessage(CONFIG_MESSAGES.LOAD_FAILED(`Workspace config: ${err}`));
         }

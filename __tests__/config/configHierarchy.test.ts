@@ -102,7 +102,7 @@ describe('Config Hierarchy', () => {
 
     const configs = {
       default: defaultRaw,
-      workspace: workspaceRaw
+      workspaceJsonConfigFile: workspaceRaw
     };
 
     const configContainer = await configProcessor.processConfig(configs, mockISecretManager, eventBus, httpClient);

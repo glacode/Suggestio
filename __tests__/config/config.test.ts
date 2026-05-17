@@ -43,7 +43,7 @@ describe('readConfig', () => {
         );
 
         expect(configs.default).toBe('{"layer": "default"}');
-        expect(configs.workspace).toBe('{"layer": "workspace"}');
+        expect(configs.workspaceJsonConfigFile).toBe('{"layer": "workspace"}');
     });
 
     it('should return empty workspace if it does not exist', async () => {
@@ -61,7 +61,7 @@ describe('readConfig', () => {
         );
 
         expect(configs.default).toBe('{"layer": "default"}');
-        expect(configs.workspace).toBeUndefined();
+        expect(configs.workspaceJsonConfigFile).toBeUndefined();
     });
 
     it('should return a fallback default config if reading the default file fails', async () => {

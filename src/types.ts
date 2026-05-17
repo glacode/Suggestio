@@ -1706,7 +1706,9 @@ export interface IConfigContainer {
 
 /**
  * Represents the user-defined overrides provided via VS Code settings.
- * These settings take precedence over defaults but are superseded by workspace configuration.
+ * These settings are retrieved via `vscode.workspace.getConfiguration`, meaning they 
+ * automatically merge User and Workspace settings, with Workspace settings prevailing.
+ * Precedence: Default < VS Code Settings < Workspace JSON File.
  */
 export interface IUserSettings {
   maxAgentIterations?: number;
@@ -1739,8 +1741,8 @@ export interface IAnonymizerUserSettings {
 export interface IRawConfigs {
   /** Built-in default configuration. */
   default: string;
-  /** Project-specific workspace configuration. */
-  workspace?: string;
+  /** Project-specific configuration file (suggestio.config.json) located in the workspace root. */
+  workspaceJsonConfigFile?: string;
 }
 
 export interface ISecretStorage {
