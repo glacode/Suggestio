@@ -146,7 +146,7 @@ export const createMockWebviewView = (webview: IWebview, title: string = ''): IW
     webview
 });
 
-export const createMockDocument = (content: string = 'content', languageId: string = 'typescript'): ITextDocument => ({
+export const createMockDocument = (content: string = 'content', languageId: string = 'typescript'): ITextDocument & { languageId: string } => ({
     uri: createMockUri('/path/to/file.ts'),
     languageId,
     lineCount: content.split('\n').length,
@@ -269,7 +269,9 @@ export const createMockConfigProvider = (): jest.Mocked<IConfigProvider> => ({
     getAnonymizerWords: jest.fn<() => string[] | undefined>(),
     getAnonymizerEntropy: jest.fn<() => number | undefined>(),
     getAnonymizerMinLength: jest.fn<() => number | undefined>(),
-    getEnableInlineCompletion: jest.fn<() => boolean>(),
+    getInlineCompletionEnabled: jest.fn<() => boolean>(),
+    getInlineCompletionSupportedLanguages: jest.fn<() => string[]>(),
+    getInlineCompletionEnableInUntitledEditors: jest.fn<() => boolean>(),
     getMaxRetries: jest.fn<() => number>(),
     getInitialDelay: jest.fn<() => number>(),
     getMaxSavedChatSessions: jest.fn<() => number>(),
@@ -288,7 +290,12 @@ export const createMockProfileConfig = (overrides: Partial<IProfileConfig> = {})
 
 export const createDefaultConfig = (overrides: Partial<IConfig> = {}): IConfig => ({
     activeChatProfile: 'test',
-    enableInlineCompletion: true,
+    inlineCompletion: {
+        enabled: true,
+        supportedLanguages: ['typescript'],
+        enableInUntitledEditors: false,
+        ...(overrides.inlineCompletion || {})
+    },
     profiles: {},
     anonymizer: { enabled: false, words: [] },
     logLevel: CONFIG_DEFAULTS.LOG_LEVEL,

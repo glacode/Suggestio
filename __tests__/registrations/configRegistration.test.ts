@@ -48,7 +48,8 @@ describe('registerConfigHandler', () => {
     mockConfigProvider.getLogLevel.mockReturnValue('Info');
     mockConfigProvider.getMaxAgentIterations.mockReturnValue(30);
     mockConfigProvider.getAnonymizerEnabled.mockReturnValue(false);
-    mockConfigProvider.getEnableInlineCompletion.mockReturnValue(true);
+    mockConfigProvider.getInlineCompletionEnabled.mockReturnValue(true);
+    mockConfigProvider.getInlineCompletionSupportedLanguages.mockReturnValue(['typescript']);
     mockConfigProvider.getMaxRetries.mockReturnValue(5);
     mockConfigProvider.getInitialDelay.mockReturnValue(1000);
     mockConfigProvider.getMaxSavedChatSessions.mockReturnValue(CONFIG_DEFAULTS.MAX_SAVED_CHAT_SESSIONS);

@@ -26,7 +26,9 @@ export function registerConfigHandler(
         const newAnonymizerWords = configProvider.getAnonymizerWords();
         const newAnonymizerEntropy = configProvider.getAnonymizerEntropy();
         const newAnonymizerMinLength = configProvider.getAnonymizerMinLength();
-        const newEnableInlineCompletion = configProvider.getEnableInlineCompletion();
+        const newInlineCompletionEnabled = configProvider.getInlineCompletionEnabled();
+        const newInlineCompletionSupportedLanguages = configProvider.getInlineCompletionSupportedLanguages();
+        const newInlineCompletionEnableInUntitledEditors = configProvider.getInlineCompletionEnableInUntitledEditors();
         const newMaxRetries = configProvider.getMaxRetries();
         const newInitialDelay = configProvider.getInitialDelay();
         const newMaxSavedChatSessions = configProvider.getMaxSavedChatSessions();
@@ -37,7 +39,7 @@ export function registerConfigHandler(
 
         eventBus.emit('log', { 
             level: 'info', 
-            message: CONFIG_LOGS.CONFIGURATION_CHANGED(newLogLevel, newMaxAgentIterations, !!newAnonymizerEnabled, newEnableInlineCompletion) 
+            message: CONFIG_LOGS.CONFIGURATION_CHANGED(newLogLevel, newMaxAgentIterations, !!newAnonymizerEnabled, newInlineCompletionEnabled) 
         });
 
         // Update logger live
@@ -47,7 +49,9 @@ export function registerConfigHandler(
         if (configContainer.config) {
           configContainer.config.logLevel = newLogLevel;
           configContainer.config.maxAgentIterations = newMaxAgentIterations;
-          configContainer.config.enableInlineCompletion = newEnableInlineCompletion;
+          configContainer.config.inlineCompletion.enabled = newInlineCompletionEnabled;
+          configContainer.config.inlineCompletion.supportedLanguages = newInlineCompletionSupportedLanguages;
+          configContainer.config.inlineCompletion.enableInUntitledEditors = newInlineCompletionEnableInUntitledEditors;
           configContainer.config.maxRetries = newMaxRetries;
           configContainer.config.initialDelay = newInitialDelay;
           configContainer.config.maxSavedChatSessions = newMaxSavedChatSessions;

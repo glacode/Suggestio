@@ -38,8 +38,8 @@ describe('provideInlineCompletionItems', () => {
         mockIgnoreManager.shouldIgnore.mockResolvedValue(false);
     });
 
-    it('should return empty list immediately if enableInlineCompletion is false', async () => {
-        const config = createDefaultConfig({ enableInlineCompletion: false });
+    it('should return empty list immediately if inline completion is disabled', async () => {
+        const config = createDefaultConfig({ inlineCompletion: { enabled: false, supportedLanguages: ['typescript'], enableInUntitledEditors: false } });
 
         const result = await provideInlineCompletionItems(
             mockProvider,
@@ -57,10 +57,11 @@ describe('provideInlineCompletionItems', () => {
         expect(mockProvider.query).not.toHaveBeenCalled();
     });
 
-    it('should proceed if enableInlineCompletion is true', async () => {
-        const config = createDefaultConfig({ enableInlineCompletion: true });
+    it('should return empty list if the language is not supported', async () => {
+        const config = createDefaultConfig({ inlineCompletion: { enabled: true, supportedLanguages: ['python'], enableInUntitledEditors: false } });
+        mockDocument.languageId = 'typescript';
 
-        const promise = provideInlineCompletionItems(
+        const result = await provideInlineCompletionItems(
             mockProvider,
             config,
             mockIgnoreManager,
@@ -70,13 +71,26 @@ describe('provideInlineCompletionItems', () => {
             {},
             mockCancellationToken
         );
-        
-        // Wait for async operations
-        await Promise.resolve();
-        await Promise.resolve();
-        await Promise.resolve();
 
-        const result = await promise;
+        expect(result.items).toHaveLength(0);
+        expect(mockProvider.query).not.toHaveBeenCalled();
+    });
+
+    it('should proceed if inline completion is enabled and language is supported', async () => {
+        const config = createDefaultConfig({ inlineCompletion: { enabled: true, supportedLanguages: ['typescript'], enableInUntitledEditors: true } });
+        mockDocument.languageId = 'typescript';
+        mockDocument.uri.scheme = 'file';
+
+        const result = await provideInlineCompletionItems(
+            mockProvider,
+            config,
+            mockIgnoreManager,
+            mockDocument,
+            mockPosition,
+            eventBus,
+            {},
+            mockCancellationToken
+        );
 
         expect(mockIgnoreManager.shouldIgnore).toHaveBeenCalled();
         expect(mockProvider.query).toHaveBeenCalled();
@@ -84,11 +98,12 @@ describe('provideInlineCompletionItems', () => {
         expect(result.items[0].insertText).toBe(' suggestion ');
     });
 
-    it('should proceed if enableInlineCompletion is true (default)', async () => {
+    it('should proceed if inline completion is enabled (default)', async () => {
         const config = createDefaultConfig();
-        // Default is true in createDefaultConfig
+        mockDocument.languageId = 'typescript'; // Included in default supportedLanguages
+        mockDocument.uri.scheme = 'file';
 
-        const promise = provideInlineCompletionItems(
+        const result = await provideInlineCompletionItems(
             mockProvider,
             config,
             mockIgnoreManager,
@@ -98,13 +113,6 @@ describe('provideInlineCompletionItems', () => {
             {},
             mockCancellationToken
         );
-        
-        // Wait for async operations
-        await Promise.resolve();
-        await Promise.resolve();
-        await Promise.resolve();
-
-        const result = await promise;
 
         expect(mockIgnoreManager.shouldIgnore).toHaveBeenCalled();
         expect(mockProvider.query).toHaveBeenCalled();

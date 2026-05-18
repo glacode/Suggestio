@@ -298,11 +298,11 @@ describe('ConfigProcessor', () => {
       expect(configContainer.config.activeChatProfile).toBe('provider1');
     });
 
-    it('updates enableInlineCompletion on inlineCompletionToggled event', () => {
+    it('updates inlineCompletion.enabled on inlineCompletionToggled event', () => {
       eventBus.emit('inlineCompletionToggled', true);
-      expect(configContainer.config.enableInlineCompletion).toBe(true);
+      expect(configContainer.config.inlineCompletion.enabled).toBe(true);
       eventBus.emit('inlineCompletionToggled', false);
-      expect(configContainer.config.enableInlineCompletion).toBe(false);
+      expect(configContainer.config.inlineCompletion.enabled).toBe(false);
     });
 
     it('updates active completion profile on completionProfileChanged event', async () => {

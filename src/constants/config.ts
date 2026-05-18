@@ -15,4 +15,6 @@ export const CONFIG_DEFAULTS = {
     ANONYMIZER_ALLOWED_ENTROPY: 0.85,
     /** Default minimum length for entropy-based anonymization. */
     ANONYMIZER_MIN_LENGTH: 10,
+    /** Default inline completion enabled status. */
+    INLINE_COMPLETION_ENABLED: true,
 } as const;

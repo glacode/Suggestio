@@ -90,7 +90,11 @@ class ConfigProcessor {
             toolResultMaxLength: CONFIG_DEFAULTS.TOOL_RESULT_MAX_LENGTH,
             maxRetries: CONFIG_DEFAULTS.MAX_RETRIES,
             initialDelay: CONFIG_DEFAULTS.INITIAL_DELAY,
-            enableInlineCompletion: true,
+            inlineCompletion: {
+                enabled: CONFIG_DEFAULTS.INLINE_COMPLETION_ENABLED,
+                supportedLanguages: [],
+                enableInUntitledEditors: false
+            },
             autoAcceptEdits: CONFIG_DEFAULTS.AUTO_ACCEPT_EDITS,
             maxSavedChatSessions: CONFIG_DEFAULTS.MAX_SAVED_CHAT_SESSIONS,
         };
@@ -147,6 +151,19 @@ class ConfigProcessor {
         if (workspaceConfig.activeChatProfile) { config.activeChatProfile = workspaceConfig.activeChatProfile; }
         if (workspaceConfig.activeCompletionProfile) { config.activeCompletionProfile = workspaceConfig.activeCompletionProfile; }
 
+        // Merge Inline Completion settings
+        if (workspaceConfig.inlineCompletion) {
+            if (workspaceConfig.inlineCompletion.enabled !== undefined) {
+                config.inlineCompletion.enabled = workspaceConfig.inlineCompletion.enabled;
+            }
+            if (workspaceConfig.inlineCompletion.supportedLanguages) {
+                config.inlineCompletion.supportedLanguages = [...workspaceConfig.inlineCompletion.supportedLanguages];
+            }
+            if (workspaceConfig.inlineCompletion.enableInUntitledEditors !== undefined) {
+                config.inlineCompletion.enableInUntitledEditors = workspaceConfig.inlineCompletion.enableInUntitledEditors;
+            }
+        }
+
         // Merge Anonymizer settings
         this.mergeAnonymizer(config.anonymizer, workspaceConfig.anonymizer);
     }
@@ -155,7 +172,7 @@ class ConfigProcessor {
      * Applies overrides from VS Code settings and ensures Project Config file maintains priority.
      */
     private applyOverrides(config: IConfig, vsCodeSettings: IVSCodeSettings, workspaceJsonConfigFile: Partial<IProjectConfig>): void {
-        const { anonymizer, profiles, activeChatProfile, activeCompletionProfile, ...rest } = vsCodeSettings;
+        const { anonymizer, profiles, activeChatProfile, activeCompletionProfile, inlineCompletion, ...rest } = vsCodeSettings;
         
         // 1. VS Code settings apply over Default
         Object.assign(config, rest);
@@ -165,6 +182,18 @@ class ConfigProcessor {
         }
         if (activeChatProfile) { config.activeChatProfile = activeChatProfile; }
         if (activeCompletionProfile) { config.activeCompletionProfile = activeCompletionProfile; }
+
+        if (inlineCompletion) {
+            if (inlineCompletion.enabled !== undefined) {
+                config.inlineCompletion.enabled = inlineCompletion.enabled;
+            }
+            if (inlineCompletion.supportedLanguages) {
+                config.inlineCompletion.supportedLanguages = [...inlineCompletion.supportedLanguages];
+            }
+            if (inlineCompletion.enableInUntitledEditors !== undefined) {
+                config.inlineCompletion.enableInUntitledEditors = inlineCompletion.enableInUntitledEditors;
+            }
+        }
 
         if (anonymizer) {
             this.mergeAnonymizer(config.anonymizer, anonymizer);
@@ -218,8 +247,8 @@ class ConfigProcessor {
         eventBus.removeAllListeners('inlineCompletionToggled');
         eventBus.on('inlineCompletionToggled', (enabled: boolean) => {
             logger.info(CONFIG_LOGS.INLINE_COMPLETION_TOGGLED(enabled));
-            config.enableInlineCompletion = enabled;
-            logger.info(CONFIG_LOGS.CONFIG_UPDATED_INLINE(config.enableInlineCompletion));
+            config.inlineCompletion.enabled = enabled;
+            logger.info(CONFIG_LOGS.CONFIG_UPDATED_INLINE(config.inlineCompletion.enabled));
         });
 
         eventBus.removeAllListeners('autoAcceptEditsToggled');

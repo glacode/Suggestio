@@ -24,11 +24,13 @@ describe('Config Hierarchy', () => {
   });
 
   it('should ignore behavioral settings in JSON and use CONFIG_DEFAULTS if no overrides provided', async () => {
-    // maxAgentIterations and enableInlineCompletion are provided in JSON but should be ignored by the new processConfig
+    // maxAgentIterations and inlineCompletion.enabled are provided in JSON but should be ignored by the new processConfig
     const rawJson = JSON.stringify({
       activeChatProfile: 'provider1',
       maxAgentIterations: 10,
-      enableInlineCompletion: false,
+      inlineCompletion: {
+        enabled: false
+      },
       profiles: {
         provider1: { model: 'gpt-4', apiKey: 'key' }
       },
@@ -39,7 +41,7 @@ describe('Config Hierarchy', () => {
 
     // It should NOT be 10 or false, but the defaults
     expect(configContainer.config.maxAgentIterations).toBe(CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS);
-    expect(configContainer.config.enableInlineCompletion).toBe(true);
+    expect(configContainer.config.inlineCompletion.enabled).toBe(true);
   });
 
   it('should correctly apply overrides over JSON and defaults', async () => {

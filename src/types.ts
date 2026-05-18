@@ -1007,7 +1007,17 @@ export interface IConfigProvider {
   /**
    * Retrieves if inline completion is enabled.
    */
-  getEnableInlineCompletion(): boolean;
+  getInlineCompletionEnabled(): boolean;
+
+  /**
+   * Retrieves the supported languages for inline completion.
+   */
+  getInlineCompletionSupportedLanguages(): string[];
+
+  /**
+   * Retrieves if inline completion is enabled in untitled editors.
+   */
+  getInlineCompletionEnableInUntitledEditors(): boolean;
 
   /**
    * Retrieves the maximum number of retries for LLM API calls.
@@ -1665,6 +1675,11 @@ export interface IProjectConfig extends IAnonymizerConfigHolder {
   profiles: {
     [key: string]: IProfileConfig;
   };
+  inlineCompletion?: {
+    enabled?: boolean;
+    supportedLanguages?: string[];
+    enableInUntitledEditors?: boolean;
+  };
   anonymizer: IAnonymizerConfig;
 }
 
@@ -1676,15 +1691,34 @@ export interface IStorageConfig {
 }
 
 /**
+ * Focused configuration interface for inline completion, applying Interface Segregation.
+ */
+export interface IInlineCompletionConfig {
+  inlineCompletion: {
+    enabled: boolean;
+    supportedLanguages: string[];
+    enableInUntitledEditors: boolean;
+  };
+  llmProviderForInlineCompletion?: ILlmProvider;
+  activeCompletionProfile?: string;
+  activeChatProfile: string;
+  profiles: Record<string, IProfileConfig>;
+}
+
+/**
  * Represents the merged, runtime configuration used by the extension.
  */
-export interface IConfig extends IProjectConfig, IStorageConfig {
+export interface IConfig extends IProjectConfig, IStorageConfig, IInlineCompletionConfig {
   anonymizerInstance?: IAnonymizer;
   llmProviderForInlineCompletion?: ILlmProvider;
   llmProviderForChat?: ILlmProvider;
   maxAgentIterations: number;
   logLevel: string;
-  enableInlineCompletion: boolean;
+  inlineCompletion: {
+    enabled: boolean;
+    supportedLanguages: string[];
+    enableInUntitledEditors: boolean;
+  };
   autoAcceptEdits: boolean;
   /**
    * Maximum length for tool results in characters before they are truncated.
@@ -1713,7 +1747,11 @@ export interface IConfigContainer {
 export interface IVSCodeSettings {
   maxAgentIterations?: number;
   logLevel?: string;
-  enableInlineCompletion?: boolean;
+  inlineCompletion?: {
+    enabled?: boolean;
+    supportedLanguages?: string[];
+    enableInUntitledEditors?: boolean;
+  };
   maxRetries?: number;
   initialDelay?: number;
   maxSavedChatSessions?: number;

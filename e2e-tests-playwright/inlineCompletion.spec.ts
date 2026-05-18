@@ -101,7 +101,9 @@ test.describe('Inline Completion E2E', () => {
         server = await createMockServer();
 
         const result = await launchVscode(tempWorkspacePath, {
-            'suggestio.experimental.anonymizer.enabled': true
+            'suggestio.experimental.anonymizer.enabled': true,
+            'suggestio.inlineCompletion.supportedLanguages': ['plaintext', 'typescript'],
+            'suggestio.inlineCompletion.enableInUntitledEditors': true
         });
         electronApp = result.electronApp;
 

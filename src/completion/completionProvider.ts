@@ -6,8 +6,8 @@ import {
   ICancellationToken, 
   IInlineCompletionList, 
   IIgnoreManager,
-  IConfig,
-  ILlmProvider
+  ILlmProvider,
+  IInlineCompletionConfig
 } from "../types.js";
 import { buildPromptForInlineCompletion } from "./promptBuilder/promptBuilder.js";
 import { debounce } from "./debounceManager.js";
@@ -19,7 +19,7 @@ const DEBOUNCE_DELAY_MS = 1000;
 
 function createDebounceCallback(
   provider: ILlmProvider | undefined,
-  config: IConfig,
+  config: IInlineCompletionConfig,
   document: ITextDocument,
   position: IPosition,
   token: ICancellationToken | undefined,
@@ -77,7 +77,7 @@ function createDebounceCallback(
 
 export async function provideInlineCompletionItems(
   provider: ILlmProvider | undefined,
-  config: IConfig,
+  config: IInlineCompletionConfig,
   ignoreManager: IIgnoreManager, // Changed to interface
   document: ITextDocument,
   position: IPosition,
@@ -85,7 +85,20 @@ export async function provideInlineCompletionItems(
   _context: unknown, // Use unknown if we don't need it
   token?: ICancellationToken
 ): Promise<IInlineCompletionList> {
-  if (config.enableInlineCompletion === false) {
+  if (config.inlineCompletion.enabled === false) {
+    return { items: [] };
+  }
+
+  // Check if the language is supported
+  if (!config.inlineCompletion.supportedLanguages.includes(document.languageId)) {
+    return { items: [] };
+  }
+
+  // Check scheme: 'file' is always allowed, 'untitled' needs explicit opt-in
+  if (document.uri.scheme === 'untitled' && !config.inlineCompletion.enableInUntitledEditors) {
+    return { items: [] };
+  }
+  if (document.uri.scheme !== 'file' && document.uri.scheme !== 'untitled') {
     return { items: [] };
   }
 

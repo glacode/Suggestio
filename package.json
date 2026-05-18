@@ -117,16 +117,10 @@
                 "language": "css"
             },
             {
-                "language": "json"
-            },
-            {
                 "language": "markdown"
             },
             {
                 "language": "shellscript"
-            },
-            {
-                "language": "yaml"
             },
             {
                 "language": "sql"
@@ -247,10 +241,40 @@
                     "default": 3,
                     "description": "Maximum number of chat sessions to keep in the history."
                 },
-                "suggestio.enableInlineCompletion": {
+                "suggestio.inlineCompletion.enabled": {
                     "type": "boolean",
                     "default": true,
                     "description": "Whether to enable inline code completion."
+                },
+                "suggestio.inlineCompletion.supportedLanguages": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "default": [
+                        "javascript",
+                        "typescript",
+                        "python",
+                        "java",
+                        "c",
+                        "cpp",
+                        "csharp",
+                        "go",
+                        "php",
+                        "ruby",
+                        "rust",
+                        "html",
+                        "css",
+                        "markdown",
+                        "shellscript",
+                        "sql"
+                    ],
+                    "description": "Languages where inline completion is active. Excludes .json and .yaml by default for security."
+                },
+                "suggestio.inlineCompletion.enableInUntitledEditors": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Whether to enable inline completion in untitled (unsaved) editors."
                 },
                 "suggestio.logLevel": {
                     "type": "string",

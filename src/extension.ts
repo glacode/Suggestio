@@ -143,7 +143,9 @@ export async function activate(context: vscode.ExtensionContext) {
     getAnonymizerWords: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<string[]>('experimental.anonymizer.words'),
     getAnonymizerEntropy: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<number>('experimental.anonymizer.sensitiveData.allowedEntropy'),
     getAnonymizerMinLength: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<number>('experimental.anonymizer.sensitiveData.minLength'),
-    getEnableInlineCompletion: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<boolean>('enableInlineCompletion', true),
+    getInlineCompletionEnabled: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<boolean>('inlineCompletion.enabled', true),
+    getInlineCompletionSupportedLanguages: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<string[]>('inlineCompletion.supportedLanguages', packageJsonLanguages),
+    getInlineCompletionEnableInUntitledEditors: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<boolean>('inlineCompletion.enableInUntitledEditors', false),
     getMaxRetries: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<number>('llm.maxRetries', CONFIG_DEFAULTS.MAX_RETRIES),
     getInitialDelay: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<number>('llm.initialDelay', CONFIG_DEFAULTS.INITIAL_DELAY),
     getMaxSavedChatSessions: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<number>('maxSavedChatSessions', CONFIG_DEFAULTS.MAX_SAVED_CHAT_SESSIONS),
@@ -177,10 +179,16 @@ export async function activate(context: vscode.ExtensionContext) {
   const logLevel = vsCodeConfig.get<string>('logLevel', CONFIG_DEFAULTS.LOG_LEVEL);
   defaultLogger.setLogLevel(parseLogLevel(logLevel));
 
+  const packageJsonLanguages = context.extension.packageJSON.contributes?.inlineCompletions?.map((c: any) => c.language) || [];
+
   const vsCodeSettings: IVSCodeSettings = {
     maxAgentIterations: vsCodeConfig.get<number>('maxAgentIterations', CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS),
     logLevel: logLevel,
-    enableInlineCompletion: vsCodeConfig.get<boolean>('enableInlineCompletion', true),
+    inlineCompletion: {
+      enabled: vsCodeConfig.get<boolean>('inlineCompletion.enabled', true),
+      supportedLanguages: vsCodeConfig.get<string[]>('inlineCompletion.supportedLanguages', packageJsonLanguages),
+      enableInUntitledEditors: vsCodeConfig.get<boolean>('inlineCompletion.enableInUntitledEditors', false)
+    },
     maxRetries: vsCodeConfig.get<number>('llm.maxRetries', CONFIG_DEFAULTS.MAX_RETRIES),
     initialDelay: vsCodeConfig.get<number>('llm.initialDelay', CONFIG_DEFAULTS.INITIAL_DELAY),
     maxSavedChatSessions: vsCodeConfig.get<number>('maxSavedChatSessions', CONFIG_DEFAULTS.MAX_SAVED_CHAT_SESSIONS),
@@ -208,7 +216,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const httpClient = new NodeFetchClient();
   const configContainer: IConfigContainer = await configProcessor.processConfig(rawConfigs, secretManager, eventBus, httpClient, vsCodeSettings);
   // Initialize UI context for toggles
-  await vscode.commands.executeCommand('setContext', 'suggestio.inlineCompletionEnabled', configContainer.config.enableInlineCompletion !== false);
+  await vscode.commands.executeCommand('setContext', 'suggestio.inlineCompletionEnabled', configContainer.config.inlineCompletion.enabled !== false);
   await vscode.commands.executeCommand('setContext', 'suggestio.autoAcceptEditsEnabled', configContainer.config.autoAcceptEdits);
 
   registerConfigHandler(context.subscriptions, configProvider, configContainer, eventBus, secretManager, httpClient);
