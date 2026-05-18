@@ -89,16 +89,19 @@ export async function provideInlineCompletionItems(
     return { items: [] };
   }
 
-  // Check if the language is supported
-  if (!config.inlineCompletion.supportedLanguages.includes(document.languageId)) {
+  const isUntitled = document.uri.scheme === 'untitled';
+  const isFile = document.uri.scheme === 'file';
+
+  // Check scheme: 'file' is always allowed, 'untitled' needs explicit opt-in
+  if (isUntitled && !config.inlineCompletion.enableInUntitledEditors) {
+    return { items: [] };
+  }
+  if (!isFile && !isUntitled) {
     return { items: [] };
   }
 
-  // Check scheme: 'file' is always allowed, 'untitled' needs explicit opt-in
-  if (document.uri.scheme === 'untitled' && !config.inlineCompletion.enableInUntitledEditors) {
-    return { items: [] };
-  }
-  if (document.uri.scheme !== 'file' && document.uri.scheme !== 'untitled') {
+  // Check if the language is supported (skip for untitled editors)
+  if (!isUntitled && !config.inlineCompletion.supportedLanguages.includes(document.languageId)) {
     return { items: [] };
   }
 
