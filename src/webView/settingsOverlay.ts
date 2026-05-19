@@ -116,7 +116,7 @@ export class SettingsOverlay {
         body.innerHTML = '';
 
         if (this.currentView === 'edit') {
-            this.editProfile.render(body, vscode);
+            this.editProfile.render(body, vscode, state);
             return;
         }
 

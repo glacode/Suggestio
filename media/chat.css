@@ -835,6 +835,123 @@ body.overlay-open textarea#messageInput {
     cursor: not-allowed;
 }
 
+.settings-section-divider {
+    height: 1px;
+    background: var(--vscode-settings-headerBorder);
+    margin: 16px 0;
+    opacity: 0.5;
+}
+
+.settings-description {
+    font-size: 12px;
+    color: var(--vscode-descriptionForeground);
+    margin: 4px 0 12px 0;
+    line-height: 1.4;
+}
+
+.settings-help-text {
+    font-size: 11px;
+    color: var(--vscode-descriptionForeground);
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+.settings-help-text code {
+    background: var(--vscode-textCodeBlock-background);
+    padding: 1px 3px;
+    border-radius: 3px;
+}
+
+.key-status-container {
+    margin-top: 8px;
+    padding: 12px;
+    background: var(--vscode-editorWidget-background);
+    border-radius: 4px;
+    border: 1px solid var(--vscode-widget-border);
+}
+
+.key-status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.key-options-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.key-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid var(--vscode-widget-border);
+    border-radius: 4px;
+    background: var(--vscode-editor-background);
+    cursor: pointer;
+    transition: border-color 0.1s;
+}
+
+.key-option:hover {
+    border-color: var(--vscode-focusBorder);
+}
+
+.key-option.active {
+    border-color: var(--vscode-focusBorder);
+    background: var(--vscode-list-hoverBackground);
+}
+
+.key-option input[type="radio"] {
+    margin-top: 3px;
+    cursor: pointer;
+}
+
+.key-option-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.key-option-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--vscode-foreground);
+}
+
+.key-option-description {
+    font-size: 11px;
+    color: var(--vscode-descriptionForeground);
+    line-height: 1.4;
+}
+
+.key-option-preview {
+    font-family: var(--vscode-editor-font-family, monospace);
+    font-size: 10px;
+    margin-top: 4px;
+    color: var(--vscode-textPreformat-foreground);
+    background: var(--vscode-textCodeBlock-background);
+    padding: 2px 4px;
+    border-radius: 3px;
+    width: fit-content;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.settings-done.small {
+    padding: 4px 12px;
+    font-size: 11px;
+}
+
 .form-actions-row {
     display: flex;
     gap: 8px;
