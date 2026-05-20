@@ -47,6 +47,7 @@ export function registerConfigHandler(
         
         // Update the shared config object by reference
         if (configContainer.config) {
+          const oldInlineEnabled = configContainer.config.inlineCompletion.enabled;
           configContainer.config.logLevel = newLogLevel;
           configContainer.config.maxAgentIterations = newMaxAgentIterations;
           configContainer.config.inlineCompletion.enabled = newInlineCompletionEnabled;
@@ -55,6 +56,10 @@ export function registerConfigHandler(
           configContainer.config.maxRetries = newMaxRetries;
           configContainer.config.initialDelay = newInitialDelay;
           configContainer.config.maxSavedChatSessions = newMaxSavedChatSessions;
+
+          if (newInlineCompletionEnabled !== oldInlineEnabled) {
+            eventBus.emit('inlineCompletionToggled', newInlineCompletionEnabled);
+          }
 
           if (newProfiles) {
             // Update profiles list. We keep the base ones and apply overrides.

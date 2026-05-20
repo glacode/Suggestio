@@ -66,7 +66,6 @@ export function registerCommands(
   context.subscriptions.push(
     vscode.commands.registerCommand('suggestio.enableInlineCompletion', async () => {
       await vscode.workspace.getConfiguration('suggestio').update('inlineCompletion.enabled', true, vscode.ConfigurationTarget.Global);
-      await vscode.commands.executeCommand('setContext', 'suggestio.inlineCompletionEnabled', true);
       // Notify other parts of the extension so they can update their behavior (mirrors modelChanged flow)
       eventBus.emit('inlineCompletionToggled', true);
     })
@@ -76,7 +75,6 @@ export function registerCommands(
   context.subscriptions.push(
     vscode.commands.registerCommand('suggestio.disableInlineCompletion', async () => {
       await vscode.workspace.getConfiguration('suggestio').update('inlineCompletion.enabled', false, vscode.ConfigurationTarget.Global);
-      await vscode.commands.executeCommand('setContext', 'suggestio.inlineCompletionEnabled', false);
       // Notify other parts of the extension so they can update their behavior (mirrors modelChanged flow)
       eventBus.emit('inlineCompletionToggled', false);
     })
@@ -85,7 +83,6 @@ export function registerCommands(
   // Enables auto-accept edits by setting a VS Code context and notifying the extension via the event bus.
   context.subscriptions.push(
     vscode.commands.registerCommand('suggestio.enableAutoAcceptEdits', () => {
-      vscode.commands.executeCommand('setContext', 'suggestio.autoAcceptEditsEnabled', true);
       eventBus.emit('autoAcceptEditsToggled', true);
     })
   );
@@ -93,7 +90,6 @@ export function registerCommands(
   // Disables auto-accept edits by setting a VS Code context and notifying the extension via the event bus.
   context.subscriptions.push(
     vscode.commands.registerCommand('suggestio.disableAutoAcceptEdits', () => {
-      vscode.commands.executeCommand('setContext', 'suggestio.autoAcceptEditsEnabled', false);
       eventBus.emit('autoAcceptEditsToggled', false);
     })
   );

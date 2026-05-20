@@ -219,6 +219,14 @@ export async function activate(context: vscode.ExtensionContext) {
   await vscode.commands.executeCommand('setContext', 'suggestio.inlineCompletionEnabled', configContainer.config.inlineCompletion.enabled !== false);
   await vscode.commands.executeCommand('setContext', 'suggestio.autoAcceptEditsEnabled', configContainer.config.autoAcceptEdits);
 
+  eventBus.on('inlineCompletionToggled', (enabled) => {
+    vscode.commands.executeCommand('setContext', 'suggestio.inlineCompletionEnabled', enabled);
+  });
+
+  eventBus.on('autoAcceptEditsToggled', (enabled) => {
+    vscode.commands.executeCommand('setContext', 'suggestio.autoAcceptEditsEnabled', enabled);
+  });
+
   registerConfigHandler(context.subscriptions, configProvider, configContainer, eventBus, secretManager, httpClient);
 
   const baseHistoryManager = new ChatHistoryManager();

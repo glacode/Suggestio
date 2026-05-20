@@ -76,9 +76,12 @@ async function createNewFile(page: Page) {
 }
 
 async function clearEditor(page: Page) {
+    const editor = page.locator('.monaco-editor').first();
+    await editor.click();
+    await page.waitForTimeout(200);
     await page.keyboard.press('Control+A');
     await page.keyboard.press('Backspace');
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1000); // Increased for stability
 }
 
 async function openChatView(page: Page) {
