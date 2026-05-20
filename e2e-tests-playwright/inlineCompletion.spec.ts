@@ -72,6 +72,12 @@ function createMockServer(): Promise<Server> {
 
 async function createNewFile(page: Page) {
     await page.keyboard.press('Control+N');
+    await page.waitForTimeout(1000); // Increased for stability
+}
+
+async function clearEditor(page: Page) {
+    await page.keyboard.press('Control+A');
+    await page.keyboard.press('Backspace');
     await page.waitForTimeout(500);
 }
 
@@ -109,6 +115,9 @@ test.describe('Inline Completion E2E', () => {
 
         page = await electronApp.firstWindow();
         await page.waitForTimeout(10000);
+
+        await openChatView(page);  // activates the extension
+        await createNewFile(page); // open the single file we will reuse
     });
 
     test.afterAll(async () => {
@@ -120,10 +129,12 @@ test.describe('Inline Completion E2E', () => {
         }
     });
 
-    test('should provide inline completion from a custom provider', async () => {
-        await openChatView(page);  // activates the extension
-        await createNewFile(page);
+    test.beforeEach(async () => {
+        lastRequestBody = null;
+        await clearEditor(page);
+    });
 
+    test('should provide inline completion from a custom provider', async () => {
         // Simulate typing
         await page.keyboard.type('hello', { delay: 150 });
 
@@ -140,9 +151,6 @@ test.describe('Inline Completion E2E', () => {
     });
 
     test('should anonymize user data before sending to the provider', async () => {
-        await openChatView(page);  // activates the extension; we need it if this test runs independently
-        await createNewFile(page);
-
         // Simulate typing
         await page.keyboard.type('hello john', { delay: 150 });
 
@@ -164,5 +172,35 @@ test.describe('Inline Completion E2E', () => {
         // Verify the final content
         const editor = page.locator('.view-line').first();
         await expect(editor).toHaveText('hello john world');
+    });
+
+    test('should toggle inline completion enabled/disabled state correctly', async () => {
+        // 1. Initially it should be enabled. Verify by clicking "Disable Inline Completion"
+        const disableBtn = page.locator('[role="button"][aria-label="Suggestio: Disable Inline Completion"]').first();
+        await expect(disableBtn).toBeVisible();
+        await disableBtn.click();
+
+        // 2. Verify UI toggled to "Enable"
+        const enableBtn = page.locator('[role="button"][aria-label="Suggestio: Enable Inline Completion"]').first();
+        await expect(enableBtn).toBeVisible();
+        await expect(disableBtn).not.toBeVisible();
+
+        // 3. Verify functionality is actually disabled (no requests sent)
+        lastRequestBody = null;
+        await page.keyboard.type('test disable', { delay: 100 });
+        await page.waitForTimeout(2000);
+        expect(lastRequestBody).toBeNull();
+
+        // 4. Toggle back to enabled
+        await enableBtn.click();
+        await expect(disableBtn).toBeVisible();
+        await expect(enableBtn).not.toBeVisible();
+
+        // 5. Verify functionality is re-enabled
+        await clearEditor(page);
+        await page.keyboard.type('test enable', { delay: 100 });
+        await page.waitForTimeout(3000); // Allow debounce and server response
+        expect(lastRequestBody).not.toBeNull();
+        expect(lastRequestBody.messages[0].content).toContain('test enable');
     });
 });
