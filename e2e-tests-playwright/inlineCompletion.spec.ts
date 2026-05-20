@@ -174,7 +174,8 @@ test.describe('Inline Completion E2E', () => {
         await expect(editor).toHaveText('hello john world');
     });
 
-    test('should toggle inline completion enabled/disabled state correctly', async () => {
+    test('should toggle UI states correctly (inline completion and auto-accept edits)', async () => {
+        // --- Inline Completion Toggle ---
         // 1. Initially it should be enabled. Verify by clicking "Disable Inline Completion"
         const disableBtn = page.locator('[role="button"][aria-label="Suggestio: Disable Inline Completion"]').first();
         await expect(disableBtn).toBeVisible();
@@ -202,5 +203,21 @@ test.describe('Inline Completion E2E', () => {
         await page.waitForTimeout(3000); // Allow debounce and server response
         expect(lastRequestBody).not.toBeNull();
         expect(lastRequestBody.messages[0].content).toContain('test enable');
+
+        // --- Auto-Accept Edits Toggle ---
+        // 6. Initially it should be disabled. Verify by clicking "Enable Auto-Accept Edits"
+        const enableAutoAcceptBtn = page.locator('[role="button"][aria-label="Suggestio: Enable Auto-Accept Edits"]').first();
+        await expect(enableAutoAcceptBtn).toBeVisible();
+        await enableAutoAcceptBtn.click();
+
+        // 7. Verify UI toggled to "Disable"
+        const disableAutoAcceptBtn = page.locator('[role="button"][aria-label="Suggestio: Disable Auto-Accept Edits"]').first();
+        await expect(disableAutoAcceptBtn).toBeVisible();
+        await expect(enableAutoAcceptBtn).not.toBeVisible();
+
+        // 8. Toggle back to disabled
+        await disableAutoAcceptBtn.click();
+        await expect(enableAutoAcceptBtn).toBeVisible();
+        await expect(disableAutoAcceptBtn).not.toBeVisible();
     });
 });
