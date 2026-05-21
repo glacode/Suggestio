@@ -275,14 +275,14 @@ export type WebviewMessage =
     }  | {
     /** User wants to edit an API key. */
     command: typeof WEBVIEW_COMMANDS.EDIT_API_KEY;
-    /** The placeholder of the key to edit. */
-    placeholder: string;
+    /** The identifier of the key to edit. */
+    identifier: string;
   }
   | {
     /** User wants to delete an API key. */
     command: typeof WEBVIEW_COMMANDS.DELETE_API_KEY;
-    /** The placeholder of the key to delete. */
-    placeholder: string;
+    /** The identifier of the key to delete. */
+    identifier: string;
   }
   | {
     /** User wants to retry the last message. */
@@ -700,7 +700,7 @@ export interface ProfileMetadata {
   endpoint: string;
   needsApiKey: boolean;
   hasApiKey: boolean;
-  apiKeyPlaceholder?: string;
+  apiKeyIdentifier?: string;
   isActiveChat: boolean;
   isActiveCompletion: boolean;
 }
@@ -1637,8 +1637,8 @@ export interface ILlmProvider {
 export interface IProfileConfig {
   endpoint?: string; // optional because Gemini doesn’t use it
   model: string;
-  apiKey: string;             // raw value from config.json
-  apiKeyPlaceholder?: string; // extracted placeholder, optional
+  apiKeyIdentifier?: string; // identifier used to look up the key (e.g. OPENROUTER_API_KEY)
+  isApiKeyRequired?: boolean; // whether an API key is required for this profile (defaults to true)
   resolvedApiKey?: string;    // actual key used at runtime
   type?: "openai-compatible" | "gemini"; // defaults to openai-compatible
   /** Whether the model supports tool calling. If not specified, defaults to true. */

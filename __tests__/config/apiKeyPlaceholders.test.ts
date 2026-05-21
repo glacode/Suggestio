@@ -4,19 +4,19 @@ import { extractApiKeyPlaceholders } from "../../src/config/apiKeyPlaceholders.j
 import { createDefaultConfig } from "../testUtils.js";
 
 describe("extractApiKeyPlaceholders", () => {
-  it("should extract placeholders from profiles with ${VARNAME}", () => {
+  it("should extract identifiers from profiles with apiKeyIdentifier", () => {
     const config: IConfig = createDefaultConfig({
       activeChatProfile: "openrouter",
       profiles: {
         openrouter: {
           endpoint: "https://api.openrouter.ai",
           model: "gpt-4",
-          apiKey: "${OPENROUTER_API_KEY}"
+          apiKeyIdentifier: "OPENROUTER_API_KEY"
         },
         anthropic: {
           endpoint: "https://api.anthropic.com",
           model: "claude-3",
-          apiKey: "${ANTHROPIC_API_KEY}"
+          apiKeyIdentifier: "ANTHROPIC_API_KEY"
         }
       }
     });
@@ -25,14 +25,14 @@ describe("extractApiKeyPlaceholders", () => {
     expect(result).toEqual(["OPENROUTER_API_KEY", "ANTHROPIC_API_KEY"]);
   });
 
-  it("should ignore hardcoded API keys", () => {
+  it("should return empty array if no apiKeyIdentifier is present", () => {
     const config: IConfig = createDefaultConfig({
-      activeChatProfile: "hardcoded",
+      activeChatProfile: "no-key",
       profiles: {
-        hardcoded: {
+        "no-key": {
           endpoint: "https://local",
           model: "test",
-          apiKey: "fixed-key"
+          isApiKeyRequired: false
         }
       }
     });
@@ -51,19 +51,19 @@ describe("extractApiKeyPlaceholders", () => {
     expect(result).toEqual([]);
   });
 
-  it("should handle duplicate placeholders gracefully", () => {
+  it("should handle duplicate identifiers gracefully", () => {
     const config: IConfig = createDefaultConfig({
       activeChatProfile: "dup",
       profiles: {
         a: {
           endpoint: "x",
           model: "y",
-          apiKey: "${DUPLICATE_API_KEY}"
+          apiKeyIdentifier: "DUPLICATE_API_KEY"
         },
         b: {
           endpoint: "x",
           model: "y",
-          apiKey: "${DUPLICATE_API_KEY}"
+          apiKeyIdentifier: "DUPLICATE_API_KEY"
         }
       }
     });

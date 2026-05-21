@@ -32,9 +32,14 @@
             "type": "string",
             "description": "The name of the model to use (e.g., 'gpt-4', 'gemini-pro')."
           },
-          "apiKey": {
+          "apiKeyIdentifier": {
             "type": "string",
-            "description": "The API key for the profile. Can be a literal string or a placeholder like '${MY_ENV_VAR}'."
+            "description": "The identifier for the API key (e.g., 'OPENROUTER_API_KEY'). This identifier is used to look up the actual key in the secret manager or environment variables."
+          },
+          "isApiKeyRequired": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether an API key is required for this profile. If set to false, no key will be requested."
           },
           "endpoint": {
             "type": "string",
@@ -51,7 +56,7 @@
             "description": "Whether to exclude this model from the chat interface. This is useful for models where the free tier is too restrictive for chat (e.g., very small context windows or low Tokens Per Minute/TPM limits) but remains useful for inline completions."
           }
         },
-        "required": ["model", "apiKey"]
+        "required": ["model"]
       }
     },
     "anonymizer": {

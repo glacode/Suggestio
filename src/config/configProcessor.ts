@@ -274,24 +274,21 @@ class ConfigProcessor {
         secretManager: ISecretManager,
         forcePrompt: boolean = false
     ) {
-        const apiKeyValue = profileConfig.apiKey;
-        if (typeof apiKeyValue !== 'string') { return; }
+        if (profileConfig.isApiKeyRequired === false) {
+            profileConfig.resolvedApiKey = "";
+            return;
+        }
 
-        const match = apiKeyValue.match(/^\$\{(\w+)\}$/);
-        const placeholder = match ? match[1] : undefined;
-        profileConfig.apiKeyPlaceholder = placeholder;
+        const identifier = profileConfig.apiKeyIdentifier;
+        if (typeof identifier !== 'string' || !identifier) { return; }
 
-        if (placeholder) {
-            const envValue = process.env[placeholder];
-            if (envValue?.trim()) {
-                profileConfig.resolvedApiKey = envValue.trim();
-            } else {
-                profileConfig.resolvedApiKey = forcePrompt
-                    ? await secretManager.getOrRequestAPIKey(placeholder)
-                    : await secretManager.getSecret(placeholder);
-            }
+        const envValue = process.env[identifier];
+        if (envValue?.trim()) {
+            profileConfig.resolvedApiKey = envValue.trim();
         } else {
-            profileConfig.resolvedApiKey = apiKeyValue;
+            profileConfig.resolvedApiKey = forcePrompt
+                ? await secretManager.getOrRequestAPIKey(identifier)
+                : await secretManager.getSecret(identifier);
         }
     }
 

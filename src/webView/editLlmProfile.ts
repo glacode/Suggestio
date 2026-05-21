@@ -180,9 +180,9 @@ export class EditLlmProfile {
         }
 
         /**
-         * Resolves the current placeholder based on selection.
+         * Resolves the current identifier based on selection.
          */
-        const getCurrentPlaceholder = (): string => {
+        const getCurrentIdentifier = (): string => {
             const isShared = keyTypeShared.checked;
             const brand = this.getBrandFromUrl(endpointInput.value.trim());
             const id = idInput.value.trim();
@@ -195,10 +195,10 @@ export class EditLlmProfile {
         };
 
         /**
-         * Checks if the current placeholder has a key in the secret manager.
+         * Checks if the current identifier has a key in the secret manager.
          */
         const updateKeyStatus = () => {
-            const currentName = getCurrentPlaceholder();
+            const currentName = getCurrentIdentifier();
             
             // Highlight active option visually
             keyTypeShared.closest('.key-option')?.classList.toggle('active', keyTypeShared.checked);
@@ -219,7 +219,7 @@ export class EditLlmProfile {
             setKeyBtn.textContent = `Set key for ${currentName}`;
 
             // Check if ANY existing profile uses this placeholder and has a key
-            const existingProfile = state.profileMetadata?.find(p => p.apiKeyPlaceholder === currentName);
+            const existingProfile = state.profileMetadata?.find(p => p.apiKeyIdentifier === currentName);
             const hasKey = existingProfile?.hasApiKey || false;
 
             if (hasKey) {
@@ -236,33 +236,33 @@ export class EditLlmProfile {
         keyTypeUnique.addEventListener('change', updateKeyStatus);
 
         setKeyBtn.addEventListener('click', () => {
-            const placeholder = getCurrentPlaceholder();
-            if (placeholder) {
+            const identifier = getCurrentIdentifier();
+            if (identifier) {
                 vscode.postMessage({
                     command: WEBVIEW_COMMANDS.EDIT_API_KEY,
-                    placeholder: placeholder
+                    identifier: identifier
                 });
             }
         });
+saveBtn.addEventListener('click', () => {
+    const id = idInput.value.trim();
+    const model = modelInput.value.trim();
+    const endpoint = endpointInput.value.trim();
+    const identifier = getCurrentIdentifier();
 
-        saveBtn.addEventListener('click', () => {
-            const id = idInput.value.trim();
-            const model = modelInput.value.trim();
-            const endpoint = endpointInput.value.trim();
-            const placeholder = getCurrentPlaceholder();
-
-            if (id && model && endpoint && placeholder) {
-                vscode.postMessage({
-                    command: WEBVIEW_COMMANDS.ADD_PROFILE,
-                    profile: {
-                        id,
-                        model,
-                        endpoint,
-                        apiKey: `\${${placeholder}}`
-                    }
-                });
-                this.onDone();
-            } else {
+    if (id && model && endpoint && identifier) {
+        vscode.postMessage({
+            command: WEBVIEW_COMMANDS.ADD_PROFILE,
+            profile: {
+                id,
+                model,
+                endpoint,
+                apiKeyIdentifier: identifier,
+                isApiKeyRequired: true
+            }
+        });
+        this.onDone();
+    } else {
                 // Basic validation
                 idInput.style.borderColor = id ? '' : 'var(--vscode-errorForeground)';
                 modelInput.style.borderColor = model ? '' : 'var(--vscode-errorForeground)';

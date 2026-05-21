@@ -6,141 +6,141 @@
     "llm7-qwen32": {
       "endpoint": "https://api.llm7.io/v1/chat/completions",
       "model": "qwen2.5-coder-32b-instruct",
-      "apiKey": "unused",
+      "isApiKeyRequired": false,
       "supportsTools": false
     },
     "publicai-olmo-32b": {
       "endpoint": "https://api.publicai.co/v1/chat/completions",
       "model": "allenai/Olmo-3.1-32B-Instruct",
-      "apiKey": "${PUBLICAI_API_KEY}",
+      "apiKeyIdentifier": "PUBLICAI_API_KEY",
       "supportsTools": false
     },
     "publicai-apertus-70b": {
       "endpoint": "https://api.publicai.co/v1/chat/completions",
       "model": "swiss-ai/apertus-70b-instruct",
-      "apiKey": "${PUBLICAI_API_KEY}",
+      "apiKeyIdentifier": "PUBLICAI_API_KEY",
       "supportsTools": false
     },
     "publicai-olmo3-7b": {
       "endpoint": "https://api.publicai.co/v1/chat/completions",
       "model": "allenai/Olmo-3-7B-Instruct",
-      "apiKey": "${PUBLICAI_API_KEY}",
+      "apiKeyIdentifier": "PUBLICAI_API_KEY",
       "supportsTools": false
     },
     "groq-compound": {
       "endpoint": "https://api.groq.com/openai/v1/chat/completions",
       "model": "groq/compound",
-      "apiKey": "${GROQ_API_KEY}",
+      "apiKeyIdentifier": "GROQ_API_KEY",
       "supportsTools": false
     },
     "groq-gpt-oss-120b": {
       "endpoint": "https://api.groq.com/openai/v1/chat/completions",
       "model": "openai/gpt-oss-120b",
-      "apiKey": "${GROQ_API_KEY}",
+      "apiKeyIdentifier": "GROQ_API_KEY",
       "excludeFromChat": true
     },
     "groq-llama370": {
       "endpoint": "https://api.groq.com/openai/v1/chat/completions",
       "model": "llama-3.3-70b-versatile",
-      "apiKey": "${GROQ_API_KEY}",
+      "apiKeyIdentifier": "GROQ_API_KEY",
       "supportsTools": false
     },
     "ollama-devstral": {
       "endpoint": "https://ollama.com/v1/chat/completions",
       "model": "devstral-2:123b-cloud",
-      "apiKey": "${OLLAMA_API_KEY}"
+      "apiKeyIdentifier": "OLLAMA_API_KEY"
     },
     "ollama-devstral-small": {
       "endpoint": "https://ollama.com/v1/chat/completions",
       "model": "devstral-small-2:24b-cloud",
-      "apiKey": "${OLLAMA_API_KEY}"
+      "apiKeyIdentifier": "OLLAMA_API_KEY"
     },
     "ollama-gpt-oss-120b": {
       "endpoint": "https://ollama.com/v1/chat/completions",
       "model": "gpt-oss:120b-cloud",
-      "apiKey": "${OLLAMA_API_KEY}"
+      "apiKeyIdentifier": "OLLAMA_API_KEY"
     },
     "ollama-qwen3-480b": {
       "endpoint": "https://ollama.com/v1/chat/completions",
       "model": "qwen3-coder:480b-cloud",
-      "apiKey": "${OLLAMA_API_KEY}"
+      "apiKeyIdentifier": "OLLAMA_API_KEY"
     },
     "mistral-medium-3-5": {
       "endpoint": "https://api.mistral.ai/v1/chat/completions",
       "model": "mistral-medium-3-5",
-      "apiKey": "${MISTRAL_API_KEY}"
+      "apiKeyIdentifier": "MISTRAL_API_KEY"
     },
     "mistral-devstral-2512": {
       "endpoint": "https://api.mistral.ai/v1/chat/completions",
       "model": "devstral-2512",
-      "apiKey": "${MISTRAL_API_KEY}"
+      "apiKeyIdentifier": "MISTRAL_API_KEY"
     },
     "mistral-devstral-small-2512": {
       "endpoint": "https://api.mistral.ai/v1/chat/completions",
       "model": "labs-devstral-small-2512",
-      "apiKey": "${MISTRAL_API_KEY}"
+      "apiKeyIdentifier": "MISTRAL_API_KEY"
     },
     "openrouter-deepseek-v4-flash:free": {
       "endpoint": "https://openrouter.ai/api/v1/chat/completions",
       "model": "deepseek/deepseek-v4-flash:free",
-      "apiKey": "${OPENROUTER_API_KEY}"
+      "apiKeyIdentifier": "OPENROUTER_API_KEY"
     },
     "openrouter-ring-2.6-1t": {
       "endpoint": "https://openrouter.ai/api/v1/chat/completions",
       "model": "inclusionai/ring-2.6-1t:free",
-      "apiKey": "${OPENROUTER_API_KEY}"
+      "apiKeyIdentifier": "OPENROUTER_API_KEY"
     },
     "openrouter-minimax-m2.5": {
       "endpoint": "https://openrouter.ai/api/v1/chat/completions",
       "model": "minimax/minimax-m2.5:free",
-      "apiKey": "${OPENROUTER_API_KEY}"
+      "apiKeyIdentifier": "OPENROUTER_API_KEY"
     },
     "openrouter-glm-4.5-air": {
       "endpoint": "https://openrouter.ai/api/v1/chat/completions",
       "model": "z-ai/glm-4.5-air:free",
-      "apiKey": "${OPENROUTER_API_KEY}"
+      "apiKeyIdentifier": "OPENROUTER_API_KEY"
     },
     "hf-lama38": {
       "endpoint": "https://router.huggingface.co/v1/chat/completions",
       "model": "meta-llama/Llama-3.1-8B-Instruct",
-      "apiKey": "${HF_API_KEY}",
+      "apiKeyIdentifier": "HF_API_KEY",
       "supportsTools": false
     },
     "gemini-3.1-flash-lite": {
       "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
       "model": "gemini-3.1-flash-lite-preview",
-      "apiKey": "${GEMINI_API_KEY}",
+      "apiKeyIdentifier": "GEMINI_API_KEY",
       "supportsTools": true
     },
     "gemma-4-31b-it": {
       "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
       "model": "gemma-4-31b-it",
-      "apiKey": "${GEMINI_API_KEY}"
+      "apiKeyIdentifier": "GEMINI_API_KEY"
     },
     "nvidia-glm4.7": {
       "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
       "model": "z-ai/glm4.7",
-      "apiKey": "${NVIDIA_API_KEY}"
+      "apiKeyIdentifier": "NVIDIA_API_KEY"
     },
     "nvidia-step-3.5-flash": {
       "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
       "model": "stepfun-ai/step-3.5-flash",
-      "apiKey": "${NVIDIA_API_KEY}"
+      "apiKeyIdentifier": "NVIDIA_API_KEY"
     },
     "nvidia-minimax2.7": {
       "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
       "model": "minimaxai/minimax-m2.7",
-      "apiKey": "${NVIDIA_API_KEY}"
+      "apiKeyIdentifier": "NVIDIA_API_KEY"
     },
     "nvidia-deepseek3.2": {
       "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
       "model": "deepseek-ai/deepseek-v3.2",
-      "apiKey": "${NVIDIA_API_KEY}"
+      "apiKeyIdentifier": "NVIDIA_API_KEY"
     },
     "test-for-retry": {
       "endpoint": "https://httpstat.us/500",
       "model": "use-just-for-testing-retry-logic",
-      "apiKey": "none"
+      "isApiKeyRequired": false
     }
   }
 }

@@ -172,14 +172,14 @@ export class SettingsOverlay {
             });
 
             item.querySelector('.edit-btn')?.addEventListener('click', () => {
-                if (profile.apiKeyPlaceholder) {
-                    vscode.postMessage({ command: WEBVIEW_COMMANDS.EDIT_API_KEY, placeholder: profile.apiKeyPlaceholder });
+                if (profile.apiKeyIdentifier) {
+                    vscode.postMessage({ command: WEBVIEW_COMMANDS.EDIT_API_KEY, identifier: profile.apiKeyIdentifier });
                 }
             });
 
             item.querySelector('.delete-btn')?.addEventListener('click', () => {
-                if (profile.apiKeyPlaceholder) {
-                    vscode.postMessage({ command: WEBVIEW_COMMANDS.DELETE_API_KEY, placeholder: profile.apiKeyPlaceholder });
+                if (profile.apiKeyIdentifier) {
+                    vscode.postMessage({ command: WEBVIEW_COMMANDS.DELETE_API_KEY, identifier: profile.apiKeyIdentifier });
                 }
             });
 

@@ -228,8 +228,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     const { config, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
     config.activeChatProfile = 'p';
-    config.profiles = { 'p': { model: 'm', apiKey: 'k' } };
-    config.llmProviderForChat = {
+    config.profiles = { 'p': { model: 'm', isApiKeyRequired: false } };    config.llmProviderForChat = {
         query: async () => null,
         queryStream: async () => {
           eventBus.emit('agent:token', { token: 'x', type: 'content' });
@@ -1070,8 +1069,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     config.profiles = {
         'test-profile': {
           model: 'test-model',
-          apiKey: '${TEST_KEY}',
-          apiKeyPlaceholder: 'TEST_KEY'
+          apiKeyIdentifier: 'TEST_KEY'
           // resolvedApiKey is missing
         }
     };

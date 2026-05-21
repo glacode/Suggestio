@@ -55,7 +55,8 @@ describe("providerFactory", () => {
         profiles: {
             openai: {
                 endpoint: "http://api.openai.com",
-                apiKey: "test-key",
+                apiKeyIdentifier: "test-identifier",
+                resolvedApiKey: "test-key",
                 model: "gpt-4"
             }
         }
@@ -73,14 +74,13 @@ describe("providerFactory", () => {
     }));
   });
 
-  it("should prefer resolvedApiKey over apiKey", () => {
+  it("should use empty string if resolvedApiKey is missing", () => {
       const config = createDefaultConfig({
           activeChatProfile: "openai",
           profiles: {
               openai: {
                   endpoint: "http://api.openai.com",
-                  apiKey: "old-key",
-                  resolvedApiKey: "resolved-key",
+                  apiKeyIdentifier: "old-key",
                   model: "gpt-4"
               }
           }
@@ -89,7 +89,7 @@ describe("providerFactory", () => {
       getLlmProvider(config, mockHttpClient, mockEventBus);
 
       expect(OpenAICompatibleProvider).toHaveBeenCalledWith(expect.objectContaining({
-          apiKey: "resolved-key",
+          apiKey: "",
       }));
   });
 
@@ -98,7 +98,8 @@ describe("providerFactory", () => {
         activeChatProfile: "openai",
         profiles: {
             openai: {
-                apiKey: "test-key",
+                apiKeyIdentifier: "test-key",
+                resolvedApiKey: "resolved-key",
                 model: "gpt-4"
             }
         }
@@ -117,7 +118,8 @@ describe("providerFactory", () => {
         profiles: {
             openai: {
                 endpoint: "http://api.openai.com",
-                apiKey: "test-key",
+                apiKeyIdentifier: "test-key",
+                resolvedApiKey: "resolved-key",
                 model: "gpt-4"
             }
         }
@@ -138,7 +140,8 @@ describe("providerFactory", () => {
         profiles: {
             gemini: {
                 type: "gemini",
-                apiKey: "gemini-key",
+                apiKeyIdentifier: "gemini-identifier",
+                resolvedApiKey: "gemini-key",
                 model: "gemini-pro"
             }
         }
@@ -157,7 +160,8 @@ describe("providerFactory", () => {
         profiles: {
             unknown: {
                 endpoint: "http://endpoint.com",
-                apiKey: "test-key",
+                apiKeyIdentifier: "test-key",
+                resolvedApiKey: "resolved-key",
                 model: "test-model"
             }
         }

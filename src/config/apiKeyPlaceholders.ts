@@ -13,14 +13,10 @@ export function extractApiKeyPlaceholders(config: IConfig): string[] {
   const placeholders = new Set<string>();
 
   for (const profileKey of Object.keys(config.profiles)) {
-    const apiKeyValue = config.profiles[profileKey].apiKey;
-
-    const match = typeof apiKeyValue === "string"
-      ? apiKeyValue.match(/^\$\{(\w+)\}$/)
-      : null;
-
-    if (match) {
-      placeholders.add(match[1]);
+    const profile = config.profiles[profileKey];
+    
+    if (profile.isApiKeyRequired !== false && profile.apiKeyIdentifier) {
+      placeholders.add(profile.apiKeyIdentifier);
     }
   }
 

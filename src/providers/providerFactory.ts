@@ -41,7 +41,7 @@ export function getLlmProvider(
   }
 
   // 4. Determine the API key (prefer runtime-resolved keys from SecretStorage over literal values)
-  const apiKey = profileConfig.resolvedApiKey ?? profileConfig.apiKey;
+  const apiKey = profileConfig.resolvedApiKey ?? "";
 
   // 5. Instantiate the provider based on the configured 'type'
   //    If 'type' is missing, we default to OpenAI-compatible logic.

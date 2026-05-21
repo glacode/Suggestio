@@ -284,7 +284,7 @@ export const createMockConfigProvider = (): jest.Mocked<IConfigProvider> => ({
 
 export const createMockProfileConfig = (overrides: Partial<IProfileConfig> = {}): IProfileConfig => ({
     model: "fake-model",
-    apiKey: "fake-key",
+    apiKeyIdentifier: "fake-key",
     ...overrides
 });
 

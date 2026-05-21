@@ -24,12 +24,12 @@ describe('ConfigProcessor', () => {
     };
   });
 
-  describe('processConfig', () => {
-    it('resolves a plain string API key', async () => {
+describe('processConfig', () => {
+    it('skips resolution if isApiKeyRequired is false', async () => {
       const rawJson = JSON.stringify({
         activeChatProfile: 'provider1',
         profiles: {
-          provider1: { endpoint: 'https://api.example.com', model: 'gpt-4', apiKey: 'my-key' }
+          provider1: { endpoint: 'https://api.example.com', model: 'gpt-4', isApiKeyRequired: false }
         },
         anonymizer: { enabled: false, words: [] }
       });
@@ -37,16 +37,15 @@ describe('ConfigProcessor', () => {
       const configContainer: IConfigContainer = await configProcessor.processConfig({ default: rawJson }, mockISecretManager, eventBus, httpClient);
 
       const provider = configContainer.config.profiles.provider1;
-      expect(provider.resolvedApiKey).toBe('my-key');
-      expect(provider.apiKeyPlaceholder).toBeUndefined();
+      expect(provider.resolvedApiKey).toBe("");
     });
 
     it('preserves excludeFromChat property', async () => {
       const rawJson = JSON.stringify({
         activeChatProfile: 'provider1',
         profiles: {
-          provider1: { model: 'gpt-4', apiKey: 'key', excludeFromChat: true },
-          provider2: { model: 'gpt-4', apiKey: 'key', excludeFromChat: false }
+          provider1: { model: 'gpt-4', apiKeyIdentifier: 'key', excludeFromChat: true },
+          provider2: { model: 'gpt-4', apiKeyIdentifier: 'key', excludeFromChat: false }
         },
         anonymizer: { enabled: false, words: [] }
       });
@@ -57,12 +56,12 @@ describe('ConfigProcessor', () => {
       expect(configContainer.config.profiles.provider2.excludeFromChat).toBe(false);
     });
 
-    it('resolves a placeholder from environment variable', async () => {
+    it('resolves a key from environment variable', async () => {
       process.env.TEST_KEY = 'env-secret';
       const rawJson = JSON.stringify({
         activeChatProfile: 'provider1',
         profiles: {
-          provider1: { endpoint: 'https://api.example.com', model: 'gpt-4', apiKey: '${TEST_KEY}' }
+          provider1: { endpoint: 'https://api.example.com', model: 'gpt-4', apiKeyIdentifier: 'TEST_KEY' }
         },
         anonymizer: { enabled: false, words: [] }
       });
@@ -71,14 +70,13 @@ describe('ConfigProcessor', () => {
 
       const provider = configContainer.config.profiles.provider1;
       expect(provider.resolvedApiKey).toBe('env-secret');
-      expect(provider.apiKeyPlaceholder).toBe('TEST_KEY');
     });
 
-    it('resolves a placeholder using secret manager (passive) if env var not set', async () => {
+    it('resolves a key using secret manager (passive) if env var not set', async () => {
       const rawJson = JSON.stringify({
         activeChatProfile: 'provider1',
         profiles: {
-          provider1: { endpoint: 'https://api.example.com', model: 'gpt-4', apiKey: '${TEST_KEY}' }
+          provider1: { endpoint: 'https://api.example.com', model: 'gpt-4', apiKeyIdentifier: 'TEST_KEY' }
         },
         anonymizer: { enabled: false, words: [] }
       });
@@ -87,7 +85,6 @@ describe('ConfigProcessor', () => {
 
       const provider = configContainer.config.profiles.provider1;
       expect(provider.resolvedApiKey).toBe('secret-for-TEST_KEY');
-      expect(provider.apiKeyPlaceholder).toBe('TEST_KEY');
       expect(mockISecretManager.getSecret).toHaveBeenCalledWith('TEST_KEY');
       expect(mockISecretManager.getOrRequestAPIKey).not.toHaveBeenCalled();
     });
@@ -96,7 +93,7 @@ describe('ConfigProcessor', () => {
       const rawJson = JSON.stringify({
         activeChatProfile: 'provider1',
         profiles: {
-          provider1: { endpoint: 'https://api.example.com', model: 'gpt-4', apiKey: '${TEST_KEY}' }
+          provider1: { endpoint: 'https://api.example.com', model: 'gpt-4', apiKeyIdentifier: 'TEST_KEY' }
         },
         anonymizer: { enabled: false, words: [] }
       });
@@ -111,11 +108,11 @@ describe('ConfigProcessor', () => {
       expect(mockISecretManager.getOrRequestAPIKey).toHaveBeenCalledWith('TEST_KEY');
     });
 
-    it('resolves an empty apiKey using secret manager', async () => {
+    it('does not resolve anything if apiKeyIdentifier is missing and isApiKeyRequired is true (default)', async () => {
       const rawJson = JSON.stringify({
         activeChatProfile: 'provider1',
         profiles: {
-          provider1: { endpoint: 'https://api.example.com', model: 'gpt-4', apiKey: '' }
+          provider1: { endpoint: 'https://api.example.com', model: 'gpt-4' }
         },
         anonymizer: { enabled: false, words: [] }
       });
@@ -123,8 +120,7 @@ describe('ConfigProcessor', () => {
       const configContainer: IConfigContainer = await configProcessor.processConfig({ default: rawJson }, mockISecretManager, eventBus, httpClient);
 
       const provider = configContainer.config.profiles.provider1;
-      expect(provider.resolvedApiKey).toBe('');
-      expect(provider.apiKeyPlaceholder).toBeUndefined();
+      expect(provider.resolvedApiKey).toBeUndefined();
       expect(mockISecretManager.getOrRequestAPIKey).not.toHaveBeenCalled();
     });
 
@@ -132,7 +128,7 @@ describe('ConfigProcessor', () => {
       const rawJson = JSON.stringify({
         activeChatProfile: 'provider1',
         profiles: {
-          provider1: { endpoint: 'https://api.example.com', model: 'gpt-4', apiKey: 'key' }
+          provider1: { endpoint: 'https://api.example.com', model: 'gpt-4', apiKeyIdentifier: 'key' }
         }
       });
       const configContainer = await configProcessor.processConfig({ default: rawJson }, mockISecretManager, eventBus, httpClient);
@@ -150,7 +146,7 @@ describe('ConfigProcessor', () => {
       const rawJson = JSON.stringify({
         activeChatProfile: 'provider1',
         profiles: {
-          provider1: { endpoint: 'https://api.example.com', model: 'gpt-4', apiKey: 'key' }
+          provider1: { endpoint: 'https://api.example.com', model: 'gpt-4', apiKeyIdentifier: 'key' }
         },
         anonymizer: { words: ['test'] }
       });
@@ -163,7 +159,7 @@ describe('ConfigProcessor', () => {
       const rawJson = JSON.stringify({
         activeChatProfile: 'provider1',
         profiles: {
-          provider1: { endpoint: 'https://api.example.com', model: 'gpt-4', apiKey: 'key' }
+          provider1: { endpoint: 'https://api.example.com', model: 'gpt-4', apiKeyIdentifier: 'key' }
         },
         anonymizer: { enabled: false, words: [] }
       });
@@ -181,21 +177,21 @@ describe('ConfigProcessor', () => {
         activeChatProfile: 'chatP',
         activeCompletionProfile: 'compP',
         profiles: {
-          chatP: { endpoint: 'https://chat.example.com', model: 'chat-model', apiKey: 'chat-key' },
-          compP: { endpoint: 'https://comp.example.com', model: 'comp-model', apiKey: 'comp-key' }
+          chatP: { endpoint: 'https://chat.example.com', model: 'chat-model', apiKeyIdentifier: 'chat-key' },
+          compP: { endpoint: 'https://comp.example.com', model: 'comp-model', apiKeyIdentifier: 'comp-key' }
         },
         anonymizer: { enabled: false, words: [] }
       });
-      const configContainer = await configProcessor.processConfig({ default: rawJson }, mockISecretManager, eventBus, httpClient);
-      expect(configContainer.config.profiles.chatP.resolvedApiKey).toBe('chat-key');
-      expect(configContainer.config.profiles.compP.resolvedApiKey).toBe('comp-key');
+      const configContainer: IConfigContainer = await configProcessor.processConfig({ default: rawJson }, mockISecretManager, eventBus, httpClient);
+      expect(configContainer.config.profiles.chatP.resolvedApiKey).toBe('secret-for-chat-key');
+      expect(configContainer.config.profiles.compP.resolvedApiKey).toBe('secret-for-comp-key');
     });
 
-    it('handles non-string apiKey gracefully', async () => {
+    it('handles non-string apiKeyIdentifier gracefully', async () => {
       const rawJson = JSON.stringify({
         activeChatProfile: 'provider1',
         profiles: {
-          provider1: { endpoint: 'https://api.example.com', model: 'gpt-4', apiKey: 123 }
+          provider1: { endpoint: 'https://api.example.com', model: 'gpt-4', apiKeyIdentifier: 123 }
         },
         anonymizer: { enabled: false, words: [] }
       });
@@ -218,7 +214,7 @@ describe('ConfigProcessor', () => {
         activeChatProfile: 'chatP',
         activeCompletionProfile: 'missingP',
         profiles: {
-          chatP: { endpoint: 'https://chat.example.com', model: 'chat-model', apiKey: 'chat-key' }
+          chatP: { endpoint: 'https://chat.example.com', model: 'chat-model', apiKeyIdentifier: 'chat-key' }
         },
         anonymizer: { enabled: false, words: [] }
       });
@@ -230,7 +226,7 @@ describe('ConfigProcessor', () => {
   describe('getChatProfileIds', () => {
     it('should include profiles that have neither supportsTools nor excludeFromChat set', () => {
       const profiles: any = {
-        'p1': { model: 'm1', apiKey: 'k1' }
+        'p1': { model: 'm1', apiKeyIdentifier: 'k1' }
       };
       const result = getChatProfileIds(profiles);
       expect(result).toContain('p1');
@@ -238,7 +234,7 @@ describe('ConfigProcessor', () => {
 
     it('should exclude profiles where supportsTools is explicitly false', () => {
       const profiles: any = {
-        'p1': { model: 'm1', apiKey: 'k1', supportsTools: false }
+        'p1': { model: 'm1', apiKeyIdentifier: 'k1', supportsTools: false }
       };
       const result = getChatProfileIds(profiles);
       expect(result).not.toContain('p1');
@@ -246,7 +242,7 @@ describe('ConfigProcessor', () => {
 
     it('should exclude profiles where excludeFromChat is explicitly true', () => {
       const profiles: any = {
-        'p1': { model: 'm1', apiKey: 'k1', excludeFromChat: true }
+        'p1': { model: 'm1', apiKeyIdentifier: 'k1', excludeFromChat: true }
       };
       const result = getChatProfileIds(profiles);
       expect(result).not.toContain('p1');
@@ -254,7 +250,7 @@ describe('ConfigProcessor', () => {
 
     it('should include profiles where supportsTools is true and excludeFromChat is false', () => {
       const profiles: any = {
-        'p1': { model: 'm1', apiKey: 'k1', supportsTools: true, excludeFromChat: false }
+        'p1': { model: 'm1', apiKeyIdentifier: 'k1', supportsTools: true, excludeFromChat: false }
       };
       const result = getChatProfileIds(profiles);
       expect(result).toContain('p1');
@@ -262,8 +258,8 @@ describe('ConfigProcessor', () => {
 
     it('should exclude if either condition is met', () => {
       const profiles: any = {
-        'p1': { model: 'm1', apiKey: 'k1', supportsTools: false, excludeFromChat: false },
-        'p2': { model: 'm2', apiKey: 'k2', supportsTools: true, excludeFromChat: true }
+        'p1': { model: 'm1', apiKeyIdentifier: 'k1', supportsTools: false, excludeFromChat: false },
+        'p2': { model: 'm2', apiKeyIdentifier: 'k2', supportsTools: true, excludeFromChat: true }
       };
       const result = getChatProfileIds(profiles);
       expect(result).toHaveLength(0);
@@ -277,8 +273,8 @@ describe('ConfigProcessor', () => {
       const rawJson = JSON.stringify({
         activeChatProfile: 'provider1',
         profiles: {
-          provider1: { endpoint: 'https://api.example.com', model: 'gpt-4', apiKey: 'key' },
-          provider2: { endpoint: 'https://api2.example.com', model: 'gpt-4-2', apiKey: 'key2' }
+          provider1: { endpoint: 'https://api.example.com', model: 'gpt-4', apiKeyIdentifier: 'key' },
+          provider2: { endpoint: 'https://api2.example.com', model: 'gpt-4-2', apiKeyIdentifier: 'key2' }
         },
         anonymizer: { enabled: false, words: [] }
       });
@@ -289,7 +285,7 @@ describe('ConfigProcessor', () => {
       eventBus.emit('chatProfileChanged', 'provider2');
       await new Promise(resolve => setTimeout(resolve, 50)); 
       expect(configContainer.config.activeChatProfile).toBe('provider2');
-      expect(configContainer.config.profiles.provider2.resolvedApiKey).toBe('key2');
+      expect(configContainer.config.profiles.provider2.resolvedApiKey).toBe('secret-for-key2');
     });
 
     it('does not update active chat profile if profileId does not exist', async () => {
@@ -309,7 +305,7 @@ describe('ConfigProcessor', () => {
       eventBus.emit('completionProfileChanged', 'provider2');
       await new Promise(resolve => setTimeout(resolve, 50));
       expect(configContainer.config.activeCompletionProfile).toBe('provider2');
-      expect(configContainer.config.profiles.provider2.resolvedApiKey).toBe('key2');
+      expect(configContainer.config.profiles.provider2.resolvedApiKey).toBe('secret-for-key2');
     });
   });
 });

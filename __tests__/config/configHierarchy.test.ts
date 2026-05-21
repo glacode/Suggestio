@@ -32,7 +32,7 @@ describe('Config Hierarchy', () => {
         enabled: false
       },
       profiles: {
-        provider1: { model: 'gpt-4', apiKey: 'key' }
+        provider1: { model: 'gpt-4', isApiKeyRequired: false }
       },
       anonymizer: { enabled: false, words: [] }
     });
@@ -48,7 +48,7 @@ describe('Config Hierarchy', () => {
     const rawJson = JSON.stringify({
       activeChatProfile: 'provider1',
       profiles: {
-        provider1: { model: 'gpt-4', apiKey: 'key' }
+        provider1: { model: 'gpt-4', isApiKeyRequired: false }
       },
       anonymizer: { enabled: false, words: [] }
     });
@@ -68,7 +68,7 @@ describe('Config Hierarchy', () => {
     const rawJson = JSON.stringify({
       activeChatProfile: 'provider1',
       profiles: {
-        provider1: { model: 'gpt-4', apiKey: 'key' }
+        provider1: { model: 'gpt-4', isApiKeyRequired: false }
       },
       anonymizer: { enabled: false, words: ['json-word'] }
     });
@@ -87,8 +87,8 @@ describe('Config Hierarchy', () => {
     const defaultRaw = JSON.stringify({
       activeChatProfile: 'defaultP',
       profiles: {
-        'defaultP': { model: 'm-default', apiKey: 'k-default' },
-        'sharedP': { model: 'm-default-shared', apiKey: 'k-default-shared' }
+        'defaultP': { model: 'm-default', apiKeyIdentifier: 'k-default' },
+        'sharedP': { model: 'm-default-shared', apiKeyIdentifier: 'k-default-shared' }
       },
       anonymizer: { enabled: false, words: ['nonsense'] }
     });
@@ -96,8 +96,8 @@ describe('Config Hierarchy', () => {
     const workspaceRaw = JSON.stringify({
       activeChatProfile: 'workspaceP',
       profiles: {
-        'workspaceP': { model: 'm-workspace', apiKey: 'k-workspace' },
-        'sharedP': { model: 'm-workspace-shared', apiKey: 'k-workspace-shared' }
+        'workspaceP': { model: 'm-workspace', apiKeyIdentifier: 'k-workspace' },
+        'sharedP': { model: 'm-workspace-shared', apiKeyIdentifier: 'k-workspace-shared' }
       },
       anonymizer: { words: ['workspace-word'] }
     });

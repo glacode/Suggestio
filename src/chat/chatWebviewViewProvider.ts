@@ -303,18 +303,18 @@ export class ChatWebviewViewProvider {
     private async _getProfileMetadata(completionProfiles: string[], activeProfile: string, activeCompletionProfile: string) {
         return await Promise.all(completionProfiles.map(async (id) => {
             const profile = this._config.profiles[id];
-            const apiKeyValue = profile?.apiKey;
-            const match = typeof apiKeyValue === "string" ? apiKeyValue.match(/^\$\{(\w+)\}$/) : null;
-            const placeholder = match ? match[1] : undefined;
-            const hasApiKey = placeholder ? !!(await this._secretManager.getSecret(placeholder)) : false;
+            const isApiKeyRequired = profile?.isApiKeyRequired !== false;
+            const identifier = profile?.apiKeyIdentifier;
+            
+            const hasApiKey = (isApiKeyRequired && identifier) ? !!(await this._secretManager.getSecret(identifier)) : false;
 
             return {
                 id,
                 model: profile?.model || '',
                 endpoint: profile?.endpoint || '',
-                needsApiKey: !!placeholder,
+                needsApiKey: isApiKeyRequired,
                 hasApiKey,
-                apiKeyPlaceholder: placeholder,
+                apiKeyIdentifier: identifier,
                 isActiveChat: id === activeProfile,
                 isActiveCompletion: id === activeCompletionProfile
             };
@@ -424,10 +424,10 @@ export class ChatWebviewViewProvider {
                     // Lazy resolution of API key if missing
                     const activeProfile = this._config.activeChatProfile;
                     const profileConfig = this._config.profiles[activeProfile];
-                    if (profileConfig && !profileConfig.resolvedApiKey && profileConfig.apiKeyPlaceholder) {
+                    if (profileConfig && !profileConfig.resolvedApiKey && profileConfig.apiKeyIdentifier) {
                         // Show notification that we need API key
                         this._eventBus.emit('agent:notification', {
-                            text: `Waiting for API key "${profileConfig.apiKeyPlaceholder}" to be entered...`
+                            text: `Waiting for API key "${profileConfig.apiKeyIdentifier}" to be entered...`
                         });
 
                         // Prompt user for API key (with forcePrompt=true)
@@ -521,7 +521,7 @@ export class ChatWebviewViewProvider {
                 const metadata = await this._getProfileMetadata(completionProfiles, this._profileAccessor.getActiveProfile(), message.model);
                 this._view?.webview.postMessage({ type: EXTENSION_EVENTS.UPDATE_PROFILE_METADATA, metadata });
             } else if (message.command === WEBVIEW_COMMANDS.EDIT_API_KEY) {
-                await this._secretManager.updateAPIKey(message.placeholder);
+                await this._secretManager.updateAPIKey(message.identifier);
                 // Refresh background provider instances with new key
                 await configProcessor.updateProviders(this._config, this._eventBus, this._secretManager, this._httpClient);
                 // Send updated metadata to the webview to refresh the overlay
@@ -532,7 +532,7 @@ export class ChatWebviewViewProvider {
                     metadata: updatedMetadata
                 });
             } else if (message.command === WEBVIEW_COMMANDS.DELETE_API_KEY) {
-                await this._secretManager.deleteSecret(message.placeholder);
+                await this._secretManager.deleteSecret(message.identifier);
                 // Refresh background provider instances
                 await configProcessor.updateProviders(this._config, this._eventBus, this._secretManager, this._httpClient);
                 // Send updated metadata to the webview to refresh the overlay

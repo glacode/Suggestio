@@ -134,7 +134,7 @@ describe('SettingsOverlay Unit Tests', () => {
                     model: 'model-1',
                     needsApiKey: true,
                     hasApiKey: false,
-                    apiKeyPlaceholder: 'P1_KEY',
+                    apiKeyIdentifier: 'P1_KEY',
                     isActiveChat: true,
                     isActiveCompletion: true
                 },
@@ -195,13 +195,13 @@ describe('SettingsOverlay Unit Tests', () => {
             editBtn.click();
             expect(mockVscode.messages).toContainEqual({
                 command: WEBVIEW_COMMANDS.EDIT_API_KEY,
-                placeholder: 'P1_KEY'
+                identifier: 'P1_KEY'
             });
 
             deleteBtn.click();
             expect(mockVscode.messages).toContainEqual({
                 command: WEBVIEW_COMMANDS.DELETE_API_KEY,
-                placeholder: 'P1_KEY'
+                identifier: 'P1_KEY'
             });
         });
 
