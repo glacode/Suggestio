@@ -65,19 +65,15 @@ export function registerCommands(
   // Enables inline completion by setting a VS Code context and notifying the extension via the event bus.
   context.subscriptions.push(
     vscode.commands.registerCommand('suggestio.enableInlineCompletion', async () => {
-      await vscode.workspace.getConfiguration('suggestio').update('inlineCompletion.enabled', true, vscode.ConfigurationTarget.Global);
-      // Notify other parts of the extension so they can update their behavior (mirrors modelChanged flow)
-      eventBus.emit('inlineCompletionToggled', true);
+      await vscode.workspace.getConfiguration('suggestio').update('inlineCompletion.enabled', true, vscode.ConfigurationTarget.Workspace);
     })
   );
 
   // Disables inline completion by setting a VS Code context and notifying the extension via the event bus.
   context.subscriptions.push(
     vscode.commands.registerCommand('suggestio.disableInlineCompletion', async () => {
-      await vscode.workspace.getConfiguration('suggestio').update('inlineCompletion.enabled', false, vscode.ConfigurationTarget.Global);
-      // Notify other parts of the extension so they can update their behavior (mirrors modelChanged flow)
-      eventBus.emit('inlineCompletionToggled', false);
-    })
+      await vscode.workspace.getConfiguration('suggestio').update('inlineCompletion.enabled', false, vscode.ConfigurationTarget.Workspace);
+     })
   );
 
   // Enables auto-accept edits by setting a VS Code context and notifying the extension via the event bus.
