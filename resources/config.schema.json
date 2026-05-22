@@ -56,7 +56,16 @@
             "description": "Whether to exclude this model from the chat interface. This is useful for models where the free tier is too restrictive for chat (e.g., very small context windows or low Tokens Per Minute/TPM limits) but remains useful for inline completions."
           }
         },
-        "required": ["model"]
+        "required": ["model"],
+        "anyOf": [
+          {
+            "properties": { "isApiKeyRequired": { "const": false } },
+            "required": ["isApiKeyRequired"]
+          },
+          {
+            "required": ["apiKeyIdentifier"]
+          }
+        ]
       }
     },
     "anonymizer": {
