@@ -1,7 +1,6 @@
-import { IConfigContainer, IConfigProvider, IDisposable, IEventBus, IHttpClient } from '../types.js';
+import { IConfigContainer, IConfigProvider, IDisposable, IEventBus, IHttpClient, IVSCodeSettings } from '../types.js';
 import { defaultLogger, parseLogLevel } from '../log/logger.js';
 import { CONFIG_LOGS } from '../constants/messages.js';
-import { CONFIG_DEFAULTS } from '../constants/config.js';
 import { configProcessor, ISecretManager } from '../config/configProcessor.js';
 
 /**
@@ -23,19 +22,7 @@ export function registerConfigHandler(
         const newLogLevel = configProvider.getLogLevel();
         const newMaxAgentIterations = configProvider.getMaxAgentIterations();
         const newAnonymizerEnabled = configProvider.getAnonymizerEnabled();
-        const newAnonymizerWords = configProvider.getAnonymizerWords();
-        const newAnonymizerEntropy = configProvider.getAnonymizerEntropy();
-        const newAnonymizerMinLength = configProvider.getAnonymizerMinLength();
         const newInlineCompletionEnabled = configProvider.getInlineCompletionEnabled();
-        const newInlineCompletionSupportedLanguages = configProvider.getInlineCompletionSupportedLanguages();
-        const newInlineCompletionEnableInUntitledEditors = configProvider.getInlineCompletionEnableInUntitledEditors();
-        const newMaxRetries = configProvider.getMaxRetries();
-        const newInitialDelay = configProvider.getInitialDelay();
-        const newMaxSavedChatSessions = configProvider.getMaxSavedChatSessions();
-
-        const newProfiles = configProvider.getProfiles();
-        const newActiveChatProfile = configProvider.getActiveChatProfile();
-        const newActiveCompletionProfile = configProvider.getActiveCompletionProfile();
 
         eventBus.emit('log', { 
             level: 'info', 
@@ -45,50 +32,41 @@ export function registerConfigHandler(
         // Update logger live
         defaultLogger.setLogLevel(parseLogLevel(newLogLevel));
         
-        // Update the shared config object by reference
-        if (configContainer.config) {
-          const oldInlineEnabled = configContainer.config.inlineCompletion.enabled;
-          configContainer.config.logLevel = newLogLevel;
-          configContainer.config.maxAgentIterations = newMaxAgentIterations;
-          configContainer.config.inlineCompletion.enabled = newInlineCompletionEnabled;
-          configContainer.config.inlineCompletion.supportedLanguages = newInlineCompletionSupportedLanguages;
-          configContainer.config.inlineCompletion.enableInUntitledEditors = newInlineCompletionEnableInUntitledEditors;
-          configContainer.config.maxRetries = newMaxRetries;
-          configContainer.config.initialDelay = newInitialDelay;
-          configContainer.config.maxSavedChatSessions = newMaxSavedChatSessions;
+        // Authority: Sync the configuration stack
+        const vsCodeSettings: IVSCodeSettings = {
+            logLevel: newLogLevel,
+            maxAgentIterations: newMaxAgentIterations,
+            anonymizer: {
+                enabled: newAnonymizerEnabled,
+                words: configProvider.getAnonymizerWords(),
+                sensitiveData: {
+                    allowedEntropy: configProvider.getAnonymizerEntropy(),
+                    minLength: configProvider.getAnonymizerMinLength()
+                }
+            },
+            inlineCompletion: {
+                enabled: newInlineCompletionEnabled,
+                supportedLanguages: configProvider.getInlineCompletionSupportedLanguages(),
+                enableInUntitledEditors: configProvider.getInlineCompletionEnableInUntitledEditors()
+            },
+            maxRetries: configProvider.getMaxRetries(),
+            initialDelay: configProvider.getInitialDelay(),
+            maxSavedChatSessions: configProvider.getMaxSavedChatSessions(),
+            profiles: configProvider.getProfiles(),
+            activeChatProfile: configProvider.getActiveChatProfile(),
+            activeCompletionProfile: configProvider.getActiveCompletionProfile()
+        };
 
-          if (newInlineCompletionEnabled !== oldInlineEnabled) {
-            eventBus.emit('inlineCompletionToggled', newInlineCompletionEnabled);
-          }
+        const oldInlineEnabled = configContainer.config?.inlineCompletion?.enabled;
 
-          if (newProfiles) {
-            // Update profiles list. We keep the base ones and apply overrides.
-            configContainer.config.profiles = { ...configContainer.config.profiles, ...newProfiles };
-          }
-          if (newActiveChatProfile) {
-            configContainer.config.activeChatProfile = newActiveChatProfile;
-          }
-          if (newActiveCompletionProfile) {
-            configContainer.config.activeCompletionProfile = newActiveCompletionProfile;
-          }
+        await configProcessor.syncConfig(configContainer, vsCodeSettings, eventBus, secretManager, httpClient);
 
-          if (newAnonymizerEnabled !== undefined) {
-            configContainer.config.anonymizer.enabled = newAnonymizerEnabled;
-          }
-          if (newAnonymizerWords !== undefined) {
-            configContainer.config.anonymizer.words = newAnonymizerWords;
-          }
-          if (newAnonymizerEntropy !== undefined || newAnonymizerMinLength !== undefined) {
-            configContainer.config.anonymizer.sensitiveData = {
-              ...configContainer.config.anonymizer.sensitiveData,
-              allowedEntropy: newAnonymizerEntropy ?? configContainer.config.anonymizer.sensitiveData?.allowedEntropy ?? CONFIG_DEFAULTS.ANONYMIZER_ALLOWED_ENTROPY,
-              minLength: newAnonymizerMinLength ?? configContainer.config.anonymizer.sensitiveData?.minLength ?? CONFIG_DEFAULTS.ANONYMIZER_MIN_LENGTH
-            };
-          }
-
-          // Refresh provider instances with new settings
-          await configProcessor.updateProviders(configContainer.config, eventBus, secretManager, httpClient);
+        if (configContainer.config.inlineCompletion.enabled !== oldInlineEnabled) {
+          eventBus.emit('inlineCompletionToggled', configContainer.config.inlineCompletion.enabled);
         }
+
+        // Notify listeners that configuration has changed
+        eventBus.emit('configChanged', undefined);
       }
     })
   );

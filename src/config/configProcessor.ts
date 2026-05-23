@@ -46,7 +46,30 @@ class ConfigProcessor {
         // 3. Resolve keys for active profiles and initialize providers
         await this.updateProviders(config, eventBus, secretManager, httpClient);
 
-        return { config };
+        return { config, rawConfigs };
+    }
+
+    /**
+     * Authority for updating the configuration state.
+     * Re-runs the full merging logic to ensure the config is a clean reflection of all layers.
+     */
+    public async syncConfig(
+        container: IConfigContainer,
+        vsCodeSettings: IVSCodeSettings,
+        eventBus: IEventBus,
+        secretManager: ISecretManager,
+        httpClient: IHttpClient
+    ) {
+        const newConfig = this.parseAndMergeConfigs(container.rawConfigs, vsCodeSettings);
+        
+        // Preserve state that isn't part of the static config stack
+        newConfig.anonymizerInstance = container.config.anonymizerInstance;
+        
+        // Update the reference in the container
+        container.config = newConfig;
+
+        // Re-resolve and re-initialize
+        await this.updateProviders(container.config, eventBus, secretManager, httpClient);
     }
 
     /**

@@ -37,7 +37,10 @@ describe('registerConfigHandler', () => {
     config.maxRetries = CONFIG_DEFAULTS.MAX_RETRIES;
     config.initialDelay = CONFIG_DEFAULTS.INITIAL_DELAY;
     
-    configContainer = { config };
+    configContainer = { 
+      config,
+      rawConfigs: { default: JSON.stringify({ activeChatProfile: 'test', profiles: {} }) }
+    };
     defaultLogger.setLogLevel(LogLevel.Info);
 
     mockConfigProvider.onDidChangeConfiguration.mockImplementation((listener: (e: IConfigChangeEvent) => void) => {

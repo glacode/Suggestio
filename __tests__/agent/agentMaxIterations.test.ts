@@ -53,7 +53,7 @@ describe("Agent Max Iterations", () => {
         });
 
         const agent = new Agent({
-            config,
+            configContainer: { config, rawConfigs: { default: '{}' } },
             chatHistoryManager: mockChatHistoryManager,
             tools: [mockTool],
             eventBus: mockEventBus
@@ -96,7 +96,7 @@ describe("Agent Max Iterations", () => {
         });
 
         const agent = new Agent({
-            config,
+            configContainer: { config, rawConfigs: { default: '{}' } },
             chatHistoryManager: mockChatHistoryManager,
             tools: [mockTool],
             eventBus: mockEventBus

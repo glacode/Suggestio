@@ -1,4 +1,4 @@
-import { IConfig, IToolImplementation } from "../types.js";
+import { IToolImplementation, IConfigContainer } from "../types.js";
 import type { IChatHistoryManager, IPrompt, IChatMessage, ToolCall, IChatAgent } from "../types.js";
 import { IEventBus } from "../utils/eventBus.js";
 import { createEventLogger } from "../log/eventLogger.js";
@@ -10,8 +10,8 @@ import { adaptiveMiddleTruncate } from "../utils/textUtils.js";
  * Arguments for the Agent constructor.
  */
 export interface IAgentArgs {
-    /** The configuration for the agent. */
-    config: IConfig;
+    /** The configuration container for the agent. */
+    configContainer: IConfigContainer;
     /** The chat history manager for the agent. */
     chatHistoryManager: IChatHistoryManager;
     /** The tools available to the agent. */
@@ -21,7 +21,7 @@ export interface IAgentArgs {
 }
 
 export class Agent implements IChatAgent {
-    private config: IConfig;
+    private configContainer: IConfigContainer;
     private chatHistoryManager: IChatHistoryManager;
     private tools: IToolImplementation<any>[];
     private eventBus: IEventBus;
@@ -29,12 +29,12 @@ export class Agent implements IChatAgent {
     private logger: ReturnType<typeof createEventLogger>;
 
     constructor({
-        config,
+        configContainer,
         chatHistoryManager,
         tools = [],
         eventBus
     }: IAgentArgs) {
-        this.config = config;
+        this.configContainer = configContainer;
         this.chatHistoryManager = chatHistoryManager;
         this.tools = tools;
         this.eventBus = eventBus;
@@ -45,7 +45,7 @@ export class Agent implements IChatAgent {
         const toolDefinitions = this.tools.map(t => t.definition);
         let currentPrompt = prompt;
         let iterations = 0;
-        const maxIterations = this.config.maxAgentIterations;
+        const maxIterations = this.configContainer.config.maxAgentIterations;
 
         while (iterations < maxIterations) {
             if (signal?.aborted) {
@@ -97,7 +97,7 @@ export class Agent implements IChatAgent {
      * Queries the LLM provider for a response.
      */
     private async queryLLM(prompt: IPrompt, toolDefinitions: any[], signal?: AbortSignal): Promise<IChatMessage[]> {
-        return await this.config.llmProviderForChat!.queryStream(
+        return await this.configContainer.config.llmProviderForChat!.queryStream(
             prompt,
             toolDefinitions.length > 0 ? toolDefinitions : undefined,
             signal
@@ -193,7 +193,7 @@ export class Agent implements IChatAgent {
      * Adds the tool execution result (or error) to the chat history.
      */
     private recordToolResult(toolCallId: string, toolName: string, content: string, success: boolean): void {
-        const truncatedContent = adaptiveMiddleTruncate(content, this.config.toolResultMaxLength);
+        const truncatedContent = adaptiveMiddleTruncate(content, this.configContainer.config.toolResultMaxLength);
         this.logger.debug(AGENT_LOGS.TOOL_RESULT_RECORDED(toolCallId));
         this.eventBus.emit('agent:toolEnd', {
             toolCallId: toolCallId,

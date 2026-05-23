@@ -4,7 +4,7 @@ import { IChatHistoryManager } from "../../src/types.js";
 import { ChatPrompt } from "../../src/chat/chatPrompt.js";
 import { ChatHistoryManager } from "../../src/chat/chatHistoryManager.js";
 import { EventBus } from "../../src/utils/eventBus.js";
-import { FakeProvider, createDefaultConfig, createMockProfileConfig } from "../testUtils.js";
+import { FakeProvider, createMockConfigContainer, createMockProfileConfig } from "../testUtils.js";
 
 describe("Chat History Management (Unit Test)", () => {
     let chatHistoryManager: IChatHistoryManager;
@@ -23,7 +23,7 @@ describe("Chat History Management (Unit Test)", () => {
         ], eventBus);
 
         const agent = new Agent({
-            config: createDefaultConfig({
+            configContainer: createMockConfigContainer({
                 activeChatProfile: "FAKE",
                 llmProviderForChat: fakeProvider,
                 profiles: { FAKE: createMockProfileConfig() }

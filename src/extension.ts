@@ -238,7 +238,7 @@ export async function activate(context: vscode.ExtensionContext) {
     directoryCreator,
     directoryReader,
     fileDeleter,
-    configContainer.config
+    configContainer
   );
   const chatHistoryManager = new PersistentChatHistoryManager(baseHistoryManager, storage);
 
@@ -265,7 +265,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const toolUiProvider = new ToolUiProvider(tools);
 
   const agent = new Agent({
-    config: configContainer.config,
+    configContainer,
     chatHistoryManager,
     tools,
     eventBus
@@ -288,7 +288,7 @@ export async function activate(context: vscode.ExtensionContext) {
     fileReader: fileContentReader,
     eventBus,
     diffManager,
-    config: configContainer.config,
+    configContainer,
     configProvider,
     secretManager,
     httpClient: new NodeFetchClient(),
@@ -300,10 +300,10 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  registerCompletionProvider(context, configContainer.config, ignoreManager, eventBus);
+  registerCompletionProvider(context, configContainer, ignoreManager, eventBus);
   registerCommands(
     context,
-    configContainer.config,
+    configContainer,
     chatWebviewViewProvider,
     eventBus,
     windowProvider,

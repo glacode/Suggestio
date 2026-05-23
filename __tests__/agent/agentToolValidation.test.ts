@@ -51,7 +51,7 @@ describe("Agent Tool Argument Validation", () => {
         });
 
         const agent = new Agent({
-            config,
+            configContainer: { config, rawConfigs: { default: '{}' } },
             chatHistoryManager: mockHistoryManager,
             eventBus: mockEventBus,
             tools: [mockTool]
@@ -122,7 +122,7 @@ describe("Agent Tool Argument Validation", () => {
         });
 
         const agent = new Agent({
-            config,
+            configContainer: { config, rawConfigs: { default: '{}' } },
             chatHistoryManager: mockHistoryManager,
             eventBus: mockEventBus,
             tools: [mockTool]
@@ -187,7 +187,7 @@ describe("Agent Tool Argument Validation", () => {
         });
 
         const agent = new Agent({
-            config,
+            configContainer: { config, rawConfigs: { default: '{}' } },
             chatHistoryManager: mockHistoryManager,
             eventBus: mockEventBus,
             tools: [mockTool]

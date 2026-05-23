@@ -588,13 +588,9 @@ export class ChatManager {
         }
 
         const dropdownLabel = modelSelector.querySelector('.dropdown-label');
-        const dropdownContent = modelSelector.querySelector('.dropdown-content');
-        const chatProfileLabel = modelSelector.querySelector('.chat-profile-label');
         const sendIcon = document.querySelector('.send-icon');
 
         if (!(dropdownLabel instanceof HTMLElement) || 
-            !(dropdownContent instanceof HTMLElement) || 
-            !(chatProfileLabel instanceof HTMLElement) || 
             !(sendIcon instanceof HTMLElement)) {
             throw new Error('Dropdown elements not found');
         }
@@ -609,7 +605,34 @@ export class ChatManager {
         });
 
         const { profiles, activeProfile } = this.initialState;
+        this.renderProfileSelector(profiles, activeProfile);
+
+        dropdownLabel.addEventListener('click', () => {
+            const dropdownContent = modelSelector.querySelector('.dropdown-content');
+            if (dropdownContent instanceof HTMLElement) {
+                dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            const dropdownContent = modelSelector.querySelector('.dropdown-content');
+            if (dropdownContent instanceof HTMLElement && e.target instanceof Node && !modelSelector.contains(e.target)) {
+                dropdownContent.style.display = 'none';
+            }
+        });
+    }
+
+    private renderProfileSelector(profiles: string[], activeProfile: string) {
+        const modelSelector = document.getElementById('modelSelector');
+        const dropdownContent = modelSelector?.querySelector('.dropdown-content');
+        const chatProfileLabel = modelSelector?.querySelector('.chat-profile-label');
+
+        if (!dropdownContent || !chatProfileLabel) {
+            return;
+        }
+
         chatProfileLabel.textContent = activeProfile;
+        dropdownContent.innerHTML = '';
 
         profiles.forEach(profileId => {
             const option = document.createElement('a');
@@ -618,23 +641,15 @@ export class ChatManager {
             option.addEventListener('click', (e) => {
                 e.preventDefault();
                 chatProfileLabel.textContent = profileId;
-                dropdownContent.style.display = 'none';
+                if (dropdownContent instanceof HTMLElement) {
+                    dropdownContent.style.display = 'none';
+                }
                 this.vscode.postMessage({ 
                     command: WEBVIEW_COMMANDS.CHAT_PROFILE_CHANGED, 
                     model: profileId 
                 });
             });
             dropdownContent.appendChild(option);
-        });
-
-        dropdownLabel.addEventListener('click', () => {
-            dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
-        });
-
-        document.addEventListener('click', (e) => {
-            if (e.target instanceof Node && !modelSelector.contains(e.target)) {
-                dropdownContent.style.display = 'none';
-            }
         });
     }
 
@@ -683,8 +698,19 @@ export class ChatManager {
 
             if (type === EXTENSION_EVENTS.UPDATE_PROFILE_METADATA) {
                 this.initialState.profileMetadata = event.data.metadata;
+                if (event.data.profiles) {
+                    this.initialState.profiles = event.data.profiles;
+                }
+                if (event.data.activeProfile) {
+                    this.initialState.activeProfile = event.data.activeProfile;
+                }
+
                 try {
                     this.settingsOverlay.render(this.vscode, this.initialState);
+                    // Update dropdown if full profile list is provided
+                    if (event.data.profiles && event.data.activeProfile) {
+                        this.renderProfileSelector(event.data.profiles, event.data.activeProfile);
+                    }
                 } catch (e) {}
                 return;
             }

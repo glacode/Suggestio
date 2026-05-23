@@ -14,6 +14,7 @@ import {
   ITextDocument,
   IIgnoreManager,
   IConfig,
+  IConfigContainer,
   IChatHistoryManager,
   IStoredChatMessage,
   IProfileConfig,
@@ -306,6 +307,11 @@ export const createDefaultConfig = (overrides: Partial<IConfig> = {}): IConfig =
     maxSavedChatSessions: CONFIG_DEFAULTS.MAX_SAVED_CHAT_SESSIONS,
     autoAcceptEdits: false,
     ...overrides
+});
+
+export const createMockConfigContainer = (overrides: Partial<IConfig> = {}): IConfigContainer => ({
+    config: createDefaultConfig(overrides),
+    rawConfigs: { default: JSON.stringify({ activeChatProfile: 'test', profiles: {} }) }
 });
 
 export function createMockDomRect(overrides: Partial<DOMRect> = {}): DOMRect {

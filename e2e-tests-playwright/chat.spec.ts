@@ -18,8 +18,6 @@ function createTempWorkspace(): string {
 
 function writeMockConfig(workspace: string) {
     const mockConfig = {
-        activeChatProfile: "testProvider",
-        activeCompletionProfile: "testProvider",
         anonymizer: {
             words: ["secret"]
         },
@@ -27,62 +25,62 @@ function writeMockConfig(workspace: string) {
             testProvider: {
                 endpoint: "http://localhost:3001/v1/chat/completions",
                 model: "test-model",
-                apiKey: "unused"
+                isApiKeyRequired: false
             },
             reasoningProvider: {
                 endpoint: "http://localhost:3001/v1/chat/completions",
                 model: "reasoning-model",
-                apiKey: "unused"
+                isApiKeyRequired: false
             },
             autoRetryProvider: {
                 endpoint: "http://localhost:3001/v1/auto-retry/completions",
                 model: "test-model",
-                apiKey: "unused"
+                isApiKeyRequired: false
             },
             manualRetryProvider: {
                 endpoint: "http://localhost:3001/v1/manual-retry/completions",
                 model: "test-model",
-                apiKey: "unused"
+                isApiKeyRequired: false
             },
             reasoningRetryProvider: {
                 endpoint: "http://localhost:3001/v1/reasoning-retry/completions",
                 model: "test-model",
-                apiKey: "unused"
+                isApiKeyRequired: false
             },
             maxIterationsProvider: {
                 endpoint: "http://localhost:3001/v1/max-iterations/completions",
                 model: "test-model",
-                apiKey: "unused"
+                isApiKeyRequired: false
             },
             maxIterationsReasoningProvider: {
                 endpoint: "http://localhost:3001/v1/max-iterations-reasoning/completions",
                 model: "test-model",
-                apiKey: "unused"
+                isApiKeyRequired: false
             },
             alwaysFailProvider: {
                 endpoint: "http://localhost:3001/v1/always-fail/completions",
                 model: "test-model",
-                apiKey: "unused"
+                isApiKeyRequired: false
             },
             alwaysHaltProvider: {
                 endpoint: "http://localhost:3001/v1/always-halt/completions",
                 model: "test-model",
-                apiKey: "unused"
+                isApiKeyRequired: false
             },
             autoAcceptEditsProvider: {
                 endpoint: "http://localhost:3001/v1/auto-accept/completions",
                 model: "test-model",
-                apiKey: "unused"
+                isApiKeyRequired: false
             },
             alwaysAllowEditProvider: {
                 endpoint: "http://localhost:3001/v1/always-allow-edit/completions",
                 model: "test-model",
-                apiKey: "unused"
+                isApiKeyRequired: false
             },
             runCommandProvider: {
                 endpoint: "http://localhost:3001/v1/run-command/completions",
                 model: "test-model",
-                apiKey: "unused"
+                isApiKeyRequired: false
             }
         }
     };
@@ -674,8 +672,13 @@ async function switchModel(inner: ReturnType<Page["frameLocator"]>, modelName: s
     // Wait for dropdown to be visible
     const dropdown = inner.locator('.dropdown-content');
     await dropdown.waitFor({ state: 'visible' });
+    
     // Use exact text match to avoid ambiguity (e.g., "reasoningProvider" matching "maxIterationsReasoningProvider")
     await dropdown.locator('a').filter({ hasText: new RegExp(`^${modelName}$`) }).click();
+
+    // Safety wait: VS Code's configuration change events are async and can take time to 
+    // propagate from the settings disk write back to the extension host.
+    await new Promise(resolve => setTimeout(resolve, 500));
 }
 
 // -----------------------------------------------------------------------------
@@ -696,6 +699,8 @@ test.describe('Chat E2E', () => {
         server = await createMockServer(capturedRequests);
 
         const result = await launchVscode(tempWorkspacePath, {
+            'suggestio.activeChatProfile': 'testProvider',
+            'suggestio.activeCompletionProfile': 'testProvider',
             'suggestio.experimental.anonymizer.enabled': true,
             'suggestio.maxAgentIterations': 10,
             'suggestio.llm.initialDelay': 500,
@@ -789,7 +794,7 @@ test.describe('Chat E2E', () => {
     });
 
     test('should handle switching to a reasoning model and processing interleaved tokens correctly', async () => {
-        // await openChatView(page);
+        await openChatView(page);
         const inner = await getChatFrames(page);
 
         // Switch to the reasoning profile

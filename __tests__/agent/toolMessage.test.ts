@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
 import { IChatHistoryManager, IChatMessage, IPrompt, IStoredChatMessage, IToolImplementation, ToolCall, IEventBus } from "../../src/types.js";
-import { FakeProvider, createDefaultConfig, createMockProfileConfig, createMockEventBus } from "../testUtils.js";
+import { FakeProvider, createMockConfigContainer, createMockProfileConfig, createMockEventBus } from "../testUtils.js";
 import { z } from "zod";
 
 describe("Agent Tool Message Formatting", () => {
@@ -55,7 +55,7 @@ describe("Agent Tool Message Formatting", () => {
         };
 
         const agent = new Agent({
-            config: createDefaultConfig({
+            configContainer: createMockConfigContainer({
                 activeChatProfile: "FAKE",
                 llmProviderForChat: provider,
                 profiles: { FAKE: createMockProfileConfig() },
@@ -104,7 +104,7 @@ describe("Agent Tool Message Formatting", () => {
         };
 
         const agent = new Agent({
-            config: createDefaultConfig({
+            configContainer: createMockConfigContainer({
                 activeChatProfile: "FAKE",
                 llmProviderForChat: provider,
                 profiles: { FAKE: createMockProfileConfig() },

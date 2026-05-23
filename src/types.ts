@@ -491,6 +491,10 @@ export type MessageFromTheExtensionToTheWebview =
     type: typeof EXTENSION_EVENTS.UPDATE_PROFILE_METADATA;
     /** Updated profile metadata. */
     metadata: ProfileMetadata[];
+    /** Optional: Updated list of profile IDs for the chat dropdown. */
+    profiles?: string[];
+    /** Optional: Currently active chat profile ID. */
+    activeProfile?: string;
   }
   | {
     /** Instructs the webview to load a specific chat history. */
@@ -1343,6 +1347,7 @@ export interface IAppEvents {
   'autoAcceptEditsToggled': boolean;
   'chatProfileChanged': string;
   'completionProfileChanged': string;
+  'configChanged': void;
   'agent:maxIterationsReached': { maxIterations: number };
   'anonymization': IAnonymizationEventPayload;
   'agent:token': ITokenEventPayload;
@@ -1736,6 +1741,7 @@ export interface IConfig extends IProjectConfig, IStorageConfig, IInlineCompleti
 
 export interface IConfigContainer {
   config: IConfig;
+  rawConfigs: IRawConfigs;
 }
 
 /**

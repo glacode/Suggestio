@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
 import { IChatHistoryManager, IChatMessage, IPrompt, IStoredChatMessage, IEventBus } from "../../src/types.js";
-import { createDefaultConfig, createMockProfileConfig, FakeProvider, createMockEventBus } from "../testUtils.js";
+import { createMockConfigContainer, createMockProfileConfig, FakeProvider, createMockEventBus } from "../testUtils.js";
 
 describe("Agent (Integration) simple tests", () => {
     let mockChatHistoryManager: IChatHistoryManager;
@@ -28,7 +28,7 @@ describe("Agent (Integration) simple tests", () => {
 
     it("fetches stream chat response on success", async () => {
         const agent = new Agent({
-            config: createDefaultConfig({
+            configContainer: createMockConfigContainer({
                 activeChatProfile: "FAKE",
                 llmProviderForChat: new FakeProvider([{ role: "assistant", content: "Hello world" }], mockEventBus),
                 profiles: { FAKE: createMockProfileConfig() },
@@ -56,7 +56,7 @@ describe("Agent (Integration) simple tests", () => {
         jest.spyOn(fakeProvider, 'queryStream').mockRejectedValue(new Error("Simulated failure"));
 
         const agent = new Agent({
-            config: createDefaultConfig({
+            configContainer: createMockConfigContainer({
                 activeChatProfile: "FAKE",
                 llmProviderForChat: fakeProvider,
                 profiles: { FAKE: createMockProfileConfig() },

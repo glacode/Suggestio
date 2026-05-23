@@ -1,7 +1,7 @@
 // registrations/commandRegistration.ts
 import * as vscode from 'vscode';
 import {
-  IConfig,
+  IConfigContainer,
   IWindowProvider,
   ICommandAutoAcceptManager
 } from '../types.js';
@@ -17,7 +17,7 @@ interface INewChatCapable {
 
 export function registerCommands(
   context: vscode.ExtensionContext,
-  config: IConfig,
+  configContainer: IConfigContainer,
   newChatCapable: INewChatCapable,
   eventBus: IEventBus,
   windowProvider: IWindowProvider,
@@ -31,20 +31,20 @@ export function registerCommands(
     )
   );
 
-  const apiKeyPlaceholders = extractApiKeyPlaceholders(config);
-
   // Prompts the user to select an API key placeholder and then enter a new value for it, which is stored securely.
   context.subscriptions.push(
-    vscode.commands.registerCommand("suggestio.updateApiKey", () =>
-      handleUpdateApiKeyCommand(secretManager, windowProvider, apiKeyPlaceholders)
-    )
+    vscode.commands.registerCommand("suggestio.updateApiKey", () => {
+      const placeholders = extractApiKeyPlaceholders(configContainer.config);
+      return handleUpdateApiKeyCommand(secretManager, windowProvider, placeholders);
+    })
   );
 
   // Prompts the user to select an API key placeholder to be removed from secure storage.
   context.subscriptions.push(
-    vscode.commands.registerCommand("suggestio.deleteApiKey", () =>
-      handleDeleteApiKeyCommand(secretManager, windowProvider, apiKeyPlaceholders)
-    )
+    vscode.commands.registerCommand("suggestio.deleteApiKey", () => {
+      const placeholders = extractApiKeyPlaceholders(configContainer.config);
+      return handleDeleteApiKeyCommand(secretManager, windowProvider, placeholders);
+    })
   );
 
   // Focuses the extension's chat view.
@@ -103,17 +103,17 @@ export function registerCommands(
         }
       }
 
-      const profiles = Object.keys(config.profiles);
+      const profiles = Object.keys(configContainer.config.profiles);
       if (profiles.length === 0) {
         windowProvider.showErrorMessage("No profiles found in configuration.");
         return;
       }
 
-      const current = config.activeCompletionProfile || config.activeChatProfile;
+      const current = configContainer.config.activeCompletionProfile || configContainer.config.activeChatProfile;
       const items = profiles.map(id => ({
         label: id,
-        description: config.profiles[id].model,
-        detail: config.profiles[id].endpoint,
+        description: configContainer.config.profiles[id].model,
+        detail: configContainer.config.profiles[id].endpoint,
         picked: id === current
       }));
 

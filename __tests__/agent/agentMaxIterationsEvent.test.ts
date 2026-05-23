@@ -52,11 +52,11 @@ describe("Agent Max Iterations Event", () => {
         });
 
         const agent = new Agent({
-            config,
-            chatHistoryManager: mockChatHistoryManager,
-            tools: [mockTool],
-            eventBus
-        });
+                    configContainer: { config, rawConfigs: { default: '{}' } },
+                    chatHistoryManager: mockChatHistoryManager,
+                    tools: [mockTool],
+                    eventBus: eventBus
+                });
 
         const eventSpy = jest.fn();
         eventBus.on('agent:maxIterationsReached', eventSpy);
@@ -82,7 +82,7 @@ describe("Agent Max Iterations Event", () => {
         });
 
         const agent = new Agent({
-            config,
+            configContainer: { config, rawConfigs: { default: '{}' } },
             chatHistoryManager: mockChatHistoryManager,
             tools: [],
             eventBus

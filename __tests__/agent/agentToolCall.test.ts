@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, expect, jest } from "@jest/globals";
 import { Agent } from "../../src/agent/agent.js";
 import { IChatHistoryManager, IChatMessage, IPrompt, IStoredChatMessage, IToolImplementation, ToolCall, IEventBus } from "../../src/types.js";
-import { FakeProvider, createDefaultConfig, createMockProfileConfig, createMockEventBus } from "../testUtils.js";
+import { FakeProvider, createMockConfigContainer, createMockProfileConfig, createMockEventBus } from "../testUtils.js";
 import { AGENT_MESSAGES } from "../../src/constants/messages.js";
 import { z } from "zod";
 
@@ -62,7 +62,7 @@ describe("ChatResponder Tool Calling Integration", () => {
         };
 
         const agent = new Agent({
-            config: createDefaultConfig({
+            configContainer: createMockConfigContainer({
                 activeChatProfile: "FAKE",
                 llmProviderForChat: provider,
                 profiles: { FAKE: createMockProfileConfig() },
