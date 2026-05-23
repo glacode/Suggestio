@@ -76,18 +76,16 @@ export class EditLlmProfile {
         }
     }
 
-    /**
-     * Renders the form.
-     * @param container Element to render into
-     * @param vscode Webview API
-     * @param state Current initial state for context-aware suggestions
-     * @param profile Optional profile to edit. If null, it's an "Add" form.
-     */
     public render(container: HTMLElement, vscode: IWebviewApi, state: InitialState, profile: ProfileMetadata | null = null) {
         container.innerHTML = '';
 
         const isEdit = !!profile;
         const title = isEdit ? `Edit Profile: ${profile.id}` : 'Add Custom Profile';
+
+        // Extract unique endpoints for suggestions
+        const existingEndpoints = Array.from(new Set(
+            (state.profileMetadata || []).map(p => p.endpoint).filter(e => !!e)
+        ));
 
         const form = document.createElement('div');
         form.className = 'edit-profile-form';
@@ -95,32 +93,53 @@ export class EditLlmProfile {
             <h3 class="settings-subtitle">${title}</h3>
             
             <div class="input-group">
-                <label class="settings-label">Profile ID (used in dropdown)</label>
-                <input type="text" id="editProfileId" value="${profile?.id || ''}" placeholder="e.g. my-custom-gpt" class="settings-input" ${isEdit ? 'disabled' : ''}>
+                <label class="settings-label">Endpoint URL</label>
+                <div class="custom-dropdown-container" id="endpointDropdownContainer">
+                    <div class="dropdown-input-wrapper">
+                        <input type="text" id="editProfileEndpoint" value="${profile?.endpoint || ''}" placeholder="e.g. https://api.openai.com/v1" class="settings-input" autocomplete="off">
+                        <span class="dropdown-chevron">▼</span>
+                    </div>
+                    <div id="endpointDropdownList" class="custom-dropdown-list">
+                        <!-- Items injected via JS -->
+                    </div>
+                </div>
             </div>
-            
+
             <div class="input-group">
-                <label class="settings-label">Model Name (e.g. gpt-4o)</label>
+                <label class="settings-label">Model Name</label>
                 <input type="text" id="editProfileModel" value="${profile?.model || ''}" placeholder="e.g. gpt-4" class="settings-input">
             </div>
-            
+
             <div class="input-group">
-                <label class="settings-label">Endpoint URL</label>
-                <input type="text" id="editProfileEndpoint" value="${profile?.endpoint || ''}" placeholder="e.g. https://api.openai.com/v1" class="settings-input">
+                <label class="settings-label">Profile ID (display name)</label>
+                <input type="text" id="editProfileId" value="${profile?.id || ''}" placeholder="e.g. my-provider-model" class="settings-input" ${isEdit ? 'disabled' : ''}>
+                <div class="settings-description">Unique identifier for this configuration.</div>
             </div>
 
             <div class="settings-section-divider"></div>
 
-            <div class="input-group">
+            <div id="keyCheckSection" class="key-status-container section-disabled">
+                <label class="settings-label">API Key Configuration</label>
+                <div id="keyCheckRow" class="key-status-row">
+                    <div id="keyStatusIndicator" class="status-indicator">
+                        <!-- Dynamic Status -->
+                    </div>
+                    <div id="keyActionButtons" class="key-action-buttons">
+                        <button id="setKeyFlowBtn" class="settings-done small">Set API Key</button>
+                        <button id="noKeyRequiredBtn" class="settings-done small secondary">No Key Required</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="keySettingsSection" class="input-group" style="display: none;">
                 <label class="settings-label">API Key Security</label>
-                <div class="settings-description">Choose how you want to link the API Key for this profile.</div>
+                <div class="settings-description">Choose how to link the API Key.</div>
                 
                 <div class="key-options-group">
                     <label class="key-option" for="keyTypeShared">
                         <input type="radio" name="keyType" id="keyTypeShared" value="shared" checked>
                         <div class="key-option-content">
-                            <span class="key-option-title">Shared Provider Key (Recommended)</span>
-                            <span class="key-option-description">Share one key across all models from this provider.</span>
+                            <span class="key-option-title">Shared Provider Key</span>
                             <span id="previewShared" class="key-option-preview">---</span>
                         </div>
                     </label>
@@ -128,56 +147,143 @@ export class EditLlmProfile {
                     <label class="key-option" for="keyTypeUnique">
                         <input type="radio" name="keyType" id="keyTypeUnique" value="unique">
                         <div class="key-option-content">
-                            <span class="key-option-title">Unique Key for this Model</span>
-                            <span class="key-option-description">Use a dedicated key only for this specific profile.</span>
+                            <span class="key-option-title">Unique Key for this Profile</span>
                             <span id="previewUnique" class="key-option-preview">---</span>
                         </div>
                     </label>
                 </div>
-            </div>
-
-            <div id="keyStatusContainer" class="key-status-container">
-                <div class="key-status-row">
-                    <div id="keyStatusIndicator" class="status-indicator">
-                        <!-- Dynamic Status -->
-                    </div>
-                    <button id="setKeyBtn" class="settings-done small">Set API Key Now</button>
+                <div class="key-status-row" style="margin-top: 10px;">
+                    <button id="setKeyFinalBtn" class="settings-done small">Confirm Key</button>
+                    <button id="cancelKeySettingsBtn" class="settings-done small secondary">Back</button>
                 </div>
             </div>
 
             <div class="form-actions-row">
                 <button id="saveProfileBtn" class="settings-done">Save Profile</button>
-                <button id="cancelEditBtn" class="settings-done secondary">Back</button>
+                <button id="cancelEditBtn" class="settings-done secondary">Cancel</button>
             </div>
         `;
 
         const idInput = form.querySelector('#editProfileId');
         const modelInput = form.querySelector('#editProfileModel');
         const endpointInput = form.querySelector('#editProfileEndpoint');
+        const endpointDropdownList = form.querySelector('#endpointDropdownList');
+        const endpointDropdownWrapper = form.querySelector('.dropdown-input-wrapper');
+
+        const keyCheckSection = form.querySelector('#keyCheckSection');
+        const keySettingsSection = form.querySelector('#keySettingsSection');
+        
         const keyTypeShared = form.querySelector('#keyTypeShared');
         const keyTypeUnique = form.querySelector('#keyTypeUnique');
         const previewShared = form.querySelector('#previewShared');
         const previewUnique = form.querySelector('#previewUnique');
-        const setKeyBtn = form.querySelector('#setKeyBtn');
+        
+        const setKeyFlowBtn = form.querySelector('#setKeyFlowBtn');
+        const noKeyRequiredBtn = form.querySelector('#noKeyRequiredBtn');
+        const setKeyFinalBtn = form.querySelector('#setKeyFinalBtn');
+        const cancelKeySettingsBtn = form.querySelector('#cancelKeySettingsBtn');
+        
         const saveBtn = form.querySelector('#saveProfileBtn');
         const cancelBtn = form.querySelector('#cancelEditBtn');
         const keyStatusIndicator = form.querySelector('#keyStatusIndicator');
-        const keyStatusContainer = form.querySelector('#keyStatusContainer');
 
         if (!(idInput instanceof HTMLInputElement) || 
             !(modelInput instanceof HTMLInputElement) || 
             !(endpointInput instanceof HTMLInputElement) || 
+            !(endpointDropdownList instanceof HTMLElement) || 
+            !(endpointDropdownWrapper instanceof HTMLElement) ||
+            !(keyCheckSection instanceof HTMLElement) || 
+            !(keySettingsSection instanceof HTMLElement) || 
             !(keyTypeShared instanceof HTMLInputElement) || 
             !(keyTypeUnique instanceof HTMLInputElement) || 
             !(previewShared instanceof HTMLElement) || 
             !(previewUnique instanceof HTMLElement) || 
-            !(setKeyBtn instanceof HTMLButtonElement) || 
+            !(setKeyFlowBtn instanceof HTMLButtonElement) || 
+            !(noKeyRequiredBtn instanceof HTMLButtonElement) || 
+            !(setKeyFinalBtn instanceof HTMLButtonElement) || 
+            !(cancelKeySettingsBtn instanceof HTMLButtonElement) || 
             !(saveBtn instanceof HTMLButtonElement) || 
             !(cancelBtn instanceof HTMLButtonElement) || 
-            !(keyStatusIndicator instanceof HTMLElement) ||
-            !(keyStatusContainer instanceof HTMLElement)) {
+            !(keyStatusIndicator instanceof HTMLElement)) {
             return;
         }
+
+        let isIdManuallyEdited = isEdit;
+
+        /**
+         * Renders the custom dropdown items.
+         */
+        const renderDropdownItems = (filter: string = '') => {
+            const normalizedFilter = filter.toLowerCase().trim();
+            const filtered = existingEndpoints.filter(e => e.toLowerCase().includes(normalizedFilter));
+            
+            endpointDropdownList.innerHTML = '';
+            
+            filtered.forEach(e => {
+                const item = document.createElement('div');
+                item.className = 'custom-dropdown-item';
+                item.textContent = e;
+                item.addEventListener('mousedown', (evt) => {
+                    evt.preventDefault();
+                    endpointInput.value = e;
+                    hideDropdown();
+                    computeSuggestedId();
+                    updateKeyStatus();
+                });
+                endpointDropdownList.appendChild(item);
+            });
+
+            // Always add the "New Endpoint..." action at the bottom
+            const newAction = document.createElement('div');
+            newAction.className = 'custom-dropdown-item new-endpoint-action';
+            newAction.textContent = '+ New Provider URL...';
+            newAction.addEventListener('mousedown', (evt) => {
+                evt.preventDefault();
+                endpointInput.value = '';
+                hideDropdown();
+                endpointInput.focus();
+                computeSuggestedId();
+                updateKeyStatus();
+            });
+            endpointDropdownList.appendChild(newAction);
+        };
+
+        const showDropdown = () => {
+            renderDropdownItems(endpointInput.value);
+            endpointDropdownList.classList.add('visible');
+            endpointDropdownWrapper.classList.add('open');
+        };
+
+        const hideDropdown = () => {
+            endpointDropdownList.classList.remove('visible');
+            endpointDropdownWrapper.classList.remove('open');
+        };
+
+        /**
+         * Computes a suggested profile ID.
+         */
+        const computeSuggestedId = () => {
+            if (isIdManuallyEdited) { return; }
+            
+            const endpoint = endpointInput.value.trim();
+            const model = modelInput.value.trim();
+            
+            if (!endpoint && !model) {
+                idInput.value = '';
+                return;
+            }
+
+            const brand = this.getBrandFromUrl(endpoint).toLowerCase();
+            const cleanModel = model.toLowerCase().replace(/[^a-z0-9]/g, '-');
+            
+            if (brand && cleanModel) {
+                idInput.value = `${brand}-${cleanModel}`;
+            } else if (brand) {
+                idInput.value = brand;
+            } else if (cleanModel) {
+                idInput.value = cleanModel;
+            }
+        };
 
         /**
          * Resolves the current identifier based on selection.
@@ -198,44 +304,75 @@ export class EditLlmProfile {
          * Checks if the current identifier has a key in the secret manager.
          */
         const updateKeyStatus = () => {
-            const currentName = getCurrentIdentifier();
-            
-            // Highlight active option visually
-            keyTypeShared.closest('.key-option')?.classList.toggle('active', keyTypeShared.checked);
-            keyTypeUnique.closest('.key-option')?.classList.toggle('active', keyTypeUnique.checked);
-
-            // Update previews
-            const brand = this.getBrandFromUrl(endpointInput.value.trim());
+            const endpoint = endpointInput.value.trim();
+            const model = modelInput.value.trim();
             const id = idInput.value.trim();
-            previewShared.textContent = brand ? `${brand}_API_KEY` : 'Enter endpoint...';
-            previewUnique.textContent = id ? `${id.toUpperCase().replace(/[^A-Z0-9]/g, '_')}_API_KEY` : 'Enter ID...';
+            const isFormComplete = !!(endpoint && model && id);
 
-            if (currentName === '') {
-                keyStatusContainer.style.display = 'none';
-                return;
-            }
+            // Toggle disabled state of the whole section
+            keyCheckSection.classList.toggle('section-disabled', !isFormComplete);
 
-            keyStatusContainer.style.display = 'block';
-            setKeyBtn.textContent = `Set key for ${currentName}`;
+            const currentIdentifier = getCurrentIdentifier();
+            
+            // Update previews
+            const brand = this.getBrandFromUrl(endpoint);
+            previewShared.textContent = brand ? `${brand}_API_KEY` : '---';
+            previewUnique.textContent = id ? `${id.toUpperCase().replace(/[^A-Z0-9]/g, '_')}_API_KEY` : '---';
 
-            // Check if ANY existing profile uses this placeholder and has a key
-            const existingProfile = state.profileMetadata?.find(p => p.apiKeyIdentifier === currentName);
-            const hasKey = existingProfile?.hasApiKey || false;
+            // Check if ANY existing profile uses this identifier and has a key
+            const existingWithKey = state.profileMetadata?.find(p => p.apiKeyIdentifier === currentIdentifier && p.hasApiKey);
+            const hasKey = !!existingWithKey;
 
             if (hasKey) {
-                keyStatusIndicator.innerHTML = '<span class="status-badge success">✅ Key is ready</span>';
+                keyStatusIndicator.innerHTML = '<span class="status-badge success">✅ Key Ready</span>';
+                setKeyFlowBtn.style.display = 'none';
+                noKeyRequiredBtn.style.display = 'none';
             } else {
-                keyStatusIndicator.innerHTML = '<span class="status-badge warning">❌ No key set</span>';
+                keyStatusIndicator.innerHTML = '<span class="status-badge warning">❌ No Key Set</span>';
+                setKeyFlowBtn.style.display = 'inline-block';
+                noKeyRequiredBtn.style.display = 'inline-block';
             }
+
+            // Enable/Disable buttons based on form completion
+            setKeyFlowBtn.disabled = !isFormComplete;
+            noKeyRequiredBtn.disabled = !isFormComplete;
+            saveBtn.disabled = !isFormComplete;
         };
 
         // Listeners
-        idInput.addEventListener('input', updateKeyStatus);
-        endpointInput.addEventListener('input', updateKeyStatus);
+        endpointInput.addEventListener('focus', showDropdown);
+        endpointInput.addEventListener('input', () => {
+            renderDropdownItems(endpointInput.value);
+            computeSuggestedId();
+            updateKeyStatus();
+        });
+        endpointInput.addEventListener('blur', () => {
+            setTimeout(hideDropdown, 200); // Allow clicks on items to register
+        });
+
+        modelInput.addEventListener('input', () => {
+            computeSuggestedId();
+            updateKeyStatus();
+        });
+        idInput.addEventListener('input', () => {
+            isIdManuallyEdited = true;
+            updateKeyStatus();
+        });
+
         keyTypeShared.addEventListener('change', updateKeyStatus);
         keyTypeUnique.addEventListener('change', updateKeyStatus);
 
-        setKeyBtn.addEventListener('click', () => {
+        setKeyFlowBtn.addEventListener('click', () => {
+            keyCheckSection.style.display = 'none';
+            keySettingsSection.style.display = 'block';
+        });
+
+        cancelKeySettingsBtn.addEventListener('click', () => {
+            keySettingsSection.style.display = 'none';
+            keyCheckSection.style.display = 'block';
+        });
+
+        setKeyFinalBtn.addEventListener('click', () => {
             const identifier = getCurrentIdentifier();
             if (identifier) {
                 vscode.postMessage({
@@ -244,29 +381,44 @@ export class EditLlmProfile {
                 });
             }
         });
-saveBtn.addEventListener('click', () => {
-    const id = idInput.value.trim();
-    const model = modelInput.value.trim();
-    const endpoint = endpointInput.value.trim();
-    const identifier = getCurrentIdentifier();
 
-    if (id && model && endpoint && identifier) {
-        vscode.postMessage({
-            command: WEBVIEW_COMMANDS.ADD_PROFILE,
-            profile: {
-                id,
-                model,
-                endpoint,
-                apiKeyIdentifier: identifier,
-                isApiKeyRequired: true
+        noKeyRequiredBtn.addEventListener('click', () => {
+            const id = idInput.value.trim();
+            const model = modelInput.value.trim();
+            const endpoint = endpointInput.value.trim();
+
+            if (id && model && endpoint) {
+                vscode.postMessage({
+                    command: WEBVIEW_COMMANDS.ADD_PROFILE,
+                    profile: {
+                        id,
+                        model,
+                        endpoint,
+                        isApiKeyRequired: false
+                    }
+                });
+                this.onDone();
             }
         });
-        this.onDone();
-    } else {
-                // Basic validation
-                idInput.style.borderColor = id ? '' : 'var(--vscode-errorForeground)';
-                modelInput.style.borderColor = model ? '' : 'var(--vscode-errorForeground)';
-                endpointInput.style.borderColor = endpoint ? '' : 'var(--vscode-errorForeground)';
+
+        saveBtn.addEventListener('click', () => {
+            const id = idInput.value.trim();
+            const model = modelInput.value.trim();
+            const endpoint = endpointInput.value.trim();
+            const identifier = getCurrentIdentifier();
+
+            if (id && model && endpoint && identifier) {
+                vscode.postMessage({
+                    command: WEBVIEW_COMMANDS.ADD_PROFILE,
+                    profile: {
+                        id,
+                        model,
+                        endpoint,
+                        apiKeyIdentifier: identifier,
+                        isApiKeyRequired: true
+                    }
+                });
+                this.onDone();
             }
         });
 
