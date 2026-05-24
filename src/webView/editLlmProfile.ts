@@ -23,6 +23,35 @@ const KNOWN_PROVIDERS: Record<string, string> = {
 export class EditLlmProfile {
     private onDone: () => void;
 
+    // Element Caching
+    private _idInput?: HTMLInputElement;
+    private _modelInput?: HTMLInputElement;
+    private _endpointInput?: HTMLInputElement;
+    private _endpointDropdownList?: HTMLElement;
+    private _endpointDropdownWrapper?: HTMLElement;
+
+    private _keyCheckSection?: HTMLElement;
+    private _keySettingsSection?: HTMLElement;
+
+    private _keyTypeShared?: HTMLInputElement;
+    private _keyTypeUnique?: HTMLInputElement;
+    private _previewShared?: HTMLElement;
+    private _previewUnique?: HTMLElement;
+
+    private _setKeyFlowBtn?: HTMLButtonElement;
+    private _noKeyRequiredBtn?: HTMLButtonElement;
+    private _setKeyFinalBtn?: HTMLButtonElement;
+    private _cancelKeySettingsBtn?: HTMLButtonElement;
+
+    private _saveBtn?: HTMLButtonElement;
+    private _cancelBtn?: HTMLButtonElement;
+    private _keyStatusIndicator?: HTMLElement;
+
+    // Component State
+    private _isIdManuallyEdited: boolean = false;
+    private _existingEndpoints: string[] = [];
+    private _state?: InitialState;
+
     constructor(onDone: () => void) {
         this.onDone = onDone;
     }
@@ -76,20 +105,46 @@ export class EditLlmProfile {
         }
     }
 
+    /**
+     * Renders the form.
+     * @param container Element to render into
+     * @param vscode Webview API
+     * @param state Current initial state for context-aware suggestions
+     * @param profile Optional profile to edit. If null, it's an "Add" form.
+     */
     public render(container: HTMLElement, vscode: IWebviewApi, state: InitialState, profile: ProfileMetadata | null = null) {
-        container.innerHTML = '';
-
         const isEdit = !!profile;
         const title = isEdit ? `Edit Profile: ${profile.id}` : 'Add Custom Profile';
+        
+        this._state = state;
+        this._isIdManuallyEdited = isEdit;
 
-        // Extract unique endpoints for suggestions
-        const existingEndpoints = Array.from(new Set(
+        // 1. Setup Data
+        this._existingEndpoints = Array.from(new Set(
             (state.profileMetadata || []).map(p => p.endpoint).filter(e => !!e)
         ));
 
+        // 2. Initial DOM Setup
+        container.innerHTML = '';
         const form = document.createElement('div');
         form.className = 'edit-profile-form';
-        form.innerHTML = `
+        form.innerHTML = this.getTemplate(title, profile);
+        container.appendChild(form);
+
+        // 3. Binding & Type Safety
+        if (!this.bindElements(form)) {
+            console.error('EditLlmProfile: Failed to bind UI elements.');
+            return;
+        }
+
+        // 4. Attach Listeners & Initial State
+        this.attachListeners(vscode);
+        this.updateKeyStatus();
+    }
+
+    private getTemplate(title: string, profile: ProfileMetadata | null): string {
+        const isEdit = !!profile;
+        return `
             <h3 class="settings-subtitle">${title}</h3>
             
             <div class="input-group">
@@ -99,9 +154,7 @@ export class EditLlmProfile {
                         <input type="text" id="editProfileEndpoint" value="${profile?.endpoint || ''}" placeholder="e.g. https://api.openai.com/v1" class="settings-input" autocomplete="off">
                         <span class="dropdown-chevron">▼</span>
                     </div>
-                    <div id="endpointDropdownList" class="custom-dropdown-list">
-                        <!-- Items injected via JS -->
-                    </div>
+                    <div id="endpointDropdownList" class="custom-dropdown-list"></div>
                 </div>
             </div>
 
@@ -121,9 +174,7 @@ export class EditLlmProfile {
             <div id="keyCheckSection" class="key-status-container section-disabled">
                 <label class="settings-label">API Key Configuration</label>
                 <div id="keyCheckRow" class="key-status-row">
-                    <div id="keyStatusIndicator" class="status-indicator">
-                        <!-- Dynamic Status -->
-                    </div>
+                    <div id="keyStatusIndicator" class="status-indicator"></div>
                     <div id="keyActionButtons" class="key-action-buttons">
                         <button id="setKeyFlowBtn" class="settings-done small">Set API Key</button>
                         <button id="noKeyRequiredBtn" class="settings-done small secondary">No Key Required</button>
@@ -163,217 +214,113 @@ export class EditLlmProfile {
                 <button id="cancelEditBtn" class="settings-done secondary">Cancel</button>
             </div>
         `;
+    }
 
+    private bindElements(form: HTMLElement): boolean {
         const idInput = form.querySelector('#editProfileId');
         const modelInput = form.querySelector('#editProfileModel');
         const endpointInput = form.querySelector('#editProfileEndpoint');
         const endpointDropdownList = form.querySelector('#endpointDropdownList');
         const endpointDropdownWrapper = form.querySelector('.dropdown-input-wrapper');
-
         const keyCheckSection = form.querySelector('#keyCheckSection');
         const keySettingsSection = form.querySelector('#keySettingsSection');
-        
         const keyTypeShared = form.querySelector('#keyTypeShared');
         const keyTypeUnique = form.querySelector('#keyTypeUnique');
         const previewShared = form.querySelector('#previewShared');
         const previewUnique = form.querySelector('#previewUnique');
-        
         const setKeyFlowBtn = form.querySelector('#setKeyFlowBtn');
         const noKeyRequiredBtn = form.querySelector('#noKeyRequiredBtn');
         const setKeyFinalBtn = form.querySelector('#setKeyFinalBtn');
         const cancelKeySettingsBtn = form.querySelector('#cancelKeySettingsBtn');
-        
         const saveBtn = form.querySelector('#saveProfileBtn');
         const cancelBtn = form.querySelector('#cancelEditBtn');
         const keyStatusIndicator = form.querySelector('#keyStatusIndicator');
 
-        if (!(idInput instanceof HTMLInputElement) || 
-            !(modelInput instanceof HTMLInputElement) || 
-            !(endpointInput instanceof HTMLInputElement) || 
-            !(endpointDropdownList instanceof HTMLElement) || 
-            !(endpointDropdownWrapper instanceof HTMLElement) ||
-            !(keyCheckSection instanceof HTMLElement) || 
-            !(keySettingsSection instanceof HTMLElement) || 
-            !(keyTypeShared instanceof HTMLInputElement) || 
-            !(keyTypeUnique instanceof HTMLInputElement) || 
-            !(previewShared instanceof HTMLElement) || 
-            !(previewUnique instanceof HTMLElement) || 
-            !(setKeyFlowBtn instanceof HTMLButtonElement) || 
-            !(noKeyRequiredBtn instanceof HTMLButtonElement) || 
-            !(setKeyFinalBtn instanceof HTMLButtonElement) || 
-            !(cancelKeySettingsBtn instanceof HTMLButtonElement) || 
-            !(saveBtn instanceof HTMLButtonElement) || 
-            !(cancelBtn instanceof HTMLButtonElement) || 
-            !(keyStatusIndicator instanceof HTMLElement)) {
+        if (idInput instanceof HTMLInputElement &&
+            modelInput instanceof HTMLInputElement &&
+            endpointInput instanceof HTMLInputElement &&
+            endpointDropdownList instanceof HTMLElement &&
+            endpointDropdownWrapper instanceof HTMLElement &&
+            keyCheckSection instanceof HTMLElement &&
+            keySettingsSection instanceof HTMLElement &&
+            keyTypeShared instanceof HTMLInputElement &&
+            keyTypeUnique instanceof HTMLInputElement &&
+            previewShared instanceof HTMLElement &&
+            previewUnique instanceof HTMLElement &&
+            setKeyFlowBtn instanceof HTMLButtonElement &&
+            noKeyRequiredBtn instanceof HTMLButtonElement &&
+            setKeyFinalBtn instanceof HTMLButtonElement &&
+            cancelKeySettingsBtn instanceof HTMLButtonElement &&
+            saveBtn instanceof HTMLButtonElement &&
+            cancelBtn instanceof HTMLButtonElement &&
+            keyStatusIndicator instanceof HTMLElement) {
+            
+            this._idInput = idInput;
+            this._modelInput = modelInput;
+            this._endpointInput = endpointInput;
+            this._endpointDropdownList = endpointDropdownList;
+            this._endpointDropdownWrapper = endpointDropdownWrapper;
+            this._keyCheckSection = keyCheckSection;
+            this._keySettingsSection = keySettingsSection;
+            this._keyTypeShared = keyTypeShared;
+            this._keyTypeUnique = keyTypeUnique;
+            this._previewShared = previewShared;
+            this._previewUnique = previewUnique;
+            this._setKeyFlowBtn = setKeyFlowBtn;
+            this._noKeyRequiredBtn = noKeyRequiredBtn;
+            this._setKeyFinalBtn = setKeyFinalBtn;
+            this._cancelKeySettingsBtn = cancelKeySettingsBtn;
+            this._saveBtn = saveBtn;
+            this._cancelBtn = cancelBtn;
+            this._keyStatusIndicator = keyStatusIndicator;
+            return true;
+        }
+
+        return false;
+    }
+
+    private attachListeners(vscode: IWebviewApi) {
+        if (!this._endpointInput || !this._modelInput || !this._idInput || !this._keyTypeShared || 
+            !this._keyTypeUnique || !this._setKeyFlowBtn || !this._cancelKeySettingsBtn || 
+            !this._setKeyFinalBtn || !this._noKeyRequiredBtn || !this._saveBtn || !this._cancelBtn) {
             return;
         }
 
-        let isIdManuallyEdited = isEdit;
-
-        /**
-         * Renders the custom dropdown items.
-         */
-        const renderDropdownItems = (filter: string = '') => {
-            const normalizedFilter = filter.toLowerCase().trim();
-            const filtered = existingEndpoints.filter(e => e.toLowerCase().includes(normalizedFilter));
-            
-            endpointDropdownList.innerHTML = '';
-            
-            filtered.forEach(e => {
-                const item = document.createElement('div');
-                item.className = 'custom-dropdown-item';
-                item.textContent = e;
-                item.addEventListener('mousedown', (evt) => {
-                    evt.preventDefault();
-                    endpointInput.value = e;
-                    hideDropdown();
-                    computeSuggestedId();
-                    updateKeyStatus();
-                });
-                endpointDropdownList.appendChild(item);
-            });
-
-            // Always add the "New Endpoint..." action at the bottom
-            const newAction = document.createElement('div');
-            newAction.className = 'custom-dropdown-item new-endpoint-action';
-            newAction.textContent = '+ New Provider URL...';
-            newAction.addEventListener('mousedown', (evt) => {
-                evt.preventDefault();
-                endpointInput.value = '';
-                hideDropdown();
-                endpointInput.focus();
-                computeSuggestedId();
-                updateKeyStatus();
-            });
-            endpointDropdownList.appendChild(newAction);
-        };
-
-        const showDropdown = () => {
-            renderDropdownItems(endpointInput.value);
-            endpointDropdownList.classList.add('visible');
-            endpointDropdownWrapper.classList.add('open');
-        };
-
-        const hideDropdown = () => {
-            endpointDropdownList.classList.remove('visible');
-            endpointDropdownWrapper.classList.remove('open');
-        };
-
-        /**
-         * Computes a suggested profile ID.
-         */
-        const computeSuggestedId = () => {
-            if (isIdManuallyEdited) { return; }
-            
-            const endpoint = endpointInput.value.trim();
-            const model = modelInput.value.trim();
-            
-            if (!endpoint && !model) {
-                idInput.value = '';
-                return;
-            }
-
-            const brand = this.getBrandFromUrl(endpoint).toLowerCase();
-            const cleanModel = model.toLowerCase().replace(/[^a-z0-9]/g, '-');
-            
-            if (brand && cleanModel) {
-                idInput.value = `${brand}-${cleanModel}`;
-            } else if (brand) {
-                idInput.value = brand;
-            } else if (cleanModel) {
-                idInput.value = cleanModel;
-            }
-        };
-
-        /**
-         * Resolves the current identifier based on selection.
-         */
-        const getCurrentIdentifier = (): string => {
-            const isShared = keyTypeShared.checked;
-            const brand = this.getBrandFromUrl(endpointInput.value.trim());
-            const id = idInput.value.trim();
-            
-            if (isShared) {
-                return brand ? `${brand}_API_KEY` : '';
-            } else {
-                return id ? `${id.toUpperCase().replace(/[^A-Z0-9]/g, '_')}_API_KEY` : '';
-            }
-        };
-
-        /**
-         * Checks if the current identifier has a key in the secret manager.
-         */
-        const updateKeyStatus = () => {
-            const endpoint = endpointInput.value.trim();
-            const model = modelInput.value.trim();
-            const id = idInput.value.trim();
-            const isFormComplete = !!(endpoint && model && id);
-
-            // Toggle disabled state of the whole section
-            keyCheckSection.classList.toggle('section-disabled', !isFormComplete);
-
-            const currentIdentifier = getCurrentIdentifier();
-            
-            // Update previews
-            const brand = this.getBrandFromUrl(endpoint);
-            previewShared.textContent = brand ? `${brand}_API_KEY` : '---';
-            previewUnique.textContent = id ? `${id.toUpperCase().replace(/[^A-Z0-9]/g, '_')}_API_KEY` : '---';
-
-            // Check if ANY existing profile uses this identifier and has a key
-            const existingWithKey = state.profileMetadata?.find(p => p.apiKeyIdentifier === currentIdentifier && p.hasApiKey);
-            const hasKey = !!existingWithKey;
-
-            if (hasKey) {
-                keyStatusIndicator.innerHTML = '<span class="status-badge success">✅ Key Ready</span>';
-                setKeyFlowBtn.style.display = 'none';
-                noKeyRequiredBtn.style.display = 'none';
-            } else {
-                keyStatusIndicator.innerHTML = '<span class="status-badge warning">❌ No Key Set</span>';
-                setKeyFlowBtn.style.display = 'inline-block';
-                noKeyRequiredBtn.style.display = 'inline-block';
-            }
-
-            // Enable/Disable buttons based on form completion
-            setKeyFlowBtn.disabled = !isFormComplete;
-            noKeyRequiredBtn.disabled = !isFormComplete;
-            saveBtn.disabled = !isFormComplete;
-        };
-
-        // Listeners
-        endpointInput.addEventListener('focus', showDropdown);
-        endpointInput.addEventListener('input', () => {
-            renderDropdownItems(endpointInput.value);
-            computeSuggestedId();
-            updateKeyStatus();
+        this._endpointInput.addEventListener('focus', () => this.showDropdown());
+        this._endpointInput.addEventListener('input', () => {
+            this.renderDropdownItems(this._endpointInput!.value);
+            this.computeSuggestedId();
+            this.updateKeyStatus();
         });
-        endpointInput.addEventListener('blur', () => {
-            setTimeout(hideDropdown, 200); // Allow clicks on items to register
+        this._endpointInput.addEventListener('blur', () => {
+            setTimeout(() => this.hideDropdown(), 200);
         });
 
-        modelInput.addEventListener('input', () => {
-            computeSuggestedId();
-            updateKeyStatus();
-        });
-        idInput.addEventListener('input', () => {
-            isIdManuallyEdited = true;
-            updateKeyStatus();
+        this._modelInput.addEventListener('input', () => {
+            this.computeSuggestedId();
+            this.updateKeyStatus();
         });
 
-        keyTypeShared.addEventListener('change', updateKeyStatus);
-        keyTypeUnique.addEventListener('change', updateKeyStatus);
-
-        setKeyFlowBtn.addEventListener('click', () => {
-            keyCheckSection.style.display = 'none';
-            keySettingsSection.style.display = 'block';
+        this._idInput.addEventListener('input', () => {
+            this._isIdManuallyEdited = true;
+            this.updateKeyStatus();
         });
 
-        cancelKeySettingsBtn.addEventListener('click', () => {
-            keySettingsSection.style.display = 'none';
-            keyCheckSection.style.display = 'block';
+        this._keyTypeShared.addEventListener('change', () => this.updateKeyStatus());
+        this._keyTypeUnique.addEventListener('change', () => this.updateKeyStatus());
+
+        this._setKeyFlowBtn.addEventListener('click', () => {
+            this._keyCheckSection!.style.display = 'none';
+            this._keySettingsSection!.style.display = 'block';
         });
 
-        setKeyFinalBtn.addEventListener('click', () => {
-            const identifier = getCurrentIdentifier();
+        this._cancelKeySettingsBtn.addEventListener('click', () => {
+            this._keySettingsSection!.style.display = 'none';
+            this._keyCheckSection!.style.display = 'block';
+        });
+
+        this._setKeyFinalBtn.addEventListener('click', () => {
+            const identifier = this.getCurrentIdentifier();
             if (identifier) {
                 vscode.postMessage({
                     command: WEBVIEW_COMMANDS.EDIT_API_KEY,
@@ -382,53 +329,158 @@ export class EditLlmProfile {
             }
         });
 
-        noKeyRequiredBtn.addEventListener('click', () => {
-            const id = idInput.value.trim();
-            const model = modelInput.value.trim();
-            const endpoint = endpointInput.value.trim();
+        this._noKeyRequiredBtn.addEventListener('click', () => {
+            const id = this._idInput!.value.trim();
+            const model = this._modelInput!.value.trim();
+            const endpoint = this._endpointInput!.value.trim();
 
             if (id && model && endpoint) {
                 vscode.postMessage({
                     command: WEBVIEW_COMMANDS.ADD_PROFILE,
-                    profile: {
-                        id,
-                        model,
-                        endpoint,
-                        isApiKeyRequired: false
-                    }
+                    profile: { id, model, endpoint, isApiKeyRequired: false }
                 });
                 this.onDone();
             }
         });
 
-        saveBtn.addEventListener('click', () => {
-            const id = idInput.value.trim();
-            const model = modelInput.value.trim();
-            const endpoint = endpointInput.value.trim();
-            const identifier = getCurrentIdentifier();
+        this._saveBtn.addEventListener('click', () => {
+            const id = this._idInput!.value.trim();
+            const model = this._modelInput!.value.trim();
+            const endpoint = this._endpointInput!.value.trim();
+            const identifier = this.getCurrentIdentifier();
 
             if (id && model && endpoint && identifier) {
                 vscode.postMessage({
                     command: WEBVIEW_COMMANDS.ADD_PROFILE,
-                    profile: {
-                        id,
-                        model,
-                        endpoint,
-                        apiKeyIdentifier: identifier,
-                        isApiKeyRequired: true
-                    }
+                    profile: { id, model, endpoint, apiKeyIdentifier: identifier, isApiKeyRequired: true }
                 });
                 this.onDone();
             }
         });
 
-        cancelBtn.addEventListener('click', () => {
-            this.onDone();
+        this._cancelBtn.addEventListener('click', () => this.onDone());
+    }
+
+    private renderDropdownItems(filter: string = '') {
+        if (!this._endpointDropdownList || !this._endpointInput) { return; }
+
+        const normalizedFilter = filter.toLowerCase().trim();
+        const filtered = this._existingEndpoints.filter(e => e.toLowerCase().includes(normalizedFilter));
+        
+        this._endpointDropdownList.innerHTML = '';
+        
+        filtered.forEach(e => {
+            const item = document.createElement('div');
+            item.className = 'custom-dropdown-item';
+            item.textContent = e;
+            item.addEventListener('mousedown', (evt) => {
+                evt.preventDefault();
+                this._endpointInput!.value = e;
+                this.hideDropdown();
+                this.computeSuggestedId();
+                this.updateKeyStatus();
+            });
+            this._endpointDropdownList!.appendChild(item);
         });
 
-        // Initial check
-        updateKeyStatus();
+        const newAction = document.createElement('div');
+        newAction.className = 'custom-dropdown-item new-endpoint-action';
+        newAction.textContent = '+ New Provider URL...';
+        newAction.addEventListener('mousedown', (evt) => {
+            evt.preventDefault();
+            this._endpointInput!.value = '';
+            this.hideDropdown();
+            this._endpointInput!.focus();
+            this.computeSuggestedId();
+            this.updateKeyStatus();
+        });
+        this._endpointDropdownList.appendChild(newAction);
+    }
 
-        container.appendChild(form);
+    private showDropdown() {
+        if (!this._endpointDropdownList || !this._endpointDropdownWrapper || !this._endpointInput) { return; }
+        this.renderDropdownItems(this._endpointInput.value);
+        this._endpointDropdownList.classList.add('visible');
+        this._endpointDropdownWrapper.classList.add('open');
+    }
+
+    private hideDropdown() {
+        if (!this._endpointDropdownList || !this._endpointDropdownWrapper) { return; }
+        this._endpointDropdownList.classList.remove('visible');
+        this._endpointDropdownWrapper.classList.remove('open');
+    }
+
+    private computeSuggestedId() {
+        if (this._isIdManuallyEdited || !this._idInput || !this._endpointInput || !this._modelInput) { return; }
+        
+        const endpoint = this._endpointInput.value.trim();
+        const model = this._modelInput.value.trim();
+        
+        if (!endpoint && !model) {
+            this._idInput.value = '';
+            return;
+        }
+
+        const brand = this.getBrandFromUrl(endpoint).toLowerCase();
+        const cleanModel = model.toLowerCase().replace(/[^a-z0-9]/g, '-');
+        
+        if (brand && cleanModel) {
+            this._idInput.value = `${brand}-${cleanModel}`;
+        } else if (brand) {
+            this._idInput.value = brand;
+        } else if (cleanModel) {
+            this._idInput.value = cleanModel;
+        }
+    }
+
+    private getCurrentIdentifier(): string {
+        if (!this._keyTypeShared || !this._endpointInput || !this._idInput) { return ''; }
+
+        const isShared = this._keyTypeShared.checked;
+        const brand = this.getBrandFromUrl(this._endpointInput.value.trim());
+        const id = this._idInput.value.trim();
+        
+        if (isShared) {
+            return brand ? `${brand}_API_KEY` : '';
+        } else {
+            return id ? `${id.toUpperCase().replace(/[^A-Z0-9]/g, '_')}_API_KEY` : '';
+        }
+    }
+
+    private updateKeyStatus() {
+        if (!this._endpointInput || !this._modelInput || !this._idInput || 
+            !this._keyCheckSection || !this._previewShared || !this._previewUnique || 
+            !this._keyStatusIndicator || !this._setKeyFlowBtn || !this._noKeyRequiredBtn || !this._saveBtn) {
+            return;
+        }
+
+        const endpoint = this._endpointInput.value.trim();
+        const model = this._modelInput.value.trim();
+        const id = this._idInput.value.trim();
+        const isFormComplete = !!(endpoint && model && id);
+
+        this._keyCheckSection.classList.toggle('section-disabled', !isFormComplete);
+
+        const currentIdentifier = this.getCurrentIdentifier();
+        const brand = this.getBrandFromUrl(endpoint);
+        this._previewShared.textContent = brand ? `${brand}_API_KEY` : '---';
+        this._previewUnique.textContent = id ? `${id.toUpperCase().replace(/[^A-Z0-9]/g, '_')}_API_KEY` : '---';
+
+        const existingWithKey = this._state?.profileMetadata?.find(p => p.apiKeyIdentifier === currentIdentifier && p.hasApiKey);
+        const hasKey = !!existingWithKey;
+
+        if (hasKey) {
+            this._keyStatusIndicator.innerHTML = '<span class="status-badge success">✅ Key Ready</span>';
+            this._setKeyFlowBtn.style.display = 'none';
+            this._noKeyRequiredBtn.style.display = 'none';
+        } else {
+            this._keyStatusIndicator.innerHTML = '<span class="status-badge warning">❌ No Key Set</span>';
+            this._setKeyFlowBtn.style.display = 'inline-block';
+            this._noKeyRequiredBtn.style.display = 'inline-block';
+        }
+
+        this._setKeyFlowBtn.disabled = !isFormComplete;
+        this._noKeyRequiredBtn.disabled = !isFormComplete;
+        this._saveBtn.disabled = !isFormComplete;
     }
 }
