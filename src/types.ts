@@ -705,6 +705,7 @@ export interface ProfileMetadata {
   needsApiKey: boolean;
   hasApiKey: boolean;
   apiKeyIdentifier?: string;
+  origin: 'bundled' | 'user' | 'project';
   isActiveChat: boolean;
   isActiveCompletion: boolean;
 }
@@ -1646,6 +1647,7 @@ export interface IProfileConfig {
   isApiKeyRequired?: boolean; // whether an API key is required for this profile (defaults to true)
   resolvedApiKey?: string;    // actual key used at runtime
   type?: "openai-compatible" | "gemini"; // defaults to openai-compatible
+  origin?: 'bundled' | 'user' | 'project'; // Source of the profile configuration
   /** Whether the model supports tool calling. If not specified, defaults to true. */
   supportsTools?: boolean;
   /**

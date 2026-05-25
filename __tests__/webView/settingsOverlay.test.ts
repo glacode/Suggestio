@@ -135,6 +135,7 @@ describe('SettingsOverlay Unit Tests', () => {
                     needsApiKey: true,
                     hasApiKey: false,
                     apiKeyIdentifier: 'P1_KEY',
+                    origin: 'bundled',
                     isActiveChat: true,
                     isActiveCompletion: true
                 },
@@ -143,6 +144,7 @@ describe('SettingsOverlay Unit Tests', () => {
                     model: 'model-2',
                     needsApiKey: false,
                     hasApiKey: false,
+                    origin: 'user',
                     isActiveChat: false,
                     isActiveCompletion: false
                 }
@@ -185,24 +187,40 @@ describe('SettingsOverlay Unit Tests', () => {
             const p1 = document.querySelectorAll('.profile-item')[0];
             expect(p1.textContent).toContain('Key ✅');
 
-            const editBtn = p1.querySelector('.edit-btn');
-            const deleteBtn = p1.querySelector('.delete-btn');
+            const editKeyBtn = p1.querySelector('.edit-key-btn');
+            const deleteKeyBtn = p1.querySelector('.delete-key-btn');
 
-            if (!(editBtn instanceof HTMLElement) || !(deleteBtn instanceof HTMLElement)) {
+            if (!(editKeyBtn instanceof HTMLElement) || !(deleteKeyBtn instanceof HTMLElement)) {
                 throw new Error('Buttons not found');
             }
 
-            editBtn.click();
+            editKeyBtn.click();
             expect(mockVscode.messages).toContainEqual({
                 command: WEBVIEW_COMMANDS.EDIT_API_KEY,
                 identifier: 'P1_KEY'
             });
 
-            deleteBtn.click();
+            deleteKeyBtn.click();
             expect(mockVscode.messages).toContainEqual({
                 command: WEBVIEW_COMMANDS.DELETE_API_KEY,
                 identifier: 'P1_KEY'
             });
+        });
+
+        it('should only show structural edit button for user profiles', () => {
+            const container = document.querySelector('.chat-container');
+            if (!(container instanceof HTMLElement)) { throw new Error('Container not found'); }
+            settingsOverlay.init(container);
+            
+            settingsOverlay.render(mockVscode, mockState);
+            
+            const items = document.querySelectorAll('.profile-item');
+            
+            // p1 is 'bundled' -> no structural edit
+            expect(items[0].querySelector('.edit-profile-btn')).toBeNull();
+            
+            // p2 is 'user' -> has structural edit
+            expect(items[1].querySelector('.edit-profile-btn')).not.toBeNull();
         });
 
         it('should do nothing if not initialized', () => {

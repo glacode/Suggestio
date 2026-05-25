@@ -343,6 +343,7 @@ export class ChatWebviewViewProvider {
                 needsApiKey: isApiKeyRequired,
                 hasApiKey,
                 apiKeyIdentifier: identifier,
+                origin: profile?.origin || 'bundled',
                 isActiveChat: id === activeProfile,
                 isActiveCompletion: id === activeCompletionProfile
             };

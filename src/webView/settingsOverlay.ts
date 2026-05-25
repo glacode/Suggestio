@@ -1,7 +1,8 @@
 // Settings overlay module
 import { WEBVIEW_COMMANDS } from '../constants/protocol.js';
-import type { IWebviewApi, InitialState } from '../types.js';
+import type { IWebviewApi, InitialState, ProfileMetadata } from '../types.js';
 import { EditLlmProfile } from './editLlmProfile.js';
+import { UpdateLlmProfile } from './updateLlmProfile.js';
 
 const EDIT_ICON_HTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
 const DELETE_ICON_HTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>';
@@ -12,24 +13,41 @@ const DELETE_ICON_HTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="
 export class SettingsOverlay {
     private overlayRoot: HTMLDivElement | null = null;
     private doneButton: HTMLButtonElement | null = null;
-    private editProfile: EditLlmProfile;
-    private currentView: 'list' | 'edit' = 'list';
+    private addProfile: EditLlmProfile;
+    private updateProfile: UpdateLlmProfile;
+    private currentView: 'list' | 'add' | 'update' = 'list';
+    private lastRenderedView: 'list' | 'add' | 'update' | null = null;
+    private profileToUpdate: ProfileMetadata | null = null;
     private vscode: IWebviewApi | null = null;
     private state: InitialState | null = null;
 
     constructor() {
-        this.editProfile = new EditLlmProfile(() => this.showList());
+        this.addProfile = new EditLlmProfile(() => this.showList());
+        this.updateProfile = new UpdateLlmProfile(() => this.showList());
     }
 
     private showList() {
         this.currentView = 'list';
+        this.profileToUpdate = null;
         if (this.vscode && this.state) {
             this.render(this.vscode, this.state);
         }
     }
 
-    private showEdit() {
-        this.currentView = 'edit';
+    private showAdd() {
+        this.currentView = 'add';
+        // Ensure a fresh form when explicitly clicking the "Add" button
+        this.addProfile.reset();
+        if (this.vscode && this.state) {
+            this.render(this.vscode, this.state);
+        }
+    }
+
+    private showUpdate(profile: ProfileMetadata) {
+        this.currentView = 'update';
+        this.profileToUpdate = profile;
+        // Ensure a fresh form when explicitly clicking the "Edit" button
+        this.updateProfile.reset();
         if (this.vscode && this.state) {
             this.render(this.vscode, this.state);
         }
@@ -103,8 +121,10 @@ export class SettingsOverlay {
      * Renders profile settings with API key management.
      */
     public render(vscode: IWebviewApi, state: InitialState) {
+        const isBackgroundUpdate = this.currentView === this.lastRenderedView;
         this.vscode = vscode;
         this.state = state;
+        
         if (!this.overlayRoot) {
             return;
         }
@@ -113,10 +133,30 @@ export class SettingsOverlay {
             return;
         }
 
+        // Surgical Update Logic:
+        // If we are already in 'add' or 'update' view, and this is a background sync
+        // (metadata changed), don't wipe the DOM. Just refresh badges.
+        if (isBackgroundUpdate) {
+            if (this.currentView === 'add') {
+                this.addProfile.refresh(state);
+                return;
+            }
+            if (this.currentView === 'update') {
+                this.updateProfile.refresh(state);
+                return;
+            }
+        }
+
+        this.lastRenderedView = this.currentView;
         body.innerHTML = '';
 
-        if (this.currentView === 'edit') {
-            this.editProfile.render(body, vscode, state);
+        if (this.currentView === 'add') {
+            this.addProfile.render(body, vscode, state);
+            return;
+        }
+
+        if (this.currentView === 'update' && this.profileToUpdate) {
+            this.updateProfile.render(body, vscode, state, this.profileToUpdate);
             return;
         }
 
@@ -124,7 +164,7 @@ export class SettingsOverlay {
         const topActions = document.createElement('div');
         topActions.className = 'add-profile-btn-container';
         topActions.innerHTML = `<button id="topAddProfileBtn" class="settings-done">+ Add Custom Profile</button>`;
-        topActions.querySelector('#topAddProfileBtn')?.addEventListener('click', () => this.showEdit());
+        topActions.querySelector('#topAddProfileBtn')?.addEventListener('click', () => this.showAdd());
         body.appendChild(topActions);
 
         const section = document.createElement('div');
@@ -145,8 +185,16 @@ export class SettingsOverlay {
             const item = document.createElement('div');
             item.className = `profile-item ${profile.isActiveCompletion ? 'active' : ''}`;
             
-            const keyStatus = profile.needsApiKey 
-                ? (profile.hasApiKey ? '<span class="status-badge success">Key ✅</span>' : '<span class="status-badge warning">No Key ❌</span>')
+            const keyStatusHtml = profile.needsApiKey 
+                ? `
+                    <div class="profile-status-row">
+                        ${profile.hasApiKey ? '<span class="status-badge success">Key ✅</span>' : '<span class="status-badge warning">No Key ❌</span>'}
+                        <div class="inline-key-actions">
+                            <button class="icon-button edit-key-btn" title="Set/Update API Key">${EDIT_ICON_HTML}</button>
+                            ${profile.hasApiKey ? `<button class="icon-button delete-key-btn" title="Delete API Key">${DELETE_ICON_HTML}</button>` : ''}
+                        </div>
+                    </div>
+                  `
                 : '<span class="status-badge info">No Key Required</span>';
 
             item.innerHTML = `
@@ -156,14 +204,11 @@ export class SettingsOverlay {
                         ${profile.isActiveCompletion ? '<span class="active-badge">ACTIVE</span>' : ''}
                     </div>
                     <div class="profile-details">${profile.model}</div>
-                    <div class="profile-status">${keyStatus}</div>
+                    <div class="profile-status">${keyStatusHtml}</div>
                 </div>
                 <div class="profile-actions">
                     ${!profile.isActiveCompletion ? `<button class="icon-button select-btn" title="Select for Completion">Set Active</button>` : ''}
-                    ${profile.needsApiKey ? `
-                        <button class="icon-button edit-btn" title="Edit API Key">${EDIT_ICON_HTML}</button>
-                        ${profile.hasApiKey ? `<button class="icon-button delete-btn" title="Delete API Key">${DELETE_ICON_HTML}</button>` : ''}
-                    ` : ''}
+                    ${profile.origin === 'user' ? `<button class="icon-button edit-profile-btn" title="Edit Profile Structure">${EDIT_ICON_HTML}</button>` : ''}
                 </div>
             `;
 
@@ -171,13 +216,17 @@ export class SettingsOverlay {
                 vscode.postMessage({ command: WEBVIEW_COMMANDS.COMPLETION_PROFILE_CHANGED, model: profile.id });
             });
 
-            item.querySelector('.edit-btn')?.addEventListener('click', () => {
+            item.querySelector('.edit-profile-btn')?.addEventListener('click', () => {
+                this.showUpdate(profile);
+            });
+
+            item.querySelector('.edit-key-btn')?.addEventListener('click', () => {
                 if (profile.apiKeyIdentifier) {
                     vscode.postMessage({ command: WEBVIEW_COMMANDS.EDIT_API_KEY, identifier: profile.apiKeyIdentifier });
                 }
             });
 
-            item.querySelector('.delete-btn')?.addEventListener('click', () => {
+            item.querySelector('.delete-key-btn')?.addEventListener('click', () => {
                 if (profile.apiKeyIdentifier) {
                     vscode.postMessage({ command: WEBVIEW_COMMANDS.DELETE_API_KEY, identifier: profile.apiKeyIdentifier });
                 }

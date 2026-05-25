@@ -201,6 +201,8 @@ class ConfigProcessor {
         Object.assign(config, rest);
         
         if (profiles) {
+            // Tag incoming user profiles
+            Object.values(profiles).forEach(p => p.origin = 'user');
             config.profiles = { ...config.profiles, ...profiles };
         }
         if (activeChatProfile) { config.activeChatProfile = activeChatProfile; }

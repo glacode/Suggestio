@@ -1,21 +1,6 @@
 import { WEBVIEW_COMMANDS } from '../constants/protocol.js';
-import type { IWebviewApi, ProfileMetadata, InitialState } from '../types.js';
-
-/**
- * Common LLM providers mapping for consistent brand naming.
- */
-const KNOWN_PROVIDERS: Record<string, string> = {
-    'openai.com': 'OPENAI',
-    'anthropic.com': 'ANTHROPIC',
-    'groq.com': 'GROQ',
-    'mistral.ai': 'MISTRAL',
-    'openrouter.ai': 'OPENROUTER',
-    'huggingface.co': 'HUGGINGFACE',
-    'together.xyz': 'TOGETHER',
-    'deepseek.com': 'DEEPSEEK',
-    'googleapis.com': 'GOOGLEAPIS',
-    'ollama.com': 'OLLAMA'
-};
+import type { IWebviewApi, InitialState } from '../types.js';
+import { getBrandFromUrl, CustomDropdown } from './webViewUtils.js';
 
 /**
  * Manages the LLM Profile Edit/Add form UI.
@@ -27,8 +12,6 @@ export class EditLlmProfile {
     private _idInput?: HTMLInputElement;
     private _modelInput?: HTMLInputElement;
     private _endpointInput?: HTMLInputElement;
-    private _endpointDropdownList?: HTMLElement;
-    private _endpointDropdownWrapper?: HTMLElement;
 
     private _keyCheckSection?: HTMLElement;
     private _keySettingsSection?: HTMLElement;
@@ -57,52 +40,19 @@ export class EditLlmProfile {
     }
 
     /**
-     * Extracts a brand name from a URL for API key placeholder generation.
+     * Resets the form state.
      */
-    private getBrandFromUrl(url: string): string {
-        try {
-            const parsed = new URL(url);
-            const host = parsed.hostname.toLowerCase();
+    public reset() {
+        this._isIdManuallyEdited = false;
+    }
 
-            // 1. Special Cases
-            if (host === 'localhost' || host === '127.0.0.1') {
-                return 'LOCAL';
-            }
-
-            // 2. Known Providers Map (exact or suffix match)
-            for (const [domain, brand] of Object.entries(KNOWN_PROVIDERS)) {
-                if (host === domain || host.endsWith('.' + domain)) {
-                    return brand;
-                }
-            }
-
-            // 3. Common Multi-part TLDs
-            const multiPartTlds = ['.co.uk', '.com.br', '.org.uk', '.net.au', '.gov.it', '.co.jp'];
-            
-            let workingHost = host;
-            for (const tld of multiPartTlds) {
-                if (host.endsWith(tld)) {
-                    workingHost = host.slice(0, -tld.length);
-                    break;
-                }
-            }
-
-            // 4. Standard TLD stripping if no multi-part match
-            if (workingHost === host) {
-                const parts = host.split('.');
-                if (parts.length > 1) {
-                    workingHost = parts.slice(0, -1).join('.');
-                }
-            }
-
-            // 5. Take last segment
-            const finalParts = workingHost.split('.');
-            const brand = finalParts[finalParts.length - 1];
-            
-            return brand.toUpperCase().replace(/[^A-Z0-9]/g, '_');
-        } catch {
-            return 'CUSTOM';
-        }
+    /**
+     * Refreshes the component with new state without re-rendering the whole DOM.
+     * Useful for updating key status badges after a background secret change.
+     */
+    public refresh(state: InitialState) {
+        this._state = state;
+        this.updateKeyStatus();
     }
 
     /**
@@ -110,14 +60,11 @@ export class EditLlmProfile {
      * @param container Element to render into
      * @param vscode Webview API
      * @param state Current initial state for context-aware suggestions
-     * @param profile Optional profile to edit. If null, it's an "Add" form.
      */
-    public render(container: HTMLElement, vscode: IWebviewApi, state: InitialState, profile: ProfileMetadata | null = null) {
-        const isEdit = !!profile;
-        const title = isEdit ? `Edit Profile: ${profile.id}` : 'Add Custom Profile';
-        
+    public render(container: HTMLElement, vscode: IWebviewApi, state: InitialState) {
+        const title = 'Add Custom Profile';
         this._state = state;
-        this._isIdManuallyEdited = isEdit;
+        this._isIdManuallyEdited = false;
 
         // 1. Setup Data
         this._existingEndpoints = Array.from(new Set(
@@ -128,7 +75,7 @@ export class EditLlmProfile {
         container.innerHTML = '';
         const form = document.createElement('div');
         form.className = 'edit-profile-form';
-        form.innerHTML = this.getTemplate(title, profile);
+        form.innerHTML = this.getTemplate(title);
         container.appendChild(form);
 
         // 3. Binding & Type Safety
@@ -137,13 +84,29 @@ export class EditLlmProfile {
             return;
         }
 
-        // 4. Attach Listeners & Initial State
+        // 4. Initialize Shared Dropdown
+        new CustomDropdown(
+            this._endpointInput!,
+            form.querySelector('#endpointDropdownList')!,
+            form.querySelector('.dropdown-input-wrapper')!,
+            this._existingEndpoints,
+            () => {
+                this.computeSuggestedId();
+                this.updateKeyStatus();
+            },
+            () => {
+                this.computeSuggestedId();
+                this.updateKeyStatus();
+            },
+            '+ New Provider URL...'
+        );
+
+        // 5. Attach Listeners & Initial State
         this.attachListeners(vscode);
         this.updateKeyStatus();
     }
 
-    private getTemplate(title: string, profile: ProfileMetadata | null): string {
-        const isEdit = !!profile;
+    private getTemplate(title: string): string {
         return `
             <h3 class="settings-subtitle">${title}</h3>
             
@@ -151,7 +114,7 @@ export class EditLlmProfile {
                 <label class="settings-label">Endpoint URL</label>
                 <div class="custom-dropdown-container" id="endpointDropdownContainer">
                     <div class="dropdown-input-wrapper">
-                        <input type="text" id="editProfileEndpoint" value="${profile?.endpoint || ''}" placeholder="e.g. https://api.openai.com/v1" class="settings-input" autocomplete="off">
+                        <input type="text" id="editProfileEndpoint" value="" placeholder="e.g. https://api.openai.com/v1" class="settings-input" autocomplete="off">
                         <span class="dropdown-chevron">▼</span>
                     </div>
                     <div id="endpointDropdownList" class="custom-dropdown-list"></div>
@@ -160,12 +123,12 @@ export class EditLlmProfile {
 
             <div class="input-group">
                 <label class="settings-label">Model Name</label>
-                <input type="text" id="editProfileModel" value="${profile?.model || ''}" placeholder="e.g. gpt-4" class="settings-input">
+                <input type="text" id="editProfileModel" value="" placeholder="e.g. gpt-4" class="settings-input">
             </div>
 
             <div class="input-group">
                 <label class="settings-label">Profile ID (display name)</label>
-                <input type="text" id="editProfileId" value="${profile?.id || ''}" placeholder="e.g. my-provider-model" class="settings-input" ${isEdit ? 'disabled' : ''}>
+                <input type="text" id="editProfileId" value="" placeholder="e.g. my-provider-model" class="settings-input">
                 <div class="settings-description">Unique identifier for this configuration.</div>
             </div>
 
@@ -220,8 +183,6 @@ export class EditLlmProfile {
         const idInput = form.querySelector('#editProfileId');
         const modelInput = form.querySelector('#editProfileModel');
         const endpointInput = form.querySelector('#editProfileEndpoint');
-        const endpointDropdownList = form.querySelector('#endpointDropdownList');
-        const endpointDropdownWrapper = form.querySelector('.dropdown-input-wrapper');
         const keyCheckSection = form.querySelector('#keyCheckSection');
         const keySettingsSection = form.querySelector('#keySettingsSection');
         const keyTypeShared = form.querySelector('#keyTypeShared');
@@ -239,8 +200,6 @@ export class EditLlmProfile {
         if (idInput instanceof HTMLInputElement &&
             modelInput instanceof HTMLInputElement &&
             endpointInput instanceof HTMLInputElement &&
-            endpointDropdownList instanceof HTMLElement &&
-            endpointDropdownWrapper instanceof HTMLElement &&
             keyCheckSection instanceof HTMLElement &&
             keySettingsSection instanceof HTMLElement &&
             keyTypeShared instanceof HTMLInputElement &&
@@ -258,8 +217,6 @@ export class EditLlmProfile {
             this._idInput = idInput;
             this._modelInput = modelInput;
             this._endpointInput = endpointInput;
-            this._endpointDropdownList = endpointDropdownList;
-            this._endpointDropdownWrapper = endpointDropdownWrapper;
             this._keyCheckSection = keyCheckSection;
             this._keySettingsSection = keySettingsSection;
             this._keyTypeShared = keyTypeShared;
@@ -285,16 +242,6 @@ export class EditLlmProfile {
             !this._setKeyFinalBtn || !this._noKeyRequiredBtn || !this._saveBtn || !this._cancelBtn) {
             return;
         }
-
-        this._endpointInput.addEventListener('focus', () => this.showDropdown());
-        this._endpointInput.addEventListener('input', () => {
-            this.renderDropdownItems(this._endpointInput!.value);
-            this.computeSuggestedId();
-            this.updateKeyStatus();
-        });
-        this._endpointInput.addEventListener('blur', () => {
-            setTimeout(() => this.hideDropdown(), 200);
-        });
 
         this._modelInput.addEventListener('input', () => {
             this.computeSuggestedId();
@@ -361,55 +308,6 @@ export class EditLlmProfile {
         this._cancelBtn.addEventListener('click', () => this.onDone());
     }
 
-    private renderDropdownItems(filter: string = '') {
-        if (!this._endpointDropdownList || !this._endpointInput) { return; }
-
-        const normalizedFilter = filter.toLowerCase().trim();
-        const filtered = this._existingEndpoints.filter(e => e.toLowerCase().includes(normalizedFilter));
-        
-        this._endpointDropdownList.innerHTML = '';
-        
-        filtered.forEach(e => {
-            const item = document.createElement('div');
-            item.className = 'custom-dropdown-item';
-            item.textContent = e;
-            item.addEventListener('mousedown', (evt) => {
-                evt.preventDefault();
-                this._endpointInput!.value = e;
-                this.hideDropdown();
-                this.computeSuggestedId();
-                this.updateKeyStatus();
-            });
-            this._endpointDropdownList!.appendChild(item);
-        });
-
-        const newAction = document.createElement('div');
-        newAction.className = 'custom-dropdown-item new-endpoint-action';
-        newAction.textContent = '+ New Provider URL...';
-        newAction.addEventListener('mousedown', (evt) => {
-            evt.preventDefault();
-            this._endpointInput!.value = '';
-            this.hideDropdown();
-            this._endpointInput!.focus();
-            this.computeSuggestedId();
-            this.updateKeyStatus();
-        });
-        this._endpointDropdownList.appendChild(newAction);
-    }
-
-    private showDropdown() {
-        if (!this._endpointDropdownList || !this._endpointDropdownWrapper || !this._endpointInput) { return; }
-        this.renderDropdownItems(this._endpointInput.value);
-        this._endpointDropdownList.classList.add('visible');
-        this._endpointDropdownWrapper.classList.add('open');
-    }
-
-    private hideDropdown() {
-        if (!this._endpointDropdownList || !this._endpointDropdownWrapper) { return; }
-        this._endpointDropdownList.classList.remove('visible');
-        this._endpointDropdownWrapper.classList.remove('open');
-    }
-
     private computeSuggestedId() {
         if (this._isIdManuallyEdited || !this._idInput || !this._endpointInput || !this._modelInput) { return; }
         
@@ -421,7 +319,7 @@ export class EditLlmProfile {
             return;
         }
 
-        const brand = this.getBrandFromUrl(endpoint).toLowerCase();
+        const brand = getBrandFromUrl(endpoint).toLowerCase();
         const cleanModel = model.toLowerCase().replace(/[^a-z0-9]/g, '-');
         
         if (brand && cleanModel) {
@@ -437,7 +335,7 @@ export class EditLlmProfile {
         if (!this._keyTypeShared || !this._endpointInput || !this._idInput) { return ''; }
 
         const isShared = this._keyTypeShared.checked;
-        const brand = this.getBrandFromUrl(this._endpointInput.value.trim());
+        const brand = getBrandFromUrl(this._endpointInput.value.trim());
         const id = this._idInput.value.trim();
         
         if (isShared) {
@@ -462,7 +360,7 @@ export class EditLlmProfile {
         this._keyCheckSection.classList.toggle('section-disabled', !isFormComplete);
 
         const currentIdentifier = this.getCurrentIdentifier();
-        const brand = this.getBrandFromUrl(endpoint);
+        const brand = getBrandFromUrl(endpoint);
         this._previewShared.textContent = brand ? `${brand}_API_KEY` : '---';
         this._previewUnique.textContent = id ? `${id.toUpperCase().replace(/[^A-Z0-9]/g, '_')}_API_KEY` : '---';
 
