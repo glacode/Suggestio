@@ -26,7 +26,7 @@ class ConfigProcessor {
      * @param secretManager The secret manager to resolve API keys.
      * @param eventBus The event bus for communication between components.
      * @param httpClient The HTTP client for provider initialization.
-     * @param userSettings Optional partial configuration from standard VSCode extension settings.
+     * @param vsCodeSettings Optional partial configuration from standard VSCode extension settings.
      */
     public async processConfig(
         rawConfigs: IRawConfigs,
@@ -39,14 +39,16 @@ class ConfigProcessor {
         const config = this.parseAndMergeConfigs(rawConfigs, vsCodeSettings);
 
         const logger = createEventLogger(eventBus);
+        const container: IConfigContainer = { config, rawConfigs };
 
-        // 2. Register event listeners for live updates to this specific config instance
-        this.registerEventListeners(config, eventBus, secretManager, httpClient, logger);
+        // 2. Register event listeners ONCE with the container reference.
+        // This ensures they always access the latest config after a sync.
+        this.registerEventListeners(container, eventBus, secretManager, httpClient, logger);
 
         // 3. Resolve keys for active profiles and initialize providers
-        await this.updateProviders(config, eventBus, secretManager, httpClient);
+        await this.updateProviders(container.config, eventBus, secretManager, httpClient);
 
-        return { config, rawConfigs };
+        return container;
     }
 
     /**
@@ -65,7 +67,8 @@ class ConfigProcessor {
         // Preserve state that isn't part of the static config stack
         newConfig.anonymizerInstance = container.config.anonymizerInstance;
         
-        // Update the reference in the container
+        // Update the reference in the container. Existing event listeners will 
+        // automatically see the new configuration because they hold the container.
         container.config = newConfig;
 
         // Re-resolve and re-initialize
@@ -252,42 +255,37 @@ class ConfigProcessor {
     }
 
     private registerEventListeners(
-        config: IConfig,
+        container: IConfigContainer,
         eventBus: IEventBus,
         secretManager: ISecretManager,
         httpClient: IHttpClient,
         logger: ReturnType<typeof createEventLogger>
     ) {
-        // Remove existing listeners to avoid duplicates if processConfig is called multiple times
-        eventBus.removeAllListeners('chatProfileChanged');
         eventBus.on('chatProfileChanged', async (profileId: string) => {
             logger.info(CONFIG_LOGS.CHAT_PROFILE_CHANGED(profileId));
-            if (config.profiles[profileId]) {
-                config.activeChatProfile = profileId;
-                await this.updateProviders(config, eventBus, secretManager, httpClient);
-                logger.info(CONFIG_LOGS.CONFIG_UPDATED_ACTIVE_CHAT_PROFILE(config.activeChatProfile));
+            if (container.config.profiles[profileId]) {
+                container.config.activeChatProfile = profileId;
+                await this.updateProviders(container.config, eventBus, secretManager, httpClient);
+                logger.info(CONFIG_LOGS.CONFIG_UPDATED_ACTIVE_CHAT_PROFILE(container.config.activeChatProfile));
             }
         });
 
-        eventBus.removeAllListeners('inlineCompletionToggled');
         eventBus.on('inlineCompletionToggled', (enabled: boolean) => {
             logger.info(CONFIG_LOGS.INLINE_COMPLETION_TOGGLED(enabled));
-            config.inlineCompletion.enabled = enabled;
-            logger.info(CONFIG_LOGS.CONFIG_UPDATED_INLINE(config.inlineCompletion.enabled));
+            container.config.inlineCompletion.enabled = enabled;
+            logger.info(CONFIG_LOGS.CONFIG_UPDATED_INLINE(container.config.inlineCompletion.enabled));
         });
 
-        eventBus.removeAllListeners('autoAcceptEditsToggled');
         eventBus.on('autoAcceptEditsToggled', (enabled: boolean) => {
-            config.autoAcceptEdits = enabled;
+            container.config.autoAcceptEdits = enabled;
             logger.info(`Auto-accept edits toggled: ${enabled}`);
         });
 
-        eventBus.removeAllListeners('completionProfileChanged');
         eventBus.on('completionProfileChanged', async (profileId: string) => {
             logger.info(CONFIG_LOGS.COMPLETION_PROFILE_CHANGED(profileId));
-            config.activeCompletionProfile = profileId;
-            await this.updateProviders(config, eventBus, secretManager, httpClient);
-            logger.info(CONFIG_LOGS.CONFIG_UPDATED_ACTIVE_COMPLETION_PROFILE(config.activeCompletionProfile));
+            container.config.activeCompletionProfile = profileId;
+            await this.updateProviders(container.config, eventBus, secretManager, httpClient);
+            logger.info(CONFIG_LOGS.CONFIG_UPDATED_ACTIVE_COMPLETION_PROFILE(container.config.activeCompletionProfile));
         });
     }
 
@@ -310,10 +308,14 @@ class ConfigProcessor {
         const envValue = process.env[identifier];
         if (envValue?.trim()) {
             profileConfig.resolvedApiKey = envValue.trim();
-        } else {
-            profileConfig.resolvedApiKey = forcePrompt
-                ? await secretManager.getOrRequestAPIKey(identifier)
-                : await secretManager.getSecret(identifier);
+            return;
+        }
+
+        const storedSecret = await secretManager.getSecret(identifier);
+        if (storedSecret && !forcePrompt) {
+            profileConfig.resolvedApiKey = storedSecret;
+        } else if (forcePrompt) {
+            profileConfig.resolvedApiKey = await secretManager.getOrRequestAPIKey(identifier);
         }
     }
 

@@ -14,7 +14,7 @@ export const CHAT_MESSAGES = {
 } as const;
 
 export const PROVIDER_MESSAGES = {
-    NOT_FOUND: (name: string) => `Profile "${name}" not found in configuration file (suggestio.config.json)`,
+    NOT_FOUND: (name: string) => `Profile "${name}" not found in configuration`,
     MISSING_ENDPOINT: (name: string) => `Profile "${name}" missing endpoint`,
     UNKNOWN_TYPE: (type: string) => `Unknown profile type: ${type}`,
 } as const;

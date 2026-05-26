@@ -276,7 +276,7 @@ export async function activate(context: vscode.ExtensionContext) {
     workspaceScanner,
     commandExecutor,
     commandValidator,
-    configContainer.config, // Acts as IAutoAcceptProvider
+    configContainer,
     autoAcceptManager
   );
 

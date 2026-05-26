@@ -1,8 +1,8 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { ReplaceTextTool } from "../../src/tools/replaceTextTool.js";
-import { IWorkspaceProvider, IPathResolver, IFileContentReader, IFileContentWriter, IEventBus, IIgnoreManager, IUserConfirmationPayload, IAutoAcceptProvider } from "../../src/types.js";
+import { IWorkspaceProvider, IPathResolver, IFileContentReader, IFileContentWriter, IEventBus, IIgnoreManager, IUserConfirmationPayload } from "../../src/types.js";
 import { AGENT_MESSAGES } from "../../src/constants/messages.js";
-import { createMockPathResolver, createMockFileContentReader, createMockWorkspaceProvider, createMockEventBus, createMockIgnoreManager, createMockFileContentWriter } from "../testUtils.js";
+import { createMockPathResolver, createMockFileContentReader, createMockWorkspaceProvider, createMockEventBus, createMockIgnoreManager, createMockFileContentWriter, createMockConfigContainer } from "../testUtils.js";
 
 describe("ReplaceTextTool", () => {
     let tool: ReplaceTextTool;
@@ -25,7 +25,8 @@ describe("ReplaceTextTool", () => {
         ignoreManager = createMockIgnoreManager();
         ignoreManager.shouldIgnore.mockResolvedValue(false);
 
-        tool = new ReplaceTextTool(workspaceProvider, fileReader, fileWriter, pathResolver, eventBus, ignoreManager);
+        const mockConfigContainer = createMockConfigContainer();
+        tool = new ReplaceTextTool(workspaceProvider, fileReader, fileWriter, pathResolver, eventBus, ignoreManager, mockConfigContainer);
     });
 
     it("should have the correct definition", () => {
@@ -173,11 +174,11 @@ describe("ReplaceTextTool", () => {
         const newString = "line2-replaced";
         const expectedNewContent = "line1\nline2-replaced\nline3";
         const toolCallId = "call1";
-        const autoAcceptProvider: IAutoAcceptProvider = { autoAcceptEdits: true };
+        const autoAcceptConfig = createMockConfigContainer({ autoAcceptEdits: true });
 
         fileReader.read.mockReturnValue(oldContent);
 
-        tool = new ReplaceTextTool(workspaceProvider, fileReader, fileWriter, pathResolver, eventBus, ignoreManager, autoAcceptProvider);
+        tool = new ReplaceTextTool(workspaceProvider, fileReader, fileWriter, pathResolver, eventBus, ignoreManager, autoAcceptConfig);
 
         const result = await tool.execute({ path: filePath, old_string: oldString, new_string: newString }, undefined, toolCallId);
 

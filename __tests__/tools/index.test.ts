@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { getTools } from "../../src/tools/index.js";
 import { ReadFileTool, WriteFileTool, ReplaceTextTool, ListFilesTool, GrepSearchTool, RunCommandTool } from "../../src/tools/index.js";
-import { createMockWorkspaceProvider, createMockFileContentReader, createMockFileContentWriter, createMockPathResolver, createMockEventBus, createMockIgnoreManager } from "../testUtils.js";
+import { createMockWorkspaceProvider, createMockFileContentReader, createMockFileContentWriter, createMockPathResolver, createMockEventBus, createMockIgnoreManager, createMockConfigContainer } from "../testUtils.js";
 import { ICommandExecutor, ICommandValidator, IWorkspaceScanner, IWorkspaceProvider, IFileContentReader, IFileContentWriter, IPathResolver, IEventBus, IIgnoreManager, ICommandAutoAcceptManager } from "../../src/types.js";
 import { jest } from "@jest/globals";
 
@@ -35,6 +35,7 @@ describe("Tools Index", () => {
     });
 
     it("should return all registered tools", () => {
+        const configContainer = createMockConfigContainer();
         const tools = getTools(
             workspaceProvider,
             fileReader,
@@ -45,7 +46,7 @@ describe("Tools Index", () => {
             workspaceScanner,
             commandExecutor,
             commandValidator,
-            { autoAcceptEdits: false },
+            configContainer,
             autoAcceptManager
         );
 
@@ -59,6 +60,7 @@ describe("Tools Index", () => {
     });
 
     it("should configure ReadFileTool with requireUserConfirmation = false", () => {
+        const configContainer = createMockConfigContainer();
         const tools = getTools(
             workspaceProvider,
             fileReader,
@@ -69,7 +71,7 @@ describe("Tools Index", () => {
             workspaceScanner,
             commandExecutor,
             commandValidator,
-            { autoAcceptEdits: false },
+            configContainer,
             autoAcceptManager
         );
 

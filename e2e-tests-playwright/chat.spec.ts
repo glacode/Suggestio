@@ -794,7 +794,7 @@ test.describe('Chat E2E', () => {
     });
 
     test('should handle switching to a reasoning model and processing interleaved tokens correctly', async () => {
-        await openChatView(page);
+        // await openChatView(page);
         const inner = await getChatFrames(page);
 
         // Switch to the reasoning profile
@@ -1344,7 +1344,7 @@ test.describe('Chat E2E', () => {
     });
 
     test('should bypass confirmation for subsequent replace_text calls after "Always Allow" is clicked', async () => {
-        // await openChatView(page);
+        await openChatView(page);
         const inner = await getChatFrames(page);
 
         // 1. Pre-create the file to be edited

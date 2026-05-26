@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { IToolImplementation, IToolDefinition, IToolResult, IEventBus, IUserConfirmationPayload, IToolConfirmationPayload, IAutoAcceptProvider } from '../types.js';
+import { IToolImplementation, IToolDefinition, IToolResult, IEventBus, IUserConfirmationPayload, IToolConfirmationPayload, IConfigContainer } from '../types.js';
 
 /**
  * Abstract base class for all tool implementations.
@@ -21,7 +21,7 @@ export abstract class BaseTool<T> implements IToolImplementation<T> {
     /**
      * Optional provider to check if tool edits should be automatically accepted.
      */
-    protected autoAcceptProvider?: IAutoAcceptProvider;
+    protected configContainer?: IConfigContainer;
 
     /**
      * The core logic of the tool.
@@ -58,7 +58,7 @@ export abstract class BaseTool<T> implements IToolImplementation<T> {
         options?: { isEdit?: boolean }
     ): Promise<string> {
         // Bypass confirmation if auto-accept is enabled for edits
-        if (options?.isEdit && this.autoAcceptProvider?.autoAcceptEdits) {
+        if (options?.isEdit && this.configContainer?.config.autoAcceptEdits) {
             // Notify the UI that the tool is starting immediately since we are bypassing confirmation.
             eventBus.emit('agent:toolExecutionStarted', { toolCallId });
             return 'allow';

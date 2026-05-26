@@ -1,8 +1,8 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { WriteFileTool } from "../../src/tools/writeFileTool.js";
-import { IWorkspaceProvider, IPathResolver, IFileContentReader, IFileContentWriter, IEventBus, IIgnoreManager, IUserConfirmationPayload, IAutoAcceptProvider } from "../../src/types.js";
+import { IWorkspaceProvider, IPathResolver, IFileContentReader, IFileContentWriter, IEventBus, IIgnoreManager, IUserConfirmationPayload } from "../../src/types.js";
 import { AGENT_MESSAGES } from "../../src/constants/messages.js";
-import { createMockPathResolver, createMockFileContentReader, createMockWorkspaceProvider, createMockEventBus, createMockIgnoreManager, createMockFileContentWriter } from "../testUtils.js";
+import { createMockPathResolver, createMockFileContentReader, createMockWorkspaceProvider, createMockEventBus, createMockIgnoreManager, createMockFileContentWriter, createMockConfigContainer } from "../testUtils.js";
 
 describe("WriteFileTool", () => {
     let tool: WriteFileTool;
@@ -25,7 +25,8 @@ describe("WriteFileTool", () => {
         ignoreManager = createMockIgnoreManager();
         ignoreManager.shouldIgnore.mockResolvedValue(false);
 
-        tool = new WriteFileTool(workspaceProvider, fileReader, fileWriter, pathResolver, eventBus, ignoreManager);
+        const mockConfigContainer = createMockConfigContainer();
+        tool = new WriteFileTool(workspaceProvider, fileReader, fileWriter, pathResolver, eventBus, ignoreManager, mockConfigContainer);
     });
 
     it("should have the correct definition", () => {
@@ -168,9 +169,9 @@ describe("WriteFileTool", () => {
         const filePath = "test.ts";
         const content = "new content";
         const toolCallId = "call1";
-        const autoAcceptProvider: IAutoAcceptProvider = { autoAcceptEdits: true };
+        const autoAcceptConfig = createMockConfigContainer({ autoAcceptEdits: true });
         
-        tool = new WriteFileTool(workspaceProvider, fileReader, fileWriter, pathResolver, eventBus, ignoreManager, autoAcceptProvider);
+        tool = new WriteFileTool(workspaceProvider, fileReader, fileWriter, pathResolver, eventBus, ignoreManager, autoAcceptConfig);
 
         const result = await tool.execute({ path: filePath, content }, undefined, toolCallId);
 
