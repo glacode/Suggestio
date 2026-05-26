@@ -3,6 +3,7 @@ import { WEBVIEW_COMMANDS } from '../constants/protocol.js';
 import type { IWebviewApi, InitialState, ProfileMetadata } from '../types.js';
 import { EditLlmProfile } from './editLlmProfile.js';
 import { UpdateLlmProfile } from './updateLlmProfile.js';
+import { DeleteLlmProfile } from './deleteLlmProfile.js';
 
 const EDIT_ICON_HTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
 const DELETE_ICON_HTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>';
@@ -15,20 +16,24 @@ export class SettingsOverlay {
     private doneButton: HTMLButtonElement | null = null;
     private addProfile: EditLlmProfile;
     private updateProfile: UpdateLlmProfile;
-    private currentView: 'list' | 'add' | 'update' = 'list';
-    private lastRenderedView: 'list' | 'add' | 'update' | null = null;
+    private deleteProfile: DeleteLlmProfile;
+    private currentView: 'list' | 'add' | 'update' | 'delete' = 'list';
+    private lastRenderedView: 'list' | 'add' | 'update' | 'delete' | null = null;
     private profileToUpdate: ProfileMetadata | null = null;
+    private profileToDelete: ProfileMetadata | null = null;
     private vscode: IWebviewApi | null = null;
     private state: InitialState | null = null;
 
     constructor() {
         this.addProfile = new EditLlmProfile(() => this.showList());
         this.updateProfile = new UpdateLlmProfile(() => this.showList());
+        this.deleteProfile = new DeleteLlmProfile(() => this.showList());
     }
 
     private showList() {
         this.currentView = 'list';
         this.profileToUpdate = null;
+        this.profileToDelete = null;
         if (this.vscode && this.state) {
             this.render(this.vscode, this.state);
         }
@@ -48,6 +53,14 @@ export class SettingsOverlay {
         this.profileToUpdate = profile;
         // Ensure a fresh form when explicitly clicking the "Edit" button
         this.updateProfile.reset();
+        if (this.vscode && this.state) {
+            this.render(this.vscode, this.state);
+        }
+    }
+
+    private showDelete(profile: ProfileMetadata) {
+        this.currentView = 'delete';
+        this.profileToDelete = profile;
         if (this.vscode && this.state) {
             this.render(this.vscode, this.state);
         }
@@ -134,7 +147,7 @@ export class SettingsOverlay {
         }
 
         // Surgical Update Logic:
-        // If we are already in 'add' or 'update' view, and this is a background sync
+        // If we are already in 'add', 'update' or 'delete' view, and this is a background sync
         // (metadata changed), don't wipe the DOM. Just refresh badges.
         if (isBackgroundUpdate) {
             if (this.currentView === 'add') {
@@ -143,6 +156,10 @@ export class SettingsOverlay {
             }
             if (this.currentView === 'update') {
                 this.updateProfile.refresh(state);
+                return;
+            }
+            if (this.currentView === 'delete') {
+                // Delete page is static, no refresh needed but we skip the wipe
                 return;
             }
         }
@@ -157,6 +174,11 @@ export class SettingsOverlay {
 
         if (this.currentView === 'update' && this.profileToUpdate) {
             this.updateProfile.render(body, vscode, state, this.profileToUpdate);
+            return;
+        }
+
+        if (this.currentView === 'delete' && this.profileToDelete) {
+            this.deleteProfile.render(body, vscode, this.profileToDelete);
             return;
         }
 
@@ -208,16 +230,24 @@ export class SettingsOverlay {
                 </div>
                 <div class="profile-actions">
                     ${!profile.isActiveCompletion ? `<button class="icon-button select-btn" title="Select for Completion">Set Active</button>` : ''}
-                    ${profile.origin === 'user' ? `<button class="icon-button edit-profile-btn" title="Edit Profile Structure">${EDIT_ICON_HTML}</button>` : ''}
+                    ${profile.origin === 'user' ? `
+                        <button class="icon-button edit-profile-btn" title="Edit Profile Structure">${EDIT_ICON_HTML}</button>
+                        <button class="icon-button delete-profile-btn" title="Delete Profile">${DELETE_ICON_HTML}</button>
+                    ` : ''}
                 </div>
             `;
 
+            // Attach listeners AFTER innerHTML is set
             item.querySelector('.select-btn')?.addEventListener('click', () => {
                 vscode.postMessage({ command: WEBVIEW_COMMANDS.COMPLETION_PROFILE_CHANGED, model: profile.id });
             });
 
             item.querySelector('.edit-profile-btn')?.addEventListener('click', () => {
                 this.showUpdate(profile);
+            });
+
+            item.querySelector('.delete-profile-btn')?.addEventListener('click', () => {
+                this.showDelete(profile);
             });
 
             item.querySelector('.edit-key-btn')?.addEventListener('click', () => {

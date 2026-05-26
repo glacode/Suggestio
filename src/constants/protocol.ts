@@ -15,6 +15,7 @@ export const WEBVIEW_COMMANDS = {
     GET_SESSIONS: 'getSessions',
     LOAD_SESSION: 'loadSession',
     ADD_PROFILE: 'addProfile',
+    DELETE_PROFILE: 'deleteProfile',
 } as const;
 
 /**

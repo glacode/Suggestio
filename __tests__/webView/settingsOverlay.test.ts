@@ -207,7 +207,7 @@ describe('SettingsOverlay Unit Tests', () => {
             });
         });
 
-        it('should only show structural edit button for user profiles', () => {
+        it('should only show structural edit and delete button for user profiles', () => {
             const container = document.querySelector('.chat-container');
             if (!(container instanceof HTMLElement)) { throw new Error('Container not found'); }
             settingsOverlay.init(container);
@@ -216,11 +216,33 @@ describe('SettingsOverlay Unit Tests', () => {
             
             const items = document.querySelectorAll('.profile-item');
             
-            // p1 is 'bundled' -> no structural edit
+            // p1 is 'bundled' -> no structural edit, no delete profile
             expect(items[0].querySelector('.edit-profile-btn')).toBeNull();
+            expect(items[0].querySelector('.delete-profile-btn')).toBeNull();
             
-            // p2 is 'user' -> has structural edit
+            // p2 is 'user' -> has structural edit and delete profile
             expect(items[1].querySelector('.edit-profile-btn')).not.toBeNull();
+            expect(items[1].querySelector('.delete-profile-btn')).not.toBeNull();
+        });
+
+        it('should transition to delete confirmation page when trash icon is clicked', () => {
+            const container = document.querySelector('.chat-container');
+            if (!(container instanceof HTMLElement)) { throw new Error('Container not found'); }
+            settingsOverlay.init(container);
+            
+            // p2 is 'user' origin
+            settingsOverlay.render(mockVscode, mockState);
+            
+            const items = document.querySelectorAll('.profile-item');
+            const deleteBtn = items[1].querySelector('.delete-profile-btn');
+            if (!(deleteBtn instanceof HTMLButtonElement)) { throw new Error('delete btn missing'); }
+
+            deleteBtn.click();
+
+            // The body should now contain the delete confirmation title
+            const body = container.querySelector('.settings-body');
+            expect(body?.textContent).toContain('Delete Profile?');
+            expect(body?.textContent).toContain('p2');
         });
 
         it('should do nothing if not initialized', () => {

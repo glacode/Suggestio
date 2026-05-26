@@ -21,6 +21,8 @@ describe('UpdateLlmProfile Unit Tests (Behavioral)', () => {
         hasApiKey: false,
         apiKeyIdentifier: 'OLD_KEY',
         origin: 'user',
+        supportsTools: false, // non-default
+        excludeFromChat: true, // non-default
         isActiveChat: true,
         isActiveCompletion: true
     };
@@ -52,6 +54,8 @@ describe('UpdateLlmProfile Unit Tests (Behavioral)', () => {
         const idInput = container.querySelector('#updateProfileId');
         const keyIdInput = container.querySelector('#updateKeyIdentifier');
         const isKeyReq = container.querySelector('#updateIsKeyRequired');
+        const toolsToggle = container.querySelector('#updateSupportsTools');
+        const excludeToggle = container.querySelector('#updateExcludeFromChat');
 
         expect(endpointInput instanceof HTMLInputElement && endpointInput.value).toBe(mockProfile.endpoint);
         expect(modelInput instanceof HTMLInputElement && modelInput.value).toBe(mockProfile.model);
@@ -59,6 +63,8 @@ describe('UpdateLlmProfile Unit Tests (Behavioral)', () => {
         expect(idInput instanceof HTMLInputElement && idInput.disabled).toBe(true);
         expect(keyIdInput instanceof HTMLInputElement && keyIdInput.value).toBe(mockProfile.apiKeyIdentifier);
         expect(isKeyReq instanceof HTMLInputElement && isKeyReq.checked).toBe(true);
+        expect(toolsToggle instanceof HTMLInputElement && toolsToggle.checked).toBe(false);
+        expect(excludeToggle instanceof HTMLInputElement && excludeToggle.checked).toBe(true);
     });
 
     it('should show and hide custom endpoint dropdown', () => {
@@ -81,7 +87,7 @@ describe('UpdateLlmProfile Unit Tests (Behavioral)', () => {
         const item = container.querySelector('.custom-dropdown-item');
         item?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
 
-        // Current mock state has only one endpoint: ollama
+        // Current mock state has only one endpoint
         expect(endpointInput.value).toBe('https://old-endpoint.com');
     });
 
@@ -151,9 +157,9 @@ describe('UpdateLlmProfile Unit Tests (Behavioral)', () => {
         modelInput.value = 'new-model';
         keyIdInput.value = 'NEW_KEY';
         
-        // Disable tools, enable exclude (non-defaults)
-        toolsToggle.checked = false;
-        excludeToggle.checked = true;
+        // Restore to defaults (true for tools, false for exclude)
+        toolsToggle.checked = true;
+        excludeToggle.checked = false;
 
         saveBtn.click();
 
@@ -164,16 +170,18 @@ describe('UpdateLlmProfile Unit Tests (Behavioral)', () => {
                 model: 'new-model',
                 endpoint: 'https://new-api.com',
                 isApiKeyRequired: true,
-                apiKeyIdentifier: 'NEW_KEY',
-                supportsTools: false,
-                excludeFromChat: true
+                apiKeyIdentifier: 'NEW_KEY'
+                // capabilities omitted because they match defaults
             }
         });
         expect(onDoneCalled).toBe(true);
     });
 
     it('should use sparse saving (not send defaults) for capabilities', () => {
-        updateLlmProfile.render(container, mockVscode, mockState, mockProfile);
+        // Create a profile that currently has defaults
+        const defaultProfile = { ...mockProfile, supportsTools: true, excludeFromChat: false };
+        updateLlmProfile.render(container, mockVscode, mockState, defaultProfile);
+        
         const saveBtn = container.querySelector('#updateSaveBtn');
         if (!(saveBtn instanceof HTMLButtonElement)) { throw new Error('btn missing'); }
 

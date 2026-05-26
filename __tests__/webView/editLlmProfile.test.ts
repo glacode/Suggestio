@@ -27,6 +27,8 @@ describe('EditLlmProfile Unit Tests (Behavioral)', () => {
                 hasApiKey: true,
                 apiKeyIdentifier: 'OLLAMA_API_KEY',
                 origin: 'bundled',
+                supportsTools: true,
+                excludeFromChat: false,
                 isActiveChat: true,
                 isActiveCompletion: true
             }

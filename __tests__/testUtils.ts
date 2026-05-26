@@ -279,6 +279,7 @@ export const createMockConfigProvider = (): jest.Mocked<IConfigProvider> => ({
     getProfiles: jest.fn<() => Record<string, any>>(),
     getActiveChatProfile: jest.fn<() => string | undefined>(),
     getActiveCompletionProfile: jest.fn<() => string | undefined>(),
+    deleteProfile: jest.fn<(profileId: string) => Promise<void>>(),
     updateConfig: jest.fn<(key: string, value: any, global: boolean) => Promise<void>>(),
     onDidChangeConfiguration: jest.fn<any>(),
 });

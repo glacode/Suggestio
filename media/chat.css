@@ -788,11 +788,6 @@ body.overlay-open textarea#messageInput {
     background: var(--vscode-button-hoverBackground);
 }
 
-.icon-button.delete-btn:hover {
-    background: var(--vscode-errorForeground);
-    color: white;
-}
-
 /* Form Styles */
 .edit-profile-form {
     display: flex;
@@ -1085,6 +1080,20 @@ body.overlay-open textarea#messageInput {
 .settings-done.small:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+.danger-button {
+    background: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+    border: 1px solid transparent;
+    transition: background 0.1s, border-color 0.1s, color 0.1s;
+}
+
+.icon-button.delete-btn:hover,
+.danger-button:hover {
+    background: var(--vscode-button-secondaryHoverBackground);
+    color: var(--vscode-errorForeground);
+    border: 1px solid var(--vscode-errorForeground);
 }
 
 /* Custom Themed Tooltip */

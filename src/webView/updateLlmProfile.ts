@@ -143,13 +143,13 @@ export class UpdateLlmProfile {
                 <label class="settings-label">Capabilities & UI</label>
                 
                 <label class="checkbox-container">
-                    <input type="checkbox" id="updateSupportsTools" checked>
+                    <input type="checkbox" id="updateSupportsTools" ${profile.supportsTools ? 'checked' : ''}>
                     <span class="checkbox-label">Supports Tool Calling</span>
                 </label>
                 <div class="settings-description small">Enable if the model can use functions (Search, Terminal, etc.)</div>
 
                 <label class="checkbox-container" style="margin-top: 10px;">
-                    <input type="checkbox" id="updateExcludeFromChat">
+                    <input type="checkbox" id="updateExcludeFromChat" ${profile.excludeFromChat ? 'checked' : ''}>
                     <span class="checkbox-label">Exclude from Chat View</span>
                 </label>
                 <div class="settings-description small">Keep this model only for inline completions.</div>

@@ -303,6 +303,12 @@ export type WebviewMessage =
     command: typeof WEBVIEW_COMMANDS.ADD_PROFILE;
     /** The configuration for the new profile. */
     profile: IProfileConfig & { id: string };
+  }
+  | {
+    /** User wants to delete a custom profile. */
+    command: typeof WEBVIEW_COMMANDS.DELETE_PROFILE;
+    /** The ID of the profile to delete. */
+    profileId: string;
   };
 
 /**
@@ -706,6 +712,8 @@ export interface ProfileMetadata {
   hasApiKey: boolean;
   apiKeyIdentifier?: string;
   origin: 'bundled' | 'user' | 'project';
+  supportsTools: boolean;
+  excludeFromChat: boolean;
   isActiveChat: boolean;
   isActiveCompletion: boolean;
 }
@@ -1053,6 +1061,12 @@ export interface IConfigProvider {
    * Retrieves the active completion profile ID from VS Code settings.
    */
   getActiveCompletionProfile(): string | undefined;
+
+  /**
+   * Deletes a profile from the user configuration.
+   * @param profileId The ID of the profile to remove.
+   */
+  deleteProfile(profileId: string): Promise<void>;
 
   /**
    * Updates a configuration setting.

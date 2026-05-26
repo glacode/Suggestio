@@ -344,6 +344,8 @@ export class ChatWebviewViewProvider {
                 hasApiKey,
                 apiKeyIdentifier: identifier,
                 origin: profile?.origin || 'bundled',
+                supportsTools: profile?.supportsTools !== false,
+                excludeFromChat: profile?.excludeFromChat === true,
                 isActiveChat: id === activeProfile,
                 isActiveCompletion: id === activeCompletionProfile
             };
@@ -561,6 +563,8 @@ export class ChatWebviewViewProvider {
                 const { id, ...profileData } = message.profile;
                 currentProfiles[id] = profileData;
                 await this._configProvider.updateConfig('profiles', currentProfiles, true);
+            } else if (message.command === WEBVIEW_COMMANDS.DELETE_PROFILE) {
+                await this._configProvider.deleteProfile(message.profileId);
             }
         });
     }

@@ -152,6 +152,24 @@ export async function activate(context: vscode.ExtensionContext) {
     getProfiles: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<Record<string, any>>('profiles') || {},
     getActiveChatProfile: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<string>('activeChatProfile'),
     getActiveCompletionProfile: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<string>('activeCompletionProfile'),
+    deleteProfile: async (profileId: string) => {
+      const config = vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri());
+      const inspect = config.inspect<Record<string, any>>('profiles');
+      
+      // Update Global (User) settings
+      const globalProfiles = { ...(inspect?.globalValue || {}) };
+      if (globalProfiles[profileId]) {
+        delete globalProfiles[profileId];
+        await config.update('profiles', globalProfiles, vscode.ConfigurationTarget.Global);
+      }
+
+      // Also try Workspace settings if it exists there
+      const workspaceProfiles = { ...(inspect?.workspaceValue || {}) };
+      if (workspaceProfiles[profileId]) {
+        delete workspaceProfiles[profileId];
+        await config.update('profiles', workspaceProfiles, vscode.ConfigurationTarget.Workspace);
+      }
+    },
     updateConfig: async (key: string, value: any, global: boolean) => {
       const config = vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri());
       await config.update(key, value, global ? vscode.ConfigurationTarget.Global : vscode.ConfigurationTarget.Workspace);
