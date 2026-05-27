@@ -43,6 +43,12 @@ describe('DeleteLlmProfile Unit Tests (Behavioral)', () => {
         expect(container.textContent).toContain('Note: Any stored API keys for this profile will NOT be removed');
     });
 
+    it('should use the danger-button class for the delete button', () => {
+        deleteLlmProfile.render(container, mockVscode, mockProfile);
+        const confirmBtn = container.querySelector('#confirmDeleteBtn');
+        expect(confirmBtn?.classList.contains('danger-button')).toBe(true);
+    });
+
     it('should post DELETE_PROFILE and call onDone when confirmed', () => {
         deleteLlmProfile.render(container, mockVscode, mockProfile);
         

@@ -118,6 +118,8 @@ describe('AddLlmProfile Unit Tests (Behavioral)', () => {
 
         expect(keySection?.classList.contains('section-disabled')).toBe(true);
         expect(saveBtn.disabled).toBe(true);
+        // Verify CSS class exists for the :disabled pseudo-selector to work
+        expect(saveBtn.classList.contains('settings-done')).toBe(true);
 
         endpointInput.value = 'https://api.openai.com/v1';
         endpointInput.dispatchEvent(new Event('input'));
