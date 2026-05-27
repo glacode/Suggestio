@@ -7,9 +7,9 @@ import { WEBVIEW_COMMANDS } from '../../src/constants/protocol.js';
 import { AddLlmProfile } from '../../src/webView/addLlmProfile.js';
 import { InitialState } from '../../src/types.js';
 
-describe('EditLlmProfile Unit Tests (Behavioral)', () => {
+describe('AddLlmProfile Unit Tests (Behavioral)', () => {
     let mockVscode: MockWebviewApi;
-    let editLlmProfile: AddLlmProfile;
+    let addLlmProfile: AddLlmProfile;
     let container: HTMLElement;
     let onDoneCalled = false;
 
@@ -37,7 +37,7 @@ describe('EditLlmProfile Unit Tests (Behavioral)', () => {
 
     beforeEach(() => {
         onDoneCalled = false;
-        editLlmProfile = new AddLlmProfile(() => { onDoneCalled = true; });
+        addLlmProfile = new AddLlmProfile(() => { onDoneCalled = true; });
         container = document.createElement('div');
         document.body.innerHTML = '';
         document.body.appendChild(container);
@@ -45,7 +45,7 @@ describe('EditLlmProfile Unit Tests (Behavioral)', () => {
     });
 
     it('should render the "Add" form initially with disabled key section', () => {
-        editLlmProfile.render(container, mockVscode, mockState);
+        addLlmProfile.render(container, mockVscode, mockState);
 
         expect(container.querySelector('.settings-subtitle')?.textContent).toBe('Add Custom Profile');
         
@@ -62,7 +62,7 @@ describe('EditLlmProfile Unit Tests (Behavioral)', () => {
     });
 
     it('should auto-compute Profile ID as user types', () => {
-        editLlmProfile.render(container, mockVscode, mockState);
+        addLlmProfile.render(container, mockVscode, mockState);
         
         const endpointInput = container.querySelector('#editProfileEndpoint');
         const modelInput = container.querySelector('#editProfileModel');
@@ -84,7 +84,7 @@ describe('EditLlmProfile Unit Tests (Behavioral)', () => {
     });
 
     it('should stop auto-computing ID if user manually edits it', () => {
-        editLlmProfile.render(container, mockVscode, mockState);
+        addLlmProfile.render(container, mockVscode, mockState);
         
         const endpointInput = container.querySelector('#editProfileEndpoint');
         const idInput = container.querySelector('#editProfileId');
@@ -104,7 +104,7 @@ describe('EditLlmProfile Unit Tests (Behavioral)', () => {
     });
 
     it('should enable key section and "Save" button when form is complete', () => {
-        editLlmProfile.render(container, mockVscode, mockState);
+        addLlmProfile.render(container, mockVscode, mockState);
         
         const endpointInput = container.querySelector('#editProfileEndpoint');
         const modelInput = container.querySelector('#editProfileModel');
@@ -132,7 +132,7 @@ describe('EditLlmProfile Unit Tests (Behavioral)', () => {
 
     it('should show "Key Ready" if provider already has an API key', () => {
         // Mock state has a key for OLLAMA_API_KEY
-        editLlmProfile.render(container, mockVscode, mockState);
+        addLlmProfile.render(container, mockVscode, mockState);
         
         const endpointInput = container.querySelector('#editProfileEndpoint');
         const modelInput = container.querySelector('#editProfileModel');
@@ -151,7 +151,7 @@ describe('EditLlmProfile Unit Tests (Behavioral)', () => {
     });
 
     it('should show custom dropdown with suggestions on focus', () => {
-        editLlmProfile.render(container, mockVscode, mockState);
+        addLlmProfile.render(container, mockVscode, mockState);
         
         const endpointInput = container.querySelector('#editProfileEndpoint');
         const dropdownList = container.querySelector('#endpointDropdownList');
@@ -171,7 +171,7 @@ describe('EditLlmProfile Unit Tests (Behavioral)', () => {
     });
 
     it('should filter dropdown items based on input', () => {
-        editLlmProfile.render(container, mockVscode, mockState);
+        addLlmProfile.render(container, mockVscode, mockState);
         
         const endpointInput = container.querySelector('#editProfileEndpoint');
         if (!(endpointInput instanceof HTMLInputElement)) {
@@ -186,7 +186,7 @@ describe('EditLlmProfile Unit Tests (Behavioral)', () => {
     });
 
     it('should handle "New Provider URL" click by clearing input', () => {
-        editLlmProfile.render(container, mockVscode, mockState);
+        addLlmProfile.render(container, mockVscode, mockState);
 
         const endpointInput = container.querySelector('#editProfileEndpoint');
         if (!(endpointInput instanceof HTMLInputElement)) {
@@ -208,7 +208,7 @@ describe('EditLlmProfile Unit Tests (Behavioral)', () => {
 
     it('should handle getBrandFromUrl logic for various hostnames', () => {
         // We can test this by checking auto-computed ID for different endpoints
-        editLlmProfile.render(container, mockVscode, mockState);
+        addLlmProfile.render(container, mockVscode, mockState);
         const endpointInput = container.querySelector('#editProfileEndpoint');
         const idInput = container.querySelector('#editProfileId');
 
@@ -233,7 +233,7 @@ describe('EditLlmProfile Unit Tests (Behavioral)', () => {
     });
 
     it('should show and hide dropdown correctly', () => {
-        editLlmProfile.render(container, mockVscode, mockState);
+        addLlmProfile.render(container, mockVscode, mockState);
         const endpointInput = container.querySelector('#editProfileEndpoint');
         const dropdownList = container.querySelector('#endpointDropdownList');
         const dropdownWrapper = container.querySelector('.dropdown-input-wrapper');
@@ -248,7 +248,7 @@ describe('EditLlmProfile Unit Tests (Behavioral)', () => {
     });
 
     it('should handle item selection from dropdown', () => {
-        editLlmProfile.render(container, mockVscode, mockState);
+        addLlmProfile.render(container, mockVscode, mockState);
         
         const endpointInput = container.querySelector('#editProfileEndpoint');
         const dropdownList = container.querySelector('#endpointDropdownList');
@@ -266,7 +266,7 @@ describe('EditLlmProfile Unit Tests (Behavioral)', () => {
     });
 
     it('should post ADD_PROFILE message when Save is clicked', () => {
-        editLlmProfile.render(container, mockVscode, mockState);
+        addLlmProfile.render(container, mockVscode, mockState);
         
         const endpointInput = container.querySelector('#editProfileEndpoint');
         const modelInput = container.querySelector('#editProfileModel');
@@ -297,7 +297,7 @@ describe('EditLlmProfile Unit Tests (Behavioral)', () => {
     });
 
     it('should post ADD_PROFILE with isApiKeyRequired: false when "No Key Required" is clicked', () => {
-        editLlmProfile.render(container, mockVscode, mockState);
+        addLlmProfile.render(container, mockVscode, mockState);
         
         const endpointInput = container.querySelector('#editProfileEndpoint');
         const modelInput = container.querySelector('#editProfileModel');
@@ -327,7 +327,7 @@ describe('EditLlmProfile Unit Tests (Behavioral)', () => {
     });
 
     it('should open security settings when "Set API Key" is clicked', () => {
-        editLlmProfile.render(container, mockVscode, mockState);
+        addLlmProfile.render(container, mockVscode, mockState);
         
         // Fill form to enable section
         const endpointInput = container.querySelector('#editProfileEndpoint');
@@ -356,7 +356,7 @@ describe('EditLlmProfile Unit Tests (Behavioral)', () => {
     });
 
     it('should send EDIT_API_KEY message from key settings section', () => {
-        editLlmProfile.render(container, mockVscode, mockState);
+        addLlmProfile.render(container, mockVscode, mockState);
         
         // Fill form
         const endpointInput = container.querySelector('#editProfileEndpoint');
@@ -388,7 +388,7 @@ describe('EditLlmProfile Unit Tests (Behavioral)', () => {
     });
 
     it('should return from security settings section via Back button', () => {
-        editLlmProfile.render(container, mockVscode, mockState);
+        addLlmProfile.render(container, mockVscode, mockState);
         
         const setKeyFlowBtn = container.querySelector('#setKeyFlowBtn');
         if (!(setKeyFlowBtn instanceof HTMLButtonElement)) {
@@ -411,7 +411,7 @@ describe('EditLlmProfile Unit Tests (Behavioral)', () => {
     });
 
     it('should call onDone when main Cancel is clicked', () => {
-        editLlmProfile.render(container, mockVscode, mockState);
+        addLlmProfile.render(container, mockVscode, mockState);
         const cancelBtn = container.querySelector('#cancelEditBtn');
         if (!(cancelBtn instanceof HTMLButtonElement)) {
             throw new Error('Elements not found');
@@ -421,7 +421,7 @@ describe('EditLlmProfile Unit Tests (Behavioral)', () => {
     });
 
     it('should show "No Key Set" if provider does not have an API key', () => {
-        editLlmProfile.render(container, mockVscode, mockState);
+        addLlmProfile.render(container, mockVscode, mockState);
         
         const endpointInput = container.querySelector('#editProfileEndpoint');
         const modelInput = container.querySelector('#editProfileModel');
@@ -441,7 +441,7 @@ describe('EditLlmProfile Unit Tests (Behavioral)', () => {
     });
 
     it('should hide dropdown on blur', (done) => {
-        editLlmProfile.render(container, mockVscode, mockState);
+        addLlmProfile.render(container, mockVscode, mockState);
         const endpointInput = container.querySelector('#editProfileEndpoint');
         const dropdownList = container.querySelector('#endpointDropdownList');
 

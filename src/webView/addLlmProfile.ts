@@ -80,7 +80,7 @@ export class AddLlmProfile {
 
         // 3. Binding & Type Safety
         if (!this.bindElements(form)) {
-            console.error('EditLlmProfile: Failed to bind UI elements.');
+            console.error('AddLlmProfile: Failed to bind UI elements.');
             return;
         }
 
