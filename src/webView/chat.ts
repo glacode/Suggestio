@@ -651,6 +651,37 @@ export class ChatManager {
             });
             dropdownContent.appendChild(option);
         });
+
+        // Add "Manage Models..." entry
+        const divider = document.createElement('div');
+        divider.className = 'dropdown-divider';
+        dropdownContent.appendChild(divider);
+
+        const manageOption = document.createElement('a');
+        manageOption.href = '#';
+        manageOption.textContent = 'Manage Models...';
+        manageOption.className = 'manage-profiles-item';
+        manageOption.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (dropdownContent instanceof HTMLElement) {
+                dropdownContent.style.display = 'none';
+            }
+            this.openSettings();
+        });
+        dropdownContent.appendChild(manageOption);
+    }
+
+    private openSettings() {
+        if (this.settingsOverlay.isVisible()) {
+            this.settingsOverlay.hide();
+        } else {
+            // Populate overlay with profile settings then show it
+            try {
+                this.settingsOverlay.render(this.vscode, this.initialState);
+            } catch (e) { }
+            this.settingsOverlay.show();
+            this.historyOverlay.hide();
+        }
     }
 
     private setupMessageListener() {
@@ -663,16 +694,7 @@ export class ChatManager {
                 return;
             }
             if (command === EXTENSION_COMMANDS.OPEN_SETTINGS) {
-                if (this.settingsOverlay.isVisible()) {
-                    this.settingsOverlay.hide();
-                } else {
-                    // Populate overlay with profile settings then show it
-                    try {
-                        this.settingsOverlay.render(this.vscode, this.initialState);
-                    } catch (e) {}
-                    this.settingsOverlay.show();
-                    this.historyOverlay.hide();
-                }
+                this.openSettings();
                 return;
             }
             if (command === EXTENSION_COMMANDS.OPEN_HISTORY) {

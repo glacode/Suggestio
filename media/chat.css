@@ -186,6 +186,21 @@ html, body {
     background-color: var(--vscode-list-hoverBackground);
 }
 
+.dropdown-divider {
+    height: 1px;
+    background-color: var(--vscode-settings-dropdownBorder);
+    margin: 4px 0;
+}
+
+.manage-profiles-item {
+    font-style: italic;
+    color: var(--vscode-textLink-foreground) !important;
+}
+
+.manage-profiles-item:hover {
+    text-decoration: underline;
+}
+
 .empty-chat {
     display: flex;
     flex-direction: column;
