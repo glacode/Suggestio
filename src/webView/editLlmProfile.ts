@@ -5,7 +5,7 @@ import { getBrandFromUrl, CustomDropdown } from './webViewUtils.js';
 /**
  * Manages the LLM Profile Edit/Add form UI.
  */
-export class EditLlmProfile {
+export class AddLlmProfile {
     private onDone: () => void;
 
     // Element Caching

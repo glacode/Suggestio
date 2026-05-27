@@ -1,7 +1,7 @@
 // Settings overlay module
 import { WEBVIEW_COMMANDS } from '../constants/protocol.js';
 import type { IWebviewApi, InitialState, ProfileMetadata } from '../types.js';
-import { EditLlmProfile } from './editLlmProfile.js';
+import { AddLlmProfile } from './editLlmProfile.js';
 import { UpdateLlmProfile } from './updateLlmProfile.js';
 import { DeleteLlmProfile } from './deleteLlmProfile.js';
 
@@ -14,7 +14,7 @@ const DELETE_ICON_HTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="
 export class SettingsOverlay {
     private overlayRoot: HTMLDivElement | null = null;
     private doneButton: HTMLButtonElement | null = null;
-    private addProfile: EditLlmProfile;
+    private addProfile: AddLlmProfile;
     private updateProfile: UpdateLlmProfile;
     private deleteProfile: DeleteLlmProfile;
     private currentView: 'list' | 'add' | 'update' | 'delete' = 'list';
@@ -25,7 +25,7 @@ export class SettingsOverlay {
     private state: InitialState | null = null;
 
     constructor() {
-        this.addProfile = new EditLlmProfile(() => this.showList());
+        this.addProfile = new AddLlmProfile(() => this.showList());
         this.updateProfile = new UpdateLlmProfile(() => this.showList());
         this.deleteProfile = new DeleteLlmProfile(() => this.showList());
     }

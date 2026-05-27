@@ -4,12 +4,12 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
 import { MockWebviewApi } from '../testUtils.js';
 import { WEBVIEW_COMMANDS } from '../../src/constants/protocol.js';
-import { EditLlmProfile } from '../../src/webView/editLlmProfile.js';
+import { AddLlmProfile } from '../../src/webView/editLlmProfile.js';
 import { InitialState } from '../../src/types.js';
 
 describe('EditLlmProfile Unit Tests (Behavioral)', () => {
     let mockVscode: MockWebviewApi;
-    let editLlmProfile: EditLlmProfile;
+    let editLlmProfile: AddLlmProfile;
     let container: HTMLElement;
     let onDoneCalled = false;
 
@@ -37,7 +37,7 @@ describe('EditLlmProfile Unit Tests (Behavioral)', () => {
 
     beforeEach(() => {
         onDoneCalled = false;
-        editLlmProfile = new EditLlmProfile(() => { onDoneCalled = true; });
+        editLlmProfile = new AddLlmProfile(() => { onDoneCalled = true; });
         container = document.createElement('div');
         document.body.innerHTML = '';
         document.body.appendChild(container);
