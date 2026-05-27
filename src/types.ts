@@ -1517,13 +1517,6 @@ export interface IToolResult {
 }
 
 /**
- * Provides information about whether tool edits should be automatically accepted.
- */
-export interface IAutoAcceptProvider {
-  readonly autoAcceptEdits: boolean;
-}
-
-/**
  * Manages the allow-list of commands that can be executed without user confirmation.
  */
 export interface ICommandAutoAcceptManager {
