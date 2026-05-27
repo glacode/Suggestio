@@ -440,6 +440,40 @@ describe('AddLlmProfile Unit Tests (Behavioral)', () => {
         expect(statusIndicator?.textContent).toContain('No Key Set');
     });
 
+    it('should block saving and show error if Profile ID is already taken', () => {
+        addLlmProfile.render(container, mockVscode, mockState);
+        
+        const idInput = container.querySelector('#editProfileId');
+        const validationMsg = container.querySelector('#idValidationMessage');
+        const saveBtn = container.querySelector('#saveProfileBtn');
+
+        if (!(idInput instanceof HTMLInputElement) || !(validationMsg instanceof HTMLElement) || !(saveBtn instanceof HTMLButtonElement)) {
+            throw new Error('Elements not found');
+        }
+
+        // 1. Manually type a taken ID ('ollama-devstral' exists in mockState)
+        idInput.value = 'ollama-devstral';
+        idInput.dispatchEvent(new Event('input'));
+
+        expect(validationMsg.textContent).toContain('already taken');
+        expect(validationMsg.style.color).toBe('var(--vscode-errorForeground)');
+        expect(saveBtn.disabled).toBe(true);
+
+        // 2. Clear ID - should still be disabled but show original message
+        idInput.value = '';
+        idInput.dispatchEvent(new Event('input'));
+        expect(validationMsg.textContent).toContain('Unique identifier');
+        expect(saveBtn.disabled).toBe(true);
+
+        // 3. Type unique ID
+        idInput.value = 'brand-new-id';
+        idInput.dispatchEvent(new Event('input'));
+        expect(validationMsg.textContent).toContain('available');
+        expect(validationMsg.style.color).toBe('var(--vscode-testing-iconPassed)');
+        // (Note: saveBtn might still be disabled if other fields are empty, 
+        // which is expected behavior for a partial form)
+    });
+
     it('should hide dropdown on blur', (done) => {
         addLlmProfile.render(container, mockVscode, mockState);
         const endpointInput = container.querySelector('#editProfileEndpoint');

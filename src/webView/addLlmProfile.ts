@@ -12,6 +12,7 @@ export class AddLlmProfile {
     private _idInput?: HTMLInputElement;
     private _modelInput?: HTMLInputElement;
     private _endpointInput?: HTMLInputElement;
+    private _idValidationMessage?: HTMLElement;
 
     private _keyCheckSection?: HTMLElement;
     private _keySettingsSection?: HTMLElement;
@@ -52,7 +53,7 @@ export class AddLlmProfile {
      */
     public refresh(state: InitialState) {
         this._state = state;
-        this.updateKeyStatus();
+        this.updateFormState();
     }
 
     /**
@@ -92,18 +93,18 @@ export class AddLlmProfile {
             this._existingEndpoints,
             () => {
                 this.computeSuggestedId();
-                this.updateKeyStatus();
+                this.updateFormState();
             },
             () => {
                 this.computeSuggestedId();
-                this.updateKeyStatus();
+                this.updateFormState();
             },
             '+ New Provider URL...'
         );
 
         // 5. Attach Listeners & Initial State
         this.attachListeners(vscode);
-        this.updateKeyStatus();
+        this.updateFormState();
     }
 
     private getTemplate(title: string): string {
@@ -129,7 +130,7 @@ export class AddLlmProfile {
             <div class="input-group">
                 <label class="settings-label">Profile ID (display name)</label>
                 <input type="text" id="editProfileId" value="" placeholder="e.g. my-provider-model" class="settings-input">
-                <div class="settings-description">Unique identifier for this configuration.</div>
+                <div id="idValidationMessage" class="settings-description" style="margin-top: 4px;">Unique identifier for this configuration.</div>
             </div>
 
             <div class="settings-section-divider"></div>
@@ -181,6 +182,7 @@ export class AddLlmProfile {
 
     private bindElements(form: HTMLElement): boolean {
         const idInput = form.querySelector('#editProfileId');
+        const idValidationMessage = form.querySelector('#idValidationMessage');
         const modelInput = form.querySelector('#editProfileModel');
         const endpointInput = form.querySelector('#editProfileEndpoint');
         const keyCheckSection = form.querySelector('#keyCheckSection');
@@ -198,6 +200,7 @@ export class AddLlmProfile {
         const keyStatusIndicator = form.querySelector('#keyStatusIndicator');
 
         if (idInput instanceof HTMLInputElement &&
+            idValidationMessage instanceof HTMLElement &&
             modelInput instanceof HTMLInputElement &&
             endpointInput instanceof HTMLInputElement &&
             keyCheckSection instanceof HTMLElement &&
@@ -215,6 +218,7 @@ export class AddLlmProfile {
             keyStatusIndicator instanceof HTMLElement) {
             
             this._idInput = idInput;
+            this._idValidationMessage = idValidationMessage;
             this._modelInput = modelInput;
             this._endpointInput = endpointInput;
             this._keyCheckSection = keyCheckSection;
@@ -245,16 +249,16 @@ export class AddLlmProfile {
 
         this._modelInput.addEventListener('input', () => {
             this.computeSuggestedId();
-            this.updateKeyStatus();
+            this.updateFormState();
         });
 
         this._idInput.addEventListener('input', () => {
             this._isIdManuallyEdited = true;
-            this.updateKeyStatus();
+            this.updateFormState();
         });
 
-        this._keyTypeShared.addEventListener('change', () => this.updateKeyStatus());
-        this._keyTypeUnique.addEventListener('change', () => this.updateKeyStatus());
+        this._keyTypeShared.addEventListener('change', () => this.updateFormState());
+        this._keyTypeUnique.addEventListener('change', () => this.updateFormState());
 
         this._setKeyFlowBtn.addEventListener('click', () => {
             this._keyCheckSection!.style.display = 'none';
@@ -345,7 +349,35 @@ export class AddLlmProfile {
         }
     }
 
-    private updateKeyStatus() {
+    /**
+     * Checks if the current ID is unique and updates the validation message.
+     * @returns true if the ID is unique, false otherwise.
+     */
+    private validateIdUniqueness(): boolean {
+        if (!this._idInput || !this._idValidationMessage) { return true; }
+
+        const currentId = this._idInput.value.trim();
+        if (!currentId) {
+            this._idValidationMessage.textContent = 'Unique identifier for this configuration.';
+            this._idValidationMessage.style.color = '';
+            return false; // Not "taken", but not complete either
+        }
+
+        const existingProfile = this._state?.profileMetadata?.find(p => p.id === currentId);
+
+        if (existingProfile) {
+            this._idValidationMessage.textContent = `Error: ID "${currentId}" is already taken. Please choose a unique name.`;
+            this._idValidationMessage.style.color = 'var(--vscode-errorForeground)';
+            return false;
+        }
+
+        // Success state
+        this._idValidationMessage.textContent = 'ID is available.';
+        this._idValidationMessage.style.color = 'var(--vscode-testing-iconPassed)';
+        return true;
+    }
+
+    private updateFormState() {
         if (!this._endpointInput || !this._modelInput || !this._idInput || 
             !this._keyCheckSection || !this._previewShared || !this._previewUnique || 
             !this._keyStatusIndicator || !this._setKeyFlowBtn || !this._noKeyRequiredBtn || !this._saveBtn) {
@@ -355,7 +387,13 @@ export class AddLlmProfile {
         const endpoint = this._endpointInput.value.trim();
         const model = this._modelInput.value.trim();
         const id = this._idInput.value.trim();
-        const isFormComplete = !!(endpoint && model && id);
+        const isCoreComplete = !!(endpoint && model && id);
+        
+        // 1. Uniqueness Validation
+        const isIdUnique = this.validateIdUniqueness();
+
+        // 2. Main Validator
+        const isFormComplete = isCoreComplete && isIdUnique;
 
         this._keyCheckSection.classList.toggle('section-disabled', !isFormComplete);
 
