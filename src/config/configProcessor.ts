@@ -102,7 +102,37 @@ class ConfigProcessor {
             this.applyWorkspaceConfig(config, workspaceJsonConfigFile);
         }
 
+        // Ensure active pointers are valid, falling back to bundled defaults if necessary.
+        this.sanitizeActiveProfiles(
+            config, 
+            defaultConfig.activeChatProfile, 
+            defaultConfig.activeCompletionProfile
+        );
+
         return config;
+    }
+
+    /**
+     * Ensures that activeChatProfile and activeCompletionProfile point to valid IDs.
+     * If a pointed profile is missing (e.g. was just deleted), falls back to a valid one.
+     */
+    private sanitizeActiveProfiles(config: IConfig, defaultChat?: string, defaultCompletion?: string): void {
+        const profileIds = Object.keys(config.profiles || {});
+        if (profileIds.length === 0) { return; }
+
+        // 1. Sanitize Chat Profile
+        if (config.activeChatProfile && !config.profiles[config.activeChatProfile]) {
+            config.activeChatProfile = (defaultChat && config.profiles[defaultChat]) 
+                ? defaultChat 
+                : profileIds[0];
+        }
+
+        // 2. Sanitize Completion Profile
+        if (config.activeCompletionProfile && !config.profiles[config.activeCompletionProfile]) {
+            config.activeCompletionProfile = (defaultCompletion && config.profiles[defaultCompletion]) 
+                ? defaultCompletion 
+                : (config.activeChatProfile || profileIds[0]);
+        }
     }
 
     /**

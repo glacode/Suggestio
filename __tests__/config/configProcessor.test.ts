@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { configProcessor, ISecretManager, getChatProfileIds } from '../../src/config/configProcessor.js';
 import { CONFIG_DEFAULTS } from '../../src/constants/config.js';
-import { IConfigContainer } from '../../src/types.js';
+import { IConfigContainer, IVSCodeSettings } from '../../src/types.js';
 import { EventBus } from '../../src/utils/eventBus.js';
 import { NodeFetchClient } from '../../src/utils/httpClient.js';
 
@@ -306,6 +306,26 @@ describe('processConfig', () => {
       await new Promise(resolve => setTimeout(resolve, 50));
       expect(configContainer.config.activeCompletionProfile).toBe('provider2');
       expect(configContainer.config.profiles.provider2.resolvedApiKey).toBe('secret-for-key2');
+    });
+
+    it('sanitizes active profiles by falling back to bundled defaults if current selection is missing', async () => {
+      const customSettings: IVSCodeSettings = {
+        activeChatProfile: 'non-existent-profile',
+        activeCompletionProfile: 'another-missing-profile'
+      };
+
+      const rawJson = JSON.stringify({
+        activeChatProfile: 'provider1',
+        profiles: {
+          provider1: { model: 'gpt-4', apiKeyIdentifier: 'key' }
+        },
+        anonymizer: { enabled: false, words: [] }
+      });
+
+      const container = await configProcessor.processConfig({ default: rawJson }, mockISecretManager, eventBus, httpClient, customSettings);
+
+      expect(container.config.activeChatProfile).toBe('provider1');
+      expect(container.config.activeCompletionProfile).toBe('provider1');
     });
   });
 });
