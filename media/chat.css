@@ -1077,9 +1077,10 @@ body.overlay-open textarea#messageInput {
     transition: opacity 0.2s ease, filter 0.2s ease;
 }
 
-.settings-done.small:disabled {
+.settings-done:disabled {
     opacity: 0.5;
-    cursor: not-allowed;
+    cursor: not-allowed !important;
+    filter: grayscale(0.5);
 }
 
 .danger-button {
