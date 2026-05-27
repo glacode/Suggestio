@@ -162,13 +162,6 @@ export async function activate(context: vscode.ExtensionContext) {
         delete globalProfiles[profileId];
         await config.update('profiles', globalProfiles, vscode.ConfigurationTarget.Global);
       }
-
-      // Also try Workspace settings if it exists there
-      const workspaceProfiles = { ...(inspect?.workspaceValue || {}) };
-      if (workspaceProfiles[profileId]) {
-        delete workspaceProfiles[profileId];
-        await config.update('profiles', workspaceProfiles, vscode.ConfigurationTarget.Workspace);
-      }
     },
     updateConfig: async (key: string, value: any, global: boolean) => {
       const config = vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri());
