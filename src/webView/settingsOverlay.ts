@@ -1,7 +1,7 @@
 // Settings overlay module
 import { WEBVIEW_COMMANDS } from '../constants/protocol.js';
 import type { IWebviewApi, InitialState, ProfileMetadata } from '../types.js';
-import { AddLlmProfile } from './editLlmProfile.js';
+import { AddLlmProfile } from './addLlmProfile.js';
 import { UpdateLlmProfile } from './updateLlmProfile.js';
 import { DeleteLlmProfile } from './deleteLlmProfile.js';
 

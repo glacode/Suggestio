@@ -4,7 +4,7 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
 import { MockWebviewApi } from '../testUtils.js';
 import { WEBVIEW_COMMANDS } from '../../src/constants/protocol.js';
-import { AddLlmProfile } from '../../src/webView/editLlmProfile.js';
+import { AddLlmProfile } from '../../src/webView/addLlmProfile.js';
 import { InitialState } from '../../src/types.js';
 
 describe('EditLlmProfile Unit Tests (Behavioral)', () => {
