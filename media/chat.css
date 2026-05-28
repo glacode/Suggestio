@@ -178,6 +178,9 @@ html, body {
     border-radius: 4px;
     padding: 4px;
     min-width: 200px;
+    width: max-content;
+    max-width: 300px;
+    z-index: 100;
 }
 
 .dropdown-content a {
@@ -185,6 +188,9 @@ html, body {
     padding: 4px 8px;
     text-decoration: none;
     display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .dropdown-content a:hover {
