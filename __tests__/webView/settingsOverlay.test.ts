@@ -151,22 +151,40 @@ describe('SettingsOverlay Unit Tests', () => {
             ]
         };
 
-        it('should render profiles and handle completion profile change', () => {
+        it('should render profiles and handle chat/completion profile changes', () => {
             const container = document.querySelector('.chat-container');
             if (!(container instanceof HTMLElement)) { throw new Error('Container not found'); }
             settingsOverlay.init(container);
             
-            settingsOverlay.render(mockVscode, mockState);
+            // p1 is active for both chat and completion
+            // p2 is active for neither
+            const testState = JSON.parse(JSON.stringify(mockState));
+            testState.profileMetadata[1].supportsTools = true; // Ensure p2 can be used for chat
+
+            settingsOverlay.render(mockVscode, testState);
             
             const items = document.querySelectorAll('.profile-item');
             expect(items.length).toBe(2);
             expect(items[0].classList.contains('active')).toBe(true);
+            expect(items[0].textContent).toContain('CHAT');
+            expect(items[0].textContent).toContain('COMPLETIONS');
             expect(items[0].textContent).toContain('Key ❌');
             expect(items[1].textContent).toContain('No Key Required');
             
-            const selectBtn = items[1].querySelector('.select-btn');
-            if (!(selectBtn instanceof HTMLElement)) { throw new Error('Select btn not found'); }
-            selectBtn.click();
+            // Check Chat profile change
+            const selectChatBtn = items[1].querySelector('.select-chat-btn');
+            if (!(selectChatBtn instanceof HTMLElement)) { throw new Error('Select chat btn not found'); }
+            selectChatBtn.click();
+            
+            expect(mockVscode.messages).toContainEqual({
+                command: WEBVIEW_COMMANDS.CHAT_PROFILE_CHANGED,
+                model: 'p2'
+            });
+
+            // Check Completion profile change
+            const selectCompBtn = items[1].querySelector('.select-completion-btn');
+            if (!(selectCompBtn instanceof HTMLElement)) { throw new Error('Select completion btn not found'); }
+            selectCompBtn.click();
             
             expect(mockVscode.messages).toContainEqual({
                 command: WEBVIEW_COMMANDS.COMPLETION_PROFILE_CHANGED,
