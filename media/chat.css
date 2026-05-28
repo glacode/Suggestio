@@ -132,7 +132,6 @@ html, body {
 }
 
 #modelSelector {
-    width: min-content;
     margin-right: 8px;
     background-color: var(--vscode-input-background);
     color: var(--vscode-input-foreground);
@@ -140,18 +139,22 @@ html, body {
     border-radius: 4px;
     padding: 4px;
     position: relative;
+    flex: 0 1 auto;
+    min-width: 0;
 }
 
 .dropdown-label {
     display: flex;
     align-items: center;
     cursor: pointer;
+    min-width: 0;
 }
 
 .action-label {
     display: flex;
     align-items: center;
     color: var(--vscode-input-placeholderForeground);
+    min-width: 0;
 }
 
 .action-label:hover {
@@ -161,6 +164,8 @@ html, body {
 .chat-profile-label {
     margin-right: 2px;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .dropdown-content {
@@ -240,6 +245,7 @@ html, body {
 .chevron-down {
     vertical-align: middle;
     margin-left: 2px;
+    flex-shrink: 0;
 }
 
 .action-label[aria-expanded="true"] .chevron-down {
