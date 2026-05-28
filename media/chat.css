@@ -812,7 +812,7 @@ body.overlay-open textarea#messageInput {
     align-items: flex-end;
     gap: 8px;
     flex-shrink: 0;
-    max-width: 50%;
+    margin-left: auto;
 }
 
 .profile-selection-actions {

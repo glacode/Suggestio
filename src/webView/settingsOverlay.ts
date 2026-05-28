@@ -235,7 +235,7 @@ export class SettingsOverlay {
                 <div class="profile-actions">
                     <div class="profile-selection-actions">
                         ${(!profile.isActiveChat && profile.supportsTools && !profile.excludeFromChat) ? `<button class="icon-button select-chat-btn" title="Use for Chat">Use for Chat</button>` : ''}
-                        ${!profile.isActiveCompletion ? `<button class="icon-button select-completion-btn" title="Use for Completions">Use for Completions</button>` : ''}
+                        ${!profile.isActiveCompletion ? `<button class="icon-button select-completion-btn" title="Use for inline Completions">Use for Completions</button>` : ''}
                     </div>
                     <div class="profile-management-actions">
                         ${profile.origin === 'user' ? `
