@@ -718,6 +718,8 @@ body.overlay-open textarea#messageInput {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
 }
 
 .profile-item.active {
@@ -729,26 +731,48 @@ body.overlay-open textarea#messageInput {
     display: flex;
     flex-direction: column;
     gap: 2px;
+    flex: 1 1 150px;
+    min-width: 0;
 }
 
 .profile-name-row {
     display: flex;
     align-items: center;
     gap: 8px;
+    min-width: 0;
 }
 
 .profile-id {
     font-weight: 600;
     font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 0 1 auto;
+    min-width: 0;
+}
+
+.profile-badges {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
 }
 
 .active-badge {
-    background: var(--vscode-badge-background);
     color: var(--vscode-badge-foreground);
     font-size: 9px;
     padding: 1px 4px;
     border-radius: 2px;
     font-weight: bold;
+}
+
+.chat-badge {
+    background: var(--vscode-statusBarItem-remoteBackground, #16825d);
+    color: var(--vscode-statusBarItem-remoteForeground, #ffffff);
+}
+
+.completion-badge {
+    background: var(--vscode-badge-background);
 }
 
 .profile-details {
@@ -784,7 +808,24 @@ body.overlay-open textarea#messageInput {
 
 .profile-actions {
     display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    flex-shrink: 0;
+    max-width: 50%;
+}
+
+.profile-selection-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: flex-end;
+}
+
+.profile-management-actions {
+    display: flex;
     gap: 6px;
+    justify-content: flex-end;
 }
 
 .icon-button {
@@ -804,14 +845,15 @@ body.overlay-open textarea#messageInput {
     background: var(--vscode-button-secondaryHoverBackground);
 }
 
-.icon-button.select-btn {
-    font-size: 11px;
-    padding: 4px 8px;
+.icon-button.select-chat-btn, .icon-button.select-completion-btn {
+    font-size: 10px;
+    padding: 3px 8px;
     background: var(--vscode-button-background);
     color: var(--vscode-button-foreground);
+    white-space: nowrap;
 }
 
-.icon-button.select-btn:hover {
+.icon-button.select-chat-btn:hover, .icon-button.select-completion-btn:hover {
     background: var(--vscode-button-hoverBackground);
 }
 

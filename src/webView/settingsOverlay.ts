@@ -204,8 +204,9 @@ export class SettingsOverlay {
         const metadata = state.profileMetadata || [];
 
         metadata.forEach(profile => {
+            const isActive = profile.isActiveChat || profile.isActiveCompletion;
             const item = document.createElement('div');
-            item.className = `profile-item ${profile.isActiveCompletion ? 'active' : ''}`;
+            item.className = `profile-item ${isActive ? 'active' : ''}`;
             
             const keyStatusHtml = profile.needsApiKey 
                 ? `
@@ -223,22 +224,34 @@ export class SettingsOverlay {
                 <div class="profile-info">
                     <div class="profile-name-row">
                         <span class="profile-id">${profile.id}</span>
-                        ${profile.isActiveCompletion ? '<span class="active-badge">ACTIVE</span>' : ''}
+                        <div class="profile-badges">
+                            ${profile.isActiveChat ? '<span class="active-badge chat-badge">CHAT</span>' : ''}
+                            ${profile.isActiveCompletion ? '<span class="active-badge completion-badge">COMPLETIONS</span>' : ''}
+                        </div>
                     </div>
                     <div class="profile-details">${profile.model}</div>
                     <div class="profile-status">${keyStatusHtml}</div>
                 </div>
                 <div class="profile-actions">
-                    ${!profile.isActiveCompletion ? `<button class="icon-button select-btn" title="Select for Completion">Set Active</button>` : ''}
-                    ${profile.origin === 'user' ? `
-                        <button class="icon-button edit-profile-btn" title="Edit Profile Structure">${EDIT_ICON_HTML}</button>
-                        <button class="icon-button delete-profile-btn" title="Delete Profile">${DELETE_ICON_HTML}</button>
-                    ` : ''}
+                    <div class="profile-selection-actions">
+                        ${(!profile.isActiveChat && profile.supportsTools && !profile.excludeFromChat) ? `<button class="icon-button select-chat-btn" title="Use for Chat">Use for Chat</button>` : ''}
+                        ${!profile.isActiveCompletion ? `<button class="icon-button select-completion-btn" title="Use for Completions">Use for Completions</button>` : ''}
+                    </div>
+                    <div class="profile-management-actions">
+                        ${profile.origin === 'user' ? `
+                            <button class="icon-button edit-profile-btn" title="Edit Profile Structure">${EDIT_ICON_HTML}</button>
+                            <button class="icon-button delete-profile-btn" title="Delete Profile">${DELETE_ICON_HTML}</button>
+                        ` : ''}
+                    </div>
                 </div>
             `;
 
             // Attach listeners AFTER innerHTML is set
-            item.querySelector('.select-btn')?.addEventListener('click', () => {
+            item.querySelector('.select-chat-btn')?.addEventListener('click', () => {
+                vscode.postMessage({ command: WEBVIEW_COMMANDS.CHAT_PROFILE_CHANGED, model: profile.id });
+            });
+
+            item.querySelector('.select-completion-btn')?.addEventListener('click', () => {
                 vscode.postMessage({ command: WEBVIEW_COMMANDS.COMPLETION_PROFILE_CHANGED, model: profile.id });
             });
 
