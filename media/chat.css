@@ -554,11 +554,6 @@ html, body {
     word-break: break-word;
 }
 
-.error-icon {
-    font-size: 14px;
-    flex-shrink: 0;
-}
-
 .retry-button {
     display: flex;
     align-items: center;
