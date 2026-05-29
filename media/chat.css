@@ -548,8 +548,15 @@ html, body {
     margin-bottom: 8px;
 }
 
+.error-message > span:last-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
 .error-icon {
     font-size: 14px;
+    flex-shrink: 0;
 }
 
 .retry-button {
@@ -594,8 +601,15 @@ html, body {
     margin-bottom: 8px;
 }
 
+.halted-message > span:last-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
 .halted-icon {
     font-size: 14px;
+    flex-shrink: 0;
 }
 
 .continue-button {
