@@ -463,7 +463,7 @@
     },
     "overrides": {
         "js-yaml": "4.1.1",
-        "brace-expansion": "5.0.5",
+        "brace-expansion": "5.0.6",
         "mocha": {
             "diff": "8.0.3",
             "serialize-javascript": "7.0.5"
