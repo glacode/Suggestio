@@ -46,7 +46,7 @@ export class ToolCallSegment extends MessageSegment {
     private pre: HTMLPreElement | null = null;
     private outputContainer: HTMLDivElement | null = null;
 
-    constructor(container: HTMLElement, payload: any) {
+    constructor(private chatManager: ChatManager, container: HTMLElement, payload: any) {
         super(container, 'tool_call');
         this.toolCallId = payload.toolCallId;
         this.toolName = payload.toolName;
@@ -77,6 +77,14 @@ export class ToolCallSegment extends MessageSegment {
         this.details = this.element.querySelector('details');
         this.pre = this.element.querySelector('pre');
         this.outputContainer = this.element.querySelector('.tool-output');
+
+        // Ensure that when the tool details are expanded or collapsed,
+        // we adjust the scroll position to keep the content visible.
+        if (this.details) {
+            this.details.addEventListener('toggle', () => {
+                this.chatManager.scrollToBottom();
+            });
+        }
     }
 
     appendOutput(text: string) {
@@ -187,7 +195,7 @@ export class ReasoningSegment extends MessageSegment {
     public internalSegments: MessageSegment[] = [];
     private lastInternalTokenType: string | null = null;
 
-    constructor(container: HTMLElement) {
+    constructor(private chatManager: ChatManager, container: HTMLElement) {
         super(container, 'reasoning');
         this.element.className = 'reasoning-container';
         this.element.innerHTML = `
@@ -230,7 +238,7 @@ export class ReasoningSegment extends MessageSegment {
     }
 
     addToolCall(payload: any) {
-        const seg = new ToolCallSegment(this.contentElement, payload);
+        const seg = new ToolCallSegment(this.chatManager, this.contentElement, payload);
         this.internalSegments.push(seg);
         this.lastInternalTokenType = 'tool_call';
         return seg;
@@ -289,7 +297,7 @@ export class AssistantMessage {
     appendToken(text: string, tokenType: string) {
         if (tokenType === 'reasoning') {
             if (!this.activeReasoningSegment) {
-                this.activeReasoningSegment = new ReasoningSegment(this.element);
+                this.activeReasoningSegment = new ReasoningSegment(this.chatManager, this.element);
                 this.segments.push(this.activeReasoningSegment);
             }
             this.activeReasoningSegment.append(text);
@@ -313,7 +321,7 @@ export class AssistantMessage {
         if (this.activeReasoningSegment) {
             segment = this.activeReasoningSegment.addToolCall(payload);
         } else {
-            segment = new ToolCallSegment(this.element, payload);
+            segment = new ToolCallSegment(this.chatManager, this.element, payload);
             this.segments.push(segment);
         }
         this.toolCalls.set(payload.toolCallId, segment);
@@ -515,7 +523,6 @@ export class ChatManager {
     private chatContainer!: HTMLElement;
     private messageInput!: HTMLTextAreaElement;
     public currentAssistantMessage: AssistantMessage | null = null;
-    private lastUserMessageElement: HTMLElement | null = null;
     private currentNotification: HTMLElement | null = null;
 
     /**
@@ -751,17 +758,14 @@ export class ChatManager {
                     }
                     this.currentAssistantMessage.appendToken(text, tokenType);
                     
-                    if (this.lastUserMessageElement) {
-                        const rect = this.lastUserMessageElement.getBoundingClientRect();
-                        if (rect.top > 25) {
-                            this.chatContainer.scrollTop += 20;
-                        }
-                    }
+                    // Auto-scroll to bottom to keep the streaming token in view.
+                    this.scrollToBottom();
                 } else if (type === EXTENSION_EVENTS.TOOL_START) {
                     if (!this.currentAssistantMessage || !this.currentAssistantMessage.isStreaming) {
                         this.currentAssistantMessage = new AssistantMessage(this, this.chatContainer);
                     }
                     this.currentAssistantMessage.addToolCall(event.data);
+                    this.scrollToBottom();
                 } else if (type === EXTENSION_EVENTS.TOOL_STARTED) {
                     // Trigger the spinner when the backend confirms the tool has officially started executing.
                     if (this.currentAssistantMessage) {
@@ -773,16 +777,19 @@ export class ChatManager {
                 } else if (type === EXTENSION_EVENTS.TOOL_OUTPUT) {
                     if (this.currentAssistantMessage) {
                         this.currentAssistantMessage.appendToolOutput(event.data);
+                        this.scrollToBottom();
                     }
                 } else if (type === EXTENSION_EVENTS.TOOL_END) {
                     if (this.currentAssistantMessage) {
                         this.currentAssistantMessage.updateToolCall(event.data);
+                        this.scrollToBottom();
                     }
                 } else if (type === EXTENSION_EVENTS.REQUEST_CONFIRMATION) {
                     if (!this.currentAssistantMessage || !this.currentAssistantMessage.isStreaming) {
                         this.currentAssistantMessage = new AssistantMessage(this, this.chatContainer);
                     }
                     this.currentAssistantMessage.addConfirmation(event.data);
+                    this.scrollToBottom();
                 } else if (type === EXTENSION_EVENTS.COMPLETION) {
                     this.removeNotification();
                     if (this.currentAssistantMessage) {
@@ -817,6 +824,25 @@ export class ChatManager {
                 this.appendUserMessage(text);
             }
         });
+    }
+
+    /**
+     * Scrolls the chat container to the bottom if the user is already near the bottom
+     * or if forced. This ensures that streaming responses stay in view without
+     * jarring the user if they have manually scrolled up to read previous messages.
+     * @param force Whether to scroll to the bottom regardless of current scroll position.
+     */
+    public scrollToBottom(force = false) {
+        if (!this.chatContainer) { return; }
+
+        // The distance (in pixels) from the bottom of the container.
+        // If the user is within this threshold, we assume they want to follow the stream.
+        const threshold = 100; 
+        const isNearBottom = (this.chatContainer.scrollHeight - this.chatContainer.scrollTop - this.chatContainer.clientHeight) < threshold;
+
+        if (force || isNearBottom) {
+            this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+        }
     }
 
     sendMessage() {
@@ -876,7 +902,6 @@ export class ChatManager {
         msg.className = 'message user';
         msg.innerText = text;
         this.chatContainer.appendChild(msg);
-        this.lastUserMessageElement = msg;
         msg.scrollIntoView();
     }
 

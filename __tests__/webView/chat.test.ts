@@ -402,35 +402,92 @@ describe('ChatManager Unit Tests', () => {
     });
 
     describe('Auto-scrolling Logic', () => {
-        it('should attempt to scroll when user message exists', () => {
+        it('should scroll to bottom when user is near the bottom during streaming', () => {
             const chat = document.getElementById('chat');
             if (!(chat instanceof HTMLElement)) {
                 throw new Error('Chat not found');
             }
+
+            // Mock container dimensions to simulate a scrolled state
+            Object.defineProperty(chat, 'scrollHeight', { value: 1000, configurable: true });
+            Object.defineProperty(chat, 'clientHeight', { value: 500, configurable: true });
             
-            // Mock a user message
-            const userMsg = document.createElement('div');
-            userMsg.className = 'message user';
-            
-            // Mock getBoundingClientRect for this specific element instance to trigger scroll (> 25)
-            jest.spyOn(userMsg, 'getBoundingClientRect').mockReturnValue(createMockDomRect({
-                top: 100
-            }));
-            
-            chat.appendChild(userMsg);
-            
-            // Access private property for testing
-            Object.defineProperty(chatManager, 'lastUserMessageElement', {
-                value: userMsg,
-                writable: true,
-                configurable: true
-            });
+            // Set scrollTop to be near the bottom (e.g., 450px from top)
+            // Distance from bottom = 1000 - 450 - 500 = 50px (within the 100px threshold)
+            chat.scrollTop = 450;
 
             window.dispatchEvent(new MessageEvent('message', {
                 data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'scroll test', tokenType: 'content' }
             }));
 
-            expect(userMsg.getBoundingClientRect).toHaveBeenCalled();
+            expect(chat.scrollTop).toBe(1000);
+        });
+
+        it('should NOT scroll to bottom when user has scrolled up', () => {
+            const chat = document.getElementById('chat');
+            if (!(chat instanceof HTMLElement)) {
+                throw new Error('Chat not found');
+            }
+
+            Object.defineProperty(chat, 'scrollHeight', { value: 1000, configurable: true });
+            Object.defineProperty(chat, 'clientHeight', { value: 500, configurable: true });
+            
+            // Set scrollTop to be far from the bottom (e.g., 100px from top)
+            // Distance from bottom = 1000 - 100 - 500 = 400px (outside the 100px threshold)
+            chat.scrollTop = 100;
+
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'scroll test', tokenType: 'content' }
+            }));
+
+            expect(chat.scrollTop).toBe(100); // Should remain unchanged
+        });
+
+        it('should scroll to bottom when tool output is received', () => {
+            const chat = document.getElementById('chat');
+            if (!(chat instanceof HTMLElement)) {
+                throw new Error('Chat not found');
+            }
+            Object.defineProperty(chat, 'scrollHeight', { value: 1000, configurable: true });
+            Object.defineProperty(chat, 'clientHeight', { value: 500, configurable: true });
+            chat.scrollTop = 450;
+
+            // First, start a tool to ensure we have an assistant message and tool call
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOOL_START, toolCallId: 'test-id', toolName: 'test-tool', displayMessage: 'Testing...', args: '{}' }
+            }));
+
+            // Then receive output
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOOL_OUTPUT, toolCallId: 'test-id', output: 'some output' }
+            }));
+
+            expect(chat.scrollTop).toBe(1000);
+        });
+
+        it('should scroll to bottom when tool details are toggled', () => {
+            const chat = document.getElementById('chat');
+            if (!(chat instanceof HTMLElement)) {
+                throw new Error('Chat not found');
+            }
+            Object.defineProperty(chat, 'scrollHeight', { value: 1000, configurable: true });
+            Object.defineProperty(chat, 'clientHeight', { value: 500, configurable: true });
+            chat.scrollTop = 450;
+
+            // Create a tool call
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOOL_START, toolCallId: 'test-id', toolName: 'test-tool', displayMessage: 'Testing...', args: '{}' }
+            }));
+
+            const details = chat.querySelector('details');
+            if (!details) {
+                throw new Error('Details element not found');
+            }
+
+            // Simulate the toggle event
+            details.dispatchEvent(new Event('toggle'));
+
+            expect(chat.scrollTop).toBe(1000);
         });
     });
 
