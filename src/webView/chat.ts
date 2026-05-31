@@ -829,6 +829,7 @@ export class ChatManager {
 
         const emptyChatContent = document.getElementById('emptyChatContent');
         if (emptyChatContent) {
+            emptyChatContent.classList.remove('show-flex');
             emptyChatContent.classList.add('hidden');
         }
 
@@ -947,6 +948,7 @@ export class ChatManager {
         this.newChat();
         const emptyChatContent = document.getElementById('emptyChatContent');
         if (emptyChatContent) {
+            emptyChatContent.classList.remove('show-flex');
             emptyChatContent.classList.add('hidden');
         }
 
