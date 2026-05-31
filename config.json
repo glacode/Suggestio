@@ -80,24 +80,24 @@
       "model": "labs-devstral-small-2512",
       "apiKeyIdentifier": "MISTRAL_API_KEY"
     },
-    "openrouter-deepseek-v4-flash:free": {
-      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
-      "model": "deepseek/deepseek-v4-flash:free",
-      "apiKeyIdentifier": "OPENROUTER_API_KEY"
-    },
-    "openrouter-ring-2.6-1t": {
-      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
-      "model": "inclusionai/ring-2.6-1t:free",
-      "apiKeyIdentifier": "OPENROUTER_API_KEY"
-    },
-    "openrouter-minimax-m2.5": {
-      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
-      "model": "minimax/minimax-m2.5:free",
-      "apiKeyIdentifier": "OPENROUTER_API_KEY"
-    },
     "openrouter-glm-4.5-air": {
       "endpoint": "https://openrouter.ai/api/v1/chat/completions",
       "model": "z-ai/glm-4.5-air:free",
+      "apiKeyIdentifier": "OPENROUTER_API_KEY"
+    },
+    "openrouter-moonshotai-kimi-k2.6-free": {
+      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+      "model": "moonshotai/kimi-k2.6:free",
+      "apiKeyIdentifier": "OPENROUTER_API_KEY"
+    },
+    "openrouter-nvidia-nemotron-3-super-120b-a12b:free": {
+      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+      "model": "nvidia/nemotron-3-super-120b-a12b:free",
+      "apiKeyIdentifier": "OPENROUTER_API_KEY"
+    },
+    "openrouter-owl-alpha": {
+      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+      "model": "openrouter/owl-alpha",
       "apiKeyIdentifier": "OPENROUTER_API_KEY"
     },
     "hf-lama38": {
