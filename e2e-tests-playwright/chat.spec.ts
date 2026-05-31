@@ -817,6 +817,7 @@ test.describe('Chat E2E', () => {
         // Clean up the listener so it doesn't affect subsequent tests
         page.off('console', consoleListener);
 
+        // Below we get all these violations because the server streams tokens, thus CSP violations are triggered multiple
         expect(violations).toEqual([
             "img-src",
             "script-src-attr",
