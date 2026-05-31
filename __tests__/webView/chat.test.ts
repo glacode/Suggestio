@@ -186,14 +186,14 @@ describe('ChatManager Unit Tests', () => {
             
             // Toggle dropdown
             dropdownLabel.dispatchEvent(new MouseEvent('click'));
-            expect(dropdownContent.style.display).toBe('block');
+            expect(dropdownContent.classList.contains('show')).toBe(true);
 
             // Select second profile
             const options = dropdownContent.querySelectorAll('a');
             options[1].click();
 
             expect(label.textContent).toBe('profile2');
-            expect(dropdownContent.style.display).toBe('none');
+            expect(dropdownContent.classList.contains('show')).toBe(false);
             expect(mockVscode.messages).toContainEqual({
                 command: WEBVIEW_COMMANDS.CHAT_PROFILE_CHANGED,
                 model: 'profile2'
@@ -211,10 +211,10 @@ describe('ChatManager Unit Tests', () => {
             }
             
             dropdownLabel.dispatchEvent(new MouseEvent('click'));
-            expect(dropdownContent.style.display).toBe('block');
+            expect(dropdownContent.classList.contains('show')).toBe(true);
 
             document.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-            expect(dropdownContent.style.display).toBe('none');
+            expect(dropdownContent.classList.contains('show')).toBe(false);
         });
     });
 

@@ -174,6 +174,13 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     expect(receivedArgs!.initialState.profiles).toEqual(['m1', 'm2']);
     // Expect the active profile to match our fake active profile.
     expect(receivedArgs!.initialState.activeProfile).toBe('m2');
+    
+    // Check security parameters
+    expect(receivedArgs!.nonce).toBeDefined();
+    expect(typeof receivedArgs!.nonce).toBe('string');
+    expect(receivedArgs!.nonce.length).toBeGreaterThan(0);
+    expect(receivedArgs!.cspSource).toBe('vscode-resource:');
+
     // Expect the webview's HTML content to be set to the value returned by our fake `getChatWebviewContent`.
     expect(webview.html).toBe('HTML for m1,m2');
 

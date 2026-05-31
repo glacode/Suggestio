@@ -130,7 +130,7 @@ export class AddLlmProfile {
             <div class="input-group">
                 <label class="settings-label">Profile ID (display name)</label>
                 <input type="text" id="editProfileId" value="" placeholder="e.g. my-provider-model" class="settings-input">
-                <div id="idValidationMessage" class="settings-description" style="margin-top: 4px;">Unique identifier for this configuration.</div>
+                <div id="idValidationMessage" class="settings-description mt-4">Unique identifier for this configuration.</div>
             </div>
 
             <div class="settings-section-divider"></div>
@@ -146,7 +146,7 @@ export class AddLlmProfile {
                 </div>
             </div>
 
-            <div id="keySettingsSection" class="input-group" style="display: none;">
+            <div id="keySettingsSection" class="input-group hidden">
                 <label class="settings-label">API Key Security</label>
                 <div class="settings-description">Choose how to link the API Key.</div>
                 
@@ -167,7 +167,7 @@ export class AddLlmProfile {
                         </div>
                     </label>
                 </div>
-                <div class="key-status-row" style="margin-top: 10px;">
+                <div class="key-status-row mt-10">
                     <button id="setKeyFinalBtn" class="settings-done small">Confirm Key</button>
                     <button id="cancelKeySettingsBtn" class="settings-done small secondary">Back</button>
                 </div>
@@ -261,13 +261,13 @@ export class AddLlmProfile {
         this._keyTypeUnique.addEventListener('change', () => this.updateFormState());
 
         this._setKeyFlowBtn.addEventListener('click', () => {
-            this._keyCheckSection!.style.display = 'none';
-            this._keySettingsSection!.style.display = 'block';
+            this._keyCheckSection!.classList.add('hidden');
+            this._keySettingsSection!.classList.remove('hidden');
         });
 
         this._cancelKeySettingsBtn.addEventListener('click', () => {
-            this._keySettingsSection!.style.display = 'none';
-            this._keyCheckSection!.style.display = 'block';
+            this._keySettingsSection!.classList.add('hidden');
+            this._keyCheckSection!.classList.remove('hidden');
         });
 
         this._setKeyFinalBtn.addEventListener('click', () => {
@@ -359,7 +359,7 @@ export class AddLlmProfile {
         const currentId = this._idInput.value.trim();
         if (!currentId) {
             this._idValidationMessage.textContent = 'Unique identifier for this configuration.';
-            this._idValidationMessage.style.color = '';
+            this._idValidationMessage.classList.remove('validation-error', 'validation-success');
             return false; // Not "taken", but not complete either
         }
 
@@ -367,13 +367,15 @@ export class AddLlmProfile {
 
         if (existingProfile) {
             this._idValidationMessage.textContent = `Error: ID "${currentId}" is already taken. Please choose a unique name.`;
-            this._idValidationMessage.style.color = 'var(--vscode-errorForeground)';
+            this._idValidationMessage.classList.add('validation-error');
+            this._idValidationMessage.classList.remove('validation-success');
             return false;
         }
 
         // Success state
         this._idValidationMessage.textContent = 'ID is available.';
-        this._idValidationMessage.style.color = 'var(--vscode-testing-iconPassed)';
+        this._idValidationMessage.classList.add('validation-success');
+        this._idValidationMessage.classList.remove('validation-error');
         return true;
     }
 
@@ -407,12 +409,12 @@ export class AddLlmProfile {
 
         if (hasKey) {
             this._keyStatusIndicator.innerHTML = '<span class="status-badge success">✅ Key Ready</span>';
-            this._setKeyFlowBtn.style.display = 'none';
-            this._noKeyRequiredBtn.style.display = 'none';
+            this._setKeyFlowBtn.classList.add('hidden');
+            this._noKeyRequiredBtn.classList.add('hidden');
         } else {
             this._keyStatusIndicator.innerHTML = '<span class="status-badge warning">❌ No Key Set</span>';
-            this._setKeyFlowBtn.style.display = 'inline-block';
-            this._noKeyRequiredBtn.style.display = 'inline-block';
+            this._setKeyFlowBtn.classList.remove('hidden');
+            this._noKeyRequiredBtn.classList.remove('hidden');
         }
 
         this._setKeyFlowBtn.disabled = !isFormComplete;

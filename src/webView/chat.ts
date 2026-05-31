@@ -9,7 +9,7 @@ declare const window: Window & {
 };
 
 const SEND_ICON_HTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="12" x2="7" y2="12"></line><polygon points="22 12 2 2 7 12 2 22 22 12"></polygon></svg>';
-const STOP_ICON_HTML = '<span style="font-size: 28px; font-weight: bold; line-height: 1;">■</span>';
+const STOP_ICON_HTML = '<span class="stop-icon">■</span>';
 
 export abstract class MessageSegment {
     public element: HTMLDivElement;
@@ -117,7 +117,7 @@ export class ToolCallSegment extends MessageSegment {
             }
             this.statusText.innerHTML = message.replace(/\.+$/, '');
             if (!payload.success) {
-                this.statusText.style.color = 'var(--vscode-errorForeground)';
+                this.statusText.classList.add('validation-error');
             }
         }
         if (this.pre && payload.result) {
@@ -146,8 +146,8 @@ export class ConfirmationSegment extends MessageSegment {
             </div>
             <div class="tool-confirmation-message">${payload.message}</div>
             ${payload.diffData ? `
-                <div style="margin-top: 8px; display: flex; justify-content: center;">
-                    <button class="tool-button tool-button-secondary view-diff-btn" style="width: 100%; max-width: none;">🔍 View Diff</button>
+                <div class="mt-8 flex-center">
+                    <button class="tool-button tool-button-secondary view-diff-btn full-width">🔍 View Diff</button>
                 </div>
             ` : ''}
             <div class="tool-confirmation-buttons">
@@ -480,7 +480,7 @@ export class AssistantMessage {
     finish() {
         this.isStreaming = false;
         this.element.classList.remove('loading');
-        this.element.style.opacity = '1';
+        this.element.classList.add('visible');
         if (this.indicator) {
             this.indicator.remove();
         }
@@ -609,14 +609,14 @@ export class ChatManager {
         dropdownLabel.addEventListener('click', () => {
             const dropdownContent = modelSelector.querySelector('.dropdown-content');
             if (dropdownContent instanceof HTMLElement) {
-                dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
+                dropdownContent.classList.toggle('show');
             }
         });
 
         document.addEventListener('click', (e) => {
             const dropdownContent = modelSelector.querySelector('.dropdown-content');
             if (dropdownContent instanceof HTMLElement && e.target instanceof Node && !modelSelector.contains(e.target)) {
-                dropdownContent.style.display = 'none';
+                dropdownContent.classList.remove('show');
             }
         });
     }
@@ -641,7 +641,7 @@ export class ChatManager {
                 e.preventDefault();
                 chatProfileLabel.textContent = profileId;
                 if (dropdownContent instanceof HTMLElement) {
-                    dropdownContent.style.display = 'none';
+                    dropdownContent.classList.remove('show');
                 }
                 this.vscode.postMessage({ 
                     command: WEBVIEW_COMMANDS.CHAT_PROFILE_CHANGED, 
@@ -663,7 +663,7 @@ export class ChatManager {
         manageOption.addEventListener('click', (e) => {
             e.preventDefault();
             if (dropdownContent instanceof HTMLElement) {
-                dropdownContent.style.display = 'none';
+                dropdownContent.classList.remove('show');
             }
             this.openSettings();
         });
@@ -829,7 +829,7 @@ export class ChatManager {
 
         const emptyChatContent = document.getElementById('emptyChatContent');
         if (emptyChatContent) {
-            emptyChatContent.style.display = 'none';
+            emptyChatContent.classList.add('hidden');
         }
 
         this.appendUserMessage(text);
@@ -936,7 +936,8 @@ export class ChatManager {
         messages.forEach(m => { m.remove(); });
         const emptyChatContent = document.getElementById('emptyChatContent');
         if(emptyChatContent) {
-            emptyChatContent.style.display = 'flex';
+            emptyChatContent.classList.remove('hidden');
+            emptyChatContent.classList.add('show-flex');
         }
         this.removeNotification();
         this.currentAssistantMessage = null;
@@ -946,7 +947,7 @@ export class ChatManager {
         this.newChat();
         const emptyChatContent = document.getElementById('emptyChatContent');
         if (emptyChatContent) {
-            emptyChatContent.style.display = 'none';
+            emptyChatContent.classList.add('hidden');
         }
 
         history.forEach(msg => {

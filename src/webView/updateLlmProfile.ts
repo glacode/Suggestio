@@ -126,11 +126,11 @@ export class UpdateLlmProfile {
                     <span class="checkbox-label">API Key is required for this profile</span>
                 </label>
 
-                <div id="updateKeySettings" style="margin-top: 10px; ${profile.needsApiKey ? '' : 'display: none;'}">
+                <div id="updateKeySettings" class="mt-10 ${profile.needsApiKey ? '' : 'hidden'}">
                     <label class="settings-label small">API Key Identifier</label>
                     <div class="dropdown-input-wrapper">
                         <input type="text" id="updateKeyIdentifier" value="${profile.apiKeyIdentifier || ''}" placeholder="e.g. MY_SERVICE_KEY" class="settings-input">
-                        <div id="updateKeyStatusIndicator" class="status-indicator" style="margin: 0 10px;"></div>
+                        <div id="updateKeyStatusIndicator" class="status-indicator mh-10"></div>
                         <button id="updateSetKeyBtn" class="settings-done small">Set Key</button>
                     </div>
                     <div class="settings-description">The name of the secret/environment variable containing the key.</div>
@@ -148,7 +148,7 @@ export class UpdateLlmProfile {
                 </label>
                 <div class="settings-description small">Enable if the model can use functions (Search, Terminal, etc.)</div>
 
-                <label class="checkbox-container" style="margin-top: 10px;">
+                <label class="checkbox-container mt-10">
                     <input type="checkbox" id="updateExcludeFromChat" ${profile.excludeFromChat ? 'checked' : ''}>
                     <span class="checkbox-label">Exclude from Chat View</span>
                 </label>
@@ -218,7 +218,7 @@ export class UpdateLlmProfile {
         this._isKeyRequiredToggle.addEventListener('change', () => {
             const container = document.getElementById('updateKeySettings');
             if (container) {
-                container.style.display = this._isKeyRequiredToggle!.checked ? 'block' : 'none';
+                container.classList.toggle('hidden', !this._isKeyRequiredToggle!.checked);
             }
             this.updateKeyStatus();
         });

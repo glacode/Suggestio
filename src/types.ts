@@ -176,6 +176,11 @@ export interface IWebview {
    * Equivalent to `vscode.Webview.html`.
    */
   html?: string;
+
+  /**
+   * Content security policy source for the webview.
+   */
+  readonly cspSource: string;
 }
 
 /**
@@ -754,6 +759,10 @@ export type GetChatWebviewContent = (args: {
   vscodeApi: IVscodeApiLocal;
   /** File reader abstraction. */
   fileReader: IFileContentReader;
+  /** Random nonce for script validation. */
+  nonce: string;
+  /** The webview's CSP source. */
+  cspSource: string;
 }) => string;
 
 /**

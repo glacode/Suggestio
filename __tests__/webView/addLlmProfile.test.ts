@@ -353,8 +353,8 @@ describe('AddLlmProfile Unit Tests (Behavioral)', () => {
 
         setKeyFlowBtn.click();
 
-        expect(keyCheckSection.style.display).toBe('none');
-        expect(keySettingsSection.style.display).toBe('block');
+        expect(keyCheckSection.classList.contains('hidden')).toBe(true);
+        expect(keySettingsSection.classList.contains('hidden')).toBe(false);
     });
 
     it('should send EDIT_API_KEY message from key settings section', () => {
@@ -408,8 +408,8 @@ describe('AddLlmProfile Unit Tests (Behavioral)', () => {
 
         backBtn.click();
 
-        expect(keyCheckSection.style.display).not.toBe('none');
-        expect(keySettingsSection.style.display).toBe('none');
+        expect(keyCheckSection.classList.contains('hidden')).toBe(false);
+        expect(keySettingsSection.classList.contains('hidden')).toBe(true);
     });
 
     it('should call onDone when main Cancel is clicked', () => {
@@ -458,7 +458,7 @@ describe('AddLlmProfile Unit Tests (Behavioral)', () => {
         idInput.dispatchEvent(new Event('input'));
 
         expect(validationMsg.textContent).toContain('already taken');
-        expect(validationMsg.style.color).toBe('var(--vscode-errorForeground)');
+        expect(validationMsg.classList.contains('validation-error')).toBe(true);
         expect(saveBtn.disabled).toBe(true);
 
         // 2. Clear ID - should still be disabled but show original message
@@ -471,7 +471,7 @@ describe('AddLlmProfile Unit Tests (Behavioral)', () => {
         idInput.value = 'brand-new-id';
         idInput.dispatchEvent(new Event('input'));
         expect(validationMsg.textContent).toContain('available');
-        expect(validationMsg.style.color).toBe('var(--vscode-testing-iconPassed)');
+        expect(validationMsg.classList.contains('validation-success')).toBe(true);
         // (Note: saveBtn might still be disabled if other fields are empty, 
         // which is expected behavior for a partial form)
     });

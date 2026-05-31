@@ -9,6 +9,8 @@ export interface IChatWebviewContentArgs {
     initialState: InitialState;
     vscodeApi: IVscodeApiLocal;
     fileReader: IFileContentReader;
+    nonce: string;
+    cspSource: string;
 }
 
 export const getChatWebviewContent: GetChatWebviewContent = (args: IChatWebviewContentArgs) => {
@@ -24,6 +26,8 @@ export const getChatWebviewContent: GetChatWebviewContent = (args: IChatWebviewC
         .replace('{{markdownJsUri}}', args.markdownJsUri.toString())
         .replace('{{highlightCssUri}}', args.highlightCssUri.toString())
         .replace('{{chatCssUri}}', args.chatCssUri.toString())
+        .replace('{{cspSource}}', args.cspSource)
+        .replace(/{{nonce}}/g, args.nonce)
         .replace('{{initialState}}', JSON.stringify(args.initialState));
 
     return htmlContent;

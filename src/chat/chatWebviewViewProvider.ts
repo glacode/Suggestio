@@ -35,6 +35,7 @@ import { ChatPrompt } from './chatPrompt.js';
 import { CHAT_MESSAGES, AGENT_LOGS } from '../constants/messages.js';
 import { WEBVIEW_COMMANDS, EXTENSION_EVENTS, EXTENSION_COMMANDS, MESSAGE_SENDERS } from '../constants/protocol.js';
 import { configProcessor, ISecretManager } from '../config/configProcessor.js';
+import { getNonce } from '../utils/textUtils.js';
 
 // This interface defines the arguments required to construct a `ChatWebviewViewProvider`.
 // It uses dependency injection to provide all necessary components.
@@ -285,6 +286,8 @@ export class ChatWebviewViewProvider {
             ? this._profileAccessor.getCompletionActiveProfile!()
             : (this._configContainer.config.activeCompletionProfile || activeProfile);
 
+        const nonce = getNonce();
+
         // Generate the full HTML content for the webview using the `_getChatWebviewContent` function.
         this._view.webview.html = this._getChatWebviewContent({
             extensionUri: this._extensionContext.extensionUri,
@@ -300,7 +303,9 @@ export class ChatWebviewViewProvider {
                 profileMetadata: await this._getProfileMetadata(completionProfiles, activeProfile, activeCompletionProfile)
             },
             vscodeApi: this._vscodeApi,
-            fileReader: this._fileReader
+            fileReader: this._fileReader,
+            nonce,
+            cspSource: this._view.webview.cspSource
         });
     }
 

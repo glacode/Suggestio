@@ -3,6 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src {{cspSource}}; script-src 'nonce-{{nonce}}';">
         <link rel="stylesheet" href="{{highlightCssUri}}">
         <link rel="stylesheet" href="{{chatCssUri}}">
     </head>
@@ -58,10 +59,10 @@
             </div>
         </div>
         
-        <script>
+        <script nonce="{{nonce}}">
             window.initialState = {{initialState}};
         </script>
-        <script src="{{markdownJsUri}}"></script>
-        <script src="{{chatJsUri}}"></script>
+        <script nonce="{{nonce}}" src="{{markdownJsUri}}"></script>
+        <script nonce="{{nonce}}" src="{{chatJsUri}}"></script>
     </body>
 </html>

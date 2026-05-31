@@ -102,17 +102,17 @@ describe('UpdateLlmProfile Unit Tests (Behavioral)', () => {
         }
 
         // Initially shown
-        expect(keySettings.style.display).not.toBe('none');
+        expect(keySettings.classList.contains('hidden')).toBe(false);
 
         // Toggle OFF
         isKeyReq.checked = false;
         isKeyReq.dispatchEvent(new Event('change'));
-        expect(keySettings.style.display).toBe('none');
+        expect(keySettings.classList.contains('hidden')).toBe(true);
 
         // Toggle ON
         isKeyReq.checked = true;
         isKeyReq.dispatchEvent(new Event('change'));
-        expect(keySettings.style.display).toBe('block');
+        expect(keySettings.classList.contains('hidden')).toBe(false);
     });
 
     it('should enable/disable Save button based on validation', () => {

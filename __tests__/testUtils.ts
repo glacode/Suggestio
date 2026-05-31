@@ -124,6 +124,7 @@ export class MockWebviewApi implements IWebviewApi {
 
 export const createMockWebview = (posted: MessageFromTheExtensionToTheWebview[] = []): IWebview & { __handler?: (msg: any) => void } => {
     const webview: IWebview & { __handler?: (msg: any) => void } = {
+        cspSource: 'vscode-resource:',
         options: undefined,
         asWebviewUri: (uri: IUriLike) => ({
             fsPath: `webview:${JSON.stringify(uri)}`,

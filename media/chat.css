@@ -488,7 +488,59 @@ html, body {
     text-align: center;
     white-space: nowrap;
     text-overflow: ellipsis;
-    overflow: hidden;
+    overflow: visible; /* Fix: allow tooltips to show */
+}
+
+/* Utility & Security classes */
+.hidden {
+    display: none !important;
+}
+
+.stop-icon {
+    font-size: 28px;
+    font-weight: bold;
+    line-height: 1;
+    display: inline-block;
+}
+
+.validation-error {
+    color: var(--vscode-errorForeground) !important;
+}
+
+.validation-success {
+    color: var(--vscode-testing-iconPassed) !important;
+}
+
+.show {
+    display: block !important;
+}
+
+.show-flex {
+    display: flex !important;
+}
+
+.visible {
+    opacity: 1 !important;
+}
+
+.full-width {
+    width: 100% !important;
+    max-width: none !important;
+}
+
+/* Layout Utilities */
+.mt-4 { margin-top: 4px !important; }
+.mt-8 { margin-top: 8px !important; }
+.mt-10 { margin-top: 10px !important; }
+.mt-15 { margin-top: 15px !important; }
+.mt-20 { margin-top: 20px !important; }
+.mt-25 { margin-top: 25px !important; }
+.mh-10 { margin-left: 10px !important; margin-right: 10px !important; }
+.p-10 { padding: 10px !important; }
+
+.flex-center {
+    display: flex;
+    justify-content: center;
 }
 
 .tool-button-primary {

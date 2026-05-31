@@ -23,20 +23,20 @@ export class DeleteLlmProfile {
         const form = document.createElement('div');
         form.className = 'edit-profile-form'; // Reuse same layout styles
         form.innerHTML = `
-            <h3 class="settings-subtitle" style="color: var(--vscode-errorForeground);">Delete Profile?</h3>
+            <h3 class="settings-subtitle validation-error">Delete Profile?</h3>
             
             <div class="input-group">
                 <p>Are you sure you want to delete the profile <strong>"${profile.id}"</strong>?</p>
-                <p class="settings-description" style="margin-top: 10px;">
+                <p class="settings-description mt-10">
                     This will remove the configuration from your settings.
                 </p>
-                <div class="status-badge warning" style="margin-top: 15px; display: block; padding: 10px;">
+                <div class="status-badge warning mt-15 p-10">
                     <strong>Note:</strong> Any stored API keys for this profile will <strong>NOT</strong> be removed. 
                     This ensures other profiles sharing the same key identifier remain functional.
                 </div>
             </div>
 
-            <div class="form-actions-row" style="margin-top: 25px;">
+            <div class="form-actions-row mt-25">
                 <button id="confirmDeleteBtn" class="settings-done danger-button">Delete Profile</button>
                 <button id="cancelDeleteBtn" class="settings-done secondary">Cancel</button>
             </div>

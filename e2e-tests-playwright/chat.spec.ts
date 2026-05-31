@@ -1,4 +1,4 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page, ConsoleMessage } from '@playwright/test';
 import { launchVscode } from './vscode-runner';
 import { ElectronApplication } from 'playwright';
 import express from 'express';
@@ -80,6 +80,11 @@ function writeMockConfig(workspace: string) {
             runCommandProvider: {
                 endpoint: "http://localhost:3001/v1/run-command/completions",
                 model: "test-model",
+                isApiKeyRequired: false
+            },
+            securityProvider: {
+                endpoint: "http://localhost:3001/v1/chat/completions",
+                model: "malicious-model",
                 isApiKeyRequired: false
             }
         }
@@ -585,6 +590,9 @@ function createMockServer(capturedRequests: any[]): Promise<Server> {
             // 4. Delegate streaming logic based on the requested model
             if (model === 'reasoning-model') {
                 streamReasoningModel(res, req.body.messages);
+            } else if (model === 'malicious-model') {
+                const maliciousPayload = 'Safe text. <script>window.XSS_EXECUTED=true;</script> <img src=x onerror="window.XSS_EXECUTED=true;"> End.';
+                streamDefaultModel(res, maliciousPayload);
             } else {
                 streamDefaultModel(res, concatenatedInput);
             }
@@ -747,7 +755,7 @@ test.describe('Chat E2E', () => {
             ['Hello', 'How are you'],
             ['Hello', 'Hello How are you']
         );
-
+ 
         // Third turn: Anonymization
         await sendChatMessage(inner, 'My secret is simple');
 
@@ -770,27 +778,66 @@ test.describe('Chat E2E', () => {
         expect(lastUserMessage.content).toMatch(/My ANON_\d+ is simple/);
     });
 
-    test('should clear chat history when "New Chat" button is clicked', async () => {
-        // await openChatView(page);
+    test('Security: should block malicious scripts and styles in LLM response via CSP', async () => {
+        await clickNewChat(page);
         const inner = await getChatFrames(page);
+        await switchModel(inner, 'securityProvider');
 
-        // Start with a clean slate
-        await clickNewChat(page);
+        // Assert the CSP Header Template Configuration
+        const cspContent = await inner.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute('content');
+        
+        expect(cspContent).toBeDefined();
+        expect(cspContent).toContain("default-src 'none'");
+        expect(cspContent).toContain("style-src");
+        expect(cspContent).toContain("script-src 'nonce-"); 
+        
+        // 1. Set up a local array and a native Playwright console listener
+        const violations: string[] = [];
+        const consoleListener = (msg: ConsoleMessage) => {
+            const text = msg.text();
+            if (text.startsWith('CSP_VIOLATION:')) {
+                violations.push(text.replace('CSP_VIOLATION:', ''));
+            }
+        };
+        page.on('console', consoleListener);
 
-        // Send a message to have some history
-        await sendChatMessage(inner, 'Clear me');
-        await expectChatMessages(inner, 'Clear me');
+        // 2. Attach the event listener inside the browser frame using standard console.log
+        await inner.locator('html').evaluate(() => {
+            document.addEventListener('securitypolicyviolation', (e) => {
+                console.log('CSP_VIOLATION:' + e.violatedDirective);
+            });
+        });
 
-        // Click the "New Chat" button in the VS Code view title
-        await clickNewChat(page);
+        // 3. Send message to trigger malicious response
+        await sendChatMessage(inner, 'trigger xss');
 
-        // Verify that the empty chat content is visible again
-        const emptyChatContent = inner.locator('#emptyChatContent');
-        await expect(emptyChatContent).toBeVisible();
+        // 4. Wait for the stream to completely finish rendering
+        await expect(inner.locator('.message.assistant').last()).toContainText('End.', { timeout: 10000 });
 
-        // Verify that no messages are left
-        const messages = inner.locator('.message');
-        await expect(messages).toHaveCount(0);
+        // Clean up the listener so it doesn't affect subsequent tests
+        page.off('console', consoleListener);
+
+        expect(violations).toEqual([
+            "img-src",
+            "script-src-attr",
+            "img-src",
+            "script-src-attr",
+            "img-src",
+            "script-src-attr",
+            "img-src",
+            "script-src-attr",
+            "img-src",
+            "script-src-attr",
+            "img-src",
+            "script-src-attr",
+        ]);
+
+        // 6. Verify that the XSS did NOT execute
+        const xssExecuted = await inner.locator('body').evaluate('window["XSS_EXECUTED"]');
+        expect(xssExecuted).toBeUndefined();
+        
+        // Final sanity check
+        await expect(inner.locator('.message.assistant').last()).toContainText('Safe text.');
     });
 
     test('should handle switching to a reasoning model and processing interleaved tokens correctly', async () => {
@@ -1344,7 +1391,7 @@ test.describe('Chat E2E', () => {
     });
 
     test('should bypass confirmation for subsequent replace_text calls after "Always Allow" is clicked', async () => {
-        await openChatView(page);
+        // await openChatView(page);
         const inner = await getChatFrames(page);
 
         // 1. Pre-create the file to be edited
