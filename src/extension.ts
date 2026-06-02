@@ -42,7 +42,7 @@ import { EventBus } from './utils/eventBus.js';
 import { EventLogHandler } from './log/eventLogHandler.js';
 import { ANONYMIZATION_EVENT } from './anonymizer/anonymizationNotifier.js';
 import { NodeFetchClient } from './utils/httpClient.js';
-import { EXTENSION_MESSAGES, EXTENSION_LOGS } from './constants/messages.js';
+import { EXTENSION_LOGS } from './constants/messages.js';
 import { DiffManager } from './utils/diffManager.js';
 import { NodeCommandExecutor } from './utils/commandExecutor.js';
 import { CommandBlacklistValidator } from './utils/commandValidator.js';
@@ -51,7 +51,7 @@ import { CommandAutoAcceptManager } from './utils/commandAutoAcceptManager.js';
 export async function activate(context: vscode.ExtensionContext) {
   initLogger();
   defaultLogger.info(EXTENSION_LOGS.ACTIVATE);
-  vscode.window.showInformationMessage(EXTENSION_MESSAGES.ACTIVATED);
+  // vscode.window.showInformationMessage(EXTENSION_MESSAGES.ACTIVATED);
 
   const vscodeApiLocal: IVscodeApiLocal = {
     Uri: vscode.Uri,
