@@ -6,6 +6,7 @@ import { Server } from 'http';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { openChatView, getChatFrames, sendChatMessage, clickNewChat } from './testUtils';
 
 // -----------------------------------------------------------------------------
 // Helpers
@@ -65,55 +66,6 @@ function createMockServer(): Promise<Server> {
         });
         const server = app.listen(3002, () => resolve(server));
     });
-}
-
-async function openChatView(page: Page) {
-    // Open command palette
-    await page.keyboard.press('F1');
-    await page.waitForTimeout(200);
-    
-    // Type command (reduced delay)
-    await page.keyboard.type('Suggestio: Focus on Chat View', { delay: 10 });
-    await page.waitForTimeout(200);
-    
-    // Press Enter
-    await page.keyboard.press('Enter');
-    
-    // Wait for the webview to appear (indicates activation and successful command)
-    const outerSelector = 'iframe.webview[src*="glacode.suggestio"]';
-    try {
-        await page.waitForSelector(outerSelector, { timeout: 10000 });
-    } catch (e) {
-        console.error('Failed to find webview after command. Retrying...');
-        await page.keyboard.press('F1');
-        await page.waitForTimeout(200);
-        await page.keyboard.type('Suggestio: Focus on Chat View', { delay: 10 });
-        await page.keyboard.press('Enter');
-        await page.waitForSelector(outerSelector, { timeout: 10000 });
-    }
-    
-    await page.waitForTimeout(500);
-}
-
-async function getChatFrames(page: Page) {
-    const outerSelector = 'iframe.webview[src*="glacode.suggestio"]';
-    await page.waitForSelector(outerSelector, { timeout: 10000 });
-    const outer = page.frameLocator(outerSelector);
-    await outer.locator('iframe').waitFor({ state: 'visible' });
-    return outer.frameLocator('iframe');
-}
-
-async function sendChatMessage(innerFrame: ReturnType<Page["frameLocator"]>, message: string) {
-    const input = innerFrame.locator('#messageInput');
-    await input.click();
-    await input.page().keyboard.type(message, { delay: 10 });
-    const sendBtn = innerFrame.locator('.send-icon');
-    await sendBtn.click();
-}
-
-async function clickNewChat(page: Page) {
-    const newChatBtn = page.locator('[role="button"][aria-label="Suggestio: New Chat"]').first();
-    await newChatBtn.click();
 }
 
 // -----------------------------------------------------------------------------
