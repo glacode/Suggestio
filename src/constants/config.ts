@@ -19,4 +19,8 @@ export const CONFIG_DEFAULTS = {
     ANONYMIZER_MIN_LENGTH: 10,
     /** Default inline completion enabled status. */
     INLINE_COMPLETION_ENABLED: true,
+    /** Default supported languages for inline completion. */
+    INLINE_COMPLETION_SUPPORTED_LANGUAGES: [],
+    /** Default status for inline completion in untitled editors. */
+    INLINE_COMPLETION_ENABLE_IN_UNTITLED_EDITORS: false,
 } as const;

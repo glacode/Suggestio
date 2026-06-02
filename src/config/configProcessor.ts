@@ -149,8 +149,8 @@ class ConfigProcessor {
             initialDelay: CONFIG_DEFAULTS.INITIAL_DELAY,
             inlineCompletion: {
                 enabled: CONFIG_DEFAULTS.INLINE_COMPLETION_ENABLED,
-                supportedLanguages: [],
-                enableInUntitledEditors: false
+                supportedLanguages: [...CONFIG_DEFAULTS.INLINE_COMPLETION_SUPPORTED_LANGUAGES],
+                enableInUntitledEditors: CONFIG_DEFAULTS.INLINE_COMPLETION_ENABLE_IN_UNTITLED_EDITORS
             },
             autoAcceptEdits: CONFIG_DEFAULTS.AUTO_ACCEPT_EDITS,
             maxSavedChatSessions: CONFIG_DEFAULTS.MAX_SAVED_CHAT_SESSIONS,

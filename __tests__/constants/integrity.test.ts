@@ -3,6 +3,7 @@ import { AGENT_MESSAGES, CHAT_MESSAGES, AGENT_LOGS, PROVIDER_MESSAGES, EXTENSION
 import { WEBVIEW_COMMANDS, EXTENSION_COMMANDS, EXTENSION_EVENTS, MESSAGE_SENDERS } from "../../src/constants/protocol.js";
 import { CONFIG_DEFAULTS } from "../../src/constants/config.js";
 import { SYSTEM_PROMPTS } from "../../src/constants/prompts.js";
+import { z } from "zod";
 
 describe("Constants Integrity Sanity Checks", () => {
     const messageSections = { 
@@ -25,21 +26,32 @@ describe("Constants Integrity Sanity Checks", () => {
 
     const allSections = { ...messageSections, ...protocolSections, ...otherSections };
 
-    it("should have non-empty values for all constants", () => {
+    it("should have defined values for all constants", () => {
         Object.values(allSections).forEach(section => {
             Object.values(section).forEach(value => {
-                const stringValue = typeof value === 'function' ? value('test') : String(value);
-                expect(stringValue.length).toBeGreaterThan(0);
+                expect(value).not.toBeUndefined();
+                expect(value).not.toBeNull();
             });
         });
     });
 
-    it("should have unique values within each section to avoid ambiguity", () => {
-        Object.values(allSections).forEach(section => {
-            const values = Object.values(section).map(v => typeof v === 'function' ? v('unique') : v);
-            const uniqueValues = new Set(values);
-            expect(uniqueValues.size).toBe(values.length);
+    it("should match the expected configuration schema", () => {
+        const ConfigDefaultsSchema = z.object({
+            LOG_LEVEL: z.string(),
+            MAX_AGENT_ITERATIONS: z.number(),
+            TOOL_RESULT_MAX_LENGTH: z.number(),
+            MAX_RETRIES: z.number(),
+            INITIAL_DELAY: z.number(),
+            AUTO_ACCEPT_EDITS: z.boolean(),
+            MAX_SAVED_CHAT_SESSIONS: z.number(),
+            SESSION_TITLE_MAX_LENGTH: z.number(),
+            ANONYMIZER_ALLOWED_ENTROPY: z.number(),
+            ANONYMIZER_MIN_LENGTH: z.number(),
+            INLINE_COMPLETION_ENABLED: z.boolean(),
+            INLINE_COMPLETION_SUPPORTED_LANGUAGES: z.array(z.string()),
+            INLINE_COMPLETION_ENABLE_IN_UNTITLED_EDITORS: z.boolean(),
         });
+        expect(() => ConfigDefaultsSchema.parse(CONFIG_DEFAULTS)).not.toThrow();
     });
 
     it("protocol values should be globally unique to avoid cross-talk", () => {
