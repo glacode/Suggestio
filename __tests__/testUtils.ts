@@ -265,6 +265,7 @@ export const createMockPathResolver = (): jest.Mocked<IPathResolver> => ({
 });
 
 export const createMockConfigProvider = (): jest.Mocked<IConfigProvider> => ({
+    getSanitizerDisabled: jest.fn<() => boolean>(),
     getLogLevel: jest.fn<() => string>(),
     getMaxAgentIterations: jest.fn<() => number>(),
     getAnonymizerEnabled: jest.fn<() => boolean | undefined>(),
@@ -302,6 +303,7 @@ export const createDefaultConfig = (overrides: Partial<IConfig> = {}): IConfig =
     profiles: {},
     anonymizer: { enabled: false, words: [] },
     logLevel: CONFIG_DEFAULTS.LOG_LEVEL,
+    disableSanitizer: false,
     maxAgentIterations: CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS,
     toolResultMaxLength: CONFIG_DEFAULTS.TOOL_RESULT_MAX_LENGTH,
     maxRetries: CONFIG_DEFAULTS.MAX_RETRIES,

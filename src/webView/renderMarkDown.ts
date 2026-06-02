@@ -1,5 +1,7 @@
 import { marked } from "marked";
 import hljs from "highlight.js";
+import { createSanitizer } from "./sanitizer.js";
+import type { InitialState } from "../types.js";
 
 const renderer = new marked.Renderer();
 
@@ -16,15 +18,19 @@ renderer.code = ({ text, lang }: { text: string; lang?: string; escaped?: boolea
 declare global {
   interface Window {
     renderMarkdown: (text: string) => string;
+    initialState: InitialState;
   }
 }
+
+// Initialize the sanitizer based on the initial state
+const sanitizer = createSanitizer(!!window.initialState?.disableSanitizer);
 
 function renderMarkdown(text: string): string {
   const parsed = marked.parse(text, { renderer });
   if (typeof parsed !== "string") {
     throw new Error("Expected marked.parse to return a string");
   }
-  return parsed;
+  return sanitizer.sanitize(parsed);
 }
 
 // Expose globally for the webview

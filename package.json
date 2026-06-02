@@ -401,6 +401,11 @@
                     "type": "string",
                     "scope": "application",
                     "description": "The ID of the profile currently active for inline completion."
+                },
+                "suggestio.debug.security.disableSanitizer": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "WARNING: Only disable this for testing purposes. Disabling the sanitizer exposes the extension to XSS attacks from LLM-generated content. Use only if you suspect the sanitizer is causing rendering issues."
                 }
             }
         }
@@ -431,6 +436,7 @@
         "dev:install": "npx vsce package -o suggestio.vsix && code --install-extension suggestio.vsix --force"
     },
     "dependencies": {
+        "dompurify": "^3.4.7",
         "highlight.js": "^11.11.1",
         "marked": "^16.3.0",
         "node-fetch": "^3.3.2",
@@ -438,6 +444,7 @@
     },
     "devDependencies": {
         "@playwright/test": "^1.56.1",
+        "@types/dompurify": "^3.0.5",
         "@types/express": "^5.0.5",
         "@types/glob": "^8.1.0",
         "@types/jest": "^30.0.0",

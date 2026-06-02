@@ -733,6 +733,20 @@ export interface InitialState {
   activeCompletionProfile?: string;
   profileMetadata?: ProfileMetadata[];
   autoAcceptEdits?: boolean;
+  disableSanitizer?: boolean;
+}
+
+/**
+ * Interface for sanitizing HTML strings.
+ * This is used to prevent XSS attacks from LLM-generated content.
+ */
+export interface ISanitizer {
+  /**
+   * Sanitizes the provided HTML string.
+   * @param html The raw HTML string to sanitize.
+   * @returns The sanitized HTML string.
+   */
+  sanitize(html: string): string;
 }
 
 /**
@@ -996,6 +1010,11 @@ export interface IConfigChangeEvent {
  * Provides access to configuration settings and notifies of changes.
  */
 export interface IConfigProvider {
+  /**
+   * Retrieves if the HTML sanitizer is disabled (for debugging).
+   */
+  getSanitizerDisabled(): boolean;
+
   /**
    * Retrieves the log level.
    */
@@ -1737,6 +1756,7 @@ export interface IConfig extends IProjectConfig, IStorageConfig, IInlineCompleti
   llmProviderForChat?: ILlmProvider;
   maxAgentIterations: number;
   logLevel: string;
+  disableSanitizer: boolean;
   inlineCompletion: {
     enabled: boolean;
     supportedLanguages: string[];
@@ -1769,6 +1789,11 @@ export interface IConfigContainer {
  * Precedence: Default < VS Code Settings < Workspace JSON File.
  */
 export interface IVSCodeSettings {
+  debug?: {
+    security?: {
+      disableSanitizer?: boolean;
+    };
+  };
   maxAgentIterations?: number;
   logLevel?: string;
   inlineCompletion?: {

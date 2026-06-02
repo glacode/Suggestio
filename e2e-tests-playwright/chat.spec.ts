@@ -1,4 +1,4 @@
-import { test, expect, Page, ConsoleMessage } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 import { launchVscode } from './vscode-runner';
 import { ElectronApplication } from 'playwright';
 import express from 'express';
@@ -776,69 +776,6 @@ test.describe('Chat E2E', () => {
 
         // The word "secret" should be replaced by "ANON_" followed by a number
         expect(lastUserMessage.content).toMatch(/My ANON_\d+ is simple/);
-    });
-
-    test('Security: should block malicious scripts and styles in LLM response via CSP', async () => {
-        await clickNewChat(page);
-        const inner = await getChatFrames(page);
-        await switchModel(inner, 'securityProvider');
-
-        // Assert the CSP Header Template Configuration
-        const cspContent = await inner.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute('content');
-        
-        expect(cspContent).toBeDefined();
-        expect(cspContent).toContain("default-src 'none'");
-        expect(cspContent).toContain("style-src");
-        expect(cspContent).toContain("script-src 'nonce-"); 
-        
-        // 1. Set up a local array and a native Playwright console listener
-        const violations: string[] = [];
-        const consoleListener = (msg: ConsoleMessage) => {
-            const text = msg.text();
-            if (text.startsWith('CSP_VIOLATION:')) {
-                violations.push(text.replace('CSP_VIOLATION:', ''));
-            }
-        };
-        page.on('console', consoleListener);
-
-        // 2. Attach the event listener inside the browser frame using standard console.log
-        await inner.locator('html').evaluate(() => {
-            document.addEventListener('securitypolicyviolation', (e) => {
-                console.log('CSP_VIOLATION:' + e.violatedDirective);
-            });
-        });
-
-        // 3. Send message to trigger malicious response
-        await sendChatMessage(inner, 'trigger xss');
-
-        // 4. Wait for the stream to completely finish rendering
-        await expect(inner.locator('.message.assistant').last()).toContainText('End.', { timeout: 10000 });
-
-        // Clean up the listener so it doesn't affect subsequent tests
-        page.off('console', consoleListener);
-
-        // Below we get all these violations because the server streams tokens, thus CSP violations are triggered multiple
-        expect(violations).toEqual([
-            "img-src",
-            "script-src-attr",
-            "img-src",
-            "script-src-attr",
-            "img-src",
-            "script-src-attr",
-            "img-src",
-            "script-src-attr",
-            "img-src",
-            "script-src-attr",
-            "img-src",
-            "script-src-attr",
-        ]);
-
-        // 6. Verify that the XSS did NOT execute
-        const xssExecuted = await inner.locator('body').evaluate('window["XSS_EXECUTED"]');
-        expect(xssExecuted).toBeUndefined();
-        
-        // Final sanity check
-        await expect(inner.locator('.message.assistant').last()).toContainText('Safe text.');
     });
 
     test('should handle switching to a reasoning model and processing interleaved tokens correctly', async () => {

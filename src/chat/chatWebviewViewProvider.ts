@@ -300,7 +300,8 @@ export class ChatWebviewViewProvider {
                 activeProfile,
                 completionProfiles: completionProfiles,
                 activeCompletionProfile: activeCompletionProfile,
-                profileMetadata: await this._getProfileMetadata(completionProfiles, activeProfile, activeCompletionProfile)
+                profileMetadata: await this._getProfileMetadata(completionProfiles, activeProfile, activeCompletionProfile),
+                disableSanitizer: this._configContainer.config.disableSanitizer
             },
             vscodeApi: this._vscodeApi,
             fileReader: this._fileReader,

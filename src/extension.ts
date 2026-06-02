@@ -137,6 +137,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const pathResolver: IPathResolver = path;
 
   const configProvider: IConfigProvider = {
+    getSanitizerDisabled: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<boolean>('debug.security.disableSanitizer', false),
     getLogLevel: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<string>('logLevel', CONFIG_DEFAULTS.LOG_LEVEL),
     getMaxAgentIterations: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<number>('maxAgentIterations', CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS),
     getAnonymizerEnabled: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<boolean | undefined>('experimental.anonymizer.enabled'),
@@ -193,6 +194,11 @@ export async function activate(context: vscode.ExtensionContext) {
   const packageJsonLanguages = context.extension.packageJSON.contributes?.inlineCompletions?.map((c: any) => c.language) || [];
 
   const vsCodeSettings: IVSCodeSettings = {
+    debug: {
+      security: {
+        disableSanitizer: vsCodeConfig.get<boolean>('debug.security.disableSanitizer', false)
+      }
+    },
     maxAgentIterations: vsCodeConfig.get<number>('maxAgentIterations', CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS),
     logLevel: logLevel,
     inlineCompletion: {

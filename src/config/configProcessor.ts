@@ -143,6 +143,7 @@ class ConfigProcessor {
             ...defaultConfig,
             maxAgentIterations: CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS,
             logLevel: CONFIG_DEFAULTS.LOG_LEVEL,
+            disableSanitizer: false,
             toolResultMaxLength: CONFIG_DEFAULTS.TOOL_RESULT_MAX_LENGTH,
             maxRetries: CONFIG_DEFAULTS.MAX_RETRIES,
             initialDelay: CONFIG_DEFAULTS.INITIAL_DELAY,
@@ -228,10 +229,14 @@ class ConfigProcessor {
      * Applies overrides from VS Code settings and ensures Project Config file maintains priority.
      */
     private applyOverrides(config: IConfig, vsCodeSettings: IVSCodeSettings, workspaceJsonConfigFile: Partial<IProjectConfig>): void {
-        const { anonymizer, profiles, activeChatProfile, activeCompletionProfile, inlineCompletion, ...rest } = vsCodeSettings;
+        const { anonymizer, profiles, activeChatProfile, activeCompletionProfile, inlineCompletion, debug, ...rest } = vsCodeSettings;
         
         // 1. VS Code settings apply over Default
         Object.assign(config, rest);
+
+        if (debug?.security?.disableSanitizer !== undefined) {
+            config.disableSanitizer = debug.security.disableSanitizer;
+        }
         
         if (profiles) {
             // Tag incoming user profiles
