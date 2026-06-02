@@ -113,7 +113,7 @@ export class HistoryOverlay {
                 </div>
             `;
 
-            item.addEventListener('dblclick', () => {
+            item.addEventListener('click', () => {
                 vscode.postMessage({ command: WEBVIEW_COMMANDS.LOAD_SESSION, sessionId: session.id });
                 this.hide();
             });
