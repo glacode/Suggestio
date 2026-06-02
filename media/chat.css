@@ -1338,9 +1338,6 @@ body.overlay-open textarea#messageInput {
     font-weight: 600;
     font-size: 13px;
     color: var(--vscode-foreground);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .history-session-date {

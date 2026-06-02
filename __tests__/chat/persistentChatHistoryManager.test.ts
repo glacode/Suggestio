@@ -44,8 +44,9 @@ describe("PersistentChatHistoryManager", () => {
     });
 
     it("should generate a title from the first user message", () => {
+        const longMessage = "This is a very long message that should be truncated because it exceeds the maximum allowed length for a session title in the chat history manager.";
         const history: IStoredChatMessage[] = [
-            { role: "user", content: "This is a very long message that should be truncated" },
+            { role: "user", content: longMessage },
             { role: "assistant", content: "OK" }
         ];
         mockHistoryManager.getChatHistory.mockReturnValue(history);
@@ -54,7 +55,7 @@ describe("PersistentChatHistoryManager", () => {
 
         expect(mockStorage.saveSession).toHaveBeenCalledWith(
             expect.objectContaining({
-                title: "This is a very long message th..."
+                title: longMessage.substring(0, 100) + "..."
             })
         );
     });

@@ -5,6 +5,7 @@ import {
     IChatHistoryManager,
     IWorkspaceChatHistoryStorage
 } from '../types.js';
+import { CONFIG_DEFAULTS } from '../constants/config.js';
 
 /**
  * Manages chat history with manual persistence support.
@@ -81,7 +82,7 @@ export class PersistentChatHistoryManager implements IPersistentChatHistoryManag
             return 'New Chat';
         }
         const text = firstUserMessage.content.trim();
-        return text.length > 30 ? text.substring(0, 30) + '...' : text;
+        return text.length > CONFIG_DEFAULTS.SESSION_TITLE_MAX_LENGTH ? text.substring(0, CONFIG_DEFAULTS.SESSION_TITLE_MAX_LENGTH) + '...' : text;
     }
 
     private generateId(): string {
