@@ -149,6 +149,7 @@ class ConfigProcessor {
             initialDelay: CONFIG_DEFAULTS.INITIAL_DELAY,
             inlineCompletion: {
                 enabled: CONFIG_DEFAULTS.INLINE_COMPLETION_ENABLED,
+                // Spread is used to create a mutable copy of the readonly constant array to satisfy IConfig's string[] type
                 supportedLanguages: [...CONFIG_DEFAULTS.INLINE_COMPLETION_SUPPORTED_LANGUAGES],
                 enableInUntitledEditors: CONFIG_DEFAULTS.INLINE_COMPLETION_ENABLE_IN_UNTITLED_EDITORS
             },
