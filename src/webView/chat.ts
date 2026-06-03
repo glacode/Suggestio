@@ -1,7 +1,7 @@
 import { WEBVIEW_COMMANDS, EXTENSION_EVENTS, EXTENSION_COMMANDS, MESSAGE_SENDERS } from '../constants/protocol.js';
 import { SettingsOverlay } from './settingsOverlay.js';
 import { HistoryOverlay } from './historyOverlay.js';
-import type { IWebviewApi, InitialState, ToolCallDecision } from '../types.js';
+import type { IWebviewApi, InitialState, ToolCallDecision, IChatManagerActions } from '../types.js';
 
 // These are provided by the environment (main.ts)
 declare const window: Window & { 
@@ -46,7 +46,7 @@ export class ToolCallSegment extends MessageSegment {
     private pre: HTMLPreElement | null = null;
     private outputContainer: HTMLDivElement | null = null;
 
-    constructor(private chatManager: ChatManager, container: HTMLElement, payload: any) {
+    constructor(private chatManager: IChatManagerActions, container: HTMLElement, payload: any) {
         super(container, 'tool_call');
         this.toolCallId = payload.toolCallId;
         this.toolName = payload.toolName;
@@ -142,7 +142,7 @@ export class ToolCallSegment extends MessageSegment {
 
 export class ConfirmationSegment extends MessageSegment {
     public toolCallId: string;
-    constructor(private chatManager: ChatManager, container: HTMLElement, payload: any) {
+    constructor(private chatManager: IChatManagerActions, container: HTMLElement, payload: any) {
         super(container, 'confirmation');
         this.toolCallId = payload.toolCallId;
         this.element.className = 'tool-confirmation-container';
@@ -195,7 +195,7 @@ export class ReasoningSegment extends MessageSegment {
     public internalSegments: MessageSegment[] = [];
     private lastInternalTokenType: string | null = null;
 
-    constructor(private chatManager: ChatManager, container: HTMLElement) {
+    constructor(private chatManager: IChatManagerActions, container: HTMLElement) {
         super(container, 'reasoning');
         this.element.className = 'reasoning-container';
         this.element.innerHTML = `
@@ -244,8 +244,8 @@ export class ReasoningSegment extends MessageSegment {
         return seg;
     }
 
-    addConfirmation(chatManager: ChatManager, payload: any) {
-        const seg = new ConfirmationSegment(chatManager, this.contentElement, payload);
+    addConfirmation(payload: any) {
+        const seg = new ConfirmationSegment(this.chatManager, this.contentElement, payload);
         this.internalSegments.push(seg);
         this.lastInternalTokenType = 'confirmation';
         return seg;
@@ -275,7 +275,7 @@ export class AssistantMessage {
     public isStreaming = true;
     public element: HTMLDivElement;
 
-    constructor(private chatManager: ChatManager, container: HTMLElement) {
+    constructor(private chatManager: IChatManagerActions, container: HTMLElement) {
         this.element = document.createElement('div');
         this.element.className = 'message assistant loading';
         this.element.innerHTML = `
@@ -349,7 +349,7 @@ export class AssistantMessage {
     addConfirmation(payload: any) {
         let segment: ConfirmationSegment;
         if (this.activeReasoningSegment) {
-            segment = this.activeReasoningSegment.addConfirmation(this.chatManager, payload);
+            segment = this.activeReasoningSegment.addConfirmation(payload);
         } else {
             segment = new ConfirmationSegment(this.chatManager, this.element, payload);
             this.segments.push(segment);
@@ -521,7 +521,7 @@ export class AssistantMessage {
 /**
  * Main manager for the Chat Webview UI.
  */
-export class ChatManager {
+export class ChatManager implements IChatManagerActions {
     private chatContainer!: HTMLElement;
     private messageInput!: HTMLTextAreaElement;
     public currentAssistantMessage: AssistantMessage | null = null;

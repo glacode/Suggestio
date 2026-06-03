@@ -737,6 +737,21 @@ export interface InitialState {
 }
 
 /**
+ * Interface for the actions that chat UI segments can request from the manager.
+ * This follows the Interface Segregation Principle.
+ */
+export interface IChatManagerActions {
+  /** Scrolls the chat container to the bottom. */
+  scrollToBottom(force?: boolean): void;
+  /** Confirms a tool call with a decision. */
+  confirmTool(toolCallId: string, decision: ToolCallDecision): void;
+  /** Requests to view a diff for a tool call. */
+  viewDiff(toolCallId: string): void;
+  /** Retries the last assistant message. */
+  retryLastMessage(): void;
+}
+
+/**
  * Interface for sanitizing HTML strings.
  * This is used to prevent XSS attacks from LLM-generated content.
  */
