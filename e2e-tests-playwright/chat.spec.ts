@@ -663,7 +663,6 @@ test.describe('Chat E2E', () => {
         electronApp = result.electronApp;
 
         page = await electronApp.firstWindow();
-        await page.waitForTimeout(10000);
     });
 
     test.afterAll(async () => {
