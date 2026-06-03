@@ -837,7 +837,8 @@ export class ChatManager {
 
         // The distance (in pixels) from the bottom of the container.
         // If the user is within this threshold, we assume they want to follow the stream.
-        const threshold = 100; 
+        // We use a threshold of 250 to account for tool output expansions (180px).
+        const threshold = 250; 
         const isNearBottom = (this.chatContainer.scrollHeight - this.chatContainer.scrollTop - this.chatContainer.clientHeight) < threshold;
 
         if (force || isNearBottom) {
