@@ -49,10 +49,11 @@ export async function openChatView(page: Page) {
 export async function getChatFrames(page: Page) {
     const outerSelector = 'iframe.webview[src*="glacode.suggestio"]';
     const outer = page.frameLocator(outerSelector);
-    // The inner iframe has no predictable ID/src, so we wait for its existence
-    const innerIframe = outer.locator('iframe');
-    await innerIframe.waitFor({ state: 'visible', timeout: 15000 });
-    return outer.frameLocator('iframe');
+    // VS Code webviews often have two internal iframes: #active-frame and #pending-frame.
+    // We must target #active-frame to avoid strict mode violations.
+    const activeIframe = outer.locator('iframe#active-frame');
+    await activeIframe.waitFor({ state: 'visible', timeout: 15000 });
+    return outer.frameLocator('iframe#active-frame');
 }
 
 /**
