@@ -414,7 +414,7 @@ export class AssistantMessage {
         });
 
         this.element.appendChild(errorContainer);
-        this.element.scrollIntoView();
+        this.chatManager.scrollToBottom(true);
     }
 
     /**
@@ -451,7 +451,7 @@ export class AssistantMessage {
         });
 
         this.element.appendChild(haltedContainer);
-        this.element.scrollIntoView();
+        this.chatManager.scrollToBottom(true);
     }
 
     /**
@@ -482,7 +482,7 @@ export class AssistantMessage {
             this.element.appendChild(this.indicator);
         }
         
-        this.element.scrollIntoView();
+        this.chatManager.scrollToBottom(true);
     }
 
     finish() {
@@ -495,6 +495,8 @@ export class AssistantMessage {
 
         // Clean up any lingering confirmation segments when the turn finishes.
         this.removeConfirmations();
+
+        this.chatManager.scrollToBottom(true);
         
         const hasContent = this.segments.some(s => {
             if (s instanceof ContentSegment) {
@@ -804,6 +806,7 @@ export class ChatManager {
                     } else {
                         this.appendStaticAssistantMessage(text);
                     }
+                    this.scrollToBottom(true);
                 } else if (type === EXTENSION_EVENTS.HALTED) {
                     this.removeNotification();
                     this.enableInput();
@@ -812,6 +815,7 @@ export class ChatManager {
                     } else {
                         this.appendStaticAssistantMessage(text);
                     }
+                    this.scrollToBottom(true);
                 } else {
                     this.removeNotification();
                     this.enableInput();
