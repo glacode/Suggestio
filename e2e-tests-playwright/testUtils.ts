@@ -61,7 +61,7 @@ export async function getChatFrames(page: Page) {
 export async function sendChatMessage(innerFrame: ReturnType<Page["frameLocator"]>, message: string) {
     const input = innerFrame.locator('#messageInput');
     await input.click(); // Focus
-    await input.fill(message); // fill() is faster and safer than type()
+    await input.page().keyboard.type(message, { delay: 10 }); // Use type for realistic behavior if expected
     const sendBtn = innerFrame.locator('.send-icon');
     await sendBtn.click();
 }
@@ -78,11 +78,13 @@ export async function clickNewChat(page: Page) {
  * Switches the model in the chat view dropdown.
  */
 export async function switchModel(inner: ReturnType<Page["frameLocator"]>, profileId: string) {
-    const selector = inner.locator('#profile-selector');
-    await selector.click();
+    const selector = inner.locator('#modelSelector');
+    await selector.locator('.dropdown-label').click();
     const dropdown = inner.locator('.dropdown-content');
     await dropdown.waitFor({ state: 'visible' });
-    const option = dropdown.locator(`.dropdown-item[data-id="${profileId}"]`);
+    
+    // The options are <a> tags with the profile ID as text
+    const option = dropdown.locator('a').filter({ hasText: new RegExp(`^${profileId}$`) });
     await option.click();
     
     // Give it a moment to propagate

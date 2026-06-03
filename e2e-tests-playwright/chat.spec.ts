@@ -6,6 +6,7 @@ import { Server } from 'http';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { openChatView, getChatFrames, sendChatMessage, clickNewChat, switchModel } from './testUtils';
 
 // -----------------------------------------------------------------------------
 // Helpers (Single-Responsibility)
@@ -602,39 +603,6 @@ function createMockServer(capturedRequests: any[]): Promise<Server> {
     });
 }
 
-async function openChatView(page: Page) {
-    await page.keyboard.press('Control+Shift+P');
-    await page.waitForTimeout(500);
-    await page.keyboard.type('Suggestio: Focus on Chat View', { delay: 10 });
-    await page.waitForTimeout(500);
-    await page.keyboard.press('Enter');
-
-    await page.waitForTimeout(2000);
-}
-
-async function getChatFrames(page: Page) {
-    const outerSelector = 'iframe.webview[src*="glacode.suggestio"]';
-    await page.waitForSelector(outerSelector);
-
-    const outer = page.frameLocator(outerSelector);
-    await outer.locator('iframe').waitFor({ state: 'visible' });
-
-    const inner = outer.frameLocator('iframe');
-    return inner;
-}
-
-async function sendChatMessage(innerFrame: ReturnType<Page["frameLocator"]>, message: string) {
-    const input = innerFrame.locator('#messageInput');
-    await input.click();  // this is needed only the secont turn onwards
-    await input.waitFor({ state: 'visible' });
-
-    await input.page().keyboard.type(message, { delay: 10 });
-    const sendBtn = innerFrame.locator('.send-icon');
-    await sendBtn.click();
-
-    return input;
-}
-
 async function expectChatMessages(inner: ReturnType<Page["frameLocator"]>, expected: string) {
     const userMessage = inner.locator('.message.user').last();
     const assistantMessage = inner.locator('.message.assistant').last();
@@ -665,28 +633,6 @@ async function expectChatHistory(
         await expect(assistantMessages.nth(i))
             .toHaveText(expectedAssistantMessages[i], { timeout: 5000 });
     }
-}
-
-async function clickNewChat(page: Page) {
-    // The "New Chat" button is a VS Code view title action, located in the workbench (outside the webview).
-    // We use a specific selector for the action button role and take the first one found.
-    const newChatBtn = page.locator('[role="button"][aria-label="Suggestio: New Chat"]').first();
-    await newChatBtn.click();
-}
-
-async function switchModel(inner: ReturnType<Page["frameLocator"]>, modelName: string) {
-    const selector = inner.locator('#modelSelector');
-    await selector.locator('.dropdown-label').click();
-    // Wait for dropdown to be visible
-    const dropdown = inner.locator('.dropdown-content');
-    await dropdown.waitFor({ state: 'visible' });
-    
-    // Use exact text match to avoid ambiguity (e.g., "reasoningProvider" matching "maxIterationsReasoningProvider")
-    await dropdown.locator('a').filter({ hasText: new RegExp(`^${modelName}$`) }).click();
-
-    // Safety wait: VS Code's configuration change events are async and can take time to 
-    // propagate from the settings disk write back to the extension host.
-    await new Promise(resolve => setTimeout(resolve, 500));
 }
 
 // -----------------------------------------------------------------------------
