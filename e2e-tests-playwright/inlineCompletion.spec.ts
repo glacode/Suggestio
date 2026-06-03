@@ -6,6 +6,7 @@ import { Server } from 'http';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { openChatView } from './testUtils';
 
 // -----------------------------------------------------------------------------
 // Test State
@@ -84,16 +85,6 @@ async function clearEditor(page: Page) {
     await page.waitForTimeout(1000); // Increased for stability
 }
 
-async function openChatView(page: Page) {
-    await page.keyboard.press('Control+Shift+P');
-    await page.waitForTimeout(500);
-    await page.keyboard.type('Suggestio: Focus on Chat View', { delay: 10 });
-    await page.waitForTimeout(500);
-    await page.keyboard.press('Enter');
-
-    await page.waitForTimeout(1000);
-}
-
 // -----------------------------------------------------------------------------
 // Main Test
 // -----------------------------------------------------------------------------
@@ -117,7 +108,6 @@ test.describe('Inline Completion E2E', () => {
         electronApp = result.electronApp;
 
         page = await electronApp.firstWindow();
-        await page.waitForTimeout(10000);
 
         await openChatView(page);  // activates the extension
         await createNewFile(page); // open the single file we will reuse
