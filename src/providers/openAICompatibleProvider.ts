@@ -357,7 +357,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
         onRetry: (attempt, total, delay, error) => {
           this.logger.warn(`API call failed (attempt ${attempt}/${total}): ${error.message}. Retrying in ${delay}ms...`);
           this.eventBus.emit('agent:notification', {
-            text: `Connection issue. Retrying (attempt ${attempt} of ${total}) in ${delay / 1000}s...`
+            text: `${error}\n\nRetrying (attempt ${attempt} of ${total}) in ${delay / 1000}s...`
           });
         }
       }

@@ -54,7 +54,7 @@ describe("OpenAICompatibleProvider Retry", () => {
     expect(result?.content).toBe("Hello");
     expect(mockHttpClient.post).toHaveBeenCalledTimes(2);
     expect(mockEventBus.emit).toHaveBeenCalledWith("agent:notification", expect.objectContaining({
-      text: expect.stringContaining("Retrying (attempt 1 of 2)")
+      text: expect.stringMatching(/Error: OpenAI API error: 500 - Error\n\nRetrying \(attempt 1 of 2\)/)
     }));
     expect(mockEventBus.emit).toHaveBeenLastCalledWith("agent:notification", { text: null });
   });
