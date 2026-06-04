@@ -1047,6 +1047,13 @@ body.overlay-open textarea#messageInput {
     color: var(--vscode-foreground);
 }
 
+.recommendation-tag {
+    font-size: 11px;
+    font-weight: normal;
+    color: var(--vscode-charts-green);
+    margin-left: 4px;
+}
+
 .key-option-description {
     font-size: 11px;
     color: var(--vscode-descriptionForeground);

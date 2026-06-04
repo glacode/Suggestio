@@ -154,7 +154,8 @@ export class AddLlmProfile {
                     <label class="key-option" for="keyTypeShared">
                         <input type="radio" name="keyType" id="keyTypeShared" value="shared" checked>
                         <div class="key-option-content">
-                            <span class="key-option-title">Shared Provider Key</span>
+                            <span class="key-option-title">Shared Provider Key <span class="recommendation-tag">(Recommended)</span></span>
+                            <span class="key-option-description">Authorizes all models from this provider with a single key.</span>
                             <span id="previewShared" class="key-option-preview">---</span>
                         </div>
                     </label>
@@ -162,7 +163,8 @@ export class AddLlmProfile {
                     <label class="key-option" for="keyTypeUnique">
                         <input type="radio" name="keyType" id="keyTypeUnique" value="unique">
                         <div class="key-option-content">
-                            <span class="key-option-title">Unique Key for this Profile</span>
+                            <span class="key-option-title">Dedicated Model Key</span>
+                            <span class="key-option-description">Useful for specific accounts or isolated per-model testing.</span>
                             <span id="previewUnique" class="key-option-preview">---</span>
                         </div>
                     </label>
