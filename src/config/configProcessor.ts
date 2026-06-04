@@ -157,6 +157,13 @@ class ConfigProcessor {
             maxSavedChatSessions: CONFIG_DEFAULTS.MAX_SAVED_CHAT_SESSIONS,
         };
 
+        // Tag initial bundled profiles
+        if (config.profiles) {
+            Object.values(config.profiles).forEach(p => {
+                if (!p.origin) { p.origin = 'bundled'; }
+            });
+        }
+
         this.ensureAnonymizerDefaults(config);
         
         return config;
@@ -199,6 +206,9 @@ class ConfigProcessor {
 
         // Merge profiles (shallow merge of objects)
         if (workspaceConfig.profiles) {
+            // Tag workspace profiles
+            Object.values(workspaceConfig.profiles).forEach(p => p.origin = 'project');
+
             config.profiles = {
                 ...config.profiles,
                 ...workspaceConfig.profiles

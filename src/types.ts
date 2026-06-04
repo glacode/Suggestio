@@ -682,28 +682,29 @@ export interface IPersistentChatHistoryManager extends IChatHistoryManager {
  */
 export interface ILlmProviderAccessor {
   /**
-   * Returns a list of available profile identifiers.
-   * @returns Array of profile ID strings.
+   * Returns a list of profile identifiers eligible for the Chat interface.
+   * These are typically models that support tool calling and are not explicitly excluded.
+   * @returns Array of chat-eligible profile ID strings.
    */
-  getProfiles(): string[];
+  getChatProfiles(): string[];
 
   /**
-   * Returns the identifier of the currently active/selected profile.
-   * @returns The active profile ID string.
+   * Returns the identifier of the currently active profile for the Chat interface.
+   * @returns The active chat profile ID string.
    */
-  getActiveProfile(): string;
+  getActiveChatProfile(): string;
+
   /**
-   * Optional: returns the list of completion profiles (including those that may not
-   * be eligible for tool calls). If omitted, callers should fall back to
-   * `getProfiles()`.
+   * Optional: returns the list of ALL configured profiles, including those
+   * that may be restricted from Chat but allowed for inline completion.
    */
   getCompletionProfiles?: () => string[];
-    /**
-     * Optional: returns the identifier of the active profile to be used for
-     * inline/completion-specific features. If omitted, callers should fall back
-     * to the chat active profile.
-     */
-    getCompletionActiveProfile?: () => string;
+
+  /**
+   * Optional: returns the identifier of the active profile specifically for
+   * inline completions. If omitted, callers should fall back to the chat active profile.
+   */
+  getCompletionActiveProfile?: () => string;
 }
 
 /**
@@ -727,10 +728,10 @@ export interface ProfileMetadata {
  * Interface for the initial state passed to the webview.
  */
 export interface InitialState {
-  profiles: string[];
-  activeProfile: string;
-  completionProfiles?: string[];
-  activeCompletionProfile?: string;
+  chatProfileIds: string[];
+  activeChatProfileId: string;
+  allProfileIds?: string[];
+  activeCompletionProfileId?: string;
   profileMetadata?: ProfileMetadata[];
   autoAcceptEdits?: boolean;
   disableSanitizer?: boolean;

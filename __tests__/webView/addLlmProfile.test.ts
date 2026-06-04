@@ -14,10 +14,10 @@ describe('AddLlmProfile Unit Tests (Behavioral)', () => {
     let onDoneCalled = false;
 
     const mockState: InitialState = {
-        profiles: ['ollama-devstral'],
-        activeProfile: 'ollama-devstral',
-        completionProfiles: ['ollama-devstral'],
-        activeCompletionProfile: 'ollama-devstral',
+        chatProfileIds: ['ollama-devstral'],
+        activeChatProfileId: 'ollama-devstral',
+        allProfileIds: ['ollama-devstral'],
+        activeCompletionProfileId: 'ollama-devstral',
         profileMetadata: [
             {
                 id: 'ollama-devstral',

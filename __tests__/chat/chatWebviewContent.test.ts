@@ -13,10 +13,10 @@ describe('getChatWebviewContent', () => {
         const chatCssUri = createMockUri('vscode-resource:/chat.css');
         
         const initialState: InitialState = {
-            profiles: ['p1'],
-            activeProfile: 'p1',
-            completionProfiles: [],
-            activeCompletionProfile: 'p1',
+            chatProfileIds: ['p1'],
+            activeChatProfileId: 'p1',
+            allProfileIds: [],
+            activeCompletionProfileId: 'p1',
             profileMetadata: []
         };
 

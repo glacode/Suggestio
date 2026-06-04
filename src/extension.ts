@@ -18,6 +18,7 @@ import {
   IWindowProvider, 
   IPathResolver,
   IConfigProvider,
+  ILlmProviderAccessor,
   IVscodeApiLocal,
   IFileDeleter,
   IVSCodeSettings,
@@ -287,9 +288,9 @@ export async function activate(context: vscode.ExtensionContext) {
     tools,
     eventBus
   });
-  const providerAccessor = {
-    getProfiles: () => getChatProfileIds(configContainer.config.profiles),
-    getActiveProfile: () => configContainer.config.activeChatProfile,
+  const providerAccessor: ILlmProviderAccessor = {
+    getChatProfiles: () => getChatProfileIds(configContainer.config.profiles),
+    getActiveChatProfile: () => configContainer.config.activeChatProfile,
     getCompletionProfiles: () => Object.entries(configContainer.config.profiles).map(([id]) => id),
     getCompletionActiveProfile: () => configContainer.config.activeCompletionProfile || configContainer.config.activeChatProfile
   };

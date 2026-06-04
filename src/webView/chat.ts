@@ -612,8 +612,8 @@ export class ChatManager implements IChatManagerActions {
             }
         });
 
-        const { profiles, activeProfile } = this.initialState;
-        this.renderProfileSelector(profiles, activeProfile);
+        const { chatProfileIds, activeChatProfileId } = this.initialState;
+        this.renderProfileSelector(chatProfileIds, activeChatProfileId);
 
         dropdownLabel.addEventListener('click', () => {
             const dropdownContent = modelSelector.querySelector('.dropdown-content');
@@ -630,7 +630,7 @@ export class ChatManager implements IChatManagerActions {
         });
     }
 
-    private renderProfileSelector(profiles: string[], activeProfile: string) {
+    private renderProfileSelector(chatProfileIds: string[], activeChatProfileId: string) {
         const modelSelector = document.getElementById('modelSelector');
         const dropdownContent = modelSelector?.querySelector('.dropdown-content');
         const chatProfileLabel = modelSelector?.querySelector('.chat-profile-label');
@@ -639,10 +639,10 @@ export class ChatManager implements IChatManagerActions {
             return;
         }
 
-        chatProfileLabel.textContent = activeProfile;
+        chatProfileLabel.textContent = activeChatProfileId;
         dropdownContent.innerHTML = '';
 
-        profiles.forEach(profileId => {
+        chatProfileIds.forEach(profileId => {
             const option = document.createElement('a');
             option.href = '#';
             option.textContent = profileId;
@@ -729,10 +729,10 @@ export class ChatManager implements IChatManagerActions {
             if (type === EXTENSION_EVENTS.UPDATE_PROFILE_METADATA) {
                 this.initialState.profileMetadata = event.data.metadata;
                 if (event.data.profiles) {
-                    this.initialState.profiles = event.data.profiles;
+                    this.initialState.chatProfileIds = event.data.profiles;
                 }
                 if (event.data.activeProfile) {
-                    this.initialState.activeProfile = event.data.activeProfile;
+                    this.initialState.activeChatProfileId = event.data.activeProfile;
                 }
 
                 try {
@@ -741,7 +741,7 @@ export class ChatManager implements IChatManagerActions {
                     if (event.data.profiles && event.data.activeProfile) {
                         this.renderProfileSelector(event.data.profiles, event.data.activeProfile);
                     }
-                } catch (e) {}
+                } catch (e) { }
                 return;
             }
 

@@ -28,10 +28,10 @@ describe('UpdateLlmProfile Unit Tests (Behavioral)', () => {
     };
 
     const mockState: InitialState = {
-        profiles: ['test-profile'],
-        activeProfile: 'test-profile',
-        completionProfiles: ['test-profile'],
-        activeCompletionProfile: 'test-profile',
+        chatProfileIds: ['test-profile'],
+        activeChatProfileId: 'test-profile',
+        allProfileIds: ['test-profile'],
+        activeCompletionProfileId: 'test-profile',
         profileMetadata: [mockProfile]
     };
 

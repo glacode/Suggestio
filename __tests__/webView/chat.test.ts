@@ -30,8 +30,8 @@ describe('ChatManager Unit Tests', () => {
         jest.spyOn(window.Element.prototype, 'getBoundingClientRect').mockReturnValue(createMockDomRect());
 
         const initialState: InitialState = {
-            profiles: ['profile1', 'profile2'],
-            activeProfile: 'profile1'
+            chatProfileIds: ['profile1', 'profile2'],
+            activeChatProfileId: 'profile1'
         };
         // Use property assignment to avoid linting warnings about global 'any' casting
         Object.defineProperty(window, 'initialState', { value: initialState, writable: true, configurable: true });
