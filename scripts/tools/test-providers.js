@@ -179,7 +179,13 @@ function analyzeResponse(name, httpResult) {
 async function testProfile(name, profile, isHeavy) {
     const apiKey = resolveApiKeyForProfile(profile);
     if (apiKey === null) {
-        return { name, status: 'skipped', reason: `Missing ENV: ${profile.apiKeyIdentifier}` };
+        return { 
+            name, 
+            status: 'skipped', 
+            reason: `Missing ENV: ${profile.apiKeyIdentifier}`,
+            supportsTools: profile.supportsTools !== false,
+            excludeFromChat: !!profile.excludeFromChat
+        };
     }
 
     console.log(`[*] Testing profile: ${name} (${profile.model})${isHeavy ? ' [HEAVY MODE]' : ''}...`);
@@ -190,9 +196,18 @@ async function testProfile(name, profile, isHeavy) {
         const httpResult = await performHttpRequest(profile.endpoint, payload, apiKey);
         const analysis = analyzeResponse(name, httpResult);
         analysis.model = profile.model;
+        analysis.supportsTools = profile.supportsTools !== false;
+        analysis.excludeFromChat = !!profile.excludeFromChat;
         return analysis;
     } catch (error) {
-        return { name, status: 'error', error: error.message, model: profile.model };
+        return { 
+            name, 
+            status: 'error', 
+            error: error.message, 
+            model: profile.model,
+            supportsTools: profile.supportsTools !== false,
+            excludeFromChat: !!profile.excludeFromChat
+        };
     }
 }
 
@@ -267,10 +282,12 @@ function generateHtmlReport(results) {
             <tr>
                 <td>${r.name}</td>
                 <td>${r.model}</td>
+                <td class="small-col">${r.supportsTools ? '✅' : '❌'}</td>
+                <td class="small-col">${r.excludeFromChat ? '🚫' : '✅'}</td>
                 <td class="${r.status}">${r.status.toUpperCase()}</td>
                 <td>${r.features?.reasoning ? '✅' : '❌'}</td>
-                <td>${detail}</td>
-                <td>${extra}</td>
+                <td class="detail">${detail}</td>
+                <td class="extra">${extra}</td>
                 <td class="rec ${rec.class}">${rec.text}</td>
             </tr>
         `;
@@ -281,43 +298,68 @@ function generateHtmlReport(results) {
 <html>
 <head>
     <title>Suggestio - LLM Test Results</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1200px; margin: 0 auto; padding: 20px; background-color: #f4f7f6; }
-        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
-        .timestamp { font-size: 0.9em; color: #7f8c8d; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; }
-        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
-        th { background-color: #3498db; color: white; text-transform: uppercase; font-size: 0.85em; letter-spacing: 1px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1400px; margin: 0 auto; padding: 10px; background-color: #f4f7f6; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; font-size: 1.5em; }
+        .timestamp { font-size: 0.8em; color: #7f8c8d; margin-bottom: 15px; }
+        .table-wrapper { width: 100%; overflow-x: auto; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; min-width: 1000px; table-layout: fixed; }
+        th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 0.9em; word-wrap: break-word; vertical-align: top; }
+        th { background-color: #3498db; color: white; text-transform: uppercase; font-size: 0.75em; letter-spacing: 1px; position: sticky; top: 0; }
         tr:hover { background-color: #f9f9f9; }
+        
+        /* Column Widths */
+        th:nth-child(1), td:nth-child(1) { width: 12%; } /* Profile */
+        th:nth-child(2), td:nth-child(2) { width: 12%; } /* Model */
+        th:nth-child(3), td:nth-child(3) { width: 5%; text-align: center; } /* Tools Config */
+        th:nth-child(4), td:nth-child(4) { width: 5%; text-align: center; } /* Exclude Chat */
+        th:nth-child(5), td:nth-child(5) { width: 8%; } /* Status */
+        th:nth-child(6), td:nth-child(6) { width: 7%; text-align: center; } /* Reasoning */
+        th:nth-child(7), td:nth-child(7) { width: 25%; } /* Detail */
+        th:nth-child(8), td:nth-child(8) { width: 13%; } /* Extra */
+        th:nth-child(9), td:nth-child(9) { width: 13%; } /* Recommendation */
+
         .success { color: #27ae60; font-weight: bold; }
         .text-only { color: #2980b9; font-weight: bold; }
         .fail, .error { color: #c0392b; font-weight: bold; }
         .skipped { color: #7f8c8d; font-weight: bold; }
-        .rec { font-weight: bold; padding: 4px 8px; border-radius: 4px; text-align: center; }
+        .small-col { text-align: center; }
+        .detail, .extra { font-family: monospace; font-size: 0.8em; white-space: pre-wrap; }
+        .rec { font-weight: bold; padding: 4px 6px; border-radius: 4px; text-align: center; font-size: 0.8em; }
         .rec.success { background-color: #eafaf1; color: #27ae60; }
         .rec.warn { background-color: #fef9e7; color: #f39c12; }
         .rec.critical { background-color: #fdedec; color: #e74c3c; }
+
+        @media screen and (max-width: 768px) {
+            body { padding: 5px; }
+            h1 { font-size: 1.2em; }
+        }
     </style>
 </head>
 <body>
     <h1>LLM Provider Test Results</h1>
     <div class="timestamp">Generated on: ${timestamp}</div>
-    <table>
-        <thead>
-            <tr>
-                <th>Profile</th>
-                <th>Model</th>
-                <th>Status</th>
-                <th>Reasoning</th>
-                <th>Detail / Error</th>
-                <th>Extra Fields</th>
-                <th>Recommendation</th>
-            </tr>
-        </thead>
-        <tbody>
-            ${rows}
-        </tbody>
-    </table>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Profile</th>
+                    <th>Model</th>
+                    <th title="supportsTools config">Tools</th>
+                    <th title="excludeFromChat config">Chat</th>
+                    <th>Status</th>
+                    <th>CoT</th>
+                    <th>Detail / Error</th>
+                    <th>Extra Fields</th>
+                    <th>Recommendation</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${rows}
+            </tbody>
+        </table>
+    </div>
 </body>
 </html>
     `;
