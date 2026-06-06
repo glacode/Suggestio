@@ -16,29 +16,35 @@ const rl = readline.createInterface({
 
 const question = (query) => new Promise((resolve) => rl.question(query, resolve));
 
-function resolveApiKey(placeholder) {
-    if (!placeholder) { return ''; }
-    if (placeholder === 'unused') { return 'unused'; }
-
-    const match = placeholder.match(/^\$\{(.+)\}$/);
-    if (match) {
-        const envVar = match[1];
-        return process.env[envVar] || null;
+/**
+ * Resolves the API key for a specific profile, ensuring strict isolation.
+ * Only the environment variable explicitly named in apiKeyIdentifier is used.
+ */
+function resolveApiKeyForProfile(profile) {
+    if (profile.isApiKeyRequired === false) {
+        return 'unused';
     }
-    return placeholder;
+
+    const identifier = profile.apiKeyIdentifier;
+    if (!identifier) {
+        return 'unused';
+    }
+
+    const envValue = process.env[identifier];
+    return envValue || null;
 }
 
 // This should match SYSTEM_PROMPTS.AGENT in src/constants/prompts.ts
 const EXTENSION_SYSTEM_PROMPT = "You are a code assistant. You can use tools to interact with the workspace. Always use the provided JSON tool-calling schema for function calls. NEVER use XML or custom tags like <function>.\n[Active editor is not a file (e.g., Output tab) and will not be included in context.]";
 
-async function testProvider(name, config, isHeavy = false) {
-    const apiKey = resolveApiKey(config.apiKey);
+async function testProfile(name, profile, isHeavy = false) {
+    const apiKey = resolveApiKeyForProfile(profile);
 
     if (apiKey === null) {
-        return { name, status: 'skipped', reason: `Missing ENV: ${config.apiKey.replace(/[${}]/g, '')}` };
+        return { name, status: 'skipped', reason: `Missing ENV: ${profile.apiKeyIdentifier}` };
     }
 
-    console.log(`[*] Testing ${name} (${config.model})${isHeavy ? ' [HEAVY MODE]' : ''}...`);
+    console.log(`[*] Testing profile: ${name} (${profile.model})${isHeavy ? ' [HEAVY MODE]' : ''}...`);
 
     const messages = isHeavy ? [
         { role: 'system', content: EXTENSION_SYSTEM_PROMPT },
@@ -50,7 +56,7 @@ async function testProvider(name, config, isHeavy = false) {
     ];
 
     const payload = {
-        model: config.model,
+        model: profile.model,
         messages: messages,
         tools: [
             {
@@ -74,12 +80,18 @@ async function testProvider(name, config, isHeavy = false) {
     };
 
     try {
-        const response = await fetch(config.endpoint, {
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+
+        // Strict isolation: Only add Authorization if we have a key and it's not 'unused'
+        if (apiKey && apiKey !== 'unused') {
+            headers['Authorization'] = `Bearer ${apiKey}`;
+        }
+
+        const response = await fetch(profile.endpoint, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey === 'unused' ? '' : apiKey}`
-            },
+            headers: headers,
             body: JSON.stringify(payload)
         });
 
@@ -91,49 +103,49 @@ async function testProvider(name, config, isHeavy = false) {
             }
         }
 
-                const data = await response.json();
-        
-                const KNOWN_ROOT_KEYS = ['id', 'object', 'created', 'model', 'choices', 'usage', 'system_fingerprint'];
-                const KNOWN_CHOICE_KEYS = ['index', 'message', 'logprobs', 'finish_reason'];
-                const KNOWN_MESSAGE_KEYS = ['role', 'content', 'tool_calls', 'function_call'];
-        
-                const extraFields = [];
-                Object.keys(data).forEach(k => { if (!KNOWN_ROOT_KEYS.includes(k)) extraFields.push(`root.${k}`); });
-                
-                const choice = data.choices?.[0];
-                if (choice) {
-                    Object.keys(choice).forEach(k => { if (!KNOWN_CHOICE_KEYS.includes(k)) extraFields.push(`choice.${k}`); });
-                    if (choice.message) {
-                        Object.keys(choice.message).forEach(k => { 
-                            if (!KNOWN_MESSAGE_KEYS.includes(k)) extraFields.push(`message.${k}`); 
-                        });
-                    }
-                }
-        
-                if (!response.ok) {
-                    return { 
-                        name, 
-                        status: 'fail', 
-                        error: data.error || data,
-                        features: { reasoning: false, tokenHeaders: Object.keys(tokenHeaders).length > 0 },
-                        tokenHeaders,
-                        extraFields
-                    };
-                }
-        
-                const hasToolCall = !!choice?.message?.tool_calls;
-                const hasReasoning = !!(choice?.message?.reasoning_content || choice?.message?.reasoning);
-        
-                const features = {
-                    reasoning: hasReasoning,
-                    tokenHeaders: Object.keys(tokenHeaders).length > 0
-                };
-        
-                if (hasToolCall) {
-                    return { name, status: 'success', detail: 'Tool Call Generated', features, tokenHeaders, extraFields };
-                } else {
-                    return { name, status: 'text-only', detail: choice?.message?.content?.substring(0, 50) + '...', features, tokenHeaders, extraFields };
-                }
+        const data = await response.json();
+
+        const KNOWN_ROOT_KEYS = ['id', 'object', 'created', 'model', 'choices', 'usage', 'system_fingerprint'];
+        const KNOWN_CHOICE_KEYS = ['index', 'message', 'logprobs', 'finish_reason'];
+        const KNOWN_MESSAGE_KEYS = ['role', 'content', 'tool_calls', 'function_call'];
+
+        const extraFields = [];
+        Object.keys(data).forEach(k => { if (!KNOWN_ROOT_KEYS.includes(k)) extraFields.push(`root.${k}`); });
+
+        const choice = data.choices?.[0];
+        if (choice) {
+            Object.keys(choice).forEach(k => { if (!KNOWN_CHOICE_KEYS.includes(k)) extraFields.push(`choice.${k}`); });
+            if (choice.message) {
+                Object.keys(choice.message).forEach(k => {
+                    if (!KNOWN_MESSAGE_KEYS.includes(k)) extraFields.push(`message.${k}`);
+                });
+            }
+        }
+
+        if (!response.ok) {
+            return {
+                name,
+                status: 'fail',
+                error: data.error || data,
+                features: { reasoning: false, tokenHeaders: Object.keys(tokenHeaders).length > 0 },
+                tokenHeaders,
+                extraFields
+            };
+        }
+
+        const hasToolCall = !!choice?.message?.tool_calls;
+        const hasReasoning = !!(choice?.message?.reasoning_content || choice?.message?.reasoning);
+
+        const features = {
+            reasoning: hasReasoning,
+            tokenHeaders: Object.keys(tokenHeaders).length > 0
+        };
+
+        if (hasToolCall) {
+            return { name, status: 'success', detail: 'Tool Call Generated', features, tokenHeaders, extraFields };
+        } else {
+            return { name, status: 'text-only', detail: choice?.message?.content?.substring(0, 50).replace(/\n/g, ' ') + '...', features, tokenHeaders, extraFields };
+        }
     } catch (error) {
         return { name, status: 'error', error: error.message };
     }
@@ -156,10 +168,10 @@ async function main() {
     }
 
     const config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
-    const providers = config.providers || {};
-    const providerNames = Object.keys(providers);
+    const profiles = config.profiles || {};
+    const profileNames = Object.keys(profiles);
 
-    console.log("\n=== Suggestio Provider Tester ===");
+    console.log("\n=== Suggestio Profile Tester ===");
     if (isHeavy) {
         console.log("--------------------------------------------------");
         console.log("[!] HEAVY MODE: ON");
@@ -171,13 +183,19 @@ async function main() {
         console.log("    npm run test:providers -- --heavy");
         console.log("--------------------------------------------------");
     }
-    console.log("Detected providers in config.json:\n");
+    console.log("Detected profiles in config.json:\n");
 
-    const candidates = providerNames.map((name, index) => {
-        const p = providers[name];
-        const apiKey = resolveApiKey(p.apiKey);
+    const candidates = profileNames.map((name, index) => {
+        const p = profiles[name];
+        const apiKey = resolveApiKeyForProfile(p);
         const hasKey = apiKey !== null;
-        return { index: index + 1, name, model: p.model, hasKey, envVar: p.apiKey };
+        return { 
+            index: index + 1, 
+            name, 
+            model: p.model, 
+            hasKey, 
+            apiKeyIdentifier: p.apiKeyIdentifier || (p.isApiKeyRequired === false ? 'None' : 'Default')
+        };
     });
 
     candidates.forEach(c => {
@@ -191,7 +209,7 @@ async function main() {
     console.log("- Use --heavy in the npm command for more complex prompts");
     console.log("- Press Enter to cancel");
 
-    const answer = await question("\nWhich models to test? ");
+    const answer = await question("\nWhich profiles to test? ");
 
     let selectedIndices = [];
     if (answer.toLowerCase() === 'all') {
@@ -201,19 +219,19 @@ async function main() {
     }
 
     if (selectedIndices.length === 0) {
-        console.log("No models selected. Exiting.");
+        console.log("No profiles selected. Exiting.");
         rl.close();
         return;
     }
 
     const toTest = candidates.filter(c => selectedIndices.includes(c.index));
 
-    console.log(`\n=== Starting Probe (${toTest.length} models) ===\n`);
+    console.log(`\n=== Starting Probe (${toTest.length} profiles) ===\n`);
 
     const results = [];
     for (let i = 0; i < toTest.length; i++) {
         const c = toTest[i];
-        const res = await testProvider(c.name, providers[c.name], isHeavy);
+        const res = await testProfile(c.name, profiles[c.name], isHeavy);
         res.name = c.name; // ensure name is attached
         results.push(res);
 
@@ -221,11 +239,14 @@ async function main() {
             const statusLabel = res.status === 'success' ? '[+]' : '[-]';
             console.log(`${statusLabel} ${c.name}: ${res.detail}`);
         }
-        else if (res.status === 'fail' || res.status === 'error') { 
-            console.log(`[!] ${c.name}: Failed`); 
+        else if (res.status === 'fail' || res.status === 'error') {
+            console.log(`[!] ${c.name}: Failed`);
+            if (res.error) {
+                console.log(`    Error: ${typeof res.error === 'string' ? res.error : JSON.stringify(res.error)}`);
+            }
         }
-        else { 
-            console.log(`[-] ${c.name}: ${res.status} (${res.reason || res.detail})`); 
+        else {
+            console.log(`[-] ${c.name}: ${res.status} (${res.reason || res.detail})`);
         }
 
         if (res.features?.reasoning) { console.log(`    [R] Reasoning detected!`); }
@@ -243,7 +264,7 @@ async function main() {
 
     console.log("\n=== Final Summary ===");
     console.table(results.map(r => ({
-        Provider: r.name,
+        Profile: r.name,
         Status: r.status,
         Reasoning: r.features?.reasoning ? '✅' : '❌',
         'Token Hdrs': r.features?.tokenHeaders ? '✅' : '❌',
@@ -252,7 +273,7 @@ async function main() {
     })));
 
     if (results.some(r => r.status === 'skipped')) {
-        console.log("\n[!] REMINDER: Some models were skipped because their API keys were not found in the environment.");
+        console.log("\n[!] REMINDER: Some profiles were skipped because their API keys were not found in the environment.");
         console.log("    Please update your .env file and restart the script to test them.");
     }
 
