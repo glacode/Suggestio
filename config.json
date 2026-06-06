@@ -1,37 +1,33 @@
 {
   "$schema": "./resources/config.schema.json",
-  "activeChatProfile": "mistral-devstral-small-2512",
+  "activeChatProfile": "gemma-4-31b-it",
   "activeCompletionProfile": "llm7-qwen32",
   "profiles": {
     "llm7-qwen32": {
       "endpoint": "https://api.llm7.io/v1/chat/completions",
       "model": "qwen2.5-coder-32b-instruct",
       "isApiKeyRequired": false,
-      "supportsTools": false
+      "supportsTools": true,
+      "excludeFromChat": true
     },
-    "publicai-olmo-32b": {
-      "endpoint": "https://api.publicai.co/v1/chat/completions",
-      "model": "allenai/Olmo-3.1-32B-Instruct",
-      "apiKeyIdentifier": "PUBLICAI_API_KEY",
-      "supportsTools": false
+    "llm7-qwen3-235b": {
+      "endpoint": "https://api.llm7.io/v1/chat/completions",
+      "model": "qwen3-235b",
+      "isApiKeyRequired": false
     },
     "publicai-apertus-70b": {
       "endpoint": "https://api.publicai.co/v1/chat/completions",
       "model": "swiss-ai/apertus-70b-instruct",
       "apiKeyIdentifier": "PUBLICAI_API_KEY",
-      "supportsTools": false
+      "supportsTools": true,
+      "excludeFromChat": true
     },
     "publicai-olmo3-7b": {
       "endpoint": "https://api.publicai.co/v1/chat/completions",
       "model": "allenai/Olmo-3-7B-Instruct",
       "apiKeyIdentifier": "PUBLICAI_API_KEY",
-      "supportsTools": false
-    },
-    "groq-compound": {
-      "endpoint": "https://api.groq.com/openai/v1/chat/completions",
-      "model": "groq/compound",
-      "apiKeyIdentifier": "GROQ_API_KEY",
-      "supportsTools": false
+      "supportsTools": true,
+      "excludeFromChat": true
     },
     "groq-gpt-oss-120b": {
       "endpoint": "https://api.groq.com/openai/v1/chat/completions",
@@ -43,7 +39,7 @@
       "endpoint": "https://api.groq.com/openai/v1/chat/completions",
       "model": "llama-3.3-70b-versatile",
       "apiKeyIdentifier": "GROQ_API_KEY",
-      "supportsTools": false
+      "excludeFromChat": true
     },
     "ollama-devstral": {
       "endpoint": "https://ollama.com/v1/chat/completions",
@@ -85,11 +81,6 @@
       "model": "z-ai/glm-4.5-air:free",
       "apiKeyIdentifier": "OPENROUTER_API_KEY"
     },
-    "openrouter-moonshotai-kimi-k2.6-free": {
-      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
-      "model": "moonshotai/kimi-k2.6:free",
-      "apiKeyIdentifier": "OPENROUTER_API_KEY"
-    },
     "openrouter-nvidia-nemotron-3-super-120b-a12b:free": {
       "endpoint": "https://openrouter.ai/api/v1/chat/completions",
       "model": "nvidia/nemotron-3-super-120b-a12b:free",
@@ -100,11 +91,11 @@
       "model": "openrouter/owl-alpha",
       "apiKeyIdentifier": "OPENROUTER_API_KEY"
     },
-    "hf-lama38": {
+    "hf-lama-3-1-8b": {
       "endpoint": "https://router.huggingface.co/v1/chat/completions",
       "model": "meta-llama/Llama-3.1-8B-Instruct",
       "apiKeyIdentifier": "HF_API_KEY",
-      "supportsTools": false
+      "supportsTools": true
     },
     "gemini-3.1-flash-lite": {
       "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
@@ -117,10 +108,10 @@
       "model": "gemma-4-31b-it",
       "apiKeyIdentifier": "GEMINI_API_KEY"
     },
-    "nvidia-glm4.7": {
-      "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
-      "model": "z-ai/glm4.7",
-      "apiKeyIdentifier": "NVIDIA_API_KEY"
+    "gemma-4-26b-it": {
+      "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+      "model": "gemma-4-26b-a4b-it",
+      "apiKeyIdentifier": "GEMINI_API_KEY"
     },
     "nvidia-step-3.5-flash": {
       "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
@@ -130,11 +121,6 @@
     "nvidia-minimax2.7": {
       "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
       "model": "minimaxai/minimax-m2.7",
-      "apiKeyIdentifier": "NVIDIA_API_KEY"
-    },
-    "nvidia-deepseek3.2": {
-      "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
-      "model": "deepseek-ai/deepseek-v3.2",
       "apiKeyIdentifier": "NVIDIA_API_KEY"
     }
   }

@@ -349,7 +349,7 @@ function generateHtmlReport(results) {
                     <th title="supportsTools config">Tools</th>
                     <th title="excludeFromChat config">Chat</th>
                     <th>Status</th>
-                    <th>CoT</th>
+                    <th title="Chain of Thought / Reasoning">Thought</th>
                     <th>Detail / Error</th>
                     <th>Extra Fields</th>
                     <th>Recommendation</th>
