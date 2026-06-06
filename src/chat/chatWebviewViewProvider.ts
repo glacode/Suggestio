@@ -33,7 +33,7 @@ import type {
 import { IEventBus } from '../utils/eventBus.js';
 import { createEventLogger } from '../log/eventLogger.js';
 import { ChatPrompt } from './chatPrompt.js';
-import { CHAT_MESSAGES, AGENT_LOGS } from '../constants/messages.js';
+import { CHAT_MESSAGES, AGENT_LOGS, CONFIG_MESSAGES } from '../constants/messages.js';
 import { WEBVIEW_COMMANDS, EXTENSION_EVENTS, EXTENSION_COMMANDS, MESSAGE_SENDERS } from '../constants/protocol.js';
 import { configProcessor, ISecretManager } from '../config/configProcessor.js';
 import { getNonce } from '../utils/textUtils.js';
@@ -498,11 +498,14 @@ export class ChatWebviewViewProvider {
                     if (profileConfig && !profileConfig.resolvedApiKey && profileConfig.apiKeyIdentifier) {
                         // Show notification that we need API key
                         this._eventBus.emit('agent:notification', {
-                            text: `Waiting for API key "${profileConfig.apiKeyIdentifier}" to be entered...`
+                            text: CONFIG_MESSAGES.WAITING_FOR_API_KEY(profileConfig.apiKeyIdentifier)
                         });
 
                         // Prompt user for API key (with forcePrompt=true)
                         await configProcessor.updateProviders(this._configContainer.config, this._eventBus, this._secretManager, this._httpClient, true);
+
+                        // Push updated state (key badges, delete icon) to webview
+                        await this._pushUpdateToWebview();
 
                         // Hide notification after key is resolved
                         this._eventBus.emit('agent:notification', { text: null });

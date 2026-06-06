@@ -349,7 +349,10 @@ class ConfigProcessor {
         }
 
         const identifier = profileConfig.apiKeyIdentifier;
-        if (typeof identifier !== 'string' || !identifier) { return; }
+        if (typeof identifier !== 'string' || !identifier) {
+            profileConfig.resolvedApiKey = undefined;
+            return;
+        }
 
         const envValue = process.env[identifier];
         if (envValue?.trim()) {
@@ -362,6 +365,9 @@ class ConfigProcessor {
             profileConfig.resolvedApiKey = storedSecret;
         } else if (forcePrompt) {
             profileConfig.resolvedApiKey = await secretManager.getOrRequestAPIKey(identifier);
+        } else {
+            // Key is not in env and not in secret manager
+            profileConfig.resolvedApiKey = undefined;
         }
     }
 

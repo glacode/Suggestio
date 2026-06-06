@@ -60,6 +60,7 @@ export const CONFIG_MESSAGES = {
     SELECT_API_KEY_TO_UPDATE: 'Select an API key to update',
     SELECT_API_KEY_TO_DELETE: 'Select an API key to delete',
     API_KEY_DELETED: (placeholder: string) => `API key value for ${placeholder} deleted.`,
+    WAITING_FOR_API_KEY: (placeholder: string) => `Please enter the API key for "${placeholder}" in the VS Code input box at the top-center of the window...`,
 } as const;
 
 export const CONFIG_LOGS = {
