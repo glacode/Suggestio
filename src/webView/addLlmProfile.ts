@@ -115,7 +115,7 @@ export class AddLlmProfile {
                 <label class="settings-label">Endpoint URL</label>
                 <div class="custom-dropdown-container" id="endpointDropdownContainer">
                     <div class="dropdown-input-wrapper">
-                        <input type="text" id="editProfileEndpoint" value="" placeholder="e.g. https://api.openai.com/v1" class="settings-input" autocomplete="off">
+                        <input type="text" id="editProfileEndpoint" value="" placeholder="e.g. https://openrouter.ai/api/v1/chat/completions" class="settings-input" autocomplete="off">
                         <span class="dropdown-chevron">▼</span>
                     </div>
                     <div id="endpointDropdownList" class="custom-dropdown-list"></div>
@@ -124,7 +124,7 @@ export class AddLlmProfile {
 
             <div class="input-group">
                 <label class="settings-label">Model Name</label>
-                <input type="text" id="editProfileModel" value="" placeholder="e.g. gpt-4" class="settings-input">
+                <input type="text" id="editProfileModel" value="" placeholder="e.g. openai/gpt-oss-120b" class="settings-input">
             </div>
 
             <div class="input-group">
