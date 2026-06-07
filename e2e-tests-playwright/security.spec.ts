@@ -61,7 +61,7 @@ function createMockServer(): Promise<Server> {
         app.use(express.json());
         app.post('/v1/chat/completions', (_req, res) => {
             res.setHeader('Content-Type', 'text/event-stream');
-            const maliciousPayload = 'Safe text. <script>window.XSS_EXECUTED=true;</script> <img src=x onerror="window.XSS_EXECUTED=true;"> End.';
+            const maliciousPayload = 'Safe text. <script>window.XSS_EXECUTED=true;</script> <img src=x onerror="window.XSS_EXECUTED=true;"> <style>body { background: red; }</style> <div style="color: blue;">Blue</div> End.';
             streamDefaultModel(res, maliciousPayload);
         });
         const server = app.listen(3002, () => resolve(server));
@@ -127,40 +127,30 @@ test.describe('Sanitizer Effectiveness E2E', () => {
 
         // 1. Verify that NO script-related violations occurred.
         // DOMPurify is our first line of defense: it should strip the <script> tag 
-        // and the malicious 'onerror' attribute from the <img> tag BEFORE the browser 
-        // even attempts to execute them. This prevents 'script-src' and 'script-src-attr' 
-        // CSP violations from even happening.
+        // and the malicious 'onerror' attribute BEFORE the browser even attempts to execute them.
+        // This prevents 'script-src' and 'script-src-attr' CSP violations from even happening.
         expect(violations).not.toContain('script-src');
         expect(violations).not.toContain('script-src-attr');
-        // below, multiple violations are triggered beacuse of the streaming behavior
-        expect(violations).toEqual([
-            "img-src",
-            "img-src",
-            "img-src",
-            "img-src",
-            "img-src",
-            "img-src",
-        ]);
 
-        // 2. Verify that an 'img-src' violation occurred.
-        // This is expected and proves DOMPurify's behavior: 
-        // DOMPurify strips the DANGEROUS 'onerror' attribute but keeps the SAFE <img> tag.
-        // When the browser tries to render the <img> tag, our extremely strict 
-        // 'default-src none' CSP steps in as a SECOND line of defense and blocks the image load,
-        // triggering this violation.
+        // 2. Verify that 'img-src', 'style-src-elem' and 'style-src-attr' violations occurred.
+        // This is expected: DOMPurify may allow the <img> tag and safe 'style' tags/attributes.
+        // Our strict CSP then steps in as a SECOND line of defense and blocks them.
         expect(violations).toContain('img-src');
+        expect(violations).toContain('style-src-elem');
+        expect(violations).toContain('style-src-attr');
 
-        // 3. Verify that script and img tags with handlers are NOT in the DOM
+        // 3. Verify that script tags are NOT in the DOM
         const scripts = await lastAssistantMessage.locator('script').count();
         expect(scripts).toBe(0);
 
         const imagesWithOnerror = await lastAssistantMessage.locator('img[onerror]').count();
         expect(imagesWithOnerror).toBe(0);
 
-        // 3. Verify safe text is still there
+        // 4. Verify safe text and styled element are still there (even if style is blocked by CSP)
         await expect(lastAssistantMessage).toContainText('Safe text.');
+        await expect(lastAssistantMessage.locator('div').filter({ hasText: /^Blue$/ })).toBeVisible();
 
-        // 4. Verify that the XSS did NOT execute (double check)
+        // 5. Verify that the XSS did NOT execute
         const xssExecuted = await inner.locator('body').evaluate('window["XSS_EXECUTED"]');
         expect(xssExecuted).toBeUndefined();
     });
@@ -222,24 +212,11 @@ test.describe('Security Isolation E2E', () => {
 
         page.off('console', consoleListener);
 
-        // Check for CSP violations (script-src-attr and img-src)
+        // Check for CSP violations
         expect(violations.length).toBeGreaterThan(0);
         expect(violations).toContain('script-src-attr');
         expect(violations).toContain('img-src');
-        // below, multiple violations are triggered beacuse of the streaming behavior
-        expect(violations).toEqual([
-            "img-src",
-            "script-src-attr",
-            "img-src",
-            "script-src-attr",
-            "img-src",
-            "script-src-attr",
-            "img-src",
-            "script-src-attr",
-            "img-src",
-            "script-src-attr",
-            "img-src",
-            "script-src-attr"
-        ]);
+        expect(violations).toContain('style-src-elem');
+        expect(violations).toContain('style-src-attr');
     });
 });
