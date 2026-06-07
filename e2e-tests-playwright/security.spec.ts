@@ -61,7 +61,7 @@ function createMockServer(): Promise<Server> {
         app.use(express.json());
         app.post('/v1/chat/completions', (_req, res) => {
             res.setHeader('Content-Type', 'text/event-stream');
-            const maliciousPayload = 'Safe text. <script>window.XSS_EXECUTED=true;</script> <img src=x onerror="window.XSS_EXECUTED=true;"> <style>body { background: red; }</style> <div style="color: blue;">Blue</div> End.';
+            const maliciousPayload = 'Safe text. <link rel="preload" href="http://malicious.com/script.js" as="script"> <script>window.XSS_EXECUTED=true;</script> <img src=x onerror="window.XSS_EXECUTED=true;"> <style>body { background: red; }</style> <div style="color: blue;">Blue</div> End.';
             streamDefaultModel(res, maliciousPayload);
         });
         const server = app.listen(3002, () => resolve(server));
@@ -214,6 +214,11 @@ test.describe('Security Isolation E2E', () => {
 
         // Check for CSP violations
         expect(violations.length).toBeGreaterThan(0);
+        
+        // Some browsers report script-src-elem, others just script-src
+        const hasScriptViolation = violations.some(v => v === 'script-src' || v === 'script-src-elem');
+        expect(hasScriptViolation).toBe(true);
+
         expect(violations).toContain('script-src-attr');
         expect(violations).toContain('img-src');
         expect(violations).toContain('style-src-elem');
