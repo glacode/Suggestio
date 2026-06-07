@@ -100,18 +100,18 @@
     "gemini-3.1-flash-lite": {
       "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
       "model": "gemini-3.1-flash-lite-preview",
-      "apiKeyIdentifier": "GEMINI_API_KEY",
+      "apiKeyIdentifier": "GOOGLEAPIS_API_KEY",
       "supportsTools": true
     },
     "gemma-4-31b-it": {
       "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
       "model": "gemma-4-31b-it",
-      "apiKeyIdentifier": "GEMINI_API_KEY"
+      "apiKeyIdentifier": "GOOGLEAPIS_API_KEY"
     },
     "gemma-4-26b-it": {
       "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
       "model": "gemma-4-26b-a4b-it",
-      "apiKeyIdentifier": "GEMINI_API_KEY"
+      "apiKeyIdentifier": "GOOGLEAPIS_API_KEY"
     },
     "nvidia-step-3.5-flash": {
       "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
