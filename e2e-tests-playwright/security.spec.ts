@@ -132,6 +132,15 @@ test.describe('Sanitizer Effectiveness E2E', () => {
         // CSP violations from even happening.
         expect(violations).not.toContain('script-src');
         expect(violations).not.toContain('script-src-attr');
+        // below, multiple violations are triggered beacuse of the streaming behavior
+        expect(violations).toEqual([
+            "img-src",
+            "img-src",
+            "img-src",
+            "img-src",
+            "img-src",
+            "img-src",
+        ]);
 
         // 2. Verify that an 'img-src' violation occurred.
         // This is expected and proves DOMPurify's behavior: 
@@ -147,7 +156,7 @@ test.describe('Sanitizer Effectiveness E2E', () => {
 
         const imagesWithOnerror = await lastAssistantMessage.locator('img[onerror]').count();
         expect(imagesWithOnerror).toBe(0);
-        
+
         // 3. Verify safe text is still there
         await expect(lastAssistantMessage).toContainText('Safe text.');
 
@@ -174,7 +183,7 @@ test.describe('Security Isolation E2E', () => {
         });
         electronApp = result.electronApp;
         page = await electronApp.firstWindow();
-        
+
         // Ensure extension is activated and view is open
         await openChatView(page);
     });
@@ -192,7 +201,7 @@ test.describe('Security Isolation E2E', () => {
         // Assert the CSP Header Template Configuration
         const cspContent = await inner.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute('content');
         expect(cspContent).toContain("default-src 'none'");
-        
+
         const violations: string[] = [];
         const consoleListener = (msg: ConsoleMessage) => {
             const text = msg.text();
@@ -217,5 +226,20 @@ test.describe('Security Isolation E2E', () => {
         expect(violations.length).toBeGreaterThan(0);
         expect(violations).toContain('script-src-attr');
         expect(violations).toContain('img-src');
+        // below, multiple violations are triggered beacuse of the streaming behavior
+        expect(violations).toEqual([
+            "img-src",
+            "script-src-attr",
+            "img-src",
+            "script-src-attr",
+            "img-src",
+            "script-src-attr",
+            "img-src",
+            "script-src-attr",
+            "img-src",
+            "script-src-attr",
+            "img-src",
+            "script-src-attr"
+        ]);
     });
 });
