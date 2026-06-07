@@ -113,6 +113,11 @@
       "model": "gemma-4-26b-a4b-it",
       "apiKeyIdentifier": "GOOGLEAPIS_API_KEY"
     },
+    "nvidia-nemotron-3-ultra-550b-a55b": {
+      "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b",
+      "apiKeyIdentifier": "NVIDIA_API_KEY"
+    },
     "nvidia-step-3.5-flash": {
       "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
       "model": "stepfun-ai/step-3.5-flash",
