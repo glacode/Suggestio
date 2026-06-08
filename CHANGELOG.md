@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0] - 2026-06-08
+
+### Added
+- **Autonomous Agent Framework:** A core agentic loop (`src/agent/agent.ts`) that can autonomously solve multi-step coding tasks using tools.
+- **Project-Aware Tools (The "Power" Suite):**
+  - `grep_search`: Semantic and pattern-based searching across the entire workspace.
+  - `read_file` / `write_file`: High-performance file I/O with security guards.
+  - `replace_text`: Surgical code edits (automated refactoring).
+  - `run_command`: Integrated shell execution for running tests, builds, and linters directly from chat.
+  - `list_files`: Recursive workspace discovery.
+- **"Auto-Accept Edits" Mode:** A new workflow that allows the agent to apply suggested code changes automatically with real-time UI status and "Always Allow" security policies.
+- **Native Diff Integration:** Added a "View Diff" bridge that opens VS Code's native side-by-side editor to review agent-proposed changes.
+- **Deep Reasoning Support:**
+  - Specialized support for reasoning-focused models (Gemma 4, DeepSeek, etc.).
+  - UI support for collapsible "Thought Process" blocks during streaming.
+  - Interleaved reasoning and tool-call support for complex multi-turn logic.
+- **Advanced Profile Management:** 
+  - Complete redesign of the "Add Profile" wizard with intent-based security.
+  - Support for multiple, switchable LLM profiles for Chat vs. Inline Completion.
+- **Resilience Engine:**
+  - Implemented exponential backoff and automatic retries for failed LLM requests.
+  - Added a "Continue" button for long-running tasks that hit iteration limits.
+- **Persistent Chat History Engine:** A robust, high-performance persistence layer that ensures your conversations are never lost.
+  - **Workspace Isolation:** Chat sessions are securely stored and isolated per workspace.
+  - **Optimized Storage:** Implemented a session-per-file storage strategy with lazy pruning for near-instant startup.
+  - **History Overlay:** A dedicated UI panel to browse, search, and restore previous sessions with single-click loading.
+  - **Session Management:** Support for manual session persistence, configurable history limits, and long session titles (up to 100 characters).
+
+### Changed
+- **Build System Overhaul:** Switched to **esbuild** for high-speed, multi-target bundling (Extension Host, Chat Webview, and Markdown Renderer).
+- **Event-Driven Core:** Introduced a centralized `EventBus` to replace legacy callbacks, decoupling the Agent, UI, and VS Code.
+- **Modern Configuration Engine:** Re-engineered the config processor to support layered merging (Default < Global < Workspace) with live UI synchronization.
+- **UI Refresh:** Redesigned Chat UI with animated typing indicators and real-time tool execution feedback.
+
+### Fixed
+- **State Integrity:** Fixed issues where interleaved streams (reasoning + tool calls) would get out of order.
+- **Security:** Implemented defense-in-depth HTML sanitization using DOMPurify and strict CSP enforcement.
+- **Performance:** Implemented middle-truncation for large tool results to prevent context window overflows.
+- **Cleanliness:** Eliminated all unsafe type assertions (`as any`) to satisfy strict engineering standards.
+
 ## [0.0.4] - 2026-01-04
 
 ### Added
