@@ -2,11 +2,11 @@
     "name": "suggestio",
     "type": "module",
     "displayName": "Suggestio",
-    "description": "Inline autocomplete using free LLMs without API keys",
+    "description": "Autonomous coding agent using free LLM APIs",
     "publisher": "glacode",
     "author": "Glauco Siliprandi",
     "icon": "resources/logo.png",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "engines": {
         "vscode": "^1.102.0"
     },
