@@ -17,6 +17,7 @@ resources/demo.gif
 resources/demoChat.gif
 resources/agentDemo.gif
 resources/setApiKeyDemo.gif
+resources/completionsDemo.gif
 coverage/**
 test-fixtures/**
 test-results/**

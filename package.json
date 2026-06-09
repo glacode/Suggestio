@@ -53,8 +53,7 @@
         "!dist/**/*.map",
         "builtResources/**",
         "media/**",
-        "resources/**",
-        "!resources/demo.gif"
+        "resources/**"
     ],
     "contributes": {
         "viewsContainers": {

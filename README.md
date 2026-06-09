@@ -23,7 +23,7 @@ The core of Suggestio is an **autonomous agent** that can help you solve complex
 
 Suggestio also provides **ghost-text completions** as you type. It’s lightweight and designed to provide helpful suggestions based on your current file context. You can use different models for chat and completions to balance speed and intelligence.
 
-![Completions Demo](resources/demo.gif)
+![Completions Demo](resources/completionsDemo.gif)
 
 ---
 
@@ -42,9 +42,9 @@ You just need a free API key from a provider like [Google Gemini](https://aistud
 
 ## 🔒 Privacy & Security
 
-- **Local & Secure:** Your API keys are stored in VS Code's native Secret Storage, never in your code or config files.
-- **You are in Control:** The agent **never** writes to your disk or runs a command without your explicit permission. You see exactly what it wants to do before it happens.
-- **Experimental Anonymizer:** Suggestio includes a built-in anonymizer to mask sensitive data (like emails or internal tokens). This is currently **experimental and disabled by default** while we improve its accuracy.
+- **Agent Guardrails:** Every file modification or shell command requires your explicit approval (unless you enable "Always Allow" for specific tools).
+- **Experimental Anonymizer:** (Disabled by default) Mathematically detects and masks sensitive data (API keys, tokens) using Shannon entropy analysis before it leaves your machine.
+- **Local Secret Storage:** API keys are never stored in your project files. They are managed securely via VS Code's native Secret Storage.
 
 ---
 
@@ -54,7 +54,7 @@ Suggestio is designed to leverage providers that offer generous free tiers. Here
 
 - **Google Gemini (Gemma 4 31B):** A reliable daily driver offering a generous free tier of 1,500 requests per day and 15 requests per minute, with no specific limitations on tokens per minute.
 - **Mistral Devstral:** Mistral has consistently offered free access to their specialized coding models, including Devstral 2512 (Large) and Devstral Small 2512. Both are exceptionally fast and capable.
-- **NVIDIA Nemotron 3 Ultra:** NVIDIA provides a free endpoint for their flagship model, Nemotron 3 Ultra 550b a55b, offering high-level performance for complex reasoning.
+- **Stepfun Step 3.5 Flash (via NVIDIA NIM):** Available through NVIDIA's free endpoint registry. This model utilizes a sparse Mixture-of-Experts (MoE) architecture with ~11B active parameters per token, providing very low latency and fast token generation alongside support for tool-calling and agentic tasks.
 - **llm7.io (No API Key Required):** You can use the Qwen3-235B model via llm7.io to test Suggestio's agentic features immediately without an API key. While not intended for heavy production use, it provides an effortless way to explore the extension.
 
 ---
