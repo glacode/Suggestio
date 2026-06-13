@@ -1292,6 +1292,76 @@ export interface IDirectoryProvider extends IDirectoryReader, IDirectoryCreator 
 export interface IWorkspaceProviderFull extends IWorkspaceProvider, IDocumentOpener { }
 
 /**
+ * Defines the contract for parsing and merging streaming SSE responses from OpenAI-compatible APIs.
+ */
+export interface IOpenAIStreamHandler {
+  /**
+   * Processes the Server-Sent Events (SSE) stream.
+   * @param response The HTTP response containing the body stream.
+   * @returns A promise resolving to the consolidated assistant's messages.
+   */
+  handleStream(response: IHttpResponse): Promise<IChatMessage[]>;
+}
+
+/**
+ * Defines the contract for constructing request payloads for OpenAI-compatible APIs.
+ */
+export interface IOpenAIRequestFormatter {
+  /**
+   * Constructs the JSON request body for the completion API.
+   * @param prompt The prompt object that generates the chat history.
+   * @param model The model identifier to use.
+   * @param options Configuration for the request (max_tokens, stream, tools).
+   * @returns A JSON-serializable object representing the request body.
+   */
+  formatRequest(
+    prompt: IPrompt,
+    model: string,
+    options: {
+      maxTokens: number;
+      stream: boolean;
+      tools?: IToolDefinition[];
+    }
+  ): any;
+}
+
+/**
+ * Defines the contract for parsing responses from OpenAI-compatible APIs.
+ * This encapsulates Zod schema validation and initial field mapping.
+ */
+export interface IOpenAIResponseParser {
+  /**
+   * Parses a non-streaming response body.
+   * @param json The raw JSON object from the API response.
+   * @returns The validated message object from the first choice, or null if no choice message is found.
+   * @throws Error if the response is malformed or contains an API error.
+   */
+  parseResponse(json: any): {
+    content?: string | null;
+    reasoning?: string | null;
+    reasoning_content?: string | null;
+    tool_calls?: ToolCall[] | null;
+  } | null;
+
+  /**
+   * Parses a single chunk from a streaming SSE response.
+   * @param json The raw JSON object from a single "data: " line.
+   * @returns The validated delta and finish reason, or null if no choices are present.
+   * @throws Error if the chunk is malformed.
+   */
+  parseStreamChunk(json: any): {
+    delta?: {
+      content?: string | null;
+      reasoning?: string | null;
+      reasoning_content?: string | null;
+      tool_calls?: any[] | null;
+      extra_content?: Record<string, any> | null;
+    } | null;
+    finish_reason?: string | null;
+  } | null;
+}
+
+/**
  * Interface for a stateful, streaming deanonymizer.
  *
  * It maintains an internal buffer to correctly handle and reassemble

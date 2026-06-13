@@ -20,6 +20,7 @@ import {
   IProfileConfig,
   IWindowProvider,
   IWorkspaceProvider,
+  IAnonymizer,
   IFileContentReader,
   IFileContentWriter,
   IDirectoryReader,
@@ -240,6 +241,12 @@ export const createMockWorkspaceProvider = (): jest.Mocked<IWorkspaceProvider> =
     rootPath: jest.fn(),
     rootUri: jest.fn(),
     storagePath: jest.fn(),
+});
+
+export const createMockAnonymizer = (): jest.Mocked<IAnonymizer> => ({
+    anonymize: jest.fn(),
+    deanonymize: jest.fn(),
+    createStreamingDeanonymizer: jest.fn(),
 });
 
 export const createMockWorkspaceProviderFull = (): jest.Mocked<IWorkspaceProviderFull> => ({
