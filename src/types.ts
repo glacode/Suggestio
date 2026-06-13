@@ -50,6 +50,25 @@ export interface IExtensionContextMinimal {
 }
 
 /**
+ * Configuration targets for updating settings.
+ * Matches `vscode.ConfigurationTarget`.
+ */
+export enum ConfigTarget {
+  Global = 1,
+  Workspace = 2,
+  WorkspaceFolder = 3
+}
+
+/**
+ * Abstraction for VS Code's WorkspaceConfiguration.
+ */
+export interface IVscodeWorkspaceConfiguration {
+  get<T>(section: string, defaultValue?: T): T | undefined;
+  update(section: string, value: any, target: ConfigTarget): Thenable<void>;
+  inspect<T>(section: string): { globalValue?: T, workspaceValue?: T } | undefined;
+}
+
+/**
  * `IVscodeApiLocal` is a local abstraction of parts of the `vscode` API.
  * This is used to avoid direct dependency on the `vscode` module in certain contexts (like tests).
  */
@@ -99,6 +118,26 @@ export interface IVscodeApiLocal {
       }[];
       close(tab: any | any[]): Thenable<boolean>;
     };
+  };
+
+  /**
+   * Exposes VS Code workspace-related functionality.
+   */
+  workspace: {
+    /**
+     * List of workspace folders.
+     */
+    workspaceFolders: readonly { uri: IUriLike }[] | undefined;
+
+    /**
+     * Returns the configuration for a section and scope.
+     */
+    getConfiguration(section?: string, scope?: IUriLike | null): IVscodeWorkspaceConfiguration;
+
+    /**
+     * Fired when the configuration changes.
+     */
+    onDidChangeConfiguration(listener: (e: IConfigChangeEvent) => any): IDisposable;
   };
 }
 

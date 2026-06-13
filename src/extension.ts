@@ -17,17 +17,19 @@ import {
   IAnonymizationEventPayload, 
   IWindowProvider, 
   IPathResolver,
-  IConfigProvider,
   ILlmProviderAccessor,
   IVscodeApiLocal,
   IFileDeleter,
   IVSCodeSettings,
-  IProfileConfig
+  IProfileConfig,
+  IVscodeWorkspaceConfiguration,
+  ConfigTarget
 } from './types.js';
 import { ChatHistoryManager } from './chat/chatHistoryManager.js';
 import { WorkspaceChatHistoryStorage } from './chat/workspaceChatHistoryStorage.js';
 import { PersistentChatHistoryManager } from './chat/persistentChatHistoryManager.js';
 import { SecretManager } from './config/secretManager.js';
+import { VScodeConfigProvider } from './config/vscodeConfigProvider.js';
 import { configProcessor, getChatProfileIds } from './config/configProcessor.js';
 import { CONFIG_DEFAULTS } from './constants/config.js';
 import { Agent } from './agent/agent.js';
@@ -54,11 +56,32 @@ export async function activate(context: vscode.ExtensionContext) {
   defaultLogger.info(EXTENSION_LOGS.ACTIVATE);
   // vscode.window.showInformationMessage(EXTENSION_MESSAGES.ACTIVATED);
 
+  const mapTarget = (target: ConfigTarget): vscode.ConfigurationTarget => {
+    if (target === ConfigTarget.Global) { return vscode.ConfigurationTarget.Global; }
+    if (target === ConfigTarget.Workspace) { return vscode.ConfigurationTarget.Workspace; }
+    return vscode.ConfigurationTarget.WorkspaceFolder;
+  };
+
   const vscodeApiLocal: IVscodeApiLocal = {
     Uri: vscode.Uri,
     commands: vscode.commands,
     window: {
       tabGroups: vscode.window.tabGroups
+    },
+    workspace: {
+      workspaceFolders: vscode.workspace.workspaceFolders,
+      getConfiguration: (section, scope) => {
+        const config = vscode.workspace.getConfiguration(section, scope instanceof vscode.Uri ? scope : undefined);
+        const wrapped: IVscodeWorkspaceConfiguration = {
+          get: <T>(s: string, d?: T) => {
+            return d !== undefined ? config.get<T>(s, d) : config.get<T>(s);
+          },
+          update: (s, v, t) => config.update(s, v, mapTarget(t)),
+          inspect: <T>(s: string) => config.inspect<T>(s)
+        };
+        return wrapped;
+      },
+      onDidChangeConfiguration: (listener) => vscode.workspace.onDidChangeConfiguration(listener)
     }
   };
 
@@ -137,40 +160,13 @@ export async function activate(context: vscode.ExtensionContext) {
 
   const pathResolver: IPathResolver = path;
 
-  const configProvider: IConfigProvider = {
-    getSanitizerDisabled: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<boolean>('debug.security.disableSanitizer', false),
-    getLogLevel: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<string>('logLevel', CONFIG_DEFAULTS.LOG_LEVEL),
-    getMaxAgentIterations: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<number>('maxAgentIterations', CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS),
-    getAnonymizerEnabled: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<boolean | undefined>('experimental.anonymizer.enabled'),
-    getAnonymizerWords: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<string[]>('experimental.anonymizer.words'),
-    getAnonymizerEntropy: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<number>('experimental.anonymizer.sensitiveData.allowedEntropy'),
-    getAnonymizerMinLength: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<number>('experimental.anonymizer.sensitiveData.minLength'),
-    getInlineCompletionEnabled: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<boolean>('inlineCompletion.enabled', true),
-    getInlineCompletionSupportedLanguages: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<string[]>('inlineCompletion.supportedLanguages', packageJsonLanguages),
-    getInlineCompletionEnableInUntitledEditors: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<boolean>('inlineCompletion.enableInUntitledEditors', false),
-    getMaxRetries: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<number>('llm.maxRetries', CONFIG_DEFAULTS.MAX_RETRIES),
-    getInitialDelay: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<number>('llm.initialDelay', CONFIG_DEFAULTS.INITIAL_DELAY),
-    getMaxSavedChatSessions: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<number>('maxSavedChatSessions', CONFIG_DEFAULTS.MAX_SAVED_CHAT_SESSIONS),
-    getProfiles: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<Record<string, any>>('profiles') || {},
-    getActiveChatProfile: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<string>('activeChatProfile'),
-    getActiveCompletionProfile: () => vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri()).get<string>('activeCompletionProfile'),
-    deleteProfile: async (profileId: string) => {
-      const config = vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri());
-      const inspect = config.inspect<Record<string, any>>('profiles');
-      
-      // Update Global (User) settings
-      const globalProfiles = { ...(inspect?.globalValue || {}) };
-      if (globalProfiles[profileId]) {
-        delete globalProfiles[profileId];
-        await config.update('profiles', globalProfiles, vscode.ConfigurationTarget.Global);
-      }
-    },
-    updateConfig: async (key: string, value: any, global: boolean) => {
-      const config = vscode.workspace.getConfiguration('suggestio', getActiveWorkspaceUri());
-      await config.update(key, value, global ? vscode.ConfigurationTarget.Global : vscode.ConfigurationTarget.Workspace);
-    },
-    onDidChangeConfiguration: (listener) => vscode.workspace.onDidChangeConfiguration(listener)
-  };
+  const packageJsonLanguages = context.extension.packageJSON.contributes?.inlineCompletions?.map((c: any) => c.language) || [];
+
+  const configProvider = new VScodeConfigProvider(
+    vscodeApiLocal,
+    workspaceProvider,
+    packageJsonLanguages
+  );
 
   const secretManager = new SecretManager({
     get: async (key: string) => await context.secrets.get(key),
@@ -191,8 +187,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
   const logLevel = vsCodeConfig.get<string>('logLevel', CONFIG_DEFAULTS.LOG_LEVEL);
   defaultLogger.setLogLevel(parseLogLevel(logLevel));
-
-  const packageJsonLanguages = context.extension.packageJSON.contributes?.inlineCompletions?.map((c: any) => c.language) || [];
 
   const vsCodeSettings: IVSCodeSettings = {
     debug: {
@@ -302,7 +296,7 @@ export async function activate(context: vscode.ExtensionContext) {
     chatHistoryManager: chatHistoryManager,
     buildContext: new ContextBuilder(vscode.window, ignoreManager, workspaceProvider, pathResolver),
     getChatWebviewContent,
-    vscodeApi: vscode,
+    vscodeApi: vscodeApiLocal,
     fileReader: fileContentReader,
     eventBus,
     diffManager,

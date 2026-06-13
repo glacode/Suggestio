@@ -36,7 +36,9 @@ import {
   IWorkspaceChatHistoryStorage,
   IFileDeleter,
   IExtensionContextMinimal,
-  IToolUiProvider
+  IToolUiProvider,
+  IVscodeWorkspaceConfiguration,
+  ConfigTarget
 } from "../src/types.js";
 import { ISecretManager } from "../src/config/configProcessor.js";
 import { ILogger } from "../src/log/logger.js";
@@ -82,27 +84,48 @@ export const createMockUri = (path: string): IUriLike => ({
     toString: () => path
 });
 
+/**
+ * Extended IVscodeApiLocal for testing, exposing internal mocks.
+ */
+export interface IMockVscodeApiLocal extends IVscodeApiLocal {
+    mockConfig: jest.Mocked<IVscodeWorkspaceConfiguration>;
+}
+
 export const createMockVscodeApi = (
     joinPathImpl: (base: IUriLike, ...paths: string[]) => IUriLike =
         (_b, ..._p) => ({ fsPath: 'joined', toString: () => 'joined' })
-): IVscodeApiLocal => ({
-    Uri: {
-        joinPath: joinPathImpl,
-        parse: jest.fn((s: string) => {
-            const normalized = s.startsWith('suggestio-diff:/') ? s : s.replace('suggestio-diff:', 'suggestio-diff:/');
-            return { fsPath: s, toString: () => normalized };
-        })
-    },
-    commands: {
-        executeCommand: jest.fn<any>().mockResolvedValue(undefined)
-    },
-    window: {
-        tabGroups: {
-            all: [],
-            close: jest.fn<any>().mockResolvedValue(undefined)
+): IMockVscodeApiLocal => {
+    const mockConfig: jest.Mocked<IVscodeWorkspaceConfiguration> = {
+        get: jest.fn<(s: string, d?: any) => any>(),
+        update: jest.fn<(s: string, v: any, t: ConfigTarget) => Thenable<void>>(),
+        inspect: jest.fn<(s: string) => { globalValue?: any, workspaceValue?: any } | undefined>()
+    };
+
+    return {
+        mockConfig,
+        Uri: {
+            joinPath: joinPathImpl,
+            parse: jest.fn((s: string) => {
+                const normalized = s.startsWith('suggestio-diff:/') ? s : s.replace('suggestio-diff:', 'suggestio-diff:/');
+                return { fsPath: s, toString: () => normalized };
+            })
+        },
+        commands: {
+            executeCommand: jest.fn<(c: string, ...args: any[]) => Thenable<any>>().mockResolvedValue(undefined)
+        },
+        window: {
+            tabGroups: {
+                all: [],
+                close: jest.fn<(tab: any | any[]) => Thenable<boolean>>().mockResolvedValue(true)
+            }
+        },
+        workspace: {
+            workspaceFolders: undefined,
+            getConfiguration: jest.fn<(section?: string, scope?: IUriLike | null) => IVscodeWorkspaceConfiguration>().mockReturnValue(mockConfig),
+            onDidChangeConfiguration: jest.fn<(listener: (e: any) => any) => IDisposable>().mockReturnValue({ dispose: () => { } })
         }
-    }
-});
+    };
+};
 
 export class MockWebviewApi implements IWebviewApi {
     public messages: WebviewMessage[] = [];
