@@ -27,13 +27,30 @@ describe('CommandBlacklistValidator', () => {
         const blocked = [
             'rm -rf .git',
             'rm .git/config',
-            'mv .git something_else'
+            'mv .git something_else',
+            'rm -rf .git/',
+            'rm -rf .git\\\\config' // Literal backslash (requires double escape in shell)
         ];
 
         for (const cmd of blocked) {
             const result = validator.validate(cmd);
             expect(result.allowed).toBe(false);
             expect(result.reason).toContain('.git');
+        }
+    });
+
+    it('should allow .github and .gitignore manipulation', () => {
+        const safe = [
+            'mkdir .github',
+            'mkdir .github/workflows',
+            'rm .gitignore',
+            'cat .github/workflows/ci.yml',
+            'ls -la .github'
+        ];
+
+        for (const cmd of safe) {
+            const result = validator.validate(cmd);
+            expect(result.allowed).toBe(true);
         }
     });
 

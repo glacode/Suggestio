@@ -39,6 +39,8 @@ export class IgnoreManager implements IIgnoreManager {
         
         // Also add .env as a hardcoded pattern
         this.ignorePatterns.push(globToRegex('.env'));
+        // Also add .git as a hardcoded pattern to protect internal git metadata
+        this.ignorePatterns.push(globToRegex('.git'));
     }
 
     async shouldIgnore(filePath: string): Promise<boolean> {
@@ -47,10 +49,12 @@ export class IgnoreManager implements IIgnoreManager {
             return false;
         }
 
-        const relativePath = normalizePath(this.pathResolver.relative(workspaceRoot, filePath));
+        const normalizedFilePath = normalizePath(filePath);
+        const normalizedWorkspaceRoot = normalizePath(workspaceRoot);
+        const relativePath = normalizePath(this.pathResolver.relative(normalizedWorkspaceRoot, normalizedFilePath));
 
         for (const pattern of this.ignorePatterns) {
-            if (pattern.test(relativePath) || pattern.test(this.pathResolver.basename(filePath))) {
+            if (pattern.test(relativePath) || pattern.test(this.pathResolver.basename(normalizedFilePath))) {
                 return true;
             }
         }

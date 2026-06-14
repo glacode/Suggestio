@@ -54,11 +54,20 @@ export class CommandBlacklistValidator implements ICommandValidator {
 
         const tokens = ShellTokenizer.tokenize(trimmedCommand);
 
-        // Rule: .git manipulation anywhere is prohibited
-        if (tokens.some(token => token.toLowerCase().includes('.git'))) {
+        // Rule: Internal .git directory manipulation is prohibited to protect project history.
+        // We split each token into path segments to ensure we only block if ".git" is a 
+        // complete component of the path (e.g., ".git", "./.git", ".git/config").
+        // This allows ".github", ".gitignore", etc.
+        const isGitInternal = (token: string): boolean => {
+            // We treat both forward and backward slashes as separators for the segment check.
+            const segments = token.split(/[/\\]/);
+            return segments.some(s => s.toLowerCase() === '.git');
+        };
+
+        if (tokens.some(isGitInternal)) {
             return { 
                 allowed: false, 
-                reason: "Modifying or deleting the .git directory is prohibited to protect project history." 
+                reason: "Modifying or deleting the internal .git directory is prohibited to protect project history." 
             };
         }
 

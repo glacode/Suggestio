@@ -18,7 +18,7 @@ describe('IgnoreManager', () => {
   beforeEach(() => {
     rootPathValue = workspaceRoot;
     fileContents = {};
-    
+
     mockWorkspaceProvider = {
       rootPath: () => rootPathValue,
       rootUri: () => undefined,
@@ -30,7 +30,7 @@ describe('IgnoreManager', () => {
     };
     mockPathResolver = createMockPathResolver();
   });
-  
+
   const createManager = () => new IgnoreManager(mockWorkspaceProvider, mockFileContentProvider, mockPathResolver);
 
   const setupIgnoreFile = (fileName: string, content: string) => {
@@ -76,16 +76,16 @@ dist/`);
     await expect(ignoreManager.shouldIgnore(path.join(workspaceRoot, 'coverage/report.html'))).resolves.toBe(true);
     await expect(ignoreManager.shouldIgnore(path.join(workspaceRoot, 'src/app.ts'))).resolves.toBe(false);
   });
-  
+
   test('should ignore files from both .gitignore and .suggestioignore', async () => {
     const gitignorePath = path.join(workspaceRoot, '.gitignore');
     const suggestioignorePath = path.join(workspaceRoot, '.suggestioignore');
-    
+
     fileContents[gitignorePath] = '*.log';
     fileContents[suggestioignorePath] = '*.tmp';
-    
+
     ignoreManager = createManager();
-    
+
     await expect(ignoreManager.shouldIgnore(path.join(workspaceRoot, 'debug.log'))).resolves.toBe(true);
     await expect(ignoreManager.shouldIgnore(path.join(workspaceRoot, 'temp.tmp'))).resolves.toBe(true);
     await expect(ignoreManager.shouldIgnore(path.join(workspaceRoot, 'main.ts'))).resolves.toBe(false);
@@ -109,9 +109,27 @@ dist/`);
 
   test('should ignore .env file by default', async () => {
     ignoreManager = createManager();
-    
+
     await expect(ignoreManager.shouldIgnore(path.join(workspaceRoot, '.env'))).resolves.toBe(true);
     await expect(ignoreManager.shouldIgnore(path.join(workspaceRoot, 'src/subdir/.env'))).resolves.toBe(true);
     await expect(ignoreManager.shouldIgnore(path.join(workspaceRoot, 'src/app.py'))).resolves.toBe(false);
+  });
+
+  test('should ignore .git directory by default and allow .github/.gitignore', async () => {
+    ignoreManager = createManager();
+
+    // Core .git folder and its contents (Unix)
+    await expect(ignoreManager.shouldIgnore(path.join(workspaceRoot, '.git'))).resolves.toBe(true);
+    await expect(ignoreManager.shouldIgnore(path.join(workspaceRoot, '.git/config'))).resolves.toBe(true);
+    await expect(ignoreManager.shouldIgnore(path.join(workspaceRoot, '.git/objects/00/abc'))).resolves.toBe(true);
+
+    // Core .git folder and its contents (Windows style)
+    await expect(ignoreManager.shouldIgnore(workspaceRoot + '\\.git')).resolves.toBe(true);
+    await expect(ignoreManager.shouldIgnore(workspaceRoot + '\\.git\\config')).resolves.toBe(true);
+
+    // Should NOT ignore .github or .gitignore
+    await expect(ignoreManager.shouldIgnore(path.join(workspaceRoot, '.github'))).resolves.toBe(false);
+    await expect(ignoreManager.shouldIgnore(path.join(workspaceRoot, '.github/workflows/ci.yml'))).resolves.toBe(false);
+    await expect(ignoreManager.shouldIgnore(path.join(workspaceRoot, '.gitignore'))).resolves.toBe(false);
   });
 });
