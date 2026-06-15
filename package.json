@@ -2,7 +2,7 @@
     "name": "suggestio",
     "type": "module",
     "displayName": "Suggestio",
-    "description": "Autonomous coding agent using free LLM APIs",
+    "description": "Autonomous coding agent using free LLM Providers",
     "publisher": "glacode",
     "author": "Glauco Siliprandi",
     "icon": "resources/logo.png",
