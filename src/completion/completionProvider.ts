@@ -1,19 +1,23 @@
 import { UserPrompt } from "./promptBuilder/userPrompt.js";
+import { FimPrompt } from "./promptBuilder/fimPrompt.js";
 // completion/completionProvider.ts
-import { 
-  ITextDocument, 
-  IPosition, 
-  ICancellationToken, 
-  IInlineCompletionList, 
+import {
+  ITextDocument,
+  IPosition,
+  ICancellationToken,
+  IInlineCompletionList,
   IIgnoreManager,
   ILlmProvider,
-  IInlineCompletionConfig
+  IInlineCompletionConfig,
+  IPrompt
 } from "../types.js";
 import { buildPromptForInlineCompletion } from "./promptBuilder/promptBuilder.js";
+import { extractPrefix, extractSuffix } from "./promptBuilder/extractPrefixAndSuffix.js";
 import { debounce } from "./debounceManager.js";
 import { handleCancellation } from "./cancellation.js";
 import { IEventBus } from "../utils/eventBus.js";
 import { COMPLETION_LOGS } from "../constants/messages.js";
+import { CONFIG_DEFAULTS } from "../constants/config.js";
 
 const DEBOUNCE_DELAY_MS = 1000;
 
@@ -35,17 +39,28 @@ function createDebounceCallback(
       return;
     }
 
-    const promptText = buildPromptForInlineCompletion(document, position);
     const profileName = config.activeCompletionProfile || config.activeChatProfile;
-    const modelName = config.profiles[profileName]?.model || "unknown";
-    
-    eventBus.emit('log', { 
-      level: 'info', 
-      message: COMPLETION_LOGS.USING_PROVIDER(`${profileName} (${modelName})`) 
-    });
-    eventBus.emit('log', { level: 'debug', message: COMPLETION_LOGS.PROMPT(promptText) });
+    const profile = config.profiles[profileName];
+    const modelName = profile?.model || "unknown";
 
-    const prompt = new UserPrompt(promptText);
+    // FIM endpoints consume raw prefix/suffix; chat endpoints get the instruction-wrapped prompt.
+    let prompt: IPrompt;
+    let promptLogText: string;
+    if (profile?.type === "deepseek-fim") {
+      const prefix = extractPrefix(document, position);
+      const suffix = extractSuffix(document, position, CONFIG_DEFAULTS.FIM_SUFFIX_MAX_LINES);
+      prompt = new FimPrompt(prefix, suffix);
+      promptLogText = `[FIM] prefix=${prefix.length} chars, suffix=${suffix.length} chars`;
+    } else {
+      promptLogText = buildPromptForInlineCompletion(document, position);
+      prompt = new UserPrompt(promptLogText);
+    }
+
+    eventBus.emit('log', {
+      level: 'info',
+      message: COMPLETION_LOGS.USING_PROVIDER(`${profileName} (${modelName})`)
+    });
+    eventBus.emit('log', { level: 'debug', message: COMPLETION_LOGS.PROMPT(promptLogText) });
 
     // Call the provider's query method
     provider
