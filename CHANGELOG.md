@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2026-06-15
+
+### Added
+- **Unit Testing Suite for LLM Components:** Introduced granular unit tests for the new request formatter, response parser, and stream handler.
+- **Dedicated VS Code Config Provider:** Isolated configuration logic for better maintainability and decoupled testing.
+
+### Changed
+- **Architectural Decomposition of OpenAI Provider:** Broke down the monolithic `OpenAICompatibleProvider` into specialized, testable services (`OpenAIRequestFormatter`, `OpenAIResponseParser`, `OpenAIStreamHandler`).
+- **Refined Security Guardrails:** Improved command validation and ignore management to allow modification of `.github` and `.gitignore` while maintaining strict protection for the internal `.git` directory.
+- **Enhanced Documentation:** Updated README to emphasize Suggestio's lightweight design and minimal resource footprint.
+
+### Fixed
+- Improved path normalization for cross-platform compatibility in the ignore manager.
+
 ## [0.1.2] - 2026-06-09
 
 ### Changed
