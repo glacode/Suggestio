@@ -23,4 +23,8 @@ export const CONFIG_DEFAULTS = {
     INLINE_COMPLETION_SUPPORTED_LANGUAGES: [],
     /** Default status for inline completion in untitled editors. */
     INLINE_COMPLETION_ENABLE_IN_UNTITLED_EDITORS: false,
+    /** Maximum tokens to request from a FIM completion endpoint (inline completions are short). */
+    FIM_MAX_TOKENS: 256,
+    /** Number of lines after the cursor to send as the FIM `suffix` (more context than the chat path). */
+    FIM_SUFFIX_MAX_LINES: 60,
 } as const;

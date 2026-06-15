@@ -612,6 +612,26 @@ export interface IPrompt {
 }
 
 /**
+ * `IFimPrompt` extends `IPrompt` for Fill-In-the-Middle (FIM) completions.
+ * FIM endpoints (e.g. DeepSeek `/beta/completions`) consume the code before and
+ * after the cursor as separate `prompt`/`suffix` fields rather than a chat history.
+ */
+export interface IFimPrompt extends IPrompt {
+  /** The code immediately before the cursor (becomes the `prompt` field). */
+  readonly prefix: string;
+  /** The code immediately after the cursor (becomes the `suffix` field). */
+  readonly suffix: string;
+}
+
+/**
+ * Type guard that narrows an `IPrompt` to an `IFimPrompt`.
+ */
+export function isFimPrompt(prompt: IPrompt): prompt is IFimPrompt {
+  return typeof (prompt as IFimPrompt).prefix === "string"
+    && typeof (prompt as IFimPrompt).suffix === "string";
+}
+
+/**
  * `IChatAgent` defines the interface for the backend logic that handles
  * interacting with the Language Model (LLM).
  *
@@ -1806,7 +1826,7 @@ export interface IProfileConfig {
   apiKeyIdentifier?: string; // identifier used to look up the key (e.g. OPENROUTER_API_KEY)
   isApiKeyRequired?: boolean; // whether an API key is required for this profile (defaults to true)
   resolvedApiKey?: string;    // actual key used at runtime
-  type?: "openai-compatible" | "gemini"; // defaults to openai-compatible
+  type?: "openai-compatible" | "gemini" | "deepseek-fim"; // defaults to openai-compatible. "deepseek-fim" targets DeepSeek's Fill-In-the-Middle completion endpoint (/beta/completions).
   origin?: 'bundled' | 'user' | 'project'; // Source of the profile configuration
   /** Whether the model supports tool calling. If not specified, defaults to true. */
   supportsTools?: boolean;
