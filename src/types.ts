@@ -747,6 +747,23 @@ export interface ILlmProviderAccessor {
 }
 
 /**
+ * Interface for a provider that handles LLM profile metadata for the UI.
+ */
+export interface IProfileMetadataProvider {
+  /**
+   * Consolidates gathering of LLM profile information for the webview.
+   * Applying sorting by origin priority.
+   */
+  getStateData(): Promise<{
+    chatProfileIds: string[];
+    activeChatProfileId: string;
+    allProfileIds: string[];
+    activeCompletionProfileId: string;
+    profileMetadata: ProfileMetadata[];
+  }>;
+}
+
+/**
  * Interface for the profile metadata passed to the webview.
  */
 export interface ProfileMetadata {

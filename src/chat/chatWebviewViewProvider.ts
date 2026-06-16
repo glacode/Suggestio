@@ -8,7 +8,6 @@ import type {
     IChatAgent, // Defines the interface for handling chat logic (e.g., sending prompts to an LLM).
     IPersistentChatHistoryManager, // Defines the interface for managing persistent chat history.
     GetChatWebviewContent, // A function type for generating the HTML content for the webview.
-    ILlmProviderAccessor, // Defines the interface for accessing information about LLM providers (models).
     IExtensionContextMinimal, // A minimal representation of VS Code's `ExtensionContext`,
     // providing access to essential extension resources like `extensionUri`.
     IVscodeApiLocal, // A minimal, faked representation of the VS Code API, used primarily for URI handling.
@@ -26,7 +25,7 @@ import type {
     IConfigProvider,
     IHttpClient,
     IToolUiProvider,
-    ProfileMetadata
+    IProfileMetadataProvider
 } from '../types.js';
 // Importing the `eventBus`, a custom mechanism for different parts of the extension
 // to communicate by emitting and listening for events.
@@ -42,7 +41,7 @@ import { getNonce } from '../utils/textUtils.js';
 // It uses dependency injection to provide all necessary components.
 interface IChatWebviewViewProviderArgs {
     extensionContext: IExtensionContextMinimal; // The VS Code extension context, vital for managing extension resources.
-    profileAccessor: ILlmProviderAccessor; // An accessor to retrieve available and active LLM profiles.
+    profileMetadataProvider: IProfileMetadataProvider; // A provider to retrieve and sort LLM profile metadata.
     chatAgent: IChatAgent; // The agent responsible for interacting with the LLM.
     chatHistoryManager: IPersistentChatHistoryManager; // The manager responsible for persistent chat history operations.
     buildContext: IContextBuilder; // A builder to create contextual information for the AI prompt.
@@ -79,7 +78,7 @@ export class ChatWebviewViewProvider {
     private readonly _chatHistoryManager: IPersistentChatHistoryManager; // Stores the chat history manager.
     private readonly _buildContext: IContextBuilder; // Stores the context builder instance.
     private readonly _extensionContext: IExtensionContextMinimal; // Stores the extension context.
-    private readonly _profileAccessor: ILlmProviderAccessor; // Stores the profile accessor.
+    private readonly _profileMetadataProvider: IProfileMetadataProvider; // Stores the profile metadata provider.
     private readonly _getChatWebviewContent: GetChatWebviewContent; // Stores the webview content generator.
     private readonly _vscodeApi: IVscodeApiLocal; // Stores the VS Code API for internal use.
     private readonly _fileReader: IFileContentReader;
@@ -101,9 +100,9 @@ export class ChatWebviewViewProvider {
      * The constructor initializes the `ChatWebviewViewProvider` with its dependencies.
      * These dependencies are typically passed from `extension.ts` during activation.
      */
-    constructor({ extensionContext, profileAccessor, chatAgent, chatHistoryManager, buildContext, getChatWebviewContent, vscodeApi, fileReader, eventBus, diffManager, configContainer, configProvider, secretManager, httpClient, toolUiProvider }: IChatWebviewViewProviderArgs) {
+    constructor({ extensionContext, profileMetadataProvider, chatAgent, chatHistoryManager, buildContext, getChatWebviewContent, vscodeApi, fileReader, eventBus, diffManager, configContainer, configProvider, secretManager, httpClient, toolUiProvider }: IChatWebviewViewProviderArgs) {
         this._extensionContext = extensionContext;
-        this._profileAccessor = profileAccessor;
+        this._profileMetadataProvider = profileMetadataProvider;
         this._chatAgent = chatAgent;
         this._chatHistoryManager = chatHistoryManager;
         this._buildContext = buildContext;
@@ -262,21 +261,9 @@ export class ChatWebviewViewProvider {
             return;
         }
 
-        // Construct URIs for assets
-        const chatJsUri = this._view.webview.asWebviewUri(
-            this._vscodeApi.Uri.joinPath(this._extensionContext.extensionUri, 'builtResources', 'chat.js')
-        );
-        const markdownJsUri = this._view.webview.asWebviewUri(
-            this._vscodeApi.Uri.joinPath(this._extensionContext.extensionUri, 'builtResources', 'renderMarkDown.js')
-        );
-        const highlightCssUri = this._view.webview.asWebviewUri(
-            this._vscodeApi.Uri.joinPath(this._extensionContext.extensionUri, 'media', 'highlight.css')
-        );
-        const chatCssUri = this._view.webview.asWebviewUri(
-            this._vscodeApi.Uri.joinPath(this._extensionContext.extensionUri, 'media', 'chat.css')
-        );
+        const { chatJsUri, markdownJsUri, highlightCssUri, chatCssUri } = this._getAssetUris();
 
-        const { chatProfileIds, activeChatProfileId, allProfileIds, activeCompletionProfileId, profileMetadata } = await this._getWebviewStateData();
+        const { chatProfileIds, activeChatProfileId, allProfileIds, activeCompletionProfileId, profileMetadata } = await this._profileMetadataProvider.getStateData();
         const nonce = getNonce();
 
         // Generate the full HTML content for the webview using the `_getChatWebviewContent` function.
@@ -301,12 +288,31 @@ export class ChatWebviewViewProvider {
         });
     }
 
+    private _getAssetUris() {
+        if (!this._view) {
+            throw new Error('View is not initialized');
+        }
+        const chatJsUri = this._view.webview.asWebviewUri(
+            this._vscodeApi.Uri.joinPath(this._extensionContext.extensionUri, 'builtResources', 'chat.js')
+        );
+        const markdownJsUri = this._view.webview.asWebviewUri(
+            this._vscodeApi.Uri.joinPath(this._extensionContext.extensionUri, 'builtResources', 'renderMarkDown.js')
+        );
+        const highlightCssUri = this._view.webview.asWebviewUri(
+            this._vscodeApi.Uri.joinPath(this._extensionContext.extensionUri, 'media', 'highlight.css')
+        );
+        const chatCssUri = this._view.webview.asWebviewUri(
+            this._vscodeApi.Uri.joinPath(this._extensionContext.extensionUri, 'media', 'chat.css')
+        );
+        return { chatJsUri, markdownJsUri, highlightCssUri, chatCssUri };
+    }
+
     private async _pushUpdateToWebview() {
         if (!this._view) {
             return;
         }
 
-        const { chatProfileIds, activeChatProfileId, profileMetadata } = await this._getWebviewStateData();
+        const { chatProfileIds, activeChatProfileId, profileMetadata } = await this._profileMetadataProvider.getStateData();
 
         this._view.webview.postMessage({
             type: EXTENSION_EVENTS.UPDATE_PROFILE_METADATA,
@@ -315,83 +321,6 @@ export class ChatWebviewViewProvider {
             activeProfile: activeChatProfileId
         });
     }
-
-    /**
-     * Consolidates the gathering of LLM profile information, applying sorting by origin priority
-     * to both the full metadata list and the chat-eligible profiles list.
-     */
-    private async _getWebviewStateData() {
-        const eligibleChatProfileIds = this._profileAccessor.getChatProfiles();
-        const activeChatProfileId = this._profileAccessor.getActiveChatProfile();
-
-        // allProfileIds should include all models (not only tool-enabled).
-        const allProfileIds = typeof this._profileAccessor.getCompletionProfiles === 'function'
-            ? this._profileAccessor.getCompletionProfiles()!
-            : eligibleChatProfileIds;
-
-        const activeCompletionProfileId = typeof this._profileAccessor.getCompletionActiveProfile === 'function'
-            ? this._profileAccessor.getCompletionActiveProfile!()
-            : (this._configContainer.config.activeCompletionProfile || activeChatProfileId);
-
-        const profileMetadata = await this._getProfileMetadata(allProfileIds, activeChatProfileId, activeCompletionProfileId);
-
-        // Ensure the chat dropdown (chatProfileIds) follows the same sorted order as the metadata
-        const sortedChatProfileIds = profileMetadata
-            .filter(m => eligibleChatProfileIds.includes(m.id))
-            .map(m => m.id);
-
-        return {
-            chatProfileIds: sortedChatProfileIds,
-            activeChatProfileId,
-            allProfileIds,
-            activeCompletionProfileId,
-            profileMetadata
-        };
-    }
-
-    private async _getProfileMetadata(completionProfiles: string[], activeProfile: string, activeCompletionProfile: string) {
-        const metadata = await Promise.all(completionProfiles.map(async (id) => {
-            const profile = this._configContainer.config.profiles[id];
-            const isApiKeyRequired = profile?.isApiKeyRequired !== false;
-            const identifier = profile?.apiKeyIdentifier;
-            
-            const hasApiKey = (isApiKeyRequired && identifier) ? !!(await this._secretManager.getSecret(identifier)) : false;
-
-            return {
-                id,
-                model: profile?.model || '',
-                endpoint: profile?.endpoint || '',
-                needsApiKey: isApiKeyRequired,
-                hasApiKey,
-                apiKeyIdentifier: identifier,
-                origin: profile?.origin || 'bundled',
-                supportsTools: profile?.supportsTools !== false,
-                excludeFromChat: profile?.excludeFromChat === true,
-                isActiveChat: id === activeProfile,
-                isActiveCompletion: id === activeCompletionProfile
-            };
-        }));
-
-        return this._sortProfileMetadata(metadata);
-    }
-
-    private _sortProfileMetadata(metadata: ProfileMetadata[]): ProfileMetadata[] {
-        // Sort by origin priority: project (0) > user (1) > bundled (2)
-        const originPriority: Record<string, number> = { 'project': 0, 'user': 1, 'bundled': 2 };
-
-        return metadata.sort((a, b) => {
-            const priorityA = originPriority[a.origin] ?? 3;
-            const priorityB = originPriority[b.origin] ?? 3;
-
-            if (priorityA !== priorityB) {
-                return priorityA - priorityB;
-            }
-
-            // Secondary sort: alphabetical by ID
-            return a.id.localeCompare(b.id);
-        });
-    }
-
 
     public newChat() {
         this._chatHistoryManager.newSession();
