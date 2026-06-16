@@ -4,7 +4,7 @@
   <p><strong>Autonomous coding agent using free LLM Providers.</strong></p>
 </div>
 
-**Suggestio** is an open-source coding assistant for VS Code designed for developers and students who want to use powerful AI without expensive subscriptions. It is specifically built to work with **free LLM tiers** (like Gemini, OpenRouter, Mistral) that don't require credit card information to get started. The extension is designed for efficiency, maintaining a minimal footprint of less than 3MB on your system.
+**Suggestio** is an open-source coding assistant for VS Code designed for developers and students who want to use powerful AI without expensive subscriptions. It is specifically built to work with **free LLM tiers** (like Gemini, OpenRouter, Mistral) that don't require credit card information to get started.
 
 ![Agent Demo](resources/agentDemo.gif)
 
