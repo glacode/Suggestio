@@ -19,6 +19,7 @@ import { WEBVIEW_COMMANDS, EXTENSION_COMMANDS, EXTENSION_EVENTS, MESSAGE_SENDERS
 // Import the actual ChatWebviewViewProvider class that we are testing.
 import { ChatWebviewViewProvider } from '../../src/chat/chatWebviewViewProvider.js';
 import { ProfileMetadataProvider } from '../../src/chat/profileMetadataProvider.js';
+import { ChatWebviewEventBridge } from '../../src/chat/chatWebviewEventBridge.js';
 import { EventBus } from '../../src/utils/eventBus.js';
 import {
   createMockVscodeApi,
@@ -130,7 +131,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // ********************************************************************************
     const webViewViewProvider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') }, // Provides the extension's URI.
-      profileMetadataProvider: new ProfileMetadataProvider(profileAccessor, configContainer, secretManager), // Provides access to LLM models.
+      profileMetadataProvider: new ProfileMetadataProvider(profileAccessor, configContainer, secretManager),
+      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider), // Provides access to LLM models.
       chatAgent, // Handles the actual chat response logic.
       chatHistoryManager, // No-op for this test
       buildContext, // Provides additional context for prompts.
@@ -258,6 +260,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileMetadataProvider: new ProfileMetadataProvider(profileAccessor, configContainer, secretManager),
+      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
       chatAgent,
       chatHistoryManager,
       buildContext: { buildContext: async () => '' },
@@ -327,6 +330,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileMetadataProvider: new ProfileMetadataProvider(profileAccessor, configContainer, secretManager),
+      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
       chatAgent,
       chatHistoryManager,
       buildContext: { buildContext: async () => '' }, // Empty context for this test.
@@ -427,6 +431,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileMetadataProvider: new ProfileMetadataProvider(profileAccessor, configContainer, secretManager),
+      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
       chatAgent,
       chatHistoryManager,
       buildContext: { buildContext: async () => '' },
@@ -492,6 +497,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileMetadataProvider: new ProfileMetadataProvider(profileAccessor, configContainer, secretManager),
+      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
       chatAgent,
       chatHistoryManager,
       buildContext: { buildContext: async (opts) => opts?.includeActiveEditor ? 'This is a SECRET' : '' },
@@ -552,6 +558,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileMetadataProvider: new ProfileMetadataProvider(profileAccessor, configContainer, secretManager),
+      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
       chatAgent,
       chatHistoryManager,
       // Here we simulate a builder that ignores the 'disabled' default and returns content anyway
@@ -622,6 +629,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileMetadataProvider: new ProfileMetadataProvider(profileAccessor, configContainer, secretManager),
+      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
       chatAgent,
       chatHistoryManager,
       buildContext: { buildContext: async () => '' },
@@ -669,16 +677,19 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const { configContainer, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
     const config = configContainer.config;
 
+    const eventBus = new EventBus();
+
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileMetadataProvider: new ProfileMetadataProvider(profileAccessor, configContainer, secretManager),
+      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
       chatAgent: { run: async () => { } },
       chatHistoryManager,
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
       vscodeApi,
       fileReader: createMockFileContentReader(),
-      eventBus: new EventBus(),
+      eventBus,
       diffManager: createMockDiffManager(),
       configContainer: createMockConfigContainer(config),
       configProvider,
@@ -715,6 +726,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileMetadataProvider: new ProfileMetadataProvider(profileAccessor, configContainer, secretManager),
+      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
       chatAgent: { run: async () => { } },
       chatHistoryManager: createMockPersistentHistoryManager(),
       buildContext: { buildContext: async () => '' },
@@ -767,6 +779,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileMetadataProvider: new ProfileMetadataProvider(profileAccessor, configContainer, secretManager),
+      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
       chatAgent: { run: async () => { } },
       chatHistoryManager: createMockPersistentHistoryManager(),
       buildContext: { buildContext: async () => '' },
@@ -821,6 +834,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileMetadataProvider: new ProfileMetadataProvider(profileAccessor, configContainer, secretManager),
+      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
       chatAgent: { run: async () => { } },
       chatHistoryManager: createMockPersistentHistoryManager(),
       buildContext: { buildContext: async () => '' },
@@ -859,16 +873,19 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const { configContainer, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
     const config = configContainer.config;
 
+    const eventBus = new EventBus();
+
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileMetadataProvider: new ProfileMetadataProvider(profileAccessor, configContainer, secretManager),
+      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
       chatAgent: { run: async () => { } },
       chatHistoryManager: createMockPersistentHistoryManager(),
       buildContext: { buildContext: async () => '' },
       getChatWebviewContent: () => '',
       vscodeApi,
       fileReader: createMockFileContentReader(),
-      eventBus: new EventBus(),
+      eventBus,
       diffManager: createMockDiffManager(),
       configContainer: createMockConfigContainer(config),
       configProvider,
@@ -907,6 +924,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileMetadataProvider: new ProfileMetadataProvider(profileAccessor, configContainer, secretManager),
+      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
       chatAgent,
       chatHistoryManager: createMockPersistentHistoryManager(),
       buildContext: { buildContext: async () => '' },
@@ -949,6 +967,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileMetadataProvider: new ProfileMetadataProvider({ getChatProfiles: () => [], getActiveChatProfile: () => '' }, configContainer, secretManager),
+      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
       chatAgent: { run: async () => { } },
       chatHistoryManager: createMockPersistentHistoryManager(),
       buildContext: { buildContext: async () => '' },
@@ -1002,6 +1021,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileMetadataProvider: new ProfileMetadataProvider({ getChatProfiles: () => [], getActiveChatProfile: () => '' }, configContainer, secretManager),
+      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
       chatAgent: { run: async () => { } },
       chatHistoryManager: createMockPersistentHistoryManager(),
       buildContext: { buildContext: async () => '' },
@@ -1056,6 +1076,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileMetadataProvider: new ProfileMetadataProvider(profileAccessor, configContainer, secretManager),
+      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
       chatAgent: {
         run: async () => {
           // Simulate view being cleared during request
@@ -1103,6 +1124,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const provider = new ChatWebviewViewProvider({
       extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
       profileMetadataProvider: new ProfileMetadataProvider({ getChatProfiles: () => ['test-profile'], getActiveChatProfile: () => 'test-profile' }, configContainer, secretManager),
+      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
       chatAgent: { run: async () => { } },
       chatHistoryManager: createMockPersistentHistoryManager(),
       buildContext: { buildContext: async () => '' },

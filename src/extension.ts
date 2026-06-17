@@ -35,6 +35,7 @@ import { CONFIG_DEFAULTS } from './constants/config.js';
 import { Agent } from './agent/agent.js';
 import { ChatWebviewViewProvider } from './chat/chatWebviewViewProvider.js';
 import { ProfileMetadataProvider } from './chat/profileMetadataProvider.js';
+import { ChatWebviewEventBridge } from './chat/chatWebviewEventBridge.js';
 import { ToolUiProvider } from './chat/toolUiProvider.js';
 import { getTools } from './tools/index.js';
 import { WorkspaceScanner } from './utils/workspaceScanner.js';
@@ -293,6 +294,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const chatWebviewViewProvider = new ChatWebviewViewProvider({
     extensionContext: context,
     profileMetadataProvider: new ProfileMetadataProvider(providerAccessor, configContainer, secretManager),
+    eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
     chatAgent: agent,
     chatHistoryManager: chatHistoryManager,
     buildContext: new ContextBuilder(vscode.window, ignoreManager, workspaceProvider, pathResolver),

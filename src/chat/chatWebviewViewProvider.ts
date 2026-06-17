@@ -15,17 +15,13 @@ import type {
     IWebviewView, // Defines the interface for a VS Code `WebviewView`, which is a container for the webview.
     WebviewMessage, // Defines the structure of messages sent from the webview to the extension.
     IContextBuilder,
-    ITokenEventPayload,
-    IToolCallEventPayload,
-    IToolOutputEventPayload,
-    IToolResultEventPayload,
-    IToolConfirmationPayload,
     IDiffManager,
     IConfigContainer,
     IConfigProvider,
     IHttpClient,
     IToolUiProvider,
-    IProfileMetadataProvider
+    IProfileMetadataProvider,
+    IChatWebviewEventBridge
 } from '../types.js';
 // Importing the `eventBus`, a custom mechanism for different parts of the extension
 // to communicate by emitting and listening for events.
@@ -42,6 +38,7 @@ import { getNonce } from '../utils/textUtils.js';
 interface IChatWebviewViewProviderArgs {
     extensionContext: IExtensionContextMinimal; // The VS Code extension context, vital for managing extension resources.
     profileMetadataProvider: IProfileMetadataProvider; // A provider to retrieve and sort LLM profile metadata.
+    eventBridge: IChatWebviewEventBridge; // A bridge to forward extension events to the webview.
     chatAgent: IChatAgent; // The agent responsible for interacting with the LLM.
     chatHistoryManager: IPersistentChatHistoryManager; // The manager responsible for persistent chat history operations.
     buildContext: IContextBuilder; // A builder to create contextual information for the AI prompt.
@@ -79,6 +76,7 @@ export class ChatWebviewViewProvider {
     private readonly _buildContext: IContextBuilder; // Stores the context builder instance.
     private readonly _extensionContext: IExtensionContextMinimal; // Stores the extension context.
     private readonly _profileMetadataProvider: IProfileMetadataProvider; // Stores the profile metadata provider.
+    private readonly _eventBridge: IChatWebviewEventBridge; // Stores the event bridge.
     private readonly _getChatWebviewContent: GetChatWebviewContent; // Stores the webview content generator.
     private readonly _vscodeApi: IVscodeApiLocal; // Stores the VS Code API for internal use.
     private readonly _fileReader: IFileContentReader;
@@ -91,18 +89,16 @@ export class ChatWebviewViewProvider {
     private readonly _toolUiProvider: IToolUiProvider;
     private _abortController?: AbortController; // For cancelling ongoing LLM requests
     
-    // Store active diff data keyed by toolCallId to handle 'viewDiff' commands
-    private _activeDiffs = new Map<string, IToolConfirmationPayload['diffData']>();
-
     private logger: ReturnType<typeof createEventLogger>;
 
     /**
      * The constructor initializes the `ChatWebviewViewProvider` with its dependencies.
      * These dependencies are typically passed from `extension.ts` during activation.
      */
-    constructor({ extensionContext, profileMetadataProvider, chatAgent, chatHistoryManager, buildContext, getChatWebviewContent, vscodeApi, fileReader, eventBus, diffManager, configContainer, configProvider, secretManager, httpClient, toolUiProvider }: IChatWebviewViewProviderArgs) {
+    constructor({ extensionContext, profileMetadataProvider, eventBridge, chatAgent, chatHistoryManager, buildContext, getChatWebviewContent, vscodeApi, fileReader, eventBus, diffManager, configContainer, configProvider, secretManager, httpClient, toolUiProvider }: IChatWebviewViewProviderArgs) {
         this._extensionContext = extensionContext;
         this._profileMetadataProvider = profileMetadataProvider;
+        this._eventBridge = eventBridge;
         this._chatAgent = chatAgent;
         this._chatHistoryManager = chatHistoryManager;
         this._buildContext = buildContext;
@@ -118,106 +114,7 @@ export class ChatWebviewViewProvider {
         this._toolUiProvider = toolUiProvider;
         this.logger = createEventLogger(eventBus);
 
-        this._eventBus.on('agent:maxIterationsReached', (payload: { maxIterations: number }) => {
-            this.logger.info(AGENT_LOGS.MAX_ITERATIONS_REACHED(payload.maxIterations));
-            if (this._view) {
-                this._view.webview.postMessage({
-                    sender: MESSAGE_SENDERS.ASSISTANT,
-                    type: EXTENSION_EVENTS.HALTED,
-                    text: CHAT_MESSAGES.MAX_ITERATIONS_REACHED(payload.maxIterations)
-                });
-            }
-        });
-
-        this._eventBus.on('agent:token', (payload: ITokenEventPayload) => {
-            if (this._abortController?.signal.aborted) {
-                return;
-            }
-            if (this._view) {
-                this._view.webview.postMessage({
-                    sender: MESSAGE_SENDERS.ASSISTANT,
-                    type: EXTENSION_EVENTS.TOKENS,
-                    text: payload.token,
-                    tokenType: payload.type
-                });
-            }
-        });
-
-        this._eventBus.on('agent:toolStart', (payload: IToolCallEventPayload) => {
-            if (this._view) {
-                const { displayMessage, uiOptions } = this._toolUiProvider.getToolUI(payload.toolName, payload.args);
-                this._view.webview.postMessage({
-                    sender: MESSAGE_SENDERS.ASSISTANT,
-                    type: EXTENSION_EVENTS.TOOL_START,
-                    toolCallId: payload.toolCallId,
-                    toolName: payload.toolName,
-                    displayMessage,
-                    args: payload.args,
-                    // Forward internal UI hints to the webview.
-                    uiOptions
-                });
-            }
-        });
-
-        this._eventBus.on('agent:toolOutput', (payload: IToolOutputEventPayload) => {
-            if (this._view) {
-                this._view.webview.postMessage({
-                    sender: MESSAGE_SENDERS.ASSISTANT,
-                    type: EXTENSION_EVENTS.TOOL_OUTPUT,
-                    toolCallId: payload.toolCallId,
-                    output: payload.output
-                });
-            }
-        });
-
-        this._eventBus.on('agent:toolEnd', (payload: IToolResultEventPayload) => {
-            // Clean up diff data when tool finishes
-            this._activeDiffs.delete(payload.toolCallId);
-
-            if (this._view) {
-                this._view.webview.postMessage({
-                    sender: MESSAGE_SENDERS.ASSISTANT,
-                    type: EXTENSION_EVENTS.TOOL_END,
-                    toolCallId: payload.toolCallId,
-                    toolName: payload.toolName,
-                    result: payload.result,
-                    success: payload.success
-                });
-            }
-        });
-
-        this._eventBus.on('agent:notification', (payload: { text: string | null }) => {
-            this._sendNotification(payload.text);
-        });
-
-        this._eventBus.on('agent:toolExecutionStarted', (payload: { toolCallId: string }) => {
-            // Forward the tool start event to the webview to trigger the spinner.
-            if (this._view) {
-                this._view.webview.postMessage({
-                    sender: MESSAGE_SENDERS.ASSISTANT,
-                    type: EXTENSION_EVENTS.TOOL_STARTED,
-                    toolCallId: payload.toolCallId
-                });
-            }
-        });
-
-        this._eventBus.on('agent:requestConfirmation', (payload: IToolConfirmationPayload) => {
-            // Store diff data if present
-            if (payload.diffData) {
-                this._activeDiffs.set(payload.toolCallId, payload.diffData);
-            }
-
-            if (this._view) {
-                this._view.webview.postMessage({
-                    sender: MESSAGE_SENDERS.ASSISTANT,
-                    type: EXTENSION_EVENTS.REQUEST_CONFIRMATION,
-                    toolCallId: payload.toolCallId,
-                    toolName: payload.toolName,
-                    message: payload.message,
-                    diffData: payload.diffData
-                });
-            }
-        });
+        this._eventBridge.setAbortControllerAccessor(() => this._abortController);
 
         this._eventBus.on('configChanged', () => {
             this._pushUpdateToWebview();
@@ -235,6 +132,7 @@ export class ChatWebviewViewProvider {
         webviewView: IWebviewView
     ) {
         this._view = webviewView; // Store the provided webviewView for later access.
+        this._eventBridge.setView(webviewView);
 
         // Sets the title of the webview sidebar panel. By setting it to an empty string,
         // VS Code will typically use the extension's name ("SUGGESTIO") as the title.
@@ -347,26 +245,6 @@ export class ChatWebviewViewProvider {
         }
     }
 
-    private _sendNotification(text: string | null) {
-        if (this._view) {
-            this._view.webview.postMessage({
-                sender: MESSAGE_SENDERS.ASSISTANT,
-                type: EXTENSION_EVENTS.NOTIFICATION,
-                text
-            });
-        }
-    }
-
-    private _sendCompletionMessage() {
-        if (this._view) {
-            this._view.webview.postMessage({
-                sender: MESSAGE_SENDERS.ASSISTANT,
-                type: EXTENSION_EVENTS.COMPLETION,
-                text: ''
-            });
-        }
-    }
-
     private async _processAgentRun() {
         let context = await this._buildContext.buildContext();
         
@@ -386,14 +264,14 @@ export class ChatWebviewViewProvider {
         this._chatHistoryManager.persistCurrentSession();
 
         // Always send completion to reset UI state
-        this._sendCompletionMessage();
+        this._eventBridge.sendCompletionMessage();
     }
 
     private _handleAgentError(error: any, webviewView: IWebviewView) {
         // If request was cancelled, don't show error
         if (this._abortController?.signal.aborted) {
             this.logger.info(AGENT_LOGS.REQUEST_CANCELLED);
-            this._sendCompletionMessage();
+            this._eventBridge.sendCompletionMessage();
             return;
         }
         
@@ -469,7 +347,7 @@ export class ChatWebviewViewProvider {
                     await this._vscodeApi.commands.executeCommand('suggestio.enableAutoAcceptEdits');
                 }
                 if (message.decision === 'deny') {
-                    const diffData = this._activeDiffs.get(message.toolCallId);
+                    const diffData = this._eventBridge.getActiveDiff(message.toolCallId);
                     if (diffData) {
                         await this._diffManager.closeDiff(diffData.filePath);
                     }
@@ -479,7 +357,7 @@ export class ChatWebviewViewProvider {
                     decision: message.decision
                 });
             } else if (message.command === WEBVIEW_COMMANDS.VIEW_DIFF) {
-                const diffData = this._activeDiffs.get(message.toolCallId);
+                const diffData = this._eventBridge.getActiveDiff(message.toolCallId);
                 if (diffData) {
                     await this._diffManager.showDiff(diffData.filePath, diffData.oldContent, diffData.newContent);
                 }

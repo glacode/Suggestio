@@ -747,6 +747,42 @@ export interface ILlmProviderAccessor {
 }
 
 /**
+ * Interface for a bridge that forwards events from the extension to the chat webview.
+ */
+export interface IChatWebviewEventBridge {
+  /**
+   * Sets the current webview view to send messages to.
+   */
+  setView(view: IWebviewView | undefined): void;
+
+  /**
+   * Sets an accessor function to retrieve the current AbortController.
+   * This is used to check if a request has been cancelled before sending tokens.
+   */
+  setAbortControllerAccessor(accessor: () => AbortController | undefined): void;
+
+  /**
+   * Retrieves active diff data for a specific tool call.
+   */
+  getActiveDiff(toolCallId: string): IToolConfirmationPayload['diffData'] | undefined;
+
+  /**
+   * Clears active diff data for a specific tool call.
+   */
+  deleteActiveDiff(toolCallId: string): void;
+
+  /**
+   * Sends a notification message to the webview.
+   */
+  sendNotification(text: string | null): void;
+
+  /**
+   * Sends a completion message to the webview to reset UI state.
+   */
+  sendCompletionMessage(): void;
+}
+
+/**
  * Interface for a provider that handles LLM profile metadata for the UI.
  */
 export interface IProfileMetadataProvider {
