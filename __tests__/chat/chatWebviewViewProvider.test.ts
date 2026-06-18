@@ -21,6 +21,7 @@ import { ChatWebviewViewProvider } from '../../src/chat/chatWebviewViewProvider.
 import { ProfileMetadataProvider } from '../../src/chat/profileMetadataProvider.js';
 import { ChatWebviewEventBridge } from '../../src/chat/chatWebviewEventBridge.js';
 import { ChatCommandHandler } from '../../src/chat/chatCommandHandler.js';
+import { ChatWebviewViewManager } from '../../src/chat/chatWebviewViewManager.js';
 import { EventBus } from '../../src/utils/eventBus.js';
 import {
   createMockVscodeApi,
@@ -70,6 +71,16 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     },
     handlerOverrides: any = {}
   ) => {
+    const profileMetadataProvider = new ProfileMetadataProvider(deps.profileAccessor || { getChatProfiles: () => [], getActiveChatProfile: () => '' }, deps.configContainer, deps.secretManager);
+    const viewManager = new ChatWebviewViewManager(
+        createMockExtensionContextMinimal(),
+        profileMetadataProvider,
+        deps.getChatWebviewContent || (() => ''),
+        deps.vscodeApi,
+        deps.fileReader || createMockFileContentReader(),
+        deps.configContainer,
+        deps.chatHistoryManager
+    );
     const eventBridge = new ChatWebviewEventBridge(deps.eventBus, deps.toolUiProvider);
     const commandHandler = new ChatCommandHandler(
       deps.chatAgent || { run: async () => { } },
@@ -88,15 +99,10 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     return new ChatWebviewViewProvider({
       extensionContext: createMockExtensionContextMinimal({ extensionUri: createMockUri('/ext'), globalStorageUri: createMockUri('/storage') }),
-      profileMetadataProvider: new ProfileMetadataProvider(deps.profileAccessor || { getChatProfiles: () => [], getActiveChatProfile: () => '' }, deps.configContainer, deps.secretManager),
       eventBridge,
       commandHandler,
-      chatHistoryManager: deps.chatHistoryManager,
-      getChatWebviewContent: deps.getChatWebviewContent || (() => ''),
-      vscodeApi: deps.vscodeApi,
-      fileReader: deps.fileReader || createMockFileContentReader(),
-      eventBus: deps.eventBus,
-      configContainer: deps.configContainer
+      viewManager,
+      eventBus: deps.eventBus
     });
   };
 

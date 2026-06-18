@@ -798,6 +798,31 @@ export interface IChatWebviewView {
 }
 
 /**
+ * Interface for managing the chat webview UI state and control commands.
+ */
+export interface IChatWebviewViewManager extends IChatWebviewView {
+  /**
+   * Sets the current webview view.
+   */
+  setView(view: IWebviewView | undefined): void;
+
+  /**
+   * Triggers the UI to start a new chat session.
+   */
+  newChat(): void;
+
+  /**
+   * Requests the webview to open the settings overlay.
+   */
+  showSettings(): void;
+
+  /**
+   * Requests the webview to open the history overlay.
+   */
+  showHistory(): void;
+}
+
+/**
  * Interface for a handler that processes commands sent from the chat webview to the extension.
  */
 export interface IChatCommandHandler {

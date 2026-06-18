@@ -37,6 +37,7 @@ import { ChatWebviewViewProvider } from './chat/chatWebviewViewProvider.js';
 import { ProfileMetadataProvider } from './chat/profileMetadataProvider.js';
 import { ChatWebviewEventBridge } from './chat/chatWebviewEventBridge.js';
 import { ChatCommandHandler } from './chat/chatCommandHandler.js';
+import { ChatWebviewViewManager } from './chat/chatWebviewViewManager.js';
 import { ToolUiProvider } from './chat/toolUiProvider.js';
 import { getTools } from './tools/index.js';
 import { WorkspaceScanner } from './utils/workspaceScanner.js';
@@ -296,6 +297,16 @@ export async function activate(context: vscode.ExtensionContext) {
   const eventBridge = new ChatWebviewEventBridge(eventBus, toolUiProvider);
   const contextBuilder = new ContextBuilder(vscode.window, ignoreManager, workspaceProvider, pathResolver);
 
+  const viewManager = new ChatWebviewViewManager(
+    context,
+    profileMetadataProvider,
+    getChatWebviewContent,
+    vscodeApiLocal,
+    fileContentReader,
+    configContainer,
+    chatHistoryManager
+  );
+
   const chatCommandHandler = new ChatCommandHandler(
     agent,
     chatHistoryManager,
@@ -313,15 +324,10 @@ export async function activate(context: vscode.ExtensionContext) {
 
   const chatWebviewViewProvider = new ChatWebviewViewProvider({
     extensionContext: context,
-    profileMetadataProvider,
     eventBridge,
     commandHandler: chatCommandHandler,
-    chatHistoryManager,
-    getChatWebviewContent,
-    vscodeApi: vscodeApiLocal,
-    fileReader: fileContentReader,
-    eventBus,
-    configContainer
+    viewManager,
+    eventBus
   });
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(ChatWebviewViewProvider.viewType, chatWebviewViewProvider, {
