@@ -5,7 +5,6 @@
 // Importing custom types defined in `types.ts`. These types help ensure consistency
 // and define the expected structure for various objects and functions used in the chat feature.
 import type {
-    IChatAgent, // Defines the interface for handling chat logic (e.g., sending prompts to an LLM).
     IPersistentChatHistoryManager, // Defines the interface for managing persistent chat history.
     GetChatWebviewContent, // A function type for generating the HTML content for the webview.
     IExtensionContextMinimal, // A minimal representation of VS Code's `ExtensionContext`,
@@ -14,23 +13,16 @@ import type {
     IFileContentReader, // Defines the interface for reading file contents.
     IWebviewView, // Defines the interface for a VS Code `WebviewView`, which is a container for the webview.
     WebviewMessage, // Defines the structure of messages sent from the webview to the extension.
-    IContextBuilder,
-    IDiffManager,
     IConfigContainer,
-    IConfigProvider,
-    IHttpClient,
-    IToolUiProvider,
     IProfileMetadataProvider,
-    IChatWebviewEventBridge
+    IChatWebviewEventBridge,
+    IChatWebviewView,
+    IChatCommandHandler
 } from '../types.js';
 // Importing the `eventBus`, a custom mechanism for different parts of the extension
 // to communicate by emitting and listening for events.
 import { IEventBus } from '../utils/eventBus.js';
-import { createEventLogger } from '../log/eventLogger.js';
-import { ChatPrompt } from './chatPrompt.js';
-import { CHAT_MESSAGES, AGENT_LOGS, CONFIG_MESSAGES } from '../constants/messages.js';
-import { WEBVIEW_COMMANDS, EXTENSION_EVENTS, EXTENSION_COMMANDS, MESSAGE_SENDERS } from '../constants/protocol.js';
-import { configProcessor, ISecretManager } from '../config/configProcessor.js';
+import { EXTENSION_EVENTS, EXTENSION_COMMANDS } from '../constants/protocol.js';
 import { getNonce } from '../utils/textUtils.js';
 
 // This interface defines the arguments required to construct a `ChatWebviewViewProvider`.
@@ -39,19 +31,13 @@ interface IChatWebviewViewProviderArgs {
     extensionContext: IExtensionContextMinimal; // The VS Code extension context, vital for managing extension resources.
     profileMetadataProvider: IProfileMetadataProvider; // A provider to retrieve and sort LLM profile metadata.
     eventBridge: IChatWebviewEventBridge; // A bridge to forward extension events to the webview.
-    chatAgent: IChatAgent; // The agent responsible for interacting with the LLM.
+    commandHandler: IChatCommandHandler; // A handler for messages from the webview.
     chatHistoryManager: IPersistentChatHistoryManager; // The manager responsible for persistent chat history operations.
-    buildContext: IContextBuilder; // A builder to create contextual information for the AI prompt.
     getChatWebviewContent: GetChatWebviewContent; // A function that provides the HTML content for the webview.
     vscodeApi: IVscodeApiLocal; // The VS Code API instance, used here for `Uri` operations.
     fileReader: IFileContentReader;
     eventBus: IEventBus;
-    diffManager: IDiffManager;
     configContainer: IConfigContainer;
-    configProvider: IConfigProvider;
-    secretManager: ISecretManager;
-    httpClient: IHttpClient;
-    toolUiProvider: IToolUiProvider;
 }
 
 /**
@@ -62,7 +48,7 @@ interface IChatWebviewViewProviderArgs {
  * It manages the lifecycle of the webview, sets its content, and handles messages
  * exchanged between the webview (frontend) and the extension (backend).
  */
-export class ChatWebviewViewProvider {
+export class ChatWebviewViewProvider implements IChatWebviewView {
     // `viewType` is a static property that defines a unique identifier for this webview view.
     // This string is used in `extension.ts` when registering this provider with VS Code:
     // `vscode.window.registerWebviewViewProvider(ChatWebviewViewProvider.viewType, chatProvider, ...)`.
@@ -71,53 +57,38 @@ export class ChatWebviewViewProvider {
     // `_view` holds a reference to the `IWebviewView` object provided by VS Code
     // when the view is resolved. This allows the provider to interact with the webview.
     public _view?: IWebviewView;
-    private readonly _chatAgent: IChatAgent; // Stores the handler for chat backend logic.
     private readonly _chatHistoryManager: IPersistentChatHistoryManager; // Stores the chat history manager.
-    private readonly _buildContext: IContextBuilder; // Stores the context builder instance.
     private readonly _extensionContext: IExtensionContextMinimal; // Stores the extension context.
     private readonly _profileMetadataProvider: IProfileMetadataProvider; // Stores the profile metadata provider.
     private readonly _eventBridge: IChatWebviewEventBridge; // Stores the event bridge.
+    private readonly _commandHandler: IChatCommandHandler; // Stores the command handler.
     private readonly _getChatWebviewContent: GetChatWebviewContent; // Stores the webview content generator.
     private readonly _vscodeApi: IVscodeApiLocal; // Stores the VS Code API for internal use.
     private readonly _fileReader: IFileContentReader;
     private readonly _eventBus: IEventBus;
-    private readonly _diffManager: IDiffManager;
     private readonly _configContainer: IConfigContainer;
-    private readonly _configProvider: IConfigProvider;
-    private readonly _secretManager: ISecretManager;
-    private readonly _httpClient: IHttpClient;
-    private readonly _toolUiProvider: IToolUiProvider;
-    private _abortController?: AbortController; // For cancelling ongoing LLM requests
-    
-    private logger: ReturnType<typeof createEventLogger>;
 
     /**
      * The constructor initializes the `ChatWebviewViewProvider` with its dependencies.
      * These dependencies are typically passed from `extension.ts` during activation.
      */
-    constructor({ extensionContext, profileMetadataProvider, eventBridge, chatAgent, chatHistoryManager, buildContext, getChatWebviewContent, vscodeApi, fileReader, eventBus, diffManager, configContainer, configProvider, secretManager, httpClient, toolUiProvider }: IChatWebviewViewProviderArgs) {
+    constructor({ extensionContext, profileMetadataProvider, eventBridge, commandHandler, chatHistoryManager, getChatWebviewContent, vscodeApi, fileReader, eventBus, configContainer }: IChatWebviewViewProviderArgs) {
         this._extensionContext = extensionContext;
         this._profileMetadataProvider = profileMetadataProvider;
         this._eventBridge = eventBridge;
-        this._chatAgent = chatAgent;
+        this._commandHandler = commandHandler;
         this._chatHistoryManager = chatHistoryManager;
-        this._buildContext = buildContext;
         this._getChatWebviewContent = getChatWebviewContent;
         this._vscodeApi = vscodeApi;
         this._fileReader = fileReader;
         this._eventBus = eventBus;
-        this._diffManager = diffManager;
         this._configContainer = configContainer;
-        this._configProvider = configProvider;
-        this._secretManager = secretManager;
-        this._httpClient = httpClient;
-        this._toolUiProvider = toolUiProvider;
-        this.logger = createEventLogger(eventBus);
 
-        this._eventBridge.setAbortControllerAccessor(() => this._abortController);
+        this._commandHandler.setView(this);
+        this._eventBridge.setAbortControllerAccessor(() => this._commandHandler.getAbortController());
 
         this._eventBus.on('configChanged', () => {
-            this._pushUpdateToWebview();
+            this.pushUpdate();
         });
     }
 
@@ -148,13 +119,13 @@ export class ChatWebviewViewProvider {
         };
 
         // Initial state population and HTML setting
-        await this._updateWebviewState();
+        await this.updateState();
 
         // Set up the message listener to handle communication from the webview (frontend).
         this.setupMessageHandler(this._view);
     }
 
-    private async _updateWebviewState() {
+    public async updateState() {
         if (!this._view) {
             return;
         }
@@ -205,7 +176,7 @@ export class ChatWebviewViewProvider {
         return { chatJsUri, markdownJsUri, highlightCssUri, chatCssUri };
     }
 
-    private async _pushUpdateToWebview() {
+    public async pushUpdate() {
         if (!this._view) {
             return;
         }
@@ -245,44 +216,6 @@ export class ChatWebviewViewProvider {
         }
     }
 
-    private async _processAgentRun() {
-        let context = await this._buildContext.buildContext();
-        
-        // Use the latest instance from config to ensure live updates (e.g. re-enabling) are reflected
-        const anonymizer = this._configContainer.config.anonymizerInstance;
-        if (anonymizer) {
-            context = anonymizer.anonymize(context);
-        }
-        const prompt = new ChatPrompt(this._chatHistoryManager.getChatHistory(), context);
-        
-        // Call the agent to run the logic loop.
-        await this._chatAgent.run(prompt, this._abortController!.signal);
-
-        // Turn complete: Save the session
-        // There's no need to add this for an error or user abort, since in both cases
-        // we get here after agent.run() so this single statement is always hit
-        this._chatHistoryManager.persistCurrentSession();
-
-        // Always send completion to reset UI state
-        this._eventBridge.sendCompletionMessage();
-    }
-
-    private _handleAgentError(error: any, webviewView: IWebviewView) {
-        // If request was cancelled, don't show error
-        if (this._abortController?.signal.aborted) {
-            this.logger.info(AGENT_LOGS.REQUEST_CANCELLED);
-            this._eventBridge.sendCompletionMessage();
-            return;
-        }
-        
-        // If an error occurs during the chat response, post an error message back to the webview.
-        webviewView.webview.postMessage({
-            sender: MESSAGE_SENDERS.ASSISTANT,
-            type: EXTENSION_EVENTS.ERROR,
-            text: CHAT_MESSAGES.ERROR_PROCESSING_REQUEST(error)
-        });
-    }
-
     /**
      * `setupMessageHandler` configures the listener for messages sent *from* the webview.
      * This is the primary way the webview (e.g., user input, model selection) communicates
@@ -295,127 +228,7 @@ export class ChatWebviewViewProvider {
         // `vscode.Webview.onDidReceiveMessage` is the core mechanism for the webview UI to communicate
         // back to the extension's backend logic.
         webviewView.webview.onDidReceiveMessage(async (message: WebviewMessage) => {
-            // The `command` property of the message determines the action to take.
-            if (message.command === WEBVIEW_COMMANDS.SEND_MESSAGE) {
-                // Handle a message sent by the user from the webview to initiate a chat response.
-                try {
-                    // Lazy resolution of API key if missing
-                    const activeProfile = this._configContainer.config.activeChatProfile;
-                    const profileConfig = this._configContainer.config.profiles[activeProfile];
-                    if (profileConfig && !profileConfig.resolvedApiKey && profileConfig.apiKeyIdentifier) {
-                        // Show notification that we need API key
-                        this._eventBus.emit('agent:notification', {
-                            text: CONFIG_MESSAGES.WAITING_FOR_API_KEY(profileConfig.apiKeyIdentifier)
-                        });
-
-                        // Prompt user for API key (with forcePrompt=true)
-                        await configProcessor.updateProviders(this._configContainer.config, this._eventBus, this._secretManager, this._httpClient, true);
-
-                        // Push updated state (key badges, delete icon) to webview
-                        await this._pushUpdateToWebview();
-
-                        // Hide notification after key is resolved
-                        this._eventBus.emit('agent:notification', { text: null });
-                    }
-
-                    // Create a new AbortController for this request
-                    this._abortController = new AbortController();
-
-                    this._chatHistoryManager.addMessage({ role: 'user', content: message.text });
-                    // Save user message immediately
-                    this._chatHistoryManager.persistCurrentSession();
-
-                    await this._processAgentRun();
-                } catch (error) {
-                    this._handleAgentError(error, webviewView);
-                }
-            } else if (message.command === WEBVIEW_COMMANDS.RETRY_LAST_MESSAGE) {
-                try {
-                    this._abortController = new AbortController();
-                    await this._processAgentRun();
-                } catch (error) {
-                    this._handleAgentError(error, webviewView);
-                }
-            } else if (message.command === WEBVIEW_COMMANDS.CANCEL_REQUEST) {
-                // Handle cancel request from webview
-                if (this._abortController) {
-                    this.logger.info(AGENT_LOGS.CANCEL_REQUEST);
-                    this._abortController.abort();
-                }
-            } else if (message.command === WEBVIEW_COMMANDS.CONFIRM_TOOL_CALL) {
-                if (message.decision === 'always-allow-edit') {
-                    await this._vscodeApi.commands.executeCommand('suggestio.enableAutoAcceptEdits');
-                }
-                if (message.decision === 'deny') {
-                    const diffData = this._eventBridge.getActiveDiff(message.toolCallId);
-                    if (diffData) {
-                        await this._diffManager.closeDiff(diffData.filePath);
-                    }
-                }
-                this._eventBus.emit('user:confirmationResponse', {
-                    toolCallId: message.toolCallId,
-                    decision: message.decision
-                });
-            } else if (message.command === WEBVIEW_COMMANDS.VIEW_DIFF) {
-                const diffData = this._eventBridge.getActiveDiff(message.toolCallId);
-                if (diffData) {
-                    await this._diffManager.showDiff(diffData.filePath, diffData.oldContent, diffData.newContent);
-                }
-            } else if (message.command === WEBVIEW_COMMANDS.CHAT_PROFILE_CHANGED) {
-                // Handle a message indicating that the active profile has changed in the webview.
-                // Emit a 'chatProfileChanged' event on the global event bus, allowing other parts
-                // of the extension to react to this change.
-                this._eventBus.emit('chatProfileChanged', message.model);
-                // Persist the choice to global settings
-                await this._configProvider.updateConfig('activeChatProfile', message.model, true);
-            } else if (message.command === WEBVIEW_COMMANDS.CLEAR_HISTORY) {
-                // Handle a message requesting to clear the chat history.
-                // Call the `clearHistory` method on the `chatHistoryManager`.
-                this._chatHistoryManager.clearHistory();
-            } else if (message.command === WEBVIEW_COMMANDS.GET_SESSIONS) {
-                const sessions = await this._chatHistoryManager.getSessions();
-                webviewView.webview.postMessage({
-                    type: EXTENSION_EVENTS.SESSIONS_LIST,
-                    sessions: sessions.map(s => ({
-                        id: s.id,
-                        title: s.title,
-                        timestamp: s.timestamp
-                    }))
-                });
-            } else if (message.command === WEBVIEW_COMMANDS.LOAD_SESSION) {
-                await this._chatHistoryManager.loadSession(message.sessionId);
-                const enrichedHistory = this._toolUiProvider.enrichHistory(this._chatHistoryManager.getChatHistory());
-                webviewView.webview.postMessage({
-                    type: EXTENSION_EVENTS.CHAT_HISTORY_LOADED,
-                    history: enrichedHistory
-                });
-            } else if (message.command === WEBVIEW_COMMANDS.COMPLETION_PROFILE_CHANGED) {
-                // Handle a message from the webview indicating the user changed the
-                // completion profile in the settings overlay. Emit the existing
-                // 'completionProfileChanged' event so configProcessor picks it up.
-                this._eventBus.emit('completionProfileChanged', message.model);
-                // Persist the choice to global settings
-                this._configProvider.updateConfig('activeCompletionProfile', message.model, true);
-            } else if (message.command === WEBVIEW_COMMANDS.EDIT_API_KEY) {
-                await this._secretManager.updateAPIKey(message.identifier);
-                // Refresh background provider instances with new key
-                await configProcessor.updateProviders(this._configContainer.config, this._eventBus, this._secretManager, this._httpClient);
-                // Manual push because secret change doesn't trigger config listener
-                await this._pushUpdateToWebview();
-            } else if (message.command === WEBVIEW_COMMANDS.DELETE_API_KEY) {
-                await this._secretManager.deleteSecret(message.identifier);
-                // Refresh background provider instances
-                await configProcessor.updateProviders(this._configContainer.config, this._eventBus, this._secretManager, this._httpClient);
-                // Manual push because secret change doesn't trigger config listener
-                await this._pushUpdateToWebview();
-            } else if (message.command === WEBVIEW_COMMANDS.ADD_PROFILE) {
-                const currentProfiles = this._configProvider.getProfiles();
-                const { id, ...profileData } = message.profile;
-                currentProfiles[id] = profileData;
-                await this._configProvider.updateConfig('profiles', currentProfiles, true);
-            } else if (message.command === WEBVIEW_COMMANDS.DELETE_PROFILE) {
-                await this._configProvider.deleteProfile(message.profileId);
-            }
+            await this._commandHandler.handleMessage(message, webviewView);
         });
     }
 }

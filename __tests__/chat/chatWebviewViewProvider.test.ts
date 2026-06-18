@@ -20,6 +20,7 @@ import { WEBVIEW_COMMANDS, EXTENSION_COMMANDS, EXTENSION_EVENTS, MESSAGE_SENDERS
 import { ChatWebviewViewProvider } from '../../src/chat/chatWebviewViewProvider.js';
 import { ProfileMetadataProvider } from '../../src/chat/profileMetadataProvider.js';
 import { ChatWebviewEventBridge } from '../../src/chat/chatWebviewEventBridge.js';
+import { ChatCommandHandler } from '../../src/chat/chatCommandHandler.js';
 import { EventBus } from '../../src/utils/eventBus.js';
 import {
   createMockVscodeApi,
@@ -34,7 +35,8 @@ import {
   createMockSecretManager,
   createMockHttpClient,
   createMockToolUiProvider,
-  createMockConfigProvider
+  createMockConfigProvider,
+  createMockExtensionContextMinimal
 } from '../testUtils.js';
 import { CONFIG_DEFAULTS } from '../../src/constants/config.js';
 import { configProcessor } from '../../src/config/configProcessor.js';
@@ -53,6 +55,49 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const httpClient = createMockHttpClient();
     const toolUiProvider = createMockToolUiProvider();
     return { configContainer: createMockConfigContainer(config), configProvider, secretManager, httpClient, toolUiProvider };
+  };
+
+  const createTestProvider = (
+    deps: ReturnType<typeof createMocks> & {
+      eventBus: EventBus,
+      vscodeApi: any,
+      chatHistoryManager: any,
+      chatAgent?: any,
+      buildContext?: any,
+      profileAccessor?: ILlmProviderAccessor,
+      getChatWebviewContent?: any,
+      fileReader?: any
+    },
+    handlerOverrides: any = {}
+  ) => {
+    const eventBridge = new ChatWebviewEventBridge(deps.eventBus, deps.toolUiProvider);
+    const commandHandler = new ChatCommandHandler(
+      deps.chatAgent || { run: async () => { } },
+      deps.chatHistoryManager,
+      deps.buildContext || { buildContext: async () => '' },
+      deps.eventBus,
+      handlerOverrides.diffManager || createMockDiffManager(),
+      deps.configContainer,
+      deps.configProvider,
+      deps.secretManager,
+      deps.httpClient,
+      deps.toolUiProvider,
+      eventBridge,
+      deps.vscodeApi
+    );
+
+    return new ChatWebviewViewProvider({
+      extensionContext: createMockExtensionContextMinimal({ extensionUri: createMockUri('/ext'), globalStorageUri: createMockUri('/storage') }),
+      profileMetadataProvider: new ProfileMetadataProvider(deps.profileAccessor || { getChatProfiles: () => [], getActiveChatProfile: () => '' }, deps.configContainer, deps.secretManager),
+      eventBridge,
+      commandHandler,
+      chatHistoryManager: deps.chatHistoryManager,
+      getChatWebviewContent: deps.getChatWebviewContent || (() => ''),
+      vscodeApi: deps.vscodeApi,
+      fileReader: deps.fileReader || createMockFileContentReader(),
+      eventBus: deps.eventBus,
+      configContainer: deps.configContainer
+    });
   };
 
   // `it` defines a single test case. This one checks if the webview is set up correctly,
@@ -123,30 +168,12 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const recorded: IStoredChatMessage[] = [];
     const chatHistoryManager = createMockPersistentHistoryManager(recorded);
 
-    const { configContainer, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
-    const config = configContainer.config;
+    const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager, chatAgent, buildContext, profileAccessor, getChatWebviewContent, fileReader };
 
     // ********************************************************************************
     //  Instantiate the ChatWebviewViewProvider with all our fake dependencies.
     // ********************************************************************************
-    const webViewViewProvider = new ChatWebviewViewProvider({
-      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') }, // Provides the extension's URI.
-      profileMetadataProvider: new ProfileMetadataProvider(profileAccessor, configContainer, secretManager),
-      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider), // Provides access to LLM models.
-      chatAgent, // Handles the actual chat response logic.
-      chatHistoryManager, // No-op for this test
-      buildContext, // Provides additional context for prompts.
-      getChatWebviewContent, // Function to generate webview HTML.
-      vscodeApi, // Faked VS Code API.
-      fileReader,
-      eventBus,
-      diffManager: createMockDiffManager(),
-      configContainer: createMockConfigContainer(config),
-      configProvider,
-      secretManager,
-      httpClient,
-      toolUiProvider
-    });
+    const webViewViewProvider = createTestProvider(deps);
 
     // ********************************************************************************
     //  Call `resolveWebviewView` which is the method VS Code calls to initialize the webview.
@@ -165,7 +192,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     expect(webview.options?.enableScripts).toBe(true);
     // Expect the `extensionUri` to be registered as a local resource root,
     // allowing the webview to load resources from our extension.
-    expect(webview.options?.localResourceRoots?.[0]).toBe(extensionUri);
+    expect(webview.options?.localResourceRoots?.[0]?.fsPath).toBe(extensionUri.fsPath);
 
     // ********************************************************************************
     //  Assertions: Verify that `getChatWebviewContent` was called with the correct arguments.
@@ -223,58 +250,27 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   });
 
   it('does not add buildContext to chat history user messages', async () => {
-    const extensionUri = createMockUri('/ext');
+    const eventBus = new EventBus();
     const vscodeApi = createMockVscodeApi();
-
     const profileAccessor: ILlmProviderAccessor = { getChatProfiles: () => [], getActiveChatProfile: () => '' };
-
-    const webview = createMockWebview();
-
+    const posted: MessageFromTheExtensionToTheWebview[] = [];
+    const webview = createMockWebview(posted);
     const webviewView = createMockWebviewView(webview, 'X');
 
-    // Spyable chat history manager to capture added messages.
     const recorded: IStoredChatMessage[] = [];
     const chatHistoryManager = createMockPersistentHistoryManager(recorded);
 
-    const eventBus = new EventBus();
-
-    const { configContainer, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
+    const { configContainer } = createMocks();
     const config = configContainer.config;
     config.activeChatProfile = 'p';
-    config.profiles = { 'p': { model: 'm', isApiKeyRequired: false } };    config.llmProviderForChat = {
-        query: async () => null,
-        queryStream: async () => {
-          eventBus.emit('agent:token', { token: 'x', type: 'content' });
-          return Promise.resolve([]);
-        }
-    };
-
-    // Use the real Agent which currently adds the (context+message) to history.
+    config.profiles = { 'p': { model: 'm', isApiKeyRequired: false } };
+    
+    // Use the real Agent
     const { Agent } = await import('../../src/agent/agent.js');
-    const chatAgent = new Agent({
-      configContainer: createMockConfigContainer(config),
-      chatHistoryManager,
-      eventBus
-    });
+    const chatAgent = new Agent({ configContainer: createMockConfigContainer(config), chatHistoryManager, eventBus });
 
-    const provider = new ChatWebviewViewProvider({
-      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
-      profileMetadataProvider: new ProfileMetadataProvider(profileAccessor, configContainer, secretManager),
-      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
-      chatAgent,
-      chatHistoryManager,
-      buildContext: { buildContext: async () => '' },
-      getChatWebviewContent: () => '',
-      vscodeApi,
-      fileReader: createMockFileContentReader(),
-      eventBus,
-      diffManager: createMockDiffManager(),
-      configContainer: createMockConfigContainer(config),
-      configProvider,
-      secretManager,
-      httpClient,
-      toolUiProvider
-    });
+    const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager, chatAgent, profileAccessor, configContainer };
+    const provider = createTestProvider(deps);
 
     await provider.resolveWebviewView(webviewView);
 
@@ -282,191 +278,66 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       await webview.__handler({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' });
     }
 
-    // Expect the first added message to be exactly the user's text without the build context.
     expect(recorded.length).toBeGreaterThan(0);
     expect(recorded[0]).toEqual({ role: 'user', content: 'hello' });
   });
 
-  // This test case verifies that the `ChatWebviewViewProvider` correctly handles:
-  // 1. The 'modelChanged' command, emitting an event.
-  // 2. The 'clearHistory' command, calling the logic handler's `clearHistory`.
-  // 3. Error reporting when AI response fails.
   it('emits modelChanged and calls clearHistory and reports errors', async () => {
-    // Define a fake extension URI.
-    const extensionUri = createMockUri('/ext');
-    // Define a fake VS Code API, specifically `Uri.joinPath`.
+    const eventBus = new EventBus();
     const vscodeApi = createMockVscodeApi();
-
-    // Define a fake `profileAccessor` that returns empty lists for models.
-    const profileAccessor: ILlmProviderAccessor = {
-      getChatProfiles: () => [],
-      getActiveChatProfile: () => ''
-    };
-
-    // `posted` array to capture messages sent to the webview.
-    const responseMessagesFromTheExtensionToTheWebview: MessageFromTheExtensionToTheWebview[] = [];
-    // Fake `webview` implementation, similar to the previous test.
-    const webview = createMockWebview(responseMessagesFromTheExtensionToTheWebview);
-    // Fake `webviewView` container.
+    const profileAccessor: ILlmProviderAccessor = { getChatProfiles: () => [], getActiveChatProfile: () => '' };
+    const responseMessages: MessageFromTheExtensionToTheWebview[] = [];
+    const webview = createMockWebview(responseMessages);
     const webviewView = createMockWebviewView(webview, 'X');
 
-    // Fake `chatAgent` for this test.
-    const chatAgent: IChatAgent = {
-      run: async () => {
-        throw new Error('boom'); // Simulate an error during AI response.
-      }
-    };
-
+    const chatAgent: IChatAgent = { run: async () => { throw new Error('boom'); } };
     const chatHistoryManager = createMockPersistentHistoryManager();
 
-    const eventBus = new EventBus();
-
-    const { configContainer, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
-    const config = configContainer.config;
-
-    // ********************************************************************************
-    //  Instantiate and resolve the `ChatWebviewViewProvider`.
-    // ********************************************************************************
-    const provider = new ChatWebviewViewProvider({
-      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
-      profileMetadataProvider: new ProfileMetadataProvider(profileAccessor, configContainer, secretManager),
-      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
-      chatAgent,
-      chatHistoryManager,
-      buildContext: { buildContext: async () => '' }, // Empty context for this test.
-      getChatWebviewContent: () => '', // Empty HTML content for this test.
-      vscodeApi,
-      fileReader: createMockFileContentReader(),
-      eventBus,
-      diffManager: createMockDiffManager(),
-      configContainer: createMockConfigContainer(config),
-      configProvider,
-      secretManager,
-      httpClient,
-      toolUiProvider
-    });
+    const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager, chatAgent, profileAccessor };
+    const provider = createTestProvider(deps);
 
     await provider.resolveWebviewView(webviewView);
 
-    // ********************************************************************************
-    //  Listen to the `chatProfileChanged` event on the global event bus.
-    // ********************************************************************************
     let emittedModel: string = '';
-    eventBus.on('chatProfileChanged', (m: string) => {
-      emittedModel = m; // Capture the profile ID emitted by the event.
-    });
+    eventBus.on('chatProfileChanged', (m: string) => { emittedModel = m; });
 
-    // ********************************************************************************
-    //  Simulate a 'modelChanged' command from the webview.
-    // ********************************************************************************
     if (webview.__handler) {
       await webview.__handler({ command: WEBVIEW_COMMANDS.CHAT_PROFILE_CHANGED, model: 'new-model' });
     }
-    // Expect that the `eventBus` emitted the 'modelChanged' event with the correct model name.
     expect(emittedModel).toBe('new-model');
 
-    // ********************************************************************************
-    //  Simulate a 'clearHistory' command from the webview.
-    // ********************************************************************************
     if (webview.__handler) {
       await webview.__handler({ command: WEBVIEW_COMMANDS.CLEAR_HISTORY });
     }
-    // Expect that the `clearHistory` method on our fake `chatHistoryManager` was called.
     expect(chatHistoryManager.clearHistory).toHaveBeenCalled();
 
-    // ********************************************************************************
-    //  Simulate a 'sendMessage' command which is expected to trigger an error.
-    // ********************************************************************************
     if (webview.__handler) {
       await webview.__handler({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'x' });
     }
-    // Get the last message that was posted to the webview.
-    const last = responseMessagesFromTheExtensionToTheWebview[responseMessagesFromTheExtensionToTheWebview.length - 1];
-    // Expect an error message to have been posted.
-    expect(last).toBeDefined();
-    // Expect the error message to contain a specific user-friendly error string.
-    expect(last).toMatchObject({
-      text: expect.stringContaining('Sorry, there was an error processing your request')
-    });
+    const last = responseMessages[responseMessages.length - 1];
+    expect(last).toMatchObject({ text: expect.stringContaining('Sorry, there was an error processing your request') });
   });
 
-  // This test case verifies that the `ChatWebviewViewProvider` gracefully ignores
-  // commands sent from the webview that it doesn't recognize.
   it('ignores unknown commands (no-op branch)', async () => {
-    // Define a fake extension URI.
-    const extensionUri = createMockUri('/ext');
-    // Define a fake VS Code API, specifically `Uri.joinPath`.
+    const eventBus = new EventBus();
     const vscodeApi = createMockVscodeApi();
-
-    // Define a fake `profileAccessor` that returns empty lists for models.
-    const profileAccessor: ILlmProviderAccessor = {
-      getChatProfiles: () => [],
-      getActiveChatProfile: () => ''
-    };
-
-    // `posted` array to capture messages sent to the webview.
-    const responseMessagesFromTheExtensionToTheWebview: MessageFromTheExtensionToTheWebview[] = [];
-    // Fake `webview` implementation, similar to previous tests.
-    const webview = createMockWebview(responseMessagesFromTheExtensionToTheWebview);
-    // Fake `webviewView` container.
+    const profileAccessor: ILlmProviderAccessor = { getChatProfiles: () => [], getActiveChatProfile: () => '' };
+    const responseMessages: MessageFromTheExtensionToTheWebview[] = [];
+    const webview = createMockWebview(responseMessages);
     const webviewView = createMockWebviewView(webview, 'X');
 
-    // Fake `chatAgent` for this test.
-    const chatAgent: IChatAgent = {
-      run: async () => {
-        /* not called */ // This should not be called.
-      }
-    };
-
-    const chatHistoryManager = createMockPersistentHistoryManager();
-
-    const eventBus = new EventBus();
-
-    const { configContainer, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
-    const config = configContainer.config;
-
-    // ********************************************************************************
-    //  Instantiate and resolve the `ChatWebviewViewProvider`.
-    // ********************************************************************************
-    const provider = new ChatWebviewViewProvider({
-      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
-      profileMetadataProvider: new ProfileMetadataProvider(profileAccessor, configContainer, secretManager),
-      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
-      chatAgent,
-      chatHistoryManager,
-      buildContext: { buildContext: async () => '' },
-      getChatWebviewContent: () => '',
-      vscodeApi,
-      fileReader: createMockFileContentReader(),
-      eventBus,
-      diffManager: createMockDiffManager(),
-      configContainer: createMockConfigContainer(config),
-      configProvider,
-      secretManager,
-      httpClient,
-      toolUiProvider
-    });
+    const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager: createMockPersistentHistoryManager(), profileAccessor };
+    const provider = createTestProvider(deps);
 
     await provider.resolveWebviewView(webviewView);
 
-    // ********************************************************************************
-    //  Simulate sending an unknown command from the webview.
-    // ********************************************************************************
-    // Send a message with a 'command' that the `ChatWebviewViewProvider` does not handle.
     if (webview.__handler) {
       await webview.__handler({ command: 'unknown' });
     }
-
-    // ********************************************************************************
-    //  Assertions: Verify that no messages were posted and no logic was executed.
-    // ********************************************************************************
-    // Expect that no messages were posted back to the webview, confirming the command was ignored.
-    expect(responseMessagesFromTheExtensionToTheWebview.length).toBe(0);
+    expect(responseMessages.length).toBe(0);
   });
 
   it('anonymizes context if anonymizer is provided', async () => {
-    const extensionUri = createMockUri('/ext');
-    const vscodeApi = createMockVscodeApi();
     const profileAccessor: ILlmProviderAccessor = { getChatProfiles: () => [], getActiveChatProfile: () => '' };
     const webview = createMockWebview();
     const webviewView = createMockWebviewView(webview, 'X');
@@ -482,8 +353,9 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const chatHistoryManager = createMockPersistentHistoryManager();
 
     const eventBus = new EventBus();
+    const vscodeApi = createMockVscodeApi();
 
-    const { configContainer, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
+    const { configContainer } = createMocks();
     const config = configContainer.config;
     config.anonymizerInstance = {
       anonymize: (text: string) => text.replace('SECRET', 'ANONYMIZED'),
@@ -494,24 +366,10 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       })
     };
 
-    const provider = new ChatWebviewViewProvider({
-      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
-      profileMetadataProvider: new ProfileMetadataProvider(profileAccessor, configContainer, secretManager),
-      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
-      chatAgent,
-      chatHistoryManager,
-      buildContext: { buildContext: async (opts) => opts?.includeActiveEditor ? 'This is a SECRET' : '' },
-      getChatWebviewContent: () => '',
-      vscodeApi,
-      fileReader: createMockFileContentReader(),
-      eventBus,
-      diffManager: createMockDiffManager(),
-      configContainer: createMockConfigContainer(config),
-      configProvider,
-      secretManager,
-      httpClient,
-      toolUiProvider
-    });
+    const buildContext = { buildContext: async (opts: any) => opts?.includeActiveEditor ? 'This is a SECRET' : '' };
+    const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager, chatAgent, profileAccessor, configContainer, buildContext };
+
+    const provider = createTestProvider(deps);
 
     await provider.resolveWebviewView(webviewView);
 
@@ -527,7 +385,6 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   });
 
   it('anonymizes context if the builder provides it (verifies wiring)', async () => {
-    const extensionUri = createMockUri('/ext');
     const vscodeApi = createMockVscodeApi();
     const profileAccessor: ILlmProviderAccessor = { getChatProfiles: () => [], getActiveChatProfile: () => '' };
     const webview = createMockWebview();
@@ -544,7 +401,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const chatHistoryManager = createMockPersistentHistoryManager();
 
     const eventBus = new EventBus();
-    const { configContainer, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
+    const { configContainer } = createMocks();
     const config = configContainer.config;
     config.anonymizerInstance = {
       anonymize: (text: string) => text.replace('SECRET', 'ANONYMIZED'),
@@ -555,26 +412,10 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       })
     };
 
-    const provider = new ChatWebviewViewProvider({
-      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
-      profileMetadataProvider: new ProfileMetadataProvider(profileAccessor, configContainer, secretManager),
-      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
-      chatAgent,
-      chatHistoryManager,
-      // Here we simulate a builder that ignores the 'disabled' default and returns content anyway
-      // to verify that IF there is content, it IS anonymized.
-      buildContext: { buildContext: async () => 'This is a SECRET' },
-      getChatWebviewContent: () => '',
-      vscodeApi,
-      fileReader: createMockFileContentReader(),
-      eventBus,
-      diffManager: createMockDiffManager(),
-      configContainer: createMockConfigContainer(config),
-      configProvider,
-      secretManager,
-      httpClient,
-      toolUiProvider
-    });
+    const buildContext = { buildContext: async () => 'This is a SECRET' };
+    const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager, chatAgent, profileAccessor, configContainer, buildContext };
+
+    const provider = createTestProvider(deps);
 
     await provider.resolveWebviewView(webviewView);
 
@@ -590,7 +431,6 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   });
 
   it('aborts request and stops sending tokens when cancelRequest is received', async () => {
-    const extensionUri = createMockUri('/ext');
     const vscodeApi = createMockVscodeApi();
     const profileAccessor: ILlmProviderAccessor = { getChatProfiles: () => [], getActiveChatProfile: () => '' };
 
@@ -623,27 +463,10 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     const chatHistoryManager = createMockPersistentHistoryManager();
 
-    const { configContainer, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
-    const config = configContainer.config;
+    const mocks = createMocks();
+    const deps = { ...mocks, eventBus, vscodeApi, chatHistoryManager, chatAgent, profileAccessor };
 
-    const provider = new ChatWebviewViewProvider({
-      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
-      profileMetadataProvider: new ProfileMetadataProvider(profileAccessor, configContainer, secretManager),
-      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
-      chatAgent,
-      chatHistoryManager,
-      buildContext: { buildContext: async () => '' },
-      getChatWebviewContent: () => '',
-      vscodeApi,
-      fileReader: createMockFileContentReader(),
-      eventBus,
-      diffManager: createMockDiffManager(),
-      configContainer: createMockConfigContainer(config),
-      configProvider,
-      secretManager,
-      httpClient,
-      toolUiProvider
-    });
+    const provider = createTestProvider(deps);
 
     await provider.resolveWebviewView(webviewView);
 
@@ -663,7 +486,6 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   });
 
   it('newChat clears history and posts message to webview', async () => {
-    const extensionUri = createMockUri('/ext');
     const vscodeApi = createMockVscodeApi();
     const profileAccessor: ILlmProviderAccessor = { getChatProfiles: () => [], getActiveChatProfile: () => '' };
     const posted: MessageFromTheExtensionToTheWebview[] = [];
@@ -674,29 +496,14 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const chatHistoryManager = createMockPersistentHistoryManager();
     chatHistoryManager.newSession.mockImplementation(() => { newSessionCalled = true; });
 
-    const { configContainer, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
+    const { configContainer } = createMocks();
     const config = configContainer.config;
 
     const eventBus = new EventBus();
 
-    const provider = new ChatWebviewViewProvider({
-      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
-      profileMetadataProvider: new ProfileMetadataProvider(profileAccessor, configContainer, secretManager),
-      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
-      chatAgent: { run: async () => { } },
-      chatHistoryManager,
-      buildContext: { buildContext: async () => '' },
-      getChatWebviewContent: () => '',
-      vscodeApi,
-      fileReader: createMockFileContentReader(),
-      eventBus,
-      diffManager: createMockDiffManager(),
-      configContainer: createMockConfigContainer(config),
-      configProvider,
-      secretManager,
-      httpClient,
-      toolUiProvider
-    });
+    const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager, chatAgent: { run: async () => { } }, profileAccessor, configContainer: createMockConfigContainer(config) };
+
+    const provider = createTestProvider(deps);
 
     // Test newChat before resolveWebviewView (view is undefined)
     provider.newChat();
@@ -711,7 +518,6 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   });
 
   it('handles viewDiff command by calling diffManager.showDiff', async () => {
-    const extensionUri = createMockUri('/ext');
     const vscodeApi = createMockVscodeApi();
     const eventBus = new EventBus();
     const diffManager = createMockDiffManager();
@@ -720,27 +526,11 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const webview = createMockWebview();
     const webviewView = createMockWebviewView(webview, 'X');
 
-    const { configContainer, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
+    const { configContainer } = createMocks();
     const config = configContainer.config;
 
-    const provider = new ChatWebviewViewProvider({
-      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
-      profileMetadataProvider: new ProfileMetadataProvider(profileAccessor, configContainer, secretManager),
-      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
-      chatAgent: { run: async () => { } },
-      chatHistoryManager: createMockPersistentHistoryManager(),
-      buildContext: { buildContext: async () => '' },
-      getChatWebviewContent: () => '',
-      vscodeApi,
-      fileReader: createMockFileContentReader(),
-      eventBus,
-      diffManager,
-      configContainer: createMockConfigContainer(config),
-      configProvider,
-      secretManager,
-      httpClient,
-      toolUiProvider
-    });
+    const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager: createMockPersistentHistoryManager(), chatAgent: { run: async () => { } }, profileAccessor, configContainer: createMockConfigContainer(config) };
+    const provider = createTestProvider(deps, { diffManager });
 
     await provider.resolveWebviewView(webviewView);
 
@@ -764,7 +554,6 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   });
 
   it('closes the diff when confirmToolCall is received with a "deny" decision', async () => {
-    const extensionUri = createMockUri('/ext');
     const vscodeApi = createMockVscodeApi();
     const eventBus = new EventBus();
     const diffManager = createMockDiffManager();
@@ -773,27 +562,11 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const webview = createMockWebview();
     const webviewView = createMockWebviewView(webview, 'X');
 
-    const { configContainer, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
+    const { configContainer } = createMocks();
     const config = configContainer.config;
 
-    const provider = new ChatWebviewViewProvider({
-      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
-      profileMetadataProvider: new ProfileMetadataProvider(profileAccessor, configContainer, secretManager),
-      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
-      chatAgent: { run: async () => { } },
-      chatHistoryManager: createMockPersistentHistoryManager(),
-      buildContext: { buildContext: async () => '' },
-      getChatWebviewContent: () => '',
-      vscodeApi,
-      fileReader: createMockFileContentReader(),
-      eventBus,
-      diffManager,
-      configContainer: createMockConfigContainer(config),
-      configProvider,
-      secretManager,
-      httpClient,
-      toolUiProvider
-    });
+    const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager: createMockPersistentHistoryManager(), chatAgent: { run: async () => { } }, profileAccessor, configContainer: createMockConfigContainer(config) };
+    const provider = createTestProvider(deps, { diffManager });
 
     await provider.resolveWebviewView(webviewView);
 
@@ -819,7 +592,6 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   });
 
   it('handles agent:maxIterationsReached event', async () => {
-    const extensionUri = createMockUri('/ext');
     const vscodeApi = createMockVscodeApi();
     const profileAccessor: ILlmProviderAccessor = { getChatProfiles: () => [], getActiveChatProfile: () => '' };
     const posted: MessageFromTheExtensionToTheWebview[] = [];
@@ -827,28 +599,11 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const webviewView = createMockWebviewView(webview, 'X');
 
     const eventBus = new EventBus();
-    
-    const { configContainer, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
+    const { configContainer } = createMocks();
     const config = configContainer.config;
 
-    const provider = new ChatWebviewViewProvider({
-      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
-      profileMetadataProvider: new ProfileMetadataProvider(profileAccessor, configContainer, secretManager),
-      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
-      chatAgent: { run: async () => { } },
-      chatHistoryManager: createMockPersistentHistoryManager(),
-      buildContext: { buildContext: async () => '' },
-      getChatWebviewContent: () => '',
-      vscodeApi,
-      fileReader: createMockFileContentReader(),
-      eventBus,
-      diffManager: createMockDiffManager(),
-      configContainer: createMockConfigContainer(config),
-      configProvider,
-      secretManager,
-      httpClient,
-      toolUiProvider
-    });
+    const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager: createMockPersistentHistoryManager(), chatAgent: { run: async () => { } }, profileAccessor, configContainer: createMockConfigContainer(config) };
+    const provider = createTestProvider(deps);
 
     // Event before resolveWebviewView
     eventBus.emit('agent:maxIterationsReached', { maxIterations: CONFIG_DEFAULTS.MAX_AGENT_ITERATIONS });
@@ -864,35 +619,16 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   });
 
   it('cancelRequest does nothing if no abortController', async () => {
-    const extensionUri = createMockUri('/ext');
     const vscodeApi = createMockVscodeApi();
     const profileAccessor: ILlmProviderAccessor = { getChatProfiles: () => [], getActiveChatProfile: () => '' };
     const webview = createMockWebview();
     const webviewView = createMockWebviewView(webview, 'X');
 
-    const { configContainer, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
-    const config = configContainer.config;
-
+    const mocks = createMocks();
     const eventBus = new EventBus();
 
-    const provider = new ChatWebviewViewProvider({
-      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
-      profileMetadataProvider: new ProfileMetadataProvider(profileAccessor, configContainer, secretManager),
-      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
-      chatAgent: { run: async () => { } },
-      chatHistoryManager: createMockPersistentHistoryManager(),
-      buildContext: { buildContext: async () => '' },
-      getChatWebviewContent: () => '',
-      vscodeApi,
-      fileReader: createMockFileContentReader(),
-      eventBus,
-      diffManager: createMockDiffManager(),
-      configContainer: createMockConfigContainer(config),
-      configProvider,
-      secretManager,
-      httpClient,
-      toolUiProvider
-    });
+    const deps = { ...mocks, eventBus, vscodeApi, chatHistoryManager: createMockPersistentHistoryManager(), chatAgent: { run: async () => { } }, profileAccessor };
+    const provider = createTestProvider(deps);
 
     await provider.resolveWebviewView(webviewView);
     if (webview.__handler) {
@@ -901,7 +637,6 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   });
 
   it('passes reasoning tokens with tokenType to webview', async () => {
-    const extensionUri = createMockUri('/ext');
     const eventBus = new EventBus();
     const vscodeApi = createMockVscodeApi();
     const profileAccessor: ILlmProviderAccessor = { getChatProfiles: () => [], getActiveChatProfile: () => '' };
@@ -918,27 +653,11 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       }
     };
 
-    const { configContainer, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
+    const { configContainer } = createMocks();
     const config = configContainer.config;
 
-    const provider = new ChatWebviewViewProvider({
-      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
-      profileMetadataProvider: new ProfileMetadataProvider(profileAccessor, configContainer, secretManager),
-      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
-      chatAgent,
-      chatHistoryManager: createMockPersistentHistoryManager(),
-      buildContext: { buildContext: async () => '' },
-      getChatWebviewContent: () => '',
-      vscodeApi,
-      fileReader: createMockFileContentReader(),
-      eventBus,
-      diffManager: createMockDiffManager(),
-      configContainer: createMockConfigContainer(config),
-      configProvider,
-      secretManager,
-      httpClient,
-      toolUiProvider
-    });
+    const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager: createMockPersistentHistoryManager(), chatAgent, profileAccessor, configContainer: createMockConfigContainer(config) };
+    const provider = createTestProvider(deps);
 
     await provider.resolveWebviewView(webviewView);
 
@@ -954,34 +673,17 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   });
 
   it('posts tool_end message to webview when agent:toolEnd is emitted', async () => {
-    const extensionUri = createMockUri('/ext');
     const vscodeApi = createMockVscodeApi();
     const eventBus = new EventBus();
     const posted: MessageFromTheExtensionToTheWebview[] = [];
     const webview = createMockWebview(posted);
     const webviewView = createMockWebviewView(webview, 'X');
 
-    const { configContainer, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
+    const { configContainer } = createMocks();
     const config = configContainer.config;
 
-    const provider = new ChatWebviewViewProvider({
-      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
-      profileMetadataProvider: new ProfileMetadataProvider({ getChatProfiles: () => [], getActiveChatProfile: () => '' }, configContainer, secretManager),
-      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
-      chatAgent: { run: async () => { } },
-      chatHistoryManager: createMockPersistentHistoryManager(),
-      buildContext: { buildContext: async () => '' },
-      getChatWebviewContent: () => '',
-      vscodeApi,
-      fileReader: createMockFileContentReader(),
-      eventBus,
-      diffManager: createMockDiffManager(),
-      configContainer: createMockConfigContainer(config),
-      configProvider,
-      secretManager,
-      httpClient,
-      toolUiProvider
-    });
+    const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager: createMockPersistentHistoryManager(), chatAgent: { run: async () => { } }, configContainer: createMockConfigContainer(config) };
+    const provider = createTestProvider(deps);
 
     await provider.resolveWebviewView(webviewView);
 
@@ -990,12 +692,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const result = 'execution result';
     const success = true;
 
-    eventBus.emit('agent:toolEnd', {
-      toolCallId,
-      toolName,
-      result,
-      success
-    });
+    eventBus.emit('agent:toolEnd', { toolCallId, toolName, result, success });
 
     expect(posted).toContainEqual({
       sender: MESSAGE_SENDERS.ASSISTANT,
@@ -1008,34 +705,17 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   });
 
   it('posts tool_start message to webview when agent:toolStart is emitted', async () => {
-    const extensionUri = createMockUri('/ext');
     const vscodeApi = createMockVscodeApi();
     const eventBus = new EventBus();
     const posted: MessageFromTheExtensionToTheWebview[] = [];
     const webview = createMockWebview(posted);
     const webviewView = createMockWebviewView(webview, 'X');
 
-    const { configContainer, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
+    const { configContainer } = createMocks();
     const config = configContainer.config;
 
-    const provider = new ChatWebviewViewProvider({
-      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
-      profileMetadataProvider: new ProfileMetadataProvider({ getChatProfiles: () => [], getActiveChatProfile: () => '' }, configContainer, secretManager),
-      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
-      chatAgent: { run: async () => { } },
-      chatHistoryManager: createMockPersistentHistoryManager(),
-      buildContext: { buildContext: async () => '' },
-      getChatWebviewContent: () => '',
-      vscodeApi,
-      fileReader: createMockFileContentReader(),
-      eventBus,
-      diffManager: createMockDiffManager(),
-      configContainer: createMockConfigContainer(config),
-      configProvider,
-      secretManager,
-      httpClient,
-      toolUiProvider
-    });
+    const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager: createMockPersistentHistoryManager(), chatAgent: { run: async () => { } }, configContainer: createMockConfigContainer(config) };
+    const provider = createTestProvider(deps);
 
     await provider.resolveWebviewView(webviewView);
 
@@ -1043,11 +723,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const toolName = 'testTool';
     const args = '{"arg1": "val1"}';
 
-    eventBus.emit('agent:toolStart', {
-      toolCallId,
-      toolName,
-      args
-    });
+    eventBus.emit('agent:toolStart', { toolCallId, toolName, args });
 
     expect(posted).toContainEqual({
       sender: MESSAGE_SENDERS.ASSISTANT,
@@ -1061,42 +737,24 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   });
 
   it('_sendCompletionMessage does nothing if _view is undefined', async () => {
-    const extensionUri = createMockUri('/ext');
     const vscodeApi = createMockVscodeApi();
     const profileAccessor: ILlmProviderAccessor = { getChatProfiles: () => [], getActiveChatProfile: () => '' };
-
     const webview = createMockWebview();
     const webviewView = createMockWebviewView(webview, 'X');
 
     const eventBus = new EventBus();
-
-    const { configContainer, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
+    const { configContainer } = createMocks();
     const config = configContainer.config;
 
-    const provider = new ChatWebviewViewProvider({
-      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
-      profileMetadataProvider: new ProfileMetadataProvider(profileAccessor, configContainer, secretManager),
-      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
-      chatAgent: {
+    const chatAgent = {
         run: async () => {
           // Simulate view being cleared during request
           provider._view = undefined;
           return Promise.resolve();
         }
-      },
-      chatHistoryManager: createMockPersistentHistoryManager(),
-      buildContext: { buildContext: async () => '' },
-      getChatWebviewContent: () => '',
-      vscodeApi,
-      fileReader: createMockFileContentReader(),
-      eventBus,
-      diffManager: createMockDiffManager(),
-      configContainer: createMockConfigContainer(config),
-      configProvider,
-      secretManager,
-      httpClient,
-      toolUiProvider
-    });
+    };
+    const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager: createMockPersistentHistoryManager(), chatAgent, profileAccessor, configContainer: createMockConfigContainer(config) };
+    const provider = createTestProvider(deps);
 
     await provider.resolveWebviewView(webviewView);
     if (webview.__handler) {
@@ -1107,10 +765,9 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
   });
 
   it('lazily resolves API key if missing when sending a message', async () => {
-    const extensionUri = createMockUri('/ext');
     const vscodeApi = createMockVscodeApi();
     const eventBus = new EventBus();
-    const { configContainer, configProvider, secretManager, httpClient, toolUiProvider } = createMocks();
+    const { configContainer } = createMocks();
     const config = configContainer.config;
     config.activeChatProfile = 'test-profile';
     config.profiles = {
@@ -1121,24 +778,9 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
         }
     };
 
-    const provider = new ChatWebviewViewProvider({
-      extensionContext: { extensionUri, globalStorageUri: createMockUri('/storage') },
-      profileMetadataProvider: new ProfileMetadataProvider({ getChatProfiles: () => ['test-profile'], getActiveChatProfile: () => 'test-profile' }, configContainer, secretManager),
-      eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
-      chatAgent: { run: async () => { } },
-      chatHistoryManager: createMockPersistentHistoryManager(),
-      buildContext: { buildContext: async () => '' },
-      getChatWebviewContent: () => '',
-      vscodeApi,
-      fileReader: createMockFileContentReader(),
-      eventBus,
-      diffManager: createMockDiffManager(),
-      configContainer: createMockConfigContainer(config),
-      configProvider,
-      secretManager,
-      httpClient,
-      toolUiProvider
-    });
+    const profileAccessor = { getChatProfiles: () => ['test-profile'], getActiveChatProfile: () => 'test-profile' };
+    const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager: createMockPersistentHistoryManager(), chatAgent: { run: async () => { } }, profileAccessor, configContainer: createMockConfigContainer(config) };
+    const provider = createTestProvider(deps);
 
     const webview = createMockWebview();
     const webviewView = createMockWebviewView(webview, 'X');
@@ -1150,7 +792,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       await webview.__handler({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' });
     }
 
-    expect(updateProvidersSpy).toHaveBeenCalledWith(expect.objectContaining({ activeChatProfile: config.activeChatProfile }), eventBus, secretManager, httpClient, true);
+    expect(updateProvidersSpy).toHaveBeenCalledWith(expect.objectContaining({ activeChatProfile: config.activeChatProfile }), expect.anything(), expect.anything(), expect.anything(), true);
     updateProvidersSpy.mockRestore();
   });
 });

@@ -783,6 +783,43 @@ export interface IChatWebviewEventBridge {
 }
 
 /**
+ * Interface for the chat webview view to allow command handlers to trigger UI updates.
+ */
+export interface IChatWebviewView {
+  /**
+   * Updates the full webview state (re-renders HTML).
+   */
+  updateState(): Promise<void>;
+
+  /**
+   * Pushes a partial update (metadata/profiles) to the webview.
+   */
+  pushUpdate(): Promise<void>;
+}
+
+/**
+ * Interface for a handler that processes commands sent from the chat webview to the extension.
+ */
+export interface IChatCommandHandler {
+  /**
+   * Sets the view to allow the handler to trigger UI updates.
+   */
+  setView(view: IChatWebviewView): void;
+
+  /**
+   * Handles a message sent from the webview.
+   * @param message The message received from the webview.
+   * @param view The current webview container.
+   */
+  handleMessage(message: WebviewMessage, view: IWebviewView): Promise<void>;
+
+  /**
+   * Returns the current abort controller if any.
+   */
+  getAbortController(): AbortController | undefined;
+}
+
+/**
  * Interface for a provider that handles LLM profile metadata for the UI.
  */
 export interface IProfileMetadataProvider {

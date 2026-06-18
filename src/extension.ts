@@ -36,6 +36,7 @@ import { Agent } from './agent/agent.js';
 import { ChatWebviewViewProvider } from './chat/chatWebviewViewProvider.js';
 import { ProfileMetadataProvider } from './chat/profileMetadataProvider.js';
 import { ChatWebviewEventBridge } from './chat/chatWebviewEventBridge.js';
+import { ChatCommandHandler } from './chat/chatCommandHandler.js';
 import { ToolUiProvider } from './chat/toolUiProvider.js';
 import { getTools } from './tools/index.js';
 import { WorkspaceScanner } from './utils/workspaceScanner.js';
@@ -291,23 +292,36 @@ export async function activate(context: vscode.ExtensionContext) {
     getCompletionActiveProfile: () => configContainer.config.activeCompletionProfile || configContainer.config.activeChatProfile
   };
 
-  const chatWebviewViewProvider = new ChatWebviewViewProvider({
-    extensionContext: context,
-    profileMetadataProvider: new ProfileMetadataProvider(providerAccessor, configContainer, secretManager),
-    eventBridge: new ChatWebviewEventBridge(eventBus, toolUiProvider),
-    chatAgent: agent,
-    chatHistoryManager: chatHistoryManager,
-    buildContext: new ContextBuilder(vscode.window, ignoreManager, workspaceProvider, pathResolver),
-    getChatWebviewContent,
-    vscodeApi: vscodeApiLocal,
-    fileReader: fileContentReader,
+  const profileMetadataProvider = new ProfileMetadataProvider(providerAccessor, configContainer, secretManager);
+  const eventBridge = new ChatWebviewEventBridge(eventBus, toolUiProvider);
+  const contextBuilder = new ContextBuilder(vscode.window, ignoreManager, workspaceProvider, pathResolver);
+
+  const chatCommandHandler = new ChatCommandHandler(
+    agent,
+    chatHistoryManager,
+    contextBuilder,
     eventBus,
     diffManager,
     configContainer,
     configProvider,
     secretManager,
-    httpClient: new NodeFetchClient(),
-    toolUiProvider
+    new NodeFetchClient(),
+    toolUiProvider,
+    eventBridge,
+    vscodeApiLocal
+  );
+
+  const chatWebviewViewProvider = new ChatWebviewViewProvider({
+    extensionContext: context,
+    profileMetadataProvider,
+    eventBridge,
+    commandHandler: chatCommandHandler,
+    chatHistoryManager,
+    getChatWebviewContent,
+    vscodeApi: vscodeApiLocal,
+    fileReader: fileContentReader,
+    eventBus,
+    configContainer
   });
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(ChatWebviewViewProvider.viewType, chatWebviewViewProvider, {
