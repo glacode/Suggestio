@@ -28,6 +28,8 @@ export interface IOpenAICompatibleProviderArgs {
   maxRetries: number;
   /** Initial delay for exponential backoff in ms. */
   initialDelay: number;
+  /** Maximum tokens to request per completion. Defaults to 8192 when omitted. */
+  maxTokens?: number;
   /** Optional reasoning processor to handle various model formats. */
   reasoningProcessor?: IReasoningProcessor;
   /** Optional response parser for validating API results. */
@@ -47,6 +49,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
   private anonymizer?: IAnonymizer;
   private maxRetries: number;
   private initialDelay: number;
+  private maxTokens: number;
   private reasoningProcessor: IReasoningProcessor;
   private parser: IOpenAIResponseParser;
   private formatter: IOpenAIRequestFormatter;
@@ -68,6 +71,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     anonymizer,
     maxRetries,
     initialDelay,
+    maxTokens,
     reasoningProcessor,
     parser,
     formatter,
@@ -81,6 +85,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     this.anonymizer = anonymizer;
     this.maxRetries = maxRetries;
     this.initialDelay = initialDelay;
+    this.maxTokens = maxTokens ?? 8192;
     this.reasoningProcessor = reasoningProcessor || new StandardReasoningProcessor();
     this.parser = parser || new OpenAIResponseParser();
     this.formatter = formatter || new OpenAIRequestFormatter(this.reasoningProcessor, anonymizer);
@@ -102,7 +107,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     stream: boolean
   ): OpenAIRequestBody {
     return this.formatter.formatRequest(prompt, this.model, {
-      maxTokens: 8192, // TODO this is a Groq Compound model hard-coded limit
+      maxTokens: this.maxTokens,
       stream,
       tools
     });

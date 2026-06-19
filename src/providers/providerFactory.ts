@@ -1,8 +1,11 @@
 import { IConfig, IProfileConfig, ILlmProvider, IAnonymizer, IHttpClient, IEventBus } from "../types.js";
 import { OpenAICompatibleProvider } from "./openAICompatibleProvider.js";
+import { DeepSeekFimRequestFormatter } from "./deepSeekFimRequestFormatter.js";
+import { DeepSeekFimResponseParser } from "./deepSeekFimResponseParser.js";
 import { GeminiProvider } from "./geminiProvider.js";
 import * as vscode from "vscode";
 import { PROVIDER_MESSAGES } from "../constants/messages.js";
+import { CONFIG_DEFAULTS } from "../constants/config.js";
 
 /**
  * Factory function to create and initialize an LLM provider instance based on the application configuration.
@@ -74,6 +77,33 @@ export function getLlmProvider(
      */
     case "gemini":
       return new GeminiProvider(apiKey, eventBus, profileConfig.model);
+
+    /**
+     * DeepSeek Fill-In-the-Middle completion provider (`/beta/completions`).
+     * Reuses OpenAICompatibleProvider's transport/retry/logging but swaps in a
+     * FIM request formatter (`prompt`/`suffix`) and response parser (`choices[].text`).
+     */
+    case "deepseek-fim":
+      if (!profileConfig.endpoint) {
+        vscode.window.showErrorMessage(
+          PROVIDER_MESSAGES.MISSING_ENDPOINT(targetProfileId)
+        );
+        return null;
+      }
+
+      return new OpenAICompatibleProvider({
+        httpClient,
+        endpoint: profileConfig.endpoint,
+        apiKey,
+        model: profileConfig.model,
+        eventBus,
+        anonymizer,
+        maxRetries: config.maxRetries,
+        initialDelay: config.initialDelay,
+        maxTokens: CONFIG_DEFAULTS.FIM_MAX_TOKENS,
+        formatter: new DeepSeekFimRequestFormatter(anonymizer),
+        parser: new DeepSeekFimResponseParser(),
+      });
 
     default:
       // Report unsupported profile types defined in config.json
