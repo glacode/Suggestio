@@ -61,3 +61,27 @@ export type WebviewCommand = typeof WEBVIEW_COMMANDS[keyof typeof WEBVIEW_COMMAN
 export type ExtensionCommand = typeof EXTENSION_COMMANDS[keyof typeof EXTENSION_COMMANDS];
 export type ExtensionEvent = typeof EXTENSION_EVENTS[keyof typeof EXTENSION_EVENTS];
 export type MessageSender = typeof MESSAGE_SENDERS[keyof typeof MESSAGE_SENDERS];
+
+/**
+ * Internal EventBus event names. Centralized to prevent string literal drift.
+ */
+export const APP_EVENTS = {
+  CONFIG_CHANGED: 'configChanged',
+  INLINE_COMPLETION_TOGGLED: 'inlineCompletionToggled',
+  AUTO_ACCEPT_EDITS_TOGGLED: 'autoAcceptEditsToggled',
+  CHAT_PROFILE_CHANGED: 'chatProfileChanged',
+  COMPLETION_PROFILE_CHANGED: 'completionProfileChanged',
+  AGENT_MAX_ITERATIONS: 'agent:maxIterationsReached',
+  ANONYMIZATION: 'anonymization',
+  AGENT_TOKEN: 'agent:token',
+  AGENT_TOOL_START: 'agent:toolStart',
+  AGENT_TOOL_EXECUTION_STARTED: 'agent:toolExecutionStarted',
+  AGENT_TOOL_OUTPUT: 'agent:toolOutput',
+  AGENT_TOOL_END: 'agent:toolEnd',
+  AGENT_REQUEST_CONFIRMATION: 'agent:requestConfirmation',
+  USER_CONFIRMATION_RESPONSE: 'user:confirmationResponse',
+  AGENT_NOTIFICATION: 'agent:notification',
+  LOG: 'log',
+} as const;
+
+export type AppEvent = typeof APP_EVENTS[keyof typeof APP_EVENTS];
