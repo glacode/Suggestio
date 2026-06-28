@@ -1,4 +1,5 @@
 import { IConfigContainer, IConfigProvider, IDisposable, IEventBus, IHttpClient, IVSCodeSettings } from '../types.js';
+import { APP_EVENTS } from '../constants/protocol.js';
 import { defaultLogger, parseLogLevel } from '../log/logger.js';
 import { CONFIG_LOGS } from '../constants/messages.js';
 import { configProcessor, ISecretManager } from '../config/configProcessor.js';
@@ -24,7 +25,7 @@ export function registerConfigHandler(
         const newAnonymizerEnabled = configProvider.getAnonymizerEnabled();
         const newInlineCompletionEnabled = configProvider.getInlineCompletionEnabled();
 
-        eventBus.emit('log', { 
+        eventBus.emit(APP_EVENTS.LOG, { 
             level: 'info', 
             message: CONFIG_LOGS.CONFIGURATION_CHANGED(newLogLevel, newMaxAgentIterations, !!newAnonymizerEnabled, newInlineCompletionEnabled) 
         });
@@ -62,11 +63,11 @@ export function registerConfigHandler(
         await configProcessor.syncConfig(configContainer, vsCodeSettings, eventBus, secretManager, httpClient);
 
         if (configContainer.config.inlineCompletion.enabled !== oldInlineEnabled) {
-          eventBus.emit('inlineCompletionToggled', configContainer.config.inlineCompletion.enabled);
+          eventBus.emit(APP_EVENTS.INLINE_COMPLETION_TOGGLED, configContainer.config.inlineCompletion.enabled);
         }
 
         // Notify listeners that configuration has changed
-        eventBus.emit('configChanged', undefined);
+        eventBus.emit(APP_EVENTS.CONFIG_CHANGED, undefined);
       }
     })
   );

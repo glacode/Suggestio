@@ -2,6 +2,7 @@ import { getAnonymizer } from '../anonymizer/anonymizer.js';
 import { getLlmProvider } from '../providers/providerFactory.js';
 import { IConfig, IConfigContainer, IProfileConfig, IHttpClient, IProjectConfig, IRawConfigs, IVSCodeSettings } from '../types.js';
 import { IEventBus } from '../utils/eventBus.js';
+import { APP_EVENTS } from '../constants/protocol.js';
 import { createEventLogger } from '../log/eventLogger.js';
 import { CONFIG_LOGS } from '../constants/messages.js';
 import { CONFIG_DEFAULTS } from '../constants/config.js';
@@ -307,7 +308,7 @@ class ConfigProcessor {
         httpClient: IHttpClient,
         logger: ReturnType<typeof createEventLogger>
     ) {
-        eventBus.on('chatProfileChanged', async (profileId: string) => {
+        eventBus.on(APP_EVENTS.CHAT_PROFILE_CHANGED, async (profileId: string) => {
             logger.info(CONFIG_LOGS.CHAT_PROFILE_CHANGED(profileId));
             if (container.config.profiles[profileId]) {
                 container.config.activeChatProfile = profileId;
@@ -316,18 +317,18 @@ class ConfigProcessor {
             }
         });
 
-        eventBus.on('inlineCompletionToggled', (enabled: boolean) => {
+        eventBus.on(APP_EVENTS.INLINE_COMPLETION_TOGGLED, (enabled: boolean) => {
             logger.info(CONFIG_LOGS.INLINE_COMPLETION_TOGGLED(enabled));
             container.config.inlineCompletion.enabled = enabled;
             logger.info(CONFIG_LOGS.CONFIG_UPDATED_INLINE(container.config.inlineCompletion.enabled));
         });
 
-        eventBus.on('autoAcceptEditsToggled', (enabled: boolean) => {
+        eventBus.on(APP_EVENTS.AUTO_ACCEPT_EDITS_TOGGLED, (enabled: boolean) => {
             container.config.autoAcceptEdits = enabled;
             logger.info(`Auto-accept edits toggled: ${enabled}`);
         });
 
-        eventBus.on('completionProfileChanged', async (profileId: string) => {
+        eventBus.on(APP_EVENTS.COMPLETION_PROFILE_CHANGED, async (profileId: string) => {
             logger.info(CONFIG_LOGS.COMPLETION_PROFILE_CHANGED(profileId));
             container.config.activeCompletionProfile = profileId;
             await this.updateProviders(container.config, eventBus, secretManager, httpClient);
