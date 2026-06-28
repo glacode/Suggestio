@@ -71,7 +71,7 @@ export const APP_EVENTS = {
   AUTO_ACCEPT_EDITS_TOGGLED: 'autoAcceptEditsToggled',
   CHAT_PROFILE_CHANGED: 'chatProfileChanged',
   COMPLETION_PROFILE_CHANGED: 'completionProfileChanged',
-  AGENT_MAX_ITERATIONS: 'agent:maxIterationsReached',
+  AGENT_MAX_ITERATIONS_REACHED: 'agent:maxIterationsReached',
   ANONYMIZATION: 'anonymization',
   AGENT_TOKEN: 'agent:token',
   AGENT_TOOL_START: 'agent:toolStart',

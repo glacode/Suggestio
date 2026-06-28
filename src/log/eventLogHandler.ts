@@ -1,10 +1,11 @@
 import { IEventBus, ILogEventPayload } from '../types.js';
+import { APP_EVENTS } from '../constants/protocol.js';
 import { ILogger } from './logger.js';
 
 /**
  * EventLogHandler listens for 'log' events on the EventBus and forwards them
  * to a concrete ILogger implementation.
- * 
+ *
  * This acts as the "Sink" in our event-based logging system.
  */
 export class EventLogHandler {
@@ -16,7 +17,7 @@ export class EventLogHandler {
   }
 
   private init(): void {
-    this.eventBus.on('log', (payload: ILogEventPayload) => {
+    this.eventBus.on(APP_EVENTS.LOG, (payload: ILogEventPayload) => {
       this.handleLogEvent(payload);
     });
   }

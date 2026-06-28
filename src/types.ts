@@ -1632,7 +1632,7 @@ export interface IAppEvents {
   [APP_EVENTS.CHAT_PROFILE_CHANGED]: string;
   [APP_EVENTS.COMPLETION_PROFILE_CHANGED]: string;
   [APP_EVENTS.CONFIG_CHANGED]: void;
-  [APP_EVENTS.AGENT_MAX_ITERATIONS]: { maxIterations: number };
+  [APP_EVENTS.AGENT_MAX_ITERATIONS_REACHED]: { maxIterations: number };
   [APP_EVENTS.ANONYMIZATION]: IAnonymizationEventPayload;
   [APP_EVENTS.AGENT_TOKEN]: ITokenEventPayload;
   [APP_EVENTS.AGENT_TOOL_START]: IToolCallEventPayload;
