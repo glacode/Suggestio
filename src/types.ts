@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { ToolCall } from "./schemas.js";
 import type { IEventBus, EventMap } from "./utils/eventBus.js";
+import { APP_EVENTS } from './constants/protocol.js';
 
 export type { ToolCall, IEventBus, EventMap };
 
@@ -1626,31 +1627,31 @@ export interface IUserConfirmationPayload {
   decision: ToolCallDecision;
 }
 export interface IAppEvents {
-  'inlineCompletionToggled': boolean;
-  'autoAcceptEditsToggled': boolean;
-  'chatProfileChanged': string;
-  'completionProfileChanged': string;
-  'configChanged': void;
-  'agent:maxIterationsReached': { maxIterations: number };
-  'anonymization': IAnonymizationEventPayload;
-  'agent:token': ITokenEventPayload;
-  'agent:toolStart': IToolCallEventPayload;
-  'agent:toolExecutionStarted': { toolCallId: string };
-  'agent:toolOutput': IToolOutputEventPayload;
-  'agent:toolEnd': IToolResultEventPayload;
+  [APP_EVENTS.INLINE_COMPLETION_TOGGLED]: boolean;
+  [APP_EVENTS.AUTO_ACCEPT_EDITS_TOGGLED]: boolean;
+  [APP_EVENTS.CHAT_PROFILE_CHANGED]: string;
+  [APP_EVENTS.COMPLETION_PROFILE_CHANGED]: string;
+  [APP_EVENTS.CONFIG_CHANGED]: void;
+  [APP_EVENTS.AGENT_MAX_ITERATIONS]: { maxIterations: number };
+  [APP_EVENTS.ANONYMIZATION]: IAnonymizationEventPayload;
+  [APP_EVENTS.AGENT_TOKEN]: ITokenEventPayload;
+  [APP_EVENTS.AGENT_TOOL_START]: IToolCallEventPayload;
+  [APP_EVENTS.AGENT_TOOL_EXECUTION_STARTED]: { toolCallId: string };
+  [APP_EVENTS.AGENT_TOOL_OUTPUT]: IToolOutputEventPayload;
+  [APP_EVENTS.AGENT_TOOL_END]: IToolResultEventPayload;
   /**
    * Fired when a tool requires explicit user confirmation before execution.
    */
-  'agent:requestConfirmation': IToolConfirmationPayload;
+  [APP_EVENTS.AGENT_REQUEST_CONFIRMATION]: IToolConfirmationPayload;
   /**
    * Fired when the user responds (Allow/Deny) to a tool confirmation request.
    */
-  'user:confirmationResponse': IUserConfirmationPayload;
+  [APP_EVENTS.USER_CONFIRMATION_RESPONSE]: IUserConfirmationPayload;
   /**
    * Fired to show a notification message in the chat UI.
    */
-  'agent:notification': { text: string | null };
-  'log': ILogEventPayload;
+  [APP_EVENTS.AGENT_NOTIFICATION]: { text: string | null };
+  [APP_EVENTS.LOG]: ILogEventPayload;
 }
 
 // --------------------------------------------------------------------------------

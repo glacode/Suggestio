@@ -1,9 +1,10 @@
 import { EventEmitter } from 'events';
 import { IDisposable, IAppEvents } from '../types.js';
+import { AppEvent } from '../constants/protocol.js';
 
 export type EventMap = Record<string, any>;
 
-export type EventKey<E extends EventMap> = string & keyof E;
+export type EventKey<E extends EventMap = IAppEvents> = E extends IAppEvents ? AppEvent : string & keyof E;
 export type EventReceiver<T> = (params: T) => void;
 
 export interface IEventBus<E extends EventMap = IAppEvents> {
