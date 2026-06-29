@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { IToolImplementation, IToolDefinition, IToolResult, IEventBus, IUserConfirmationPayload, IToolConfirmationPayload, IConfigContainer } from '../types.js';
+import { APP_EVENTS } from '../constants/protocol.js';
 
 /**
  * Abstract base class for all tool implementations.
@@ -60,7 +61,7 @@ export abstract class BaseTool<T> implements IToolImplementation<T> {
         // Bypass confirmation if auto-accept is enabled for edits
         if (options?.isEdit && this.configContainer?.config.autoAcceptEdits) {
             // Notify the UI that the tool is starting immediately since we are bypassing confirmation.
-            eventBus.emit('agent:toolExecutionStarted', { toolCallId });
+            eventBus.emit(APP_EVENTS.AGENT_TOOL_EXECUTION_STARTED, { toolCallId });
             return 'allow';
         }
 
@@ -68,7 +69,7 @@ export abstract class BaseTool<T> implements IToolImplementation<T> {
         // This prevents a race condition where the response might arrive (e.g., in tests or 
         // extremely fast UIs) before we've started listening for it.
         const userDecisionPromise = new Promise<string>((resolve) => {
-            const disposable = eventBus.on('user:confirmationResponse', (payload: IUserConfirmationPayload) => {
+            const disposable = eventBus.on(APP_EVENTS.USER_CONFIRMATION_RESPONSE, (payload: IUserConfirmationPayload) => {
                 // We only care about the response for THIS specific tool call.
                 if (payload.toolCallId === toolCallId) {
                     disposable.dispose(); // Always clean up the listener once resolved.
@@ -87,7 +88,7 @@ export abstract class BaseTool<T> implements IToolImplementation<T> {
         });
 
         // NOW that we are actively listening for the response, we emit the request to the UI.
-        eventBus.emit('agent:requestConfirmation', {
+        eventBus.emit(APP_EVENTS.AGENT_REQUEST_CONFIRMATION, {
             toolCallId,
             toolName: this.definition.name,
             message,
@@ -99,7 +100,7 @@ export abstract class BaseTool<T> implements IToolImplementation<T> {
 
         // If the tool was allowed to run, notify the UI to start the spinner.
         if (decision === 'allow' || decision === 'always-allow-edit' || decision === 'always-allow-command') {
-            eventBus.emit('agent:toolExecutionStarted', { toolCallId });
+            eventBus.emit(APP_EVENTS.AGENT_TOOL_EXECUTION_STARTED, { toolCallId });
         }
 
         return decision;

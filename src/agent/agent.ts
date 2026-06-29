@@ -1,6 +1,7 @@
 import { IToolImplementation, IConfigContainer } from "../types.js";
 import type { IChatHistoryManager, IPrompt, IChatMessage, ToolCall, IChatAgent } from "../types.js";
 import { IEventBus } from "../utils/eventBus.js";
+import { APP_EVENTS } from "../constants/protocol.js";
 import { createEventLogger } from "../log/eventLogger.js";
 import { AGENT_MESSAGES, AGENT_LOGS } from "../constants/messages.js";
 import { ChatPrompt } from "../chat/chatPrompt.js";
@@ -88,7 +89,7 @@ export class Agent implements IChatAgent {
         }
 
         if (iterations >= maxIterations) {
-            this.eventBus?.emit('agent:maxIterationsReached', { maxIterations });
+            this.eventBus?.emit(APP_EVENTS.AGENT_MAX_ITERATIONS_REACHED, { maxIterations });
         }
         this.logger.info(AGENT_LOGS.AGENT_FINISHED);
     }
@@ -143,7 +144,7 @@ export class Agent implements IChatAgent {
     private async runTool(tool: IToolImplementation, toolCall: ToolCall, signal?: AbortSignal): Promise<void> {
         this.logger.info(AGENT_LOGS.EXECUTING_TOOL(toolCall.function.name));
         
-        this.eventBus.emit('agent:toolStart', {
+        this.eventBus.emit(APP_EVENTS.AGENT_TOOL_START, {
             toolCallId: toolCall.id,
             toolName: toolCall.function.name,
             args: toolCall.function.arguments,
@@ -173,7 +174,7 @@ export class Agent implements IChatAgent {
      */
     private handleToolNotFound(toolCall: ToolCall): void {
         this.logger.error(AGENT_LOGS.TOOL_NOT_FOUND(toolCall.function.name));
-        this.eventBus.emit('agent:toolStart', {
+        this.eventBus.emit(APP_EVENTS.AGENT_TOOL_START, {
             toolCallId: toolCall.id,
             toolName: toolCall.function.name,
             args: toolCall.function.arguments
@@ -195,7 +196,7 @@ export class Agent implements IChatAgent {
     private recordToolResult(toolCallId: string, toolName: string, content: string, success: boolean): void {
         const truncatedContent = adaptiveMiddleTruncate(content, this.configContainer.config.toolResultMaxLength);
         this.logger.debug(AGENT_LOGS.TOOL_RESULT_RECORDED(toolCallId));
-        this.eventBus.emit('agent:toolEnd', {
+        this.eventBus.emit(APP_EVENTS.AGENT_TOOL_END, {
             toolCallId: toolCallId,
             toolName: toolName,
             result: truncatedContent,

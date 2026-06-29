@@ -1,6 +1,7 @@
 import fetch from "node-fetch";
 import { IChatMessage, IPrompt, ILlmProvider, IToolDefinition } from "../types.js";
 import { IEventBus } from "../utils/eventBus.js";
+import { APP_EVENTS } from "../constants/protocol.js";
 import { LLM_MESSAGES, LLM_LOGS } from "../constants/messages.js";
 import { createEventLogger } from "../log/eventLogger.js";
 
@@ -97,7 +98,7 @@ export class GeminiProvider implements ILlmProvider {
                 const parts = text.split(/(\s+)/);
                 for (const part of parts) {
                   if (part) {
-                    this.eventBus.emit('agent:token', { token: part, type: 'content' });
+                    this.eventBus.emit(APP_EVENTS.AGENT_TOKEN, { token: part, type: 'content' });
                   }
                 }
               }
@@ -122,7 +123,7 @@ export class GeminiProvider implements ILlmProvider {
               const parts = text.split(/(\s+)/);
               for (const part of parts) {
                 if (part) {
-                  this.eventBus.emit('agent:token', { token: part, type: 'content' });
+                  this.eventBus.emit(APP_EVENTS.AGENT_TOKEN, { token: part, type: 'content' });
                 }
               }
             }

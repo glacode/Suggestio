@@ -10,6 +10,7 @@ import {
   IStreamingDeanonymizer,
   IReasoningDelta
 } from "../types.js";
+import { APP_EVENTS } from "../constants/protocol.js";
 import { OpenAIStreamDelta, OpenAIStreamingToolCall } from "./openAIResponseParser.js";
 import { LLM_MESSAGES, LLM_LOGS } from "../constants/messages.js";
 
@@ -199,13 +200,13 @@ export class OpenAIStreamHandler implements IOpenAIStreamHandler {
     if (deanonymizer) {
       const { processed } = deanonymizer.process(token);
       if (processed) {
-        this.eventBus.emit('agent:token', { token: processed, type });
+        this.eventBus.emit(APP_EVENTS.AGENT_TOKEN, { token: processed, type });
         return processed;
       }
       return "";
     } else {
       if (token) {
-        this.eventBus.emit('agent:token', { token, type });
+        this.eventBus.emit(APP_EVENTS.AGENT_TOKEN, { token, type });
       }
       return token;
     }
@@ -285,7 +286,7 @@ export class OpenAIStreamHandler implements IOpenAIStreamHandler {
     if (deanonymizer) {
       const remaining = deanonymizer.flush();
       if (remaining) {
-        this.eventBus.emit('agent:token', { token: remaining, type });
+        this.eventBus.emit(APP_EVENTS.AGENT_TOKEN, { token: remaining, type });
         return remaining;
       }
     }

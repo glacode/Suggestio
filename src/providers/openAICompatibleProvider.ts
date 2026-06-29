@@ -1,4 +1,5 @@
 import { IChatMessage, IAnonymizer, IPrompt, ILlmProvider, IToolDefinition, IHttpClient, IHttpResponse, IReasoningProcessor, IOpenAIResponseParser, IOpenAIRequestFormatter, IOpenAIStreamHandler } from "../types.js";
+import { APP_EVENTS } from "../constants/protocol.js";
 import { StandardReasoningProcessor } from "./reasoningProcessor.js";
 import { OpenAIResponseParser } from "./openAIResponseParser.js";
 import { OpenAIRequestFormatter, OpenAIRequestBody } from "./openAIRequestFormatter.js";
@@ -166,14 +167,14 @@ export class OpenAICompatibleProvider implements ILlmProvider {
         },
         onRetry: (attempt, total, delay, error) => {
           this.logger.warn(`API call failed (attempt ${attempt}/${total}): ${error.message}. Retrying in ${delay}ms...`);
-          this.eventBus.emit('agent:notification', {
+          this.eventBus.emit(APP_EVENTS.AGENT_NOTIFICATION, {
             text: `${error}\n\nRetrying (attempt ${attempt} of ${total}) in ${delay / 1000}s...`
           });
         }
       }
     ).finally(() => {
       // Clear the notification when we either succeed or give up
-      this.eventBus.emit('agent:notification', { text: null });
+      this.eventBus.emit(APP_EVENTS.AGENT_NOTIFICATION, { text: null });
     });
   }
 

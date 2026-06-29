@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { IWorkspaceProvider, IToolDefinition, IToolResult, IEventBus, ICommandExecutor, ICommandValidator, ICommandAutoAcceptManager } from '../types.js';
+import { APP_EVENTS } from '../constants/protocol.js';
 import { AGENT_MESSAGES } from '../constants/messages.js';
 import { BaseTool } from './baseTool.js';
 
@@ -86,7 +87,7 @@ export class RunCommandTool extends BaseTool<RunCommandArgs> {
         try {
             // Notify the UI that the command is actually starting now.
             if (toolCallId) {
-                this.eventBus.emit('agent:toolExecutionStarted', { toolCallId });
+                this.eventBus.emit(APP_EVENTS.AGENT_TOOL_EXECUTION_STARTED, { toolCallId });
             }
 
             const result = await this.commandExecutor.execute(command, { 
@@ -94,12 +95,12 @@ export class RunCommandTool extends BaseTool<RunCommandArgs> {
                 signal,
                 onStdout: (data) => {
                     if (toolCallId) {
-                        this.eventBus.emit('agent:toolOutput', { toolCallId, output: data });
+                        this.eventBus.emit(APP_EVENTS.AGENT_TOOL_OUTPUT, { toolCallId, output: data });
                     }
                 },
                 onStderr: (data) => {
                     if (toolCallId) {
-                        this.eventBus.emit('agent:toolOutput', { toolCallId, output: data });
+                        this.eventBus.emit(APP_EVENTS.AGENT_TOOL_OUTPUT, { toolCallId, output: data });
                     }
                 }
             });
