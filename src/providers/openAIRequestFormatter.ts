@@ -8,9 +8,9 @@ import {
 } from "../types.js";
 
 /**
- * Represents the body of a completion request sent to an OpenAI-compatible API.
+ * Body of a chat-completions request (`/chat/completions`).
  */
-export type OpenAIRequestBody = {
+export type OpenAIChatRequestBody = {
   model: string;
   messages: IChatMessage[];
   max_tokens: number;
@@ -20,6 +20,22 @@ export type OpenAIRequestBody = {
     function: IToolDefinition;
   }[];
 };
+
+/**
+ * Body of a DeepSeek Fill-In-the-Middle completions request (`/beta/completions`).
+ */
+export type DeepSeekFimRequestBody = {
+  model: string;
+  prompt: string;
+  suffix?: string;
+  max_tokens: number;
+  stream?: boolean;
+};
+
+/**
+ * Represents the body of any completion request sent to an OpenAI-compatible API.
+ */
+export type OpenAIRequestBody = OpenAIChatRequestBody | DeepSeekFimRequestBody;
 
 /**
  * Implementation of IOpenAIRequestFormatter that handles anonymization and reasoning formatting.
@@ -60,11 +76,11 @@ export class OpenAIRequestFormatter implements IOpenAIRequestFormatter {
       stream: boolean;
       tools?: IToolDefinition[];
     }
-  ): OpenAIRequestBody {
+  ): OpenAIChatRequestBody {
     const conversation = prompt.generateChatHistory();
     const messages = this.prepareMessages(conversation);
 
-    const body: OpenAIRequestBody = {
+    const body: OpenAIChatRequestBody = {
       model: model,
       messages: messages,
       max_tokens: options.maxTokens,

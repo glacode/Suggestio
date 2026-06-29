@@ -24,9 +24,9 @@
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["openai-compatible", "gemini"],
+            "enum": ["openai-compatible", "gemini", "deepseek-fim"],
             "default": "openai-compatible",
-            "description": "The type of the profile."
+            "description": "The type of the profile. Use \"deepseek-fim\" for DeepSeek's Fill-In-the-Middle completion endpoint (/beta/completions)."
           },
           "model": {
             "type": "string",
