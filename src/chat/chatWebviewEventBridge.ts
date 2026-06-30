@@ -9,6 +9,7 @@ import type {
     IChatWebviewEventBridge
 } from '../types.js';
 import { IEventBus } from '../utils/eventBus.js';
+import { APP_EVENTS } from '../constants/protocol.js';
 import { createEventLogger } from '../log/eventLogger.js';
 import { CHAT_MESSAGES, AGENT_LOGS } from '../constants/messages.js';
 import { EXTENSION_EVENTS, MESSAGE_SENDERS } from '../constants/protocol.js';
@@ -72,7 +73,7 @@ export class ChatWebviewEventBridge implements IChatWebviewEventBridge {
     }
 
     private _setupListeners(): void {
-        this._eventBus.on('agent:maxIterationsReached', (payload: { maxIterations: number }) => {
+        this._eventBus.on(APP_EVENTS.AGENT_MAX_ITERATIONS_REACHED, (payload: { maxIterations: number }) => {
             this._logger.info(AGENT_LOGS.MAX_ITERATIONS_REACHED(payload.maxIterations));
             if (this._view) {
                 this._view.webview.postMessage({
@@ -83,7 +84,7 @@ export class ChatWebviewEventBridge implements IChatWebviewEventBridge {
             }
         });
 
-        this._eventBus.on('agent:token', (payload: ITokenEventPayload) => {
+        this._eventBus.on(APP_EVENTS.AGENT_TOKEN, (payload: ITokenEventPayload) => {
             const abortController = this._getAbortController();
             if (abortController?.signal.aborted) {
                 return;
@@ -98,7 +99,7 @@ export class ChatWebviewEventBridge implements IChatWebviewEventBridge {
             }
         });
 
-        this._eventBus.on('agent:toolStart', (payload: IToolCallEventPayload) => {
+        this._eventBus.on(APP_EVENTS.AGENT_TOOL_START, (payload: IToolCallEventPayload) => {
             if (this._view) {
                 const { displayMessage, uiOptions } = this._toolUiProvider.getToolUI(payload.toolName, payload.args);
                 this._view.webview.postMessage({
@@ -113,7 +114,7 @@ export class ChatWebviewEventBridge implements IChatWebviewEventBridge {
             }
         });
 
-        this._eventBus.on('agent:toolOutput', (payload: IToolOutputEventPayload) => {
+        this._eventBus.on(APP_EVENTS.AGENT_TOOL_OUTPUT, (payload: IToolOutputEventPayload) => {
             if (this._view) {
                 this._view.webview.postMessage({
                     sender: MESSAGE_SENDERS.ASSISTANT,
@@ -124,7 +125,7 @@ export class ChatWebviewEventBridge implements IChatWebviewEventBridge {
             }
         });
 
-        this._eventBus.on('agent:toolEnd', (payload: IToolResultEventPayload) => {
+        this._eventBus.on(APP_EVENTS.AGENT_TOOL_END, (payload: IToolResultEventPayload) => {
             // Clean up diff data when tool finishes
             this._activeDiffs.delete(payload.toolCallId);
 
@@ -140,11 +141,11 @@ export class ChatWebviewEventBridge implements IChatWebviewEventBridge {
             }
         });
 
-        this._eventBus.on('agent:notification', (payload: { text: string | null }) => {
+        this._eventBus.on(APP_EVENTS.AGENT_NOTIFICATION, (payload: { text: string | null }) => {
             this.sendNotification(payload.text);
         });
 
-        this._eventBus.on('agent:toolExecutionStarted', (payload: { toolCallId: string }) => {
+        this._eventBus.on(APP_EVENTS.AGENT_TOOL_EXECUTION_STARTED, (payload: { toolCallId: string }) => {
             if (this._view) {
                 this._view.webview.postMessage({
                     sender: MESSAGE_SENDERS.ASSISTANT,
@@ -154,7 +155,7 @@ export class ChatWebviewEventBridge implements IChatWebviewEventBridge {
             }
         });
 
-        this._eventBus.on('agent:requestConfirmation', (payload: IToolConfirmationPayload) => {
+        this._eventBus.on(APP_EVENTS.AGENT_REQUEST_CONFIRMATION, (payload: IToolConfirmationPayload) => {
             if (payload.diffData) {
                 this._activeDiffs.set(payload.toolCallId, payload.diffData);
             }

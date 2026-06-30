@@ -15,6 +15,7 @@ import type {
     IChatCommandHandler
 } from '../types.js';
 import { IEventBus } from '../utils/eventBus.js';
+import { APP_EVENTS } from '../constants/protocol.js';
 import { createEventLogger } from '../log/eventLogger.js';
 import { ChatPrompt } from './chatPrompt.js';
 import { CHAT_MESSAGES, AGENT_LOGS, CONFIG_MESSAGES } from '../constants/messages.js';
@@ -88,7 +89,7 @@ export class ChatCommandHandler implements IChatCommandHandler {
                 const activeProfile = this._configContainer.config.activeChatProfile;
                 const profileConfig = this._configContainer.config.profiles[activeProfile];
                 if (profileConfig && !profileConfig.resolvedApiKey && profileConfig.apiKeyIdentifier) {
-                    this._eventBus.emit('agent:notification', {
+                    this._eventBus.emit(APP_EVENTS.AGENT_NOTIFICATION, {
                         text: CONFIG_MESSAGES.WAITING_FOR_API_KEY(profileConfig.apiKeyIdentifier)
                     });
 
@@ -96,7 +97,7 @@ export class ChatCommandHandler implements IChatCommandHandler {
                     if (this._view) {
                         await this._view.pushUpdate();
                     }
-                    this._eventBus.emit('agent:notification', { text: null });
+                    this._eventBus.emit(APP_EVENTS.AGENT_NOTIFICATION, { text: null });
                 }
 
                 this._abortController = new AbortController();
@@ -129,7 +130,7 @@ export class ChatCommandHandler implements IChatCommandHandler {
                     await this._diffManager.closeDiff(diffData.filePath);
                 }
             }
-            this._eventBus.emit('user:confirmationResponse', {
+            this._eventBus.emit(APP_EVENTS.USER_CONFIRMATION_RESPONSE, {
                 toolCallId: message.toolCallId,
                 decision: message.decision
             });
@@ -139,7 +140,7 @@ export class ChatCommandHandler implements IChatCommandHandler {
                 await this._diffManager.showDiff(diffData.filePath, diffData.oldContent, diffData.newContent);
             }
         } else if (message.command === WEBVIEW_COMMANDS.CHAT_PROFILE_CHANGED) {
-            this._eventBus.emit('chatProfileChanged', message.model);
+            this._eventBus.emit(APP_EVENTS.CHAT_PROFILE_CHANGED, message.model);
             await this._configProvider.updateConfig('activeChatProfile', message.model, true);
         } else if (message.command === WEBVIEW_COMMANDS.CLEAR_HISTORY) {
             this._chatHistoryManager.clearHistory();
@@ -161,7 +162,7 @@ export class ChatCommandHandler implements IChatCommandHandler {
                 history: enrichedHistory
             });
         } else if (message.command === WEBVIEW_COMMANDS.COMPLETION_PROFILE_CHANGED) {
-            this._eventBus.emit('completionProfileChanged', message.model);
+            this._eventBus.emit(APP_EVENTS.COMPLETION_PROFILE_CHANGED, message.model);
             this._configProvider.updateConfig('activeCompletionProfile', message.model, true);
         } else if (message.command === WEBVIEW_COMMANDS.EDIT_API_KEY) {
             await this._secretManager.updateAPIKey(message.identifier);

@@ -16,6 +16,7 @@ import type {
 // Importing the `eventBus`, a custom mechanism for different parts of the extension
 // to communicate by emitting and listening for events.
 import { IEventBus } from '../utils/eventBus.js';
+import { APP_EVENTS } from '../constants/protocol.js';
 
 // This interface defines the arguments required to construct a `ChatWebviewViewProvider`.
 // It uses dependency injection to provide all necessary components.
@@ -64,7 +65,7 @@ export class ChatWebviewViewProvider {
         this._commandHandler.setView(this._viewManager);
         this._eventBridge.setAbortControllerAccessor(() => this._commandHandler.getAbortController());
 
-        this._eventBus.on('configChanged', () => {
+        this._eventBus.on(APP_EVENTS.CONFIG_CHANGED, () => {
             this._viewManager.pushUpdate();
         });
     }
