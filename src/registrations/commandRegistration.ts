@@ -8,6 +8,7 @@ import {
 import { handleUpdateApiKeyCommand, handleDeleteApiKeyCommand, SecretManager } from '../config/secretManager.js';
 import { extractApiKeyPlaceholders } from '../config/apiKeyPlaceholders.js';
 import { IEventBus } from '../utils/eventBus.js';
+import { APP_EVENTS } from '../constants/protocol.js';
 
 interface INewChatCapable {
   newChat(): void;
@@ -79,14 +80,14 @@ export function registerCommands(
   // Enables auto-accept edits by setting a VS Code context and notifying the extension via the event bus.
   context.subscriptions.push(
     vscode.commands.registerCommand('suggestio.enableAutoAcceptEdits', () => {
-      eventBus.emit('autoAcceptEditsToggled', true);
+      eventBus.emit(APP_EVENTS.AUTO_ACCEPT_EDITS_TOGGLED, true);
     })
   );
 
   // Disables auto-accept edits by setting a VS Code context and notifying the extension via the event bus.
   context.subscriptions.push(
     vscode.commands.registerCommand('suggestio.disableAutoAcceptEdits', () => {
-      eventBus.emit('autoAcceptEditsToggled', false);
+      eventBus.emit(APP_EVENTS.AUTO_ACCEPT_EDITS_TOGGLED, false);
     })
   );
 
@@ -122,7 +123,7 @@ export function registerCommands(
       });
 
       if (selected) {
-        eventBus.emit('completionProfileChanged', selected.label);
+        eventBus.emit(APP_EVENTS.COMPLETION_PROFILE_CHANGED, selected.label);
         windowProvider.showInformationMessage(`Inline completion profile set to: ${selected.label}`);
       }
     })

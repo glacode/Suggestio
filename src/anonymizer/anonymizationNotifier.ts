@@ -1,7 +1,8 @@
 import { IAnonymizationEventPayload, IAnonymizationNotifier } from "../types.js";
 import { IEventBus } from "../utils/eventBus.js";
+import { APP_EVENTS } from "../constants/protocol.js";
 
-export const ANONYMIZATION_EVENT = 'anonymization';
+export const ANONYMIZATION_EVENT = APP_EVENTS.ANONYMIZATION;
 
 export class EventBusAnonymizationNotifier implements IAnonymizationNotifier {
     constructor(private eventBus: IEventBus) {}

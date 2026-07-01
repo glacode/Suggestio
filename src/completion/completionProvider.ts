@@ -13,6 +13,7 @@ import { buildPromptForInlineCompletion } from "./promptBuilder/promptBuilder.js
 import { debounce } from "./debounceManager.js";
 import { handleCancellation } from "./cancellation.js";
 import { IEventBus } from "../utils/eventBus.js";
+import { APP_EVENTS } from "../constants/protocol.js";
 import { COMPLETION_LOGS } from "../constants/messages.js";
 
 const DEBOUNCE_DELAY_MS = 1000;
@@ -39,11 +40,11 @@ function createDebounceCallback(
     const profileName = config.activeCompletionProfile || config.activeChatProfile;
     const modelName = config.profiles[profileName]?.model || "unknown";
     
-    eventBus.emit('log', { 
+    eventBus.emit(APP_EVENTS.LOG, { 
       level: 'info', 
       message: COMPLETION_LOGS.USING_PROVIDER(`${profileName} (${modelName})`) 
     });
-    eventBus.emit('log', { level: 'debug', message: COMPLETION_LOGS.PROMPT(promptText) });
+    eventBus.emit(APP_EVENTS.LOG, { level: 'debug', message: COMPLETION_LOGS.PROMPT(promptText) });
 
     const prompt = new UserPrompt(promptText);
 
@@ -65,11 +66,11 @@ function createDebounceCallback(
           insertText: response.content, 
           range: { start: position, end: position } 
         };
-        eventBus.emit('log', { level: 'info', message: COMPLETION_LOGS.RETURNING_COMPLETION });
+        eventBus.emit(APP_EVENTS.LOG, { level: 'info', message: COMPLETION_LOGS.RETURNING_COMPLETION });
         resolve({ items: [item] });
       })
       .catch((err) => {
-        eventBus.emit('log', { level: 'error', message: COMPLETION_LOGS.FETCHING_ERROR(err) });
+        eventBus.emit(APP_EVENTS.LOG, { level: 'error', message: COMPLETION_LOGS.FETCHING_ERROR(err) });
         resolve({ items: [] });
       });
   };
@@ -107,7 +108,7 @@ export async function provideInlineCompletionItems(
 
   // Check if the document should be ignored
   if (document.uri.fsPath && await ignoreManager.shouldIgnore(document.uri.fsPath)) {
-    eventBus.emit('log', { level: 'info', message: COMPLETION_LOGS.DOCUMENT_IGNORED(document.uri.fsPath) });
+    eventBus.emit(APP_EVENTS.LOG, { level: 'info', message: COMPLETION_LOGS.DOCUMENT_IGNORED(document.uri.fsPath) });
     return { items: [] };
   }
 

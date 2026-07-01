@@ -32,6 +32,7 @@ import { SecretManager } from './config/secretManager.js';
 import { VScodeConfigProvider } from './config/vscodeConfigProvider.js';
 import { configProcessor, getChatProfileIds } from './config/configProcessor.js';
 import { CONFIG_DEFAULTS } from './constants/config.js';
+import { APP_EVENTS } from './constants/protocol.js';
 import { Agent } from './agent/agent.js';
 import { ChatWebviewViewProvider } from './chat/chatWebviewViewProvider.js';
 import { ProfileMetadataProvider } from './chat/profileMetadataProvider.js';
@@ -100,7 +101,7 @@ export async function activate(context: vscode.ExtensionContext) {
   new EventLogHandler(eventBus, defaultLogger);
 
   eventBus.on(ANONYMIZATION_EVENT, (payload: IAnonymizationEventPayload) => {
-    eventBus.emit('log', { 
+    eventBus.emit(APP_EVENTS.LOG, { 
       level: 'info', 
       message: EXTENSION_LOGS.ANONYMIZED(payload.original, payload.placeholder, payload.type) 
     });
@@ -235,11 +236,11 @@ export async function activate(context: vscode.ExtensionContext) {
   await vscode.commands.executeCommand('setContext', 'suggestio.inlineCompletionEnabled', configContainer.config.inlineCompletion.enabled !== false);
   await vscode.commands.executeCommand('setContext', 'suggestio.autoAcceptEditsEnabled', configContainer.config.autoAcceptEdits);
 
-  eventBus.on('inlineCompletionToggled', (enabled) => {
+  eventBus.on(APP_EVENTS.INLINE_COMPLETION_TOGGLED, (enabled) => {
     vscode.commands.executeCommand('setContext', 'suggestio.inlineCompletionEnabled', enabled);
   });
 
-  eventBus.on('autoAcceptEditsToggled', (enabled) => {
+  eventBus.on(APP_EVENTS.AUTO_ACCEPT_EDITS_TOGGLED, (enabled) => {
     vscode.commands.executeCommand('setContext', 'suggestio.autoAcceptEditsEnabled', enabled);
   });
 
