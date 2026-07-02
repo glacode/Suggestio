@@ -1,18 +1,20 @@
 import { EventEmitter } from 'events';
 import { IDisposable, IAppEvents } from '../types.js';
-import { AppEvent } from '../constants/protocol.js';
 
 export type EventMap = Record<string, any>;
 
-export type EventKey<E extends EventMap = IAppEvents> = E extends IAppEvents ? AppEvent : string & keyof E;
+export type EventKey<E extends EventMap> = keyof E & string;
 export type EventReceiver<T> = (params: T) => void;
 
 export interface IEventBus<E extends EventMap = IAppEvents> {
   on<K extends EventKey<E>>(eventName: K, fn: EventReceiver<E[K]>): IDisposable;
-  once<K extends EventKey<E>>(eventName: K, fn: EventReceiver<E[K]>): void;
+  once<K extends EventKey<E>>(eventName: K, fn: EventReceiver<E[K]>): IDisposable;
   off<K extends EventKey<E>>(eventName: K, fn: EventReceiver<E[K]>): void;
   removeAllListeners<K extends EventKey<E>>(eventName?: K): void;
-  emit<K extends EventKey<E>>(eventName: K, params: E[K]): void;
+  emit<K extends EventKey<E>>(
+    eventName: K,
+    ...args: E[K] extends void | undefined ? [params?: E[K]] : [params: E[K]]
+  ): void;
 }
 
 export class EventBus<E extends EventMap = IAppEvents> implements IEventBus<E> {
@@ -31,8 +33,13 @@ export class EventBus<E extends EventMap = IAppEvents> implements IEventBus<E> {
     };
   }
 
-  public once<K extends EventKey<E>>(eventName: K, fn: EventReceiver<E[K]>): void {
+  public once<K extends EventKey<E>>(eventName: K, fn: EventReceiver<E[K]>): IDisposable {
     this.emitter.once(eventName, fn);
+    return {
+      dispose: () => {
+        this.off(eventName, fn);
+      }
+    };
   }
 
   public off<K extends EventKey<E>>(eventName: K, fn: EventReceiver<E[K]>): void {
@@ -47,7 +54,10 @@ export class EventBus<E extends EventMap = IAppEvents> implements IEventBus<E> {
     }
   }
 
-  public emit<K extends EventKey<E>>(eventName: K, params: E[K]): void {
-    this.emitter.emit(eventName, params);
+  public emit<K extends EventKey<E>>(
+    eventName: K,
+    ...args: E[K] extends void | undefined ? [params?: E[K]] : [params: E[K]]
+  ): void {
+    this.emitter.emit(eventName, ...args);
   }
 }
