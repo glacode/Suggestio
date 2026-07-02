@@ -87,12 +87,6 @@
       "apiKeyIdentifier": "OPENROUTER_API_KEY",
       "isApiKeyRequired": true
     },
-    "hf-lama-3-1-8b": {
-      "endpoint": "https://router.huggingface.co/v1/chat/completions",
-      "model": "meta-llama/Llama-3.1-8B-Instruct",
-      "apiKeyIdentifier": "HF_API_KEY",
-      "supportsTools": true
-    },
     "gemini-3.1-flash-lite": {
       "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
       "model": "gemini-3.1-flash-lite-preview",
