@@ -81,6 +81,12 @@
       "model": "nvidia/nemotron-3-super-120b-a12b:free",
       "apiKeyIdentifier": "OPENROUTER_API_KEY"
     },
+    "openrouter-poolside-laguna-m-1-free": {
+      "model": "poolside/laguna-m.1:free",
+      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+      "apiKeyIdentifier": "OPENROUTER_API_KEY",
+      "isApiKeyRequired": true
+    },
     "hf-lama-3-1-8b": {
       "endpoint": "https://router.huggingface.co/v1/chat/completions",
       "model": "meta-llama/Llama-3.1-8B-Instruct",
