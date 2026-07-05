@@ -39,7 +39,12 @@ describe('provideInlineCompletionItems', () => {
     });
 
     it('should return empty list immediately if inline completion is disabled', async () => {
-        const config = createDefaultConfig({ inlineCompletion: { enabled: false, supportedLanguages: ['typescript'], enableInUntitledEditors: false } });
+        const config = createDefaultConfig({ 
+            inlineCompletion: { enabled: false, supportedLanguages: ['typescript'], enableInUntitledEditors: false },
+            profiles: { 'test': { model: 'test-model', resolvedApiKey: 'some-key' } }
+        });
+
+        const emitSpy = jest.spyOn(eventBus, 'emit');
 
         const result = await provideInlineCompletionItems(
             mockProvider,
@@ -55,6 +60,35 @@ describe('provideInlineCompletionItems', () => {
         expect(result.items).toHaveLength(0);
         expect(mockIgnoreManager.shouldIgnore).not.toHaveBeenCalled();
         expect(mockProvider.query).not.toHaveBeenCalled();
+        expect(emitSpy).not.toHaveBeenCalledWith('log', expect.objectContaining({
+            message: expect.stringContaining('API key for profile "test" is missing')
+        }));
+    });
+
+    it('should not log missing API key if inline completion is disabled', async () => {
+        const config = createDefaultConfig({ 
+            inlineCompletion: { enabled: false, supportedLanguages: ['typescript'], enableInUntitledEditors: false },
+            profiles: { 'test': { model: 'test-model', isApiKeyRequired: true, resolvedApiKey: undefined } }
+        });
+
+        const emitSpy = jest.spyOn(eventBus, 'emit');
+
+        const result = await provideInlineCompletionItems(
+            mockProvider,
+            config,
+            mockIgnoreManager,
+            mockDocument,
+            mockPosition,
+            eventBus,
+            {},
+            mockCancellationToken
+        );
+
+        expect(result.items).toHaveLength(0);
+        expect(mockProvider.query).not.toHaveBeenCalled();
+        expect(emitSpy).not.toHaveBeenCalledWith('log', expect.objectContaining({
+            message: expect.stringContaining('API key for profile "test" is missing')
+        }));
     });
 
     it('should return empty list if the language is not supported', async () => {
@@ -77,7 +111,10 @@ describe('provideInlineCompletionItems', () => {
     });
 
     it('should proceed if inline completion is enabled and language is supported', async () => {
-        const config = createDefaultConfig({ inlineCompletion: { enabled: true, supportedLanguages: ['typescript'], enableInUntitledEditors: true } });
+        const config = createDefaultConfig({ 
+            inlineCompletion: { enabled: true, supportedLanguages: ['typescript'], enableInUntitledEditors: true },
+            profiles: { 'test': { model: 'test-model', resolvedApiKey: 'some-key' } }
+        });
         mockDocument.languageId = 'typescript';
         mockDocument.uri.scheme = 'file';
 
@@ -99,7 +136,9 @@ describe('provideInlineCompletionItems', () => {
     });
 
     it('should proceed if inline completion is enabled (default)', async () => {
-        const config = createDefaultConfig();
+        const config = createDefaultConfig({
+            profiles: { 'test': { model: 'test-model', resolvedApiKey: 'some-key' } }
+        });
         mockDocument.languageId = 'typescript'; // Included in default supportedLanguages
         mockDocument.uri.scheme = 'file';
 
@@ -117,5 +156,33 @@ describe('provideInlineCompletionItems', () => {
         expect(mockIgnoreManager.shouldIgnore).toHaveBeenCalled();
         expect(mockProvider.query).toHaveBeenCalled();
         expect(result.items).toHaveLength(1);
+    });
+
+    it('should return empty list and log message if API key is missing but required', async () => {
+        const config = createDefaultConfig({ 
+            profiles: { 'test': { model: 'test-model', isApiKeyRequired: true, resolvedApiKey: undefined } } 
+        });
+        mockDocument.languageId = 'typescript';
+        mockDocument.uri.scheme = 'file';
+
+        const emitSpy = jest.spyOn(eventBus, 'emit');
+
+        const result = await provideInlineCompletionItems(
+            mockProvider,
+            config,
+            mockIgnoreManager,
+            mockDocument,
+            mockPosition,
+            eventBus,
+            {},
+            mockCancellationToken
+        );
+
+        expect(result.items).toHaveLength(0);
+        expect(mockProvider.query).not.toHaveBeenCalled();
+        expect(emitSpy).toHaveBeenCalledWith('log', expect.objectContaining({
+            level: 'info',
+            message: expect.stringContaining('API key for profile "test" is missing')
+        }));
     });
 });

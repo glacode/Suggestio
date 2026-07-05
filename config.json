@@ -1,7 +1,7 @@
 {
   "$schema": "./resources/config.schema.json",
   "activeChatProfile": "llm7-fast-noapikey",
-  "activeCompletionProfile": "llm7-qwen32",
+  "activeCompletionProfile": "mistral-devstral-small-2512",
   "profiles": {
     "llm7-fast-noapikey": {
       "endpoint": "https://api.llm7.io/v1/chat/completions",

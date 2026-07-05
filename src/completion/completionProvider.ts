@@ -38,7 +38,18 @@ function createDebounceCallback(
 
     const promptText = buildPromptForInlineCompletion(document, position);
     const profileName = config.activeCompletionProfile || config.activeChatProfile;
-    const modelName = config.profiles[profileName]?.model || "unknown";
+    const profile = config.profiles[profileName];
+
+    if (profile?.isApiKeyRequired !== false && !profile?.resolvedApiKey) {
+      eventBus.emit(APP_EVENTS.LOG, { 
+        level: 'info', 
+        message: COMPLETION_LOGS.MISSING_API_KEY(profileName) 
+      });
+      resolve({ items: [] });
+      return;
+    }
+
+    const modelName = profile?.model || "unknown";
     
     eventBus.emit(APP_EVENTS.LOG, { 
       level: 'info', 

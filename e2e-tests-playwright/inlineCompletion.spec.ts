@@ -32,7 +32,7 @@ function writeMockConfig(workspace: string) {
             testProvider: {
                 endpoint: "http://localhost:3000/v1/completions",
                 model: "test-model",
-                apiKey: "unused"
+                isApiKeyRequired: false
             }
         },
         anonymizer: {

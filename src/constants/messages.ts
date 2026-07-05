@@ -81,6 +81,7 @@ export const COMPLETION_LOGS = {
     FETCHING_ERROR: (error: any) => `Error fetching completion: ${error}`,
     DOCUMENT_IGNORED: (path: string) => `Document ${path} is ignored. Skipping inline completion.`,
     CANCELLED: (stage: string) => `❌ Suggestio: Request cancelled ${stage} LLM call`,
+    MISSING_API_KEY: (profile: string) => `Inline completion is enabled, but API key for profile "${profile}" is missing. Requests will be skipped.`,
 } as const;
 
 export const LLM_MESSAGES = {
