@@ -1,19 +1,13 @@
 {
   "$schema": "./resources/config.schema.json",
-  "activeChatProfile": "gemma-4-31b-it",
+  "activeChatProfile": "llm7-fast-noapikey",
   "activeCompletionProfile": "llm7-qwen32",
   "profiles": {
-    "llm7-qwen32": {
+    "llm7-fast-noapikey": {
       "endpoint": "https://api.llm7.io/v1/chat/completions",
-      "model": "qwen2.5-coder-32b-instruct",
+      "model": "fast",
       "isApiKeyRequired": false,
-      "supportsTools": true,
-      "excludeFromChat": true
-    },
-    "llm7-qwen3-235b": {
-      "endpoint": "https://api.llm7.io/v1/chat/completions",
-      "model": "qwen3-235b",
-      "isApiKeyRequired": false
+      "supportsTools": true
     },
     "publicai-apertus-70b": {
       "endpoint": "https://api.publicai.co/v1/chat/completions",
