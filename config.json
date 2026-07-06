@@ -1,6 +1,6 @@
 {
   "$schema": "./resources/config.schema.json",
-  "activeChatProfile": "llm7-fast-noapikey",
+  "activeChatProfile": "llm7-devstral-small-2-24b-noapikey",
   "activeCompletionProfile": "mistral-devstral-small-2512",
   "profiles": {
     "llm7-fast-noapikey": {
@@ -8,6 +8,11 @@
       "model": "fast",
       "isApiKeyRequired": false,
       "supportsTools": true
+    },
+    "llm7-devstral-small-2-24b-noapikey": {
+      "model": "devstral-small-2:24b",
+      "endpoint": "https://api.llm7.io/v1/chat/completions",
+      "isApiKeyRequired": false
     },
     "publicai-apertus-70b": {
       "endpoint": "https://api.publicai.co/v1/chat/completions",
@@ -114,7 +119,13 @@
       "model": "nvidia/nemotron-3-ultra-550b-a55b",
       "apiKeyIdentifier": "NVIDIA_API_KEY"
     },
-    "nvidia-step-3.5-flash": {
+    "nvidia-stepfun-ai-step-3-7-flash": {
+      "model": "stepfun-ai/step-3.7-flash",
+      "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
+      "apiKeyIdentifier": "NVIDIA_API_KEY",
+      "isApiKeyRequired": true
+    },
+    "nvidia-stepfun-ai-step-3-5-flash": {
       "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
       "model": "stepfun-ai/step-3.5-flash",
       "apiKeyIdentifier": "NVIDIA_API_KEY"
