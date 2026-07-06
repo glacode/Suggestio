@@ -71,18 +71,30 @@ function createMockServer(): Promise<Server> {
     });
 }
 
+async function focusEditor(page: Page) {
+    // Wait for the editor container to be visible
+    const editor = page.locator('.monaco-editor').first();
+    await editor.waitFor({ state: 'visible', timeout: 5000 });
+    
+    // Force VS Code to focus the first editor group
+    await page.keyboard.press('Control+1');
+    await page.waitForTimeout(200);
+    
+    // Click the editor to focus the cursor
+    await editor.click();
+    await page.waitForTimeout(200);
+}
+
 async function createNewFile(page: Page) {
     await page.keyboard.press('Control+N');
     await page.waitForTimeout(1000); // Increased for stability
 }
 
 async function clearEditor(page: Page) {
-    const editor = page.locator('.monaco-editor').first();
-    await editor.click();
-    await page.waitForTimeout(200);
+    await focusEditor(page);
     await page.keyboard.press('Control+A');
     await page.keyboard.press('Backspace');
-    await page.waitForTimeout(1000); // Increased for stability
+    await page.waitForTimeout(500); // Increased for stability
 }
 
 // -----------------------------------------------------------------------------
