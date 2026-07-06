@@ -180,6 +180,8 @@ html, body {
     min-width: 200px;
     width: max-content;
     max-width: 300px;
+    max-height: 80vh;
+    overflow-y: auto;
     z-index: 100;
 }
 
