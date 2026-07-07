@@ -56,7 +56,7 @@ Suggestio is designed to leverage providers that offer generous free tiers. Here
 - **Google Gemini (Gemma 4 31B):** A reliable daily driver offering a generous free tier of 1,500 requests per day and 15 requests per minute, with no specific limitations on tokens per minute.
 - **Mistral Devstral:** Mistral has consistently offered free access to their specialized coding models, including Devstral 2512 (Large) and Devstral Small 2512. Both are exceptionally fast and capable.
 - **Stepfun Step 3.5 Flash (via NVIDIA NIM):** Available through NVIDIA's free endpoint registry. This model utilizes a sparse Mixture-of-Experts (MoE) architecture with ~11B active parameters per token, providing very low latency and fast token generation alongside support for tool-calling and agentic tasks.
-- **llm7.io (No API Key Required):** You can use the Qwen3-235B model via llm7.io to test Suggestio's agentic features immediately without an API key. While not intended for heavy production use, it provides an effortless way to explore the extension.
+- **llm7.io (No API Key Required):** You can use the two predefined models available via llm7.io to immediately test Suggestio's agentic features without an API key. While not intended for heavy production use, they provide an effortless way to explore the extension.
 
 ---
 
