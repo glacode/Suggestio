@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2026-07-07
+
+### Added
+- **Comprehensive Chat Testing Suite:** Introduced granular unit tests for `ChatCommandHandler`, `ChatWebviewEventBridge`, `ChatWebviewViewManager`, `ChatWebviewViewProvider`, `ProfileMetadataProvider`, and `CompletionProvider`.
+- **`ChatCommandHandler`:** New dedicated handler for orchestrating webview messages and agent interactions.
+- **`ChatWebviewEventBridge`:** New bridge for decoupled communication between the webview and the extension host.
+- **`ProfileMetadataProvider`:** New specialized provider for managing LLM profile metadata for the UI.
+- **Inline Completion E2E Tests:** Added comprehensive end-to-end tests for inline completions using Playwright.
+
+### Changed
+- **LLM Profile Optimization:** Updated default LLM profiles by pruning obsolete models and introducing new alternatives to improve out-of-the-box experience.
+- **Event System Refactor:** Enhanced `EventBus` to support `IDisposable` on one-time listeners and improved type safety for event emission.
+- **Global Type Safety:** Migrated event identifiers to constants (`APP_EVENTS`) project-wide to eliminate string-literal errors.
+- **Architectural Decoupling:** Refactored `ChatWebviewViewProvider` by extracting command handling and metadata management into specialized services.
+- **UI Refinements:** Improved chat interface responsiveness and scrolling behavior in `chat.css`.
+
+### Fixed
+- Minor bug fixes in completion cancellation logic and event logging.
+
 ## [0.1.3] - 2026-06-15
 
 ### Added
