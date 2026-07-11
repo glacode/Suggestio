@@ -498,13 +498,6 @@ html, body {
     display: none !important;
 }
 
-.stop-icon {
-    font-size: 28px;
-    font-weight: bold;
-    line-height: 1;
-    display: inline-block;
-}
-
 .validation-error {
     color: var(--vscode-errorForeground) !important;
 }
