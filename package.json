@@ -168,8 +168,8 @@
                 "icon": "$(shield)"
             },
             {
-                "command": "suggestio.selectCompletionProfile",
-                "title": "Suggestio: Select Completion Profile",
+                "command": "suggestio.configureLlmProfiles",
+                "title": "Suggestio: Configure AI Models",
                 "icon": "$(gear)"
             },
             {
@@ -211,7 +211,7 @@
                     "group": "navigation@2"
                 },
                 {
-                    "command": "suggestio.selectCompletionProfile",
+                    "command": "suggestio.configureLlmProfiles",
                     "when": "view == suggestio.chat.view",
                     "group": "navigation@3"
                 }

@@ -93,7 +93,7 @@ export function registerCommands(
 
   // Allows the user to select an active completion profile from the configured profiles.
   context.subscriptions.push(
-    vscode.commands.registerCommand('suggestio.selectCompletionProfile', async () => {
+    vscode.commands.registerCommand('suggestio.configureLlmProfiles', async () => {
       // Prefer opening the in-webview settings overlay if the chat provider exposes it
       if (newChatCapable && typeof newChatCapable.showSettings === 'function') {
         try {
