@@ -1,6 +1,6 @@
 {
   "$schema": "./resources/config.schema.json",
-  "activeChatProfile": "llm7-devstral-small-2-24b-noapikey",
+  "activeChatProfile": "gemma-4-31b-it",
   "activeCompletionProfile": "mistral-devstral-small-2512",
   "profiles": {
     "llm7-fast-noapikey": {
@@ -9,8 +9,13 @@
       "isApiKeyRequired": false,
       "supportsTools": true
     },
-    "llm7-devstral-small-2-24b-noapikey": {
-      "model": "devstral-small-2:24b",
+    "llm7-codestral-latest-noapikey": {
+      "model": "codestral-latest",
+      "endpoint": "https://api.llm7.io/v1/chat/completions",
+      "isApiKeyRequired": false
+    },
+    "llm7-minimax-m2-7-noapikey": {
+      "model": "minimax-m2.7",
       "endpoint": "https://api.llm7.io/v1/chat/completions",
       "isApiKeyRequired": false
     },
