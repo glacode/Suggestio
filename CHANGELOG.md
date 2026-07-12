@@ -5,7 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.5] - 2026-07-12
+
+### Added
+- **Improved Stop Icon:** Replaced the text-based stop button with a native SVG icon for a more consistent UI.
+- **Enhanced Discovery:** Added "agent" and "assistant" keywords to improve visibility in the VS Code Marketplace.
+
+### Changed
+- **Model Configuration:** Updated default active chat profile to Gemma 4 31B and refined the llm7.io model offerings for better variety and performance.
+- **Command Refinement:** Renamed "Select Completion Profile" to "Configure AI Models" (`suggestio.configureLlmProfiles`) to better reflect its broader purpose.
+- **Documentation:** Updated README to accurately describe the available models via llm7.io.
+
 ## [0.1.4] - 2026-07-07
+
 
 ### Added
 - **Comprehensive Chat Testing Suite:** Introduced granular unit tests for `ChatCommandHandler`, `ChatWebviewEventBridge`, `ChatWebviewViewManager`, `ChatWebviewViewProvider`, `ProfileMetadataProvider`, and `CompletionProvider`.
