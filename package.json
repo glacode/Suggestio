@@ -25,6 +25,8 @@
         "inline",
         "code",
         "suggestions",
+        "agent",
+        "assistant",
         "AI"
     ],
     "activationEvents": [
