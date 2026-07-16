@@ -114,6 +114,11 @@ export class HistoryOverlay {
             `;
 
             item.addEventListener('click', () => {
+                // Show loading spinner
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                if (loadingOverlay) {
+                    loadingOverlay.classList.add('visible');
+                }
                 vscode.postMessage({ command: WEBVIEW_COMMANDS.LOAD_SESSION, sessionId: session.id });
                 this.hide();
             });

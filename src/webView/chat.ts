@@ -722,6 +722,11 @@ export class ChatManager implements IChatManagerActions {
             }
 
             if (type === EXTENSION_EVENTS.CHAT_HISTORY_LOADED) {
+                // Hide loading spinner
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                if (loadingOverlay) {
+                    loadingOverlay.classList.remove('visible');
+                }
                 this.loadHistory(event.data.history);
                 return;
             }
@@ -799,6 +804,11 @@ export class ChatManager implements IChatManagerActions {
                     }
                     this.enableInput();
                 } else if (type === EXTENSION_EVENTS.ERROR) {
+                    // Hide loading spinner on error
+                    const loadingOverlay = document.getElementById('loadingOverlay');
+                    if (loadingOverlay) {
+                        loadingOverlay.classList.remove('visible');
+                    }
                     this.removeNotification();
                     this.enableInput();
                     if (this.currentAssistantMessage) {

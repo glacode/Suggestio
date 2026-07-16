@@ -156,6 +156,8 @@ export class ChatCommandHandler implements IChatCommandHandler {
             });
         } else if (message.command === WEBVIEW_COMMANDS.LOAD_SESSION) {
             await this._chatHistoryManager.loadSession(message.sessionId);
+            // Uncomment the following line to simulate a long loading time so that you can see the loading spinner
+            // await new Promise(resolve => setTimeout(resolve, 2000));
             const enrichedHistory = this._toolUiProvider.enrichHistory(this._chatHistoryManager.getChatHistory());
             webviewView.webview.postMessage({
                 type: EXTENSION_EVENTS.CHAT_HISTORY_LOADED,
