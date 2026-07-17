@@ -296,6 +296,72 @@ describe('ChatManager Unit Tests', () => {
             expect(input.disabled).toBe(false);
         });
 
+        // Helper function to set up loading overlay for tests
+        const setupLoadingOverlay = (): HTMLElement => {
+            const chatContainer = document.querySelector('.chat-container');
+            if (!chatContainer) { throw new Error('Chat container not found'); }
+            chatContainer.innerHTML += '<div id="loadingOverlay" class="loading-overlay visible"></div>';
+            
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            if (!loadingOverlay) { throw new Error('Loading overlay not found'); }
+            return loadingOverlay;
+        };
+
+        it('should hide loading spinner when CHAT_HISTORY_LOADED event is received', () => {
+            // Setup: Show loading spinner initially
+            const loadingOverlay = setupLoadingOverlay();
+            expect(loadingOverlay.classList.contains('visible')).toBe(true);
+
+            // Trigger CHAT_HISTORY_LOADED event
+            window.dispatchEvent(new MessageEvent('message', {
+                data: {
+                    type: EXTENSION_EVENTS.CHAT_HISTORY_LOADED,
+                    history: [
+                        { role: 'user', content: 'Test message' }
+                    ]
+                }
+            }));
+
+            // Verify spinner is hidden
+            expect(loadingOverlay.classList.contains('visible')).toBe(false);
+        });
+
+        it('should hide loading spinner when error occurs during loading', () => {
+            // Setup: Show loading spinner initially
+            const loadingOverlay = setupLoadingOverlay();
+            expect(loadingOverlay.classList.contains('visible')).toBe(true);
+
+            // Trigger error event
+            window.dispatchEvent(new MessageEvent('message', {
+                data: {
+                    sender: MESSAGE_SENDERS.ASSISTANT,
+                    type: EXTENSION_EVENTS.ERROR,
+                    text: 'Failed to load session'
+                }
+            }));
+
+            // Verify spinner is hidden
+            expect(loadingOverlay.classList.contains('visible')).toBe(false);
+        });
+
+        it('should handle loading spinner when no overlay exists in DOM', () => {
+            // Setup: Remove loading overlay from DOM
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            if (loadingOverlay) {
+                loadingOverlay.remove();
+            }
+
+            // Trigger CHAT_HISTORY_LOADED event should not throw error
+            expect(() => {
+                window.dispatchEvent(new MessageEvent('message', {
+                    data: {
+                        type: EXTENSION_EVENTS.CHAT_HISTORY_LOADED,
+                        history: []
+                    }
+                }));
+            }).not.toThrow();
+        });
+
         it('should handle completion event', () => {
             const input = document.getElementById('messageInput');
             if (!(input instanceof HTMLTextAreaElement)) {
