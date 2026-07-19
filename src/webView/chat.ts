@@ -722,12 +722,17 @@ export class ChatManager implements IChatManagerActions {
             }
 
             if (type === EXTENSION_EVENTS.CHAT_HISTORY_LOADED) {
-                // Hide loading spinner
-                const loadingOverlay = document.getElementById('loadingOverlay');
-                if (loadingOverlay) {
-                    loadingOverlay.classList.remove('visible');
-                }
-                this.loadHistory(event.data.history);
+                // Yield control to the browser to allow it to paint the visible loading overlay.
+                // Since loadHistory blocks the main thread during rendering, yielding ensures
+                // the user sees the spinner while rendering is in progress.
+                setTimeout(() => {
+                    this.loadHistory(event.data.history);
+                    // Hide loading spinner
+                    const loadingOverlay = document.getElementById('loadingOverlay');
+                    if (loadingOverlay) {
+                        loadingOverlay.classList.remove('visible');
+                    }
+                }, 50);
                 return;
             }
 

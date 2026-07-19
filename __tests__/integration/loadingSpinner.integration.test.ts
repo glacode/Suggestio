@@ -1,7 +1,7 @@
 /**
  * @jest-environment jsdom
  */
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, jest, afterEach } from '@jest/globals';
 import { ChatManager } from '../../src/webView/chat.js';
 import { HistoryOverlay } from '../../src/webView/historyOverlay.js';
 import { SettingsOverlay } from '../../src/webView/settingsOverlay.js';
@@ -15,6 +15,7 @@ describe('Loading Spinner Integration', () => {
     let initialState: any;
 
     beforeEach(() => {
+        jest.useFakeTimers();
         // Setup full DOM with both chat and history overlay
         document.body.innerHTML = `
             <div class="chat-container">
@@ -79,6 +80,10 @@ describe('Loading Spinner Integration', () => {
         chatManager.init();
     });
 
+    afterEach(() => {
+        jest.useRealTimers();
+    });
+
     it('should show and hide spinner during complete session loading flow', () => {
         // Setup: Add a test session
         const testSessions = [{
@@ -117,6 +122,9 @@ describe('Loading Spinner Integration', () => {
                 history: [{ role: 'user', content: 'Test message' }]
             }
         }));
+
+        // Advance timers to trigger async loading spinner hiding
+        jest.runAllTimers();
 
         // 7. Verify spinner is hidden again
         expect(loadingOverlay?.classList.contains('visible')).toBe(false);
@@ -197,6 +205,9 @@ describe('Loading Spinner Integration', () => {
             }
         }));
 
+        // Advance timers to trigger async loading spinner hiding
+        jest.runAllTimers();
+
         // Verify first session loading completed
         expect(loadingOverlay?.classList.contains('visible')).toBe(false);
 
@@ -215,6 +226,9 @@ describe('Loading Spinner Integration', () => {
                 history: [{ role: 'user', content: 'Second message' }]
             }
         }));
+
+        // Advance timers to trigger async loading spinner hiding
+        jest.runAllTimers();
 
         // Verify second session loading completed
         expect(loadingOverlay?.classList.contains('visible')).toBe(false);

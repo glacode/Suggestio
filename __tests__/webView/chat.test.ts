@@ -322,6 +322,9 @@ describe('ChatManager Unit Tests', () => {
                 }
             }));
 
+            // Fast-forward timers to run the scheduled loading and spinner removal
+            jest.runAllTimers();
+
             // Verify spinner is hidden
             expect(loadingOverlay.classList.contains('visible')).toBe(false);
         });
@@ -359,6 +362,7 @@ describe('ChatManager Unit Tests', () => {
                         history: []
                     }
                 }));
+                jest.runAllTimers();
             }).not.toThrow();
         });
 
