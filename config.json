@@ -91,6 +91,12 @@
       "apiKeyIdentifier": "OPENROUTER_API_KEY",
       "isApiKeyRequired": true
     },
+      "openrouter-google-gemma-4-31b-it-free": {
+      "model": "google/gemma-4-31b-it:free",
+      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+      "apiKeyIdentifier": "OPENROUTER_API_KEY",
+      "isApiKeyRequired": true
+    },
     "huggingface-qwen-qwen3-6-27b-featherless-ai": {
       "model": "Qwen/Qwen3.6-27B:featherless-ai",
       "endpoint": "https://router.huggingface.co/v1/chat/completions",
