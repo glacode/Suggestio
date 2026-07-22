@@ -55,6 +55,12 @@
       "model": "devstral-small-2:24b-cloud",
       "apiKeyIdentifier": "OLLAMA_API_KEY"
     },
+    "ollama-gemma4-31b": {
+      "model": "gemma4:31b-cloud",
+      "endpoint": "https://ollama.com/v1/chat/completions",
+      "apiKeyIdentifier": "OLLAMA_API_KEY",
+      "isApiKeyRequired": true
+    },
     "ollama-gpt-oss-120b": {
       "endpoint": "https://ollama.com/v1/chat/completions",
       "model": "gpt-oss:120b-cloud",
@@ -91,7 +97,7 @@
       "apiKeyIdentifier": "OPENROUTER_API_KEY",
       "isApiKeyRequired": true
     },
-      "openrouter-google-gemma-4-31b-it-free": {
+    "openrouter-google-gemma-4-31b-it-free": {
       "model": "google/gemma-4-31b-it:free",
       "endpoint": "https://openrouter.ai/api/v1/chat/completions",
       "apiKeyIdentifier": "OPENROUTER_API_KEY",
