@@ -1,5 +1,6 @@
 import { EventEmitter } from 'events';
 import { IDisposable, IAppEvents } from '../types.js';
+import { SYSTEM_CONFIG } from '../constants/system.js';
 
 export type EventMap = Record<string, any>;
 
@@ -21,7 +22,7 @@ export class EventBus<E extends EventMap = IAppEvents> implements IEventBus<E> {
   private emitter = new EventEmitter();
 
   constructor() {
-    this.emitter.setMaxListeners(20);
+    this.emitter.setMaxListeners(SYSTEM_CONFIG.EVENT_BUS_MAX_LISTENERS);
   }
 
   public on<K extends EventKey<E>>(eventName: K, fn: EventReceiver<E[K]>): IDisposable {
