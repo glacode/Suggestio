@@ -97,6 +97,12 @@
       "apiKeyIdentifier": "OPENROUTER_API_KEY",
       "isApiKeyRequired": true
     },
+    "openrouter-poolside-laguna-s-2-1-free": {
+      "model": "poolside/laguna-s-2.1:free",
+      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+      "apiKeyIdentifier": "OPENROUTER_API_KEY",
+      "isApiKeyRequired": true
+    },
     "huggingface-qwen-qwen3-6-27b-featherless-ai": {
       "model": "Qwen/Qwen3.6-27B:featherless-ai",
       "endpoint": "https://router.huggingface.co/v1/chat/completions",
