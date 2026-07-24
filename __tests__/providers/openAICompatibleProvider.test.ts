@@ -336,7 +336,56 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
     const lastCallArgs = mockHttpClient.post.mock.calls[1];
     const body = JSON.parse(lastCallArgs[1].body);
     const assistantMessage = body.messages.find((m: any) => m.role === "assistant");
-    // It should be stripped to avoid 422 errors and context pollution
+    // Google's thought_signature should be preserved when re-sent
+    expect(assistantMessage.tool_calls[0].extra_content).toEqual({
+      google: { thought_signature: thoughtSignature }
+    });
+  });
+
+  it("should strip non-Google extra_content when re-sent to avoid 422 errors", async () => {
+    // Test with non-Google extra_content
+    mockHttpClient.post.mockResolvedValue(createMockResponse({
+      body: createStream([
+        'data: {"choices":[{"delta":{"role":"assistant","tool_calls":[{"extra_content":{"custom":{"data":"xyz"}},"function":{"arguments":"{}","name":"list_files"},"id":"test123","type":"function"}]},"index":0}]}\n\n',
+        'data: {"choices":[{"delta":{"role":"assistant"},"finish_reason":"stop","index":0}]}\n\n',
+        'data: [DONE]\n\n'
+      ])
+    }));
+
+    const provider = new OpenAICompatibleProvider({
+      httpClient: mockHttpClient,
+      endpoint,
+      apiKey,
+      model,
+      eventBus: mockEventBus,
+      maxRetries: 0,
+      initialDelay: 0
+    });
+    const prompt = new TestPrompt([{ role: "user", content: "list files" }]);
+    const results = await provider.queryStream(prompt);
+
+    expect(results).toHaveLength(1);
+    expect(results[0].tool_calls).toBeDefined();
+    expect(results[0].tool_calls?.[0].extra_content).toEqual({
+      custom: { data: "xyz" }
+    });
+
+    // Verify it is stripped when re-sent to avoid 422 errors
+    mockHttpClient.post.mockResolvedValue(createMockResponse({
+      body: createStream(['data: {"choices":[{"delta":{"content":"final response"}}]}\n\n', 'data: [DONE]\n\n'])
+    }));
+
+    const prompt2 = new TestPrompt([
+      { role: "user", content: "list files" },
+      ...results
+    ]);
+    await provider.queryStream(prompt2);
+
+    expect(mockHttpClient.post).toHaveBeenCalledTimes(2);
+    const lastCallArgs = mockHttpClient.post.mock.calls[1];
+    const body = JSON.parse(lastCallArgs[1].body);
+    const assistantMessage = body.messages.find((m: any) => m.role === "assistant");
+    // Non-Google extra_content should be stripped to avoid 422 errors
     expect(assistantMessage.tool_calls[0].extra_content).toBeUndefined();
   });
 

@@ -106,13 +106,30 @@ export class StandardReasoningProcessor implements IReasoningProcessor {
             finalContent = `<thought>\n${reasoning}\n</thought>\n${finalContent}`;
         }
 
-        // Strip extra_content from tool_calls to ensure compatibility with standard OpenAI APIs
+        // Preserve extra_content only for Google's thought_signature structure
+        // Strip it for other cases to ensure compatibility with standard OpenAI APIs
         // and reduce context pollution.
-        const cleanedToolCalls = tool_calls?.map((tc: any) => ({
-            id: tc.id,
-            type: tc.type,
-            function: tc.function,
-        }));
+        const cleanedToolCalls = tool_calls?.map((tc: any) => {
+            // Check if this is Google's thought_signature structure
+            const isGoogleThoughtSignature = tc.extra_content?.google?.thought_signature !== undefined;
+            
+            if (isGoogleThoughtSignature) {
+                // Preserve the entire tool call including extra_content for Google
+                return {
+                    id: tc.id,
+                    type: tc.type,
+                    function: tc.function,
+                    extra_content: tc.extra_content
+                };
+            } else {
+                // Strip extra_content for non-Google cases
+                return {
+                    id: tc.id,
+                    type: tc.type,
+                    function: tc.function,
+                };
+            }
+        });
 
         return {
             role,

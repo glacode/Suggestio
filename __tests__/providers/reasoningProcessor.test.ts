@@ -125,8 +125,9 @@ describe('StandardReasoningProcessor', () => {
             expect(result.content).toBe('No reasoning here');
         });
 
-        it('should preserve tool calls and other fields, but strip extra_content', () => {
-            const message = { 
+        it('should preserve Google thought_signature but strip other extra_content', () => {
+            // Test Google thought_signature preservation
+            const googleMessage = { 
                 role: 'assistant' as const, 
                 content: '', 
                 reasoning: 'I need to list files',
@@ -137,11 +138,26 @@ describe('StandardReasoningProcessor', () => {
                     extra_content: { google: { thought_signature: 'abc' } }
                 }]
             };
-            const result = processor.prepareHistoryMessage(message);
-            expect(result.content).toContain('<thought>\nI need to list files\n</thought>');
-            expect(result.tool_calls).toHaveLength(1);
-            expect(result.tool_calls[0].id).toBe('1');
-            expect(result.tool_calls[0].extra_content).toBeUndefined();
+            const googleResult = processor.prepareHistoryMessage(googleMessage);
+            expect(googleResult.content).toContain('<thought>\nI need to list files\n</thought>');
+            expect(googleResult.tool_calls).toHaveLength(1);
+            expect(googleResult.tool_calls[0].id).toBe('1');
+            expect(googleResult.tool_calls[0].extra_content).toEqual({ google: { thought_signature: 'abc' } });
+            
+            // Test that non-Google extra_content is still stripped
+            const nonGoogleMessage = { 
+                role: 'assistant' as const, 
+                content: '', 
+                reasoning: 'I need to list files',
+                tool_calls: [{ 
+                    id: '2', 
+                    type: 'function', 
+                    function: { name: 'list', arguments: '{}' },
+                    extra_content: { custom: { data: 'xyz' } }
+                }]
+            };
+            const nonGoogleResult = processor.prepareHistoryMessage(nonGoogleMessage);
+            expect(nonGoogleResult.tool_calls[0].extra_content).toBeUndefined();
         });
     });
 });
