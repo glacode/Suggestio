@@ -1,6 +1,6 @@
 {
   "$schema": "./resources/config.schema.json",
-  "activeChatProfile": "gemma-4-31b-it",
+  "activeChatProfile": "mistral-devstral-2512",
   "activeCompletionProfile": "mistral-devstral-small-2512",
   "profiles": {
     "llm7-fast-noapikey": {
