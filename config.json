@@ -45,16 +45,6 @@
       "apiKeyIdentifier": "GROQ_API_KEY",
       "excludeFromChat": true
     },
-    "ollama-devstral": {
-      "endpoint": "https://ollama.com/v1/chat/completions",
-      "model": "devstral-2:123b-cloud",
-      "apiKeyIdentifier": "OLLAMA_API_KEY"
-    },
-    "ollama-devstral-small": {
-      "endpoint": "https://ollama.com/v1/chat/completions",
-      "model": "devstral-small-2:24b-cloud",
-      "apiKeyIdentifier": "OLLAMA_API_KEY"
-    },
     "ollama-gemma4-31b": {
       "model": "gemma4:31b-cloud",
       "endpoint": "https://ollama.com/v1/chat/completions",
