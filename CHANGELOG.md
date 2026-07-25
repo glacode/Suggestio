@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6] - 2026-07-25
+
+### Added
+- **Loading Spinner for Chat History:** A new overlay with a spinner is now displayed when loading a saved chat session from history, providing clear visual feedback that the operation is in progress.
+- **New Free Model: Poolside Laguna S 2.1:** Added `openrouter-poolside-laguna-s-2-1-free` profile for OpenRouter access to the new free Poolside coding model.
+- **New Free Model: Ollama Gemma 4 31B:** Added `ollama-gemma4-31b` profile for Ollama Cloud access to Gemma 4 31B.
+- **New Free Model: NVIDIA StepFun Step 3.7 Flash:** Added `nvidia-stepfun-ai-step-3-7-flash` profile via NVIDIA NIM.
+
+### Changed
+- **Default Chat Profile:** Switched the default active chat profile from `gemma-4-31b-it` to `mistral-devstral-2512` for improved out-of-the-box experience.
+- **Model Refresh:** Updated Gemini profile from `gemini-3.1-flash-lite-preview` to the stable `gemini-3.5-flash-lite`.
+- **Model Refresh:** Replaced `ollama-qwen3-480b` with `ollama-minimax-m3` for better performance.
+- **Architectural Decoupling:** Extracted internal system constants (e.g. `EVENT_BUS_MAX_LISTENERS`) into a dedicated `src/constants/system.ts` module, separated from user-facing configuration constants.
+- **UI Polish:** Modernized chat overlay background transparency and typography for a cleaner look.
+
+### Removed
+- **Retired Models:** Removed `ollama-devstral`, `ollama-devstral-small`, and `openrouter-gemma-4-31b-free` profiles (endpoints no longer on the free tier).
+
+### Fixed
+- **Gemini Tool Calling:** Preserved Google's `thought_signature` (`extra_content`) in tool calls so multi-turn agentic flows with Gemini models no longer break.
+- **Loading Spinner Visibility:** Fixed the spinner not appearing in light themes and resolved stacking-context / transition-freeze issues that caused the overlay to be cut off.
+- **Loading Spinner Cleanup:** The spinner is now reliably hidden when an error occurs during history load.
+
 ## [0.1.5] - 2026-07-12
 
 ### Added
