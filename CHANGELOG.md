@@ -25,8 +25,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Gemini Tool Calling:** Preserved Google's `thought_signature` (`extra_content`) in tool calls so multi-turn agentic flows with Gemini models no longer break.
-- **Loading Spinner Visibility:** Fixed the spinner not appearing in light themes and resolved stacking-context / transition-freeze issues that caused the overlay to be cut off.
-- **Loading Spinner Cleanup:** The spinner is now reliably hidden when an error occurs during history load.
 
 ## [0.1.5] - 2026-07-12
 
