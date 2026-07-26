@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import { configProcessor, ISecretManager, getChatProfileIds } from '../../src/config/configProcessor.js';
+import { configProcessor, getChatProfileIds } from '../../src/config/configProcessor.js';
 import { CONFIG_DEFAULTS } from '../../src/constants/config.js';
-import { IConfigContainer, IVSCodeSettings } from '../../src/types.js';
+import { IConfigContainer, IVSCodeSettings, ISecretManager } from '../../src/types.js';
 import { EventBus } from '../../src/utils/eventBus.js';
 import { NodeFetchClient } from '../../src/utils/httpClient.js';
 

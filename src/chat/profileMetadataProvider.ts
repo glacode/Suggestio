@@ -2,9 +2,9 @@ import type {
     ILlmProviderAccessor,
     IConfigContainer,
     ProfileMetadata,
-    IProfileMetadataProvider
+    IProfileMetadataProvider,
+    ISecretManager
 } from '../types.js';
-import type { ISecretManager } from '../config/configProcessor.js';
 
 /**
  * `ProfileMetadataProvider` handles the logic for gathering, filtering, and sorting

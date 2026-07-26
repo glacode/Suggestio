@@ -12,7 +12,8 @@ import type {
     IWebviewView,
     WebviewMessage,
     IVscodeApiLocal,
-    IChatCommandHandler
+    IChatCommandHandler,
+    ISecretManager
 } from '../types.js';
 import { IEventBus } from '../utils/eventBus.js';
 import { APP_EVENTS } from '../constants/protocol.js';
@@ -20,7 +21,7 @@ import { createEventLogger } from '../log/eventLogger.js';
 import { ChatPrompt } from './chatPrompt.js';
 import { CHAT_MESSAGES, AGENT_LOGS, CONFIG_MESSAGES } from '../constants/messages.js';
 import { WEBVIEW_COMMANDS, EXTENSION_EVENTS, MESSAGE_SENDERS } from '../constants/protocol.js';
-import { configProcessor, ISecretManager } from '../config/configProcessor.js';
+import { configProcessor } from '../config/configProcessor.js';
 
 /**
  * `ChatCommandHandler` handles messages sent from the webview and orchestrates

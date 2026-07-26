@@ -1,18 +1,11 @@
 import { getAnonymizer } from '../anonymizer/anonymizer.js';
 import { getLlmProvider } from '../providers/providerFactory.js';
-import { IConfig, IConfigContainer, IProfileConfig, IHttpClient, IProjectConfig, IRawConfigs, IVSCodeSettings } from '../types.js';
+import { IConfig, IConfigContainer, IProfileConfig, IHttpClient, IProjectConfig, IRawConfigs, IVSCodeSettings, ISecretManager } from '../types.js';
 import { IEventBus } from '../utils/eventBus.js';
 import { APP_EVENTS } from '../constants/protocol.js';
 import { createEventLogger } from '../log/eventLogger.js';
 import { CONFIG_LOGS } from '../constants/messages.js';
 import { CONFIG_DEFAULTS } from '../constants/config.js';
-
-export interface ISecretManager {
-    getOrRequestAPIKey(providerKey: string): Promise<string>;
-    getSecret(apiKeyPlaceholder: string): Promise<string | undefined>;
-    updateAPIKey(apiKeyPlaceholder: string): Promise<void>;
-    deleteSecret(apiKeyPlaceholder: string): Promise<void>;
-}
 
 /**
  * Service for processing and initializing the extension configuration.

@@ -1,10 +1,9 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { registerConfigHandler } from '../../src/registrations/configRegistration.js';
-import { IConfigContainer, IConfig, IConfigChangeEvent, IConfigProvider, IEventBus, IHttpClient } from '../../src/types.js';
+import { IConfigContainer, IConfig, IConfigChangeEvent, IConfigProvider, IEventBus, IHttpClient, ISecretManager } from '../../src/types.js';
 import { defaultLogger, LogLevel } from '../../src/log/logger.js';
 import { CONFIG_DEFAULTS } from '../../src/constants/config.js';
 import { createDefaultConfig, createMockConfigProvider, createMockEventBus, createMockHttpClient } from '../testUtils.js';
-import { ISecretManager } from '../../src/config/configProcessor.js';
 
 describe('registerConfigHandler', () => {
   let mockSubscriptions: { push: jest.Mock };

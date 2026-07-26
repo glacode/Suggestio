@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import { configProcessor, ISecretManager } from '../../src/config/configProcessor.js';
-import { IConfigContainer } from '../../src/types.js';
+import { configProcessor } from '../../src/config/configProcessor.js';
+import { IConfigContainer, ISecretManager } from '../../src/types.js';
 import { EventBus } from '../../src/utils/eventBus.js';
 import { NodeFetchClient } from '../../src/utils/httpClient.js';
 import { CONFIG_DEFAULTS } from '../../src/constants/config.js';

@@ -41,7 +41,7 @@ import {
   IVscodeWorkspaceConfiguration,
   ConfigTarget
 } from "../src/types.js";
-import { ISecretManager } from "../src/config/configProcessor.js";
+import { ISecretManager } from "../src/types.js";
 import { ILogger } from "../src/log/logger.js";
 import { CONFIG_DEFAULTS } from "../src/constants/config.js";
 import { jest } from "@jest/globals";

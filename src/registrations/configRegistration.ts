@@ -1,8 +1,8 @@
-import { IConfigContainer, IConfigProvider, IDisposable, IEventBus, IHttpClient, IVSCodeSettings } from '../types.js';
+import { IConfigContainer, IConfigProvider, IDisposable, IEventBus, IHttpClient, IVSCodeSettings, ISecretManager } from '../types.js';
 import { APP_EVENTS } from '../constants/protocol.js';
 import { defaultLogger, parseLogLevel } from '../log/logger.js';
 import { CONFIG_LOGS } from '../constants/messages.js';
-import { configProcessor, ISecretManager } from '../config/configProcessor.js';
+import { configProcessor } from '../config/configProcessor.js';
 
 /**
  * Registers a listener for configuration changes.

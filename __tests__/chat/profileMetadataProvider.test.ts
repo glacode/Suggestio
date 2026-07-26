@@ -1,7 +1,6 @@
 import { describe, it, expect } from '@jest/globals';
 import { ProfileMetadataProvider } from '../../src/chat/profileMetadataProvider.js';
-import type { ILlmProviderAccessor } from '../../src/types.js';
-import type { ISecretManager } from '../../src/config/configProcessor.js';
+import type { ILlmProviderAccessor, ISecretManager } from '../../src/types.js';
 import { createMockConfigContainer } from '../testUtils.js';
 
 describe('ProfileMetadataProvider', () => {
