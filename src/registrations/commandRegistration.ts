@@ -32,19 +32,19 @@ export function registerCommands(
     )
   );
 
-  // Prompts the user to select an API key placeholder and then enter a new value for it, which is stored securely.
+  // Prompts the user to select an API key identifier and then enter a new value for it, which is stored securely.
   context.subscriptions.push(
     vscode.commands.registerCommand("suggestio.updateApiKey", () => {
-      const placeholders = extractApiKeyPlaceholders(configContainer.config);
-      return handleUpdateApiKeyCommand(secretManager, windowProvider, placeholders);
+      const apiKeyIdentifiers = extractApiKeyPlaceholders(configContainer.config);
+      return handleUpdateApiKeyCommand(secretManager, windowProvider, apiKeyIdentifiers);
     })
   );
 
-  // Prompts the user to select an API key placeholder to be removed from secure storage.
+  // Prompts the user to select an API key identifier to be removed from secure storage.
   context.subscriptions.push(
     vscode.commands.registerCommand("suggestio.deleteApiKey", () => {
-      const placeholders = extractApiKeyPlaceholders(configContainer.config);
-      return handleDeleteApiKeyCommand(secretManager, windowProvider, placeholders);
+      const apiKeyIdentifiers = extractApiKeyPlaceholders(configContainer.config);
+      return handleDeleteApiKeyCommand(secretManager, windowProvider, apiKeyIdentifiers);
     })
   );
 
