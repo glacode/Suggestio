@@ -1,9 +1,9 @@
 import { describe, it, expect } from '@jest/globals';
 import { IConfig } from "../../src/types.js";
-import { extractApiKeyPlaceholders } from "../../src/config/apiKeyPlaceholders.js";
+import { extractApiKeyIdentifiers } from "../../src/config/apiKeyPlaceholders.js";
 import { createDefaultConfig } from "../testUtils.js";
 
-describe("extractApiKeyPlaceholders", () => {
+describe("extractApiKeyIdentifiers", () => {
   it("should extract identifiers from profiles with apiKeyIdentifier", () => {
     const config: IConfig = createDefaultConfig({
       activeChatProfile: "openrouter",
@@ -21,7 +21,7 @@ describe("extractApiKeyPlaceholders", () => {
       }
     });
 
-    const result = extractApiKeyPlaceholders(config);
+    const result = extractApiKeyIdentifiers(config);
     expect(result).toEqual(["OPENROUTER_API_KEY", "ANTHROPIC_API_KEY"]);
   });
 
@@ -37,7 +37,7 @@ describe("extractApiKeyPlaceholders", () => {
       }
     });
 
-    const result = extractApiKeyPlaceholders(config);
+    const result = extractApiKeyIdentifiers(config);
     expect(result).toEqual([]);
   });
 
@@ -47,7 +47,7 @@ describe("extractApiKeyPlaceholders", () => {
       profiles: {}
     });
 
-    const result = extractApiKeyPlaceholders(config);
+    const result = extractApiKeyIdentifiers(config);
     expect(result).toEqual([]);
   });
 
@@ -68,7 +68,7 @@ describe("extractApiKeyPlaceholders", () => {
       }
     });
 
-    const result = extractApiKeyPlaceholders(config);
+    const result = extractApiKeyIdentifiers(config);
     expect(result).toEqual(["DUPLICATE_API_KEY"]);
   });
 });

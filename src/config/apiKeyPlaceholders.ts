@@ -1,24 +1,21 @@
 import { IConfig } from "../types.js";
 
 /**
- * Scans all profiles in the config and collects API key placeholders.
- * A placeholder is defined as a string in the form "${VARNAME}".
- * 
- * Example:
- *   "apiKey": "${OPENROUTER_API_KEY}" → yields "OPENROUTER_API_KEY"
+ * Scans all profiles in the config and collects the API key identifiers
+ * declared in profiles that require an API key.
  *
- * Returns an array of unique placeholder names for use in secret management commands.
+ * Returns an array of unique identifier names for use in secret management commands.
  */
-export function extractApiKeyPlaceholders(config: IConfig): string[] {
-  const placeholders = new Set<string>();
+export function extractApiKeyIdentifiers(config: IConfig): string[] {
+  const apiKeyIdentifiers = new Set<string>();
 
   for (const profileKey of Object.keys(config.profiles)) {
     const profile = config.profiles[profileKey];
     
     if (profile.isApiKeyRequired !== false && profile.apiKeyIdentifier) {
-      placeholders.add(profile.apiKeyIdentifier);
+      apiKeyIdentifiers.add(profile.apiKeyIdentifier);
     }
   }
 
-  return Array.from(placeholders);
+  return Array.from(apiKeyIdentifiers);
 }

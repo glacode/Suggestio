@@ -6,7 +6,7 @@ import {
   ICommandAutoAcceptManager
 } from '../types.js';
 import { handleUpdateApiKeyCommand, handleDeleteApiKeyCommand, SecretManager } from '../config/secretManager.js';
-import { extractApiKeyPlaceholders } from '../config/apiKeyPlaceholders.js';
+import { extractApiKeyIdentifiers } from '../config/apiKeyPlaceholders.js';
 import { IEventBus } from '../utils/eventBus.js';
 import { APP_EVENTS } from '../constants/protocol.js';
 
@@ -35,7 +35,7 @@ export function registerCommands(
   // Prompts the user to select an API key identifier and then enter a new value for it, which is stored securely.
   context.subscriptions.push(
     vscode.commands.registerCommand("suggestio.updateApiKey", () => {
-      const apiKeyIdentifiers = extractApiKeyPlaceholders(configContainer.config);
+      const apiKeyIdentifiers = extractApiKeyIdentifiers(configContainer.config);
       return handleUpdateApiKeyCommand(secretManager, windowProvider, apiKeyIdentifiers);
     })
   );
@@ -43,7 +43,7 @@ export function registerCommands(
   // Prompts the user to select an API key identifier to be removed from secure storage.
   context.subscriptions.push(
     vscode.commands.registerCommand("suggestio.deleteApiKey", () => {
-      const apiKeyIdentifiers = extractApiKeyPlaceholders(configContainer.config);
+      const apiKeyIdentifiers = extractApiKeyIdentifiers(configContainer.config);
       return handleDeleteApiKeyCommand(secretManager, windowProvider, apiKeyIdentifiers);
     })
   );
