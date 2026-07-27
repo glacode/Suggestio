@@ -1,6 +1,6 @@
 import { describe, it, expect } from '@jest/globals';
 import { IConfig } from "../../src/types.js";
-import { extractApiKeyIdentifiers } from "../../src/config/apiKeyPlaceholders.js";
+import { extractApiKeyIdentifiers } from "../../src/config/apiKeyIdentifiers.js";
 import { createDefaultConfig } from "../testUtils.js";
 
 describe("extractApiKeyIdentifiers", () => {

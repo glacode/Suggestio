@@ -6,7 +6,7 @@ import {
   ICommandAutoAcceptManager
 } from '../types.js';
 import { handleUpdateApiKeyCommand, handleDeleteApiKeyCommand, SecretManager } from '../config/secretManager.js';
-import { extractApiKeyIdentifiers } from '../config/apiKeyPlaceholders.js';
+import { extractApiKeyIdentifiers } from '../config/apiKeyIdentifiers.js';
 import { IEventBus } from '../utils/eventBus.js';
 import { APP_EVENTS } from '../constants/protocol.js';
 
