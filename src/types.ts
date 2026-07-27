@@ -2081,9 +2081,9 @@ export interface ISecretStorage {
 
 export interface ISecretManager {
   getOrRequestAPIKey(providerKey: string): Promise<string>;
-  getSecret(apiKeyPlaceholder: string): Promise<string | undefined>;
-  updateAPIKey(apiKeyPlaceholder: string): Promise<void>;
-  deleteSecret(apiKeyPlaceholder: string): Promise<void>;
+  getSecret(apiKeyIdentifier: string): Promise<string | undefined>;
+  updateAPIKey(apiKeyIdentifier: string): Promise<void>;
+  deleteSecret(apiKeyIdentifier: string): Promise<void>;
 }
 
 export interface SecretContext {
