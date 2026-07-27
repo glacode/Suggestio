@@ -66,9 +66,9 @@ export class SecretManager {
 export async function handleUpdateApiKeyCommand(
     secretManager: SecretManager, 
     windowProvider: IWindowProvider,
-    providerApiKeys: string[]
+    apiKeyIdentifiers: string[]
 ): Promise<void> {
-    const apiKeyIdentifier = await windowProvider.showQuickPick(providerApiKeys, {
+    const apiKeyIdentifier = await windowProvider.showQuickPick(apiKeyIdentifiers, {
         placeHolder: CONFIG_MESSAGES.SELECT_API_KEY_TO_UPDATE
     });
     if (apiKeyIdentifier) {
@@ -82,9 +82,9 @@ export async function handleUpdateApiKeyCommand(
 export async function handleDeleteApiKeyCommand(
     secretManager: SecretManager, 
     windowProvider: IWindowProvider,
-    providerApiKeys: string[]
+    apiKeyIdentifiers: string[]
 ): Promise<void> {
-    const apiKeyIdentifier = await windowProvider.showQuickPick(providerApiKeys, {
+    const apiKeyIdentifier = await windowProvider.showQuickPick(apiKeyIdentifiers, {
         placeHolder: CONFIG_MESSAGES.SELECT_API_KEY_TO_DELETE
     });
     if (apiKeyIdentifier) {
