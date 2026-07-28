@@ -50,10 +50,10 @@ export class SecretManager {
         throw new Error(CONFIG_MESSAGES.API_KEY_REQUIRED(apiKeyIdentifier));
     }
 
-    private async promptForAPIKey(providerKey: string): Promise<string | undefined> {
+    private async promptForAPIKey(apiKeyIdentifier: string): Promise<string | undefined> {
         return await this.windowProvider.showInputBox({
-            prompt: CONFIG_MESSAGES.ENTER_API_KEY(providerKey),
-            placeHolder: CONFIG_MESSAGES.API_KEY_PLACEHOLDER(providerKey),
+            prompt: CONFIG_MESSAGES.ENTER_API_KEY(apiKeyIdentifier),
+            placeHolder: CONFIG_MESSAGES.API_KEY_PLACEHOLDER(apiKeyIdentifier),
             password: true,
             ignoreFocusOut: true
         });

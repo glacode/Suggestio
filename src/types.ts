@@ -2080,7 +2080,7 @@ export interface ISecretStorage {
 }
 
 export interface ISecretManager {
-  getOrRequestAPIKey(providerKey: string): Promise<string>;
+  getOrRequestAPIKey(apiKeyIdentifier: string): Promise<string>;
   getSecret(apiKeyIdentifier: string): Promise<string | undefined>;
   updateAPIKey(apiKeyIdentifier: string): Promise<void>;
   deleteSecret(apiKeyIdentifier: string): Promise<void>;
