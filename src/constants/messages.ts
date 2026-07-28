@@ -52,15 +52,15 @@ export const EXTENSION_LOGS = {
 export const CONFIG_MESSAGES = {
     FILE_NOT_FOUND: (path: string) => `File not found or unreadable: ${path}`,
     LOAD_FAILED: (error: any) => `Failed to load config.json: ${error}`,
-    ENTER_NEW_API_KEY: (placeholder: string) => `Enter new API key for ${placeholder}`,
-    API_KEY_PLACEHOLDER: (placeholder: string) => `Your ${placeholder} API key here...`,
-    API_KEY_UPDATED: (placeholder: string) => `API key for ${placeholder} updated.`,
-    API_KEY_REQUIRED: (placeholder: string) => `API key for ${placeholder} is required for this feature to work.`,
-    ENTER_API_KEY: (placeholder: string) => `Enter your ${placeholder} API Key`,
+    ENTER_NEW_API_KEY: (apiKeyIdentifier: string) => `Enter new API key for ${apiKeyIdentifier}`,
+    API_KEY_PLACEHOLDER: (apiKeyIdentifier: string) => `Your ${apiKeyIdentifier} API key here...`,
+    API_KEY_UPDATED: (apiKeyIdentifier: string) => `API key for ${apiKeyIdentifier} updated.`,
+    API_KEY_REQUIRED: (apiKeyIdentifier: string) => `API key for ${apiKeyIdentifier} is required for this feature to work.`,
+    ENTER_API_KEY: (apiKeyIdentifier: string) => `Enter your ${apiKeyIdentifier} API Key`,
     SELECT_API_KEY_TO_UPDATE: 'Select an API key to update',
     SELECT_API_KEY_TO_DELETE: 'Select an API key to delete',
-    API_KEY_DELETED: (placeholder: string) => `API key value for ${placeholder} deleted.`,
-    WAITING_FOR_API_KEY: (placeholder: string) => `Please enter the API key for "${placeholder}" in the VS Code input box at the top-center of the window...`,
+    API_KEY_DELETED: (apiKeyIdentifier: string) => `API key value for ${apiKeyIdentifier} deleted.`,
+    WAITING_FOR_API_KEY: (apiKeyIdentifier: string) => `Please enter the API key for "${apiKeyIdentifier}" in the VS Code input box at the top-center of the window...`,
 } as const;
 
 export const CONFIG_LOGS = {
