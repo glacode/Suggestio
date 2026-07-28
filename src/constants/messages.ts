@@ -53,6 +53,11 @@ export const CONFIG_MESSAGES = {
     FILE_NOT_FOUND: (path: string) => `File not found or unreadable: ${path}`,
     LOAD_FAILED: (error: any) => `Failed to load config.json: ${error}`,
     ENTER_NEW_API_KEY: (apiKeyIdentifier: string) => `Enter new API key for ${apiKeyIdentifier}`,
+    /**
+     * UI input box placeholder text (e.g. "Your OPENROUTER_API_KEY API key here...").
+     * The name reflects the VS Code input box "placeholder" property, not the old
+     * config.json placeholder concept. The parameter is the API key identifier.
+     */
     API_KEY_PLACEHOLDER: (apiKeyIdentifier: string) => `Your ${apiKeyIdentifier} API key here...`,
     API_KEY_UPDATED: (apiKeyIdentifier: string) => `API key for ${apiKeyIdentifier} updated.`,
     API_KEY_REQUIRED: (apiKeyIdentifier: string) => `API key for ${apiKeyIdentifier} is required for this feature to work.`,
