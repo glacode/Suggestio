@@ -105,7 +105,7 @@
       "apiKeyIdentifier": "HUGGINGFACE_API_KEY",
       "isApiKeyRequired": true
     },
-    "gemini-3.5-flash-lite": {
+    "gemini-3-5-flash-lite": {
       "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
       "model": "gemini-3.5-flash-lite",
       "apiKeyIdentifier": "GOOGLEAPIS_API_KEY",
@@ -131,11 +131,6 @@
       "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
       "apiKeyIdentifier": "NVIDIA_API_KEY",
       "isApiKeyRequired": true
-    },
-    "nvidia-stepfun-ai-step-3-5-flash": {
-      "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
-      "model": "stepfun-ai/step-3.5-flash",
-      "apiKeyIdentifier": "NVIDIA_API_KEY"
     },
     "nvidia-minimax2.7": {
       "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
