@@ -1,7 +1,7 @@
-import { ISecretStorage, IWindowProvider } from '../types.js';
+import { ISecretStorage, IWindowProvider, ISecretManager } from '../types.js';
 import { CONFIG_MESSAGES } from '../constants/messages.js';
 
-export class SecretManager {
+export class SecretManager implements ISecretManager {
     constructor(
         private readonly secrets: ISecretStorage,
         private readonly windowProvider: IWindowProvider
