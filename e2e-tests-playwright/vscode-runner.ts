@@ -46,9 +46,23 @@ export async function launchVscode(workspacePath?: string, settings?: Record<str
         args.push(workspacePath);
     }
 
+    // ELECTRON_RUN_AS_NODE=1 makes the Electron binary run as plain Node.js
+    // instead of a GUI app. If this var leaks from the parent shell (e.g.
+    // an active VS Code extension-host process), Playwright's launch of
+    // the raw binary fails with "bad option: --extensionDevelopmentPath".
+    // Strip it from the spawned child env so the binary always launches as a GUI app.
+    const childEnv: { [key: string]: string } = {};
+    for (const [key, value] of Object.entries(process.env)) {
+        if (value !== undefined) {
+            childEnv[key] = value;
+        }
+    }
+    delete childEnv.ELECTRON_RUN_AS_NODE;
+
     const electronApp = await electron.launch({
         executablePath: vscodeExecutablePath,
-        args: args
+        args: args,
+        env: childEnv,
     });
 
     // Print the args so you can confirm the inspect flags were passed when Playwright launches VS Code.
