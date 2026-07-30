@@ -134,10 +134,11 @@
       "apiKeyIdentifier": "NVIDIA_API_KEY",
       "isApiKeyRequired": true
     },
-    "nvidia-minimax2.7": {
+    "nvidia-minimaxai-minimax-m3": {
+      "model": "minimaxai/minimax-m3",
       "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
-      "model": "minimaxai/minimax-m2.7",
-      "apiKeyIdentifier": "NVIDIA_API_KEY"
+      "apiKeyIdentifier": "NVIDIA_API_KEY",
+      "isApiKeyRequired": true
     }
   }
 }
