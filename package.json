@@ -239,7 +239,7 @@
                 },
                 "suggestio.maxSavedChatSessions": {
                     "type": "number",
-                    "default": 5,
+                    "default": 10,
                     "description": "Maximum number of chat sessions to keep in the history."
                 },
                 "suggestio.inlineCompletion.enabled": {
