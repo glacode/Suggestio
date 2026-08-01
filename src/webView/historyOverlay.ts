@@ -6,6 +6,7 @@ export interface ISessionSummary {
     id: string;
     title: string;
     timestamp: number;
+    fullPrompt?: string;
 }
 
 /**
@@ -103,6 +104,9 @@ export class HistoryOverlay {
         sessions.forEach(session => {
             const item = document.createElement('div');
             item.className = 'history-item';
+            if (session.fullPrompt) {
+                item.title = session.fullPrompt;
+            }
             
             const date = new Date(session.timestamp).toLocaleString();
 

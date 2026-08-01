@@ -557,7 +557,7 @@ export type MessageFromTheExtensionToTheWebview =
     /** Provides a list of saved chat sessions to the webview. */
     type: typeof EXTENSION_EVENTS.SESSIONS_LIST;
     /** The list of session summaries. */
-    sessions: { id: string; title: string; timestamp: number }[];
+    sessions: { id: string; title: string; timestamp: number; fullPrompt?: string }[];
   };
 
 /**

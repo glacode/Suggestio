@@ -149,11 +149,15 @@ export class ChatCommandHandler implements IChatCommandHandler {
             const sessions = await this._chatHistoryManager.getSessions();
             webviewView.webview.postMessage({
                 type: EXTENSION_EVENTS.SESSIONS_LIST,
-                sessions: sessions.map(s => ({
-                    id: s.id,
-                    title: s.title,
-                    timestamp: s.timestamp
-                }))
+                sessions: sessions.map(s => {
+                    const firstUserMessage = s.history.find(m => m.role === 'user');
+                    return {
+                        id: s.id,
+                        title: s.title,
+                        timestamp: s.timestamp,
+                        fullPrompt: firstUserMessage ? firstUserMessage.content.trim() : undefined
+                    };
+                })
             });
         } else if (message.command === WEBVIEW_COMMANDS.LOAD_SESSION) {
             await this._chatHistoryManager.loadSession(message.sessionId);
