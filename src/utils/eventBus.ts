@@ -74,7 +74,7 @@ export interface IEventBus<E extends EventMap = IAppEvents> {
    * SUBSCRIBE: Listen for an event continuously
    *
    * @param eventName - The name of the event to listen for (must exist in E)
-   * @param fn - Callback function that receives the event data
+   * @param listener - Callback function that receives the event data
    * @returns IDisposable - An object with a dispose() method to unsubscribe
    *
    * USAGE:
@@ -87,7 +87,7 @@ export interface IEventBus<E extends EventMap = IAppEvents> {
    */
   on<K extends EventKey<E>>(
     eventName: K,
-    fn: EventReceiver<E[K]>
+    listener: EventReceiver<E[K]>
   ): IDisposable;
 
   /**
@@ -97,7 +97,7 @@ export interface IEventBus<E extends EventMap = IAppEvents> {
    * Useful for one-time setup, waiting for initialization, etc.
    *
    * @param eventName - The name of the event to listen for
-   * @param fn - Callback function (called at most once)
+   * @param listener - Callback function (called at most once)
    * @returns IDisposable - Call dispose() to cancel before the event fires
    *
    * USAGE:
@@ -107,7 +107,7 @@ export interface IEventBus<E extends EventMap = IAppEvents> {
    */
   once<K extends EventKey<E>>(
     eventName: K,
-    fn: EventReceiver<E[K]>
+    listener: EventReceiver<E[K]>
   ): IDisposable;
 
   /**
@@ -125,11 +125,11 @@ export interface IEventBus<E extends EventMap = IAppEvents> {
    *   eventBus.off('event', handler); // Works!
    *
    * @param eventName - The event name
-   * @param fn - The exact function reference to remove
+   * @param listener - The exact function reference to remove
    */
   off<K extends EventKey<E>>(
     eventName: K,
-    fn: EventReceiver<E[K]>
+    listener: EventReceiver<E[K]>
   ): void;
 
   /**
@@ -217,7 +217,7 @@ export class EventBus<E extends EventMap = IAppEvents> implements IEventBus<E> {
    * SUBSCRIBE to an event (continuous listening)
    *
    * @param eventName - The event to listen for (type-safe: must exist in E)
-   * @param fn - Callback that receives typed event data (E[K] = the payload type)
+   * @param listener - Callback that receives typed event data (E[K] = the payload type)
    * @returns IDisposable - Call .dispose() to unsubscribe
    *
    * HOW IT WORKS:
@@ -238,16 +238,16 @@ export class EventBus<E extends EventMap = IAppEvents> implements IEventBus<E> {
    *   // In a React component cleanup or class destructor:
    *   sub.dispose();
    */
-  public on<K extends EventKey<E>>(eventName: K, fn: EventReceiver<E[K]>): IDisposable {
+  public on<K extends EventKey<E>>(eventName: K, listener: EventReceiver<E[K]>): IDisposable {
     // Register the listener with Node's EventEmitter
-    this.emitter.on(eventName, fn);
+    this.emitter.on(eventName, listener);
 
     // Return a disposable object for easy cleanup
     // This is the "subscription" - hold onto it to unsubscribe later
     return {
       dispose: () => {
         // When dispose() is called, remove this specific listener
-        this.off(eventName, fn);
+        this.off(eventName, listener);
       }
     };
   }
@@ -256,7 +256,7 @@ export class EventBus<E extends EventMap = IAppEvents> implements IEventBus<E> {
    * SUBSCRIBE to an event ONCE (auto-unsubscribes after first fire)
    *
    * @param eventName - The event to listen for
-   * @param fn - Callback (will be called at most once)
+   * @param listener - Callback (will be called at most once)
    * @returns IDisposable - Call .dispose() to cancel before event fires
    *
    * USE CASES:
@@ -266,14 +266,14 @@ export class EventBus<E extends EventMap = IAppEvents> implements IEventBus<E> {
    *
    * NOTE: If you call dispose() before the event fires, the callback NEVER runs
    */
-  public once<K extends EventKey<E>>(eventName: K, fn: EventReceiver<E[K]>): IDisposable {
+  public once<K extends EventKey<E>>(eventName: K, listener: EventReceiver<E[K]>): IDisposable {
     // EventEmitter's once() automatically removes the listener after first call
-    this.emitter.once(eventName, fn);
+    this.emitter.once(eventName, listener);
 
     // Still return IDisposable so caller can cancel if needed
     return {
       dispose: () => {
-        this.off(eventName, fn);
+        this.off(eventName, listener);
       }
     };
   }
@@ -282,20 +282,20 @@ export class EventBus<E extends EventMap = IAppEvents> implements IEventBus<E> {
    * UNSUBSCRIBE a specific listener
    *
    * @param eventName - The event name
-   * @param fn - The EXACT function reference passed to on()/once()
+   * @param listener - The EXACT listener reference passed to on()/once()
    *
-   * IMPORTANT: You must pass the same function reference!
+   * IMPORTANT: You must pass the same listener reference!
    * This won't work:
    *   eventBus.on('event', () => console.log('hi'));
-   *   eventBus.off('event', () => console.log('hi')); // Different function!
+   *   eventBus.off('event', () => console.log('hi')); // Different listener!
    *
    * This WILL work:
    *   const handler = () => console.log('hi');
    *   eventBus.on('event', handler);
    *   eventBus.off('event', handler); // Same reference!
    */
-  public off<K extends EventKey<E>>(eventName: K, fn: EventReceiver<E[K]>): void {
-    this.emitter.off(eventName, fn);
+  public off<K extends EventKey<E>>(eventName: K, listener: EventReceiver<E[K]>): void {
+    this.emitter.off(eventName, listener);
   }
 
   /**
