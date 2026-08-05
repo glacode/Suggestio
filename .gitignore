@@ -140,6 +140,9 @@ vite.config.ts.timestamp-*
 
 *.vsix
 
+# Local personal files (not committed)
+.local/
+
 # Generated webview / built resources
 builtResources/
 
