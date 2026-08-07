@@ -24,6 +24,24 @@ import { WEBVIEW_COMMANDS, EXTENSION_EVENTS, MESSAGE_SENDERS } from '../constant
 import { configProcessor } from '../config/configProcessor.js';
 
 /**
+ * Arguments for the ChatCommandHandler constructor.
+ */
+export interface IChatCommandHandlerArgs {
+    chatAgent: IChatAgent;
+    chatHistoryManager: IPersistentChatHistoryManager;
+    buildContext: IContextBuilder;
+    eventBus: IEventBus;
+    diffManager: IDiffManager;
+    configContainer: IConfigContainer;
+    configProvider: IConfigProvider;
+    secretManager: ISecretManager;
+    httpClient: IHttpClient;
+    toolUiProvider: IToolUiProvider;
+    eventBridge: IChatWebviewEventBridge;
+    vscodeApi: IVscodeApiLocal;
+}
+
+/**
  * `ChatCommandHandler` handles messages sent from the webview and orchestrates
  * the corresponding actions in the extension.
  */
@@ -45,20 +63,20 @@ export class ChatCommandHandler implements IChatCommandHandler {
     private _abortController?: AbortController;
     private readonly _logger: ReturnType<typeof createEventLogger>;
 
-    constructor(
-        chatAgent: IChatAgent,
-        chatHistoryManager: IPersistentChatHistoryManager,
-        buildContext: IContextBuilder,
-        eventBus: IEventBus,
-        diffManager: IDiffManager,
-        configContainer: IConfigContainer,
-        configProvider: IConfigProvider,
-        secretManager: ISecretManager,
-        httpClient: IHttpClient,
-        toolUiProvider: IToolUiProvider,
-        eventBridge: IChatWebviewEventBridge,
-        vscodeApi: IVscodeApiLocal
-    ) {
+    constructor({
+        chatAgent,
+        chatHistoryManager,
+        buildContext,
+        eventBus,
+        diffManager,
+        configContainer,
+        configProvider,
+        secretManager,
+        httpClient,
+        toolUiProvider,
+        eventBridge,
+        vscodeApi
+    }: IChatCommandHandlerArgs) {
         this._chatAgent = chatAgent;
         this._chatHistoryManager = chatHistoryManager;
         this._buildContext = buildContext;

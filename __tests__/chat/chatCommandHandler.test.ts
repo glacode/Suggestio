@@ -44,7 +44,7 @@ describe('ChatCommandHandler', () => {
             pushUpdate: jest.fn<() => Promise<void>>()
         };
 
-        const handler = new ChatCommandHandler(
+        const handler = new ChatCommandHandler({
             chatAgent,
             chatHistoryManager,
             buildContext,
@@ -57,7 +57,7 @@ describe('ChatCommandHandler', () => {
             toolUiProvider,
             eventBridge,
             vscodeApi
-        );
+        });
         handler.setView(view);
 
         return { handler, chatAgent, chatHistoryManager, buildContext, eventBus, view, eventBridge };

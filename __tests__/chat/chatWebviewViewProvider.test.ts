@@ -82,20 +82,20 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
         deps.chatHistoryManager
     );
     const eventBridge = new ChatWebviewEventBridge(deps.eventBus, deps.toolUiProvider);
-    const commandHandler = new ChatCommandHandler(
-      deps.chatAgent || { run: async () => { } },
-      deps.chatHistoryManager,
-      deps.buildContext || { buildContext: async () => '' },
-      deps.eventBus,
-      handlerOverrides.diffManager || createMockDiffManager(),
-      deps.configContainer,
-      deps.configProvider,
-      deps.secretManager,
-      deps.httpClient,
-      deps.toolUiProvider,
+    const commandHandler = new ChatCommandHandler({
+      chatAgent: deps.chatAgent || { run: async () => { } },
+      chatHistoryManager: deps.chatHistoryManager,
+      buildContext: deps.buildContext || { buildContext: async () => '' },
+      eventBus: deps.eventBus,
+      diffManager: handlerOverrides.diffManager || createMockDiffManager(),
+      configContainer: deps.configContainer,
+      configProvider: deps.configProvider,
+      secretManager: deps.secretManager,
+      httpClient: deps.httpClient,
+      toolUiProvider: deps.toolUiProvider,
       eventBridge,
-      deps.vscodeApi
-    );
+      vscodeApi: deps.vscodeApi
+    });
 
     return new ChatWebviewViewProvider({
       extensionContext: createMockExtensionContextMinimal({ extensionUri: createMockUri('/ext'), globalStorageUri: createMockUri('/storage') }),

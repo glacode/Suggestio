@@ -308,20 +308,20 @@ export async function activate(context: vscode.ExtensionContext) {
     chatHistoryManager
   );
 
-  const chatCommandHandler = new ChatCommandHandler(
-    agent,
+  const chatCommandHandler = new ChatCommandHandler({
+    chatAgent: agent,
     chatHistoryManager,
-    contextBuilder,
+    buildContext: contextBuilder,
     eventBus,
     diffManager,
     configContainer,
     configProvider,
     secretManager,
-    new NodeFetchClient(),
+    httpClient: new NodeFetchClient(),
     toolUiProvider,
     eventBridge,
-    vscodeApiLocal
-  );
+    vscodeApi: vscodeApiLocal
+  });
 
   const chatWebviewViewProvider = new ChatWebviewViewProvider({
     extensionContext: context,
