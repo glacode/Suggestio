@@ -24,6 +24,33 @@ import { WEBVIEW_COMMANDS, EXTENSION_EVENTS, MESSAGE_SENDERS } from '../constant
 import { configProcessor } from '../config/configProcessor.js';
 
 /**
+ * Context passed to each command handler, containing only the dependencies
+ * that are actually needed by multiple handlers.
+ */
+interface ICommandContext {
+    readonly view: IChatWebviewView;
+    readonly webviewView: IWebviewView;
+    readonly abortController: AbortController | undefined;
+    readonly getAbortController: () => AbortController | undefined;
+    readonly eventBus: IEventBus;
+    readonly logger: ReturnType<typeof createEventLogger>;
+}
+
+/**
+ * Interface for a handler that processes a specific webview command.
+ */
+interface IWebviewCommandHandler {
+    /**
+     * Returns true if this handler can process the given command.
+     */
+    canHandle(command: string): boolean;
+    /**
+     * Processes the command.
+     */
+    handle(message: WebviewMessage, ctx: ICommandContext): Promise<void>;
+}
+
+/**
  * Arguments for the ChatCommandHandler constructor.
  */
 export interface IChatCommandHandlerArgs {
@@ -93,6 +120,19 @@ export class ChatCommandHandler implements IChatCommandHandler {
         this._logger = createEventLogger(eventBus);
     }
 
+    /**
+     * Internal handler that wraps all legacy command logic.
+     * Will be incrementally replaced by dedicated handlers in follow-up commits.
+     */
+    private readonly _legacyHandler: IWebviewCommandHandler = {
+        canHandle: () => true, // handles everything for now
+        handle: async (message: WebviewMessage, ctx: ICommandContext) => {
+            await this._handleMessageLegacy(message, ctx);
+        }
+    };
+
+    private readonly _handlers: IWebviewCommandHandler[] = [this._legacyHandler];
+
     public setView(view: IChatWebviewView): void {
         this._view = view;
     }
@@ -102,6 +142,27 @@ export class ChatCommandHandler implements IChatCommandHandler {
     }
 
     public async handleMessage(message: WebviewMessage, webviewView: IWebviewView): Promise<void> {
+        const ctx: ICommandContext = {
+            view: this._view!,
+            webviewView,
+            abortController: this._abortController,
+            getAbortController: () => this._abortController,
+            eventBus: this._eventBus,
+            logger: this._logger
+        };
+
+        for (const handler of this._handlers) {
+            if (handler.canHandle(message.command)) {
+                await handler.handle(message, ctx);
+                return;
+            }
+        }
+    }
+
+    /**
+     * Legacy command handling logic — will be split into dedicated handlers.
+     */
+    private async _handleMessageLegacy(message: WebviewMessage, ctx: ICommandContext): Promise<void> {
         if (message.command === WEBVIEW_COMMANDS.SEND_MESSAGE) {
             try {
                 // Lazy resolution of API key if missing
@@ -125,14 +186,14 @@ export class ChatCommandHandler implements IChatCommandHandler {
 
                 await this._processAgentRun();
             } catch (error) {
-                this._handleAgentError(error, webviewView);
+                this._handleAgentError(error, ctx.webviewView);
             }
         } else if (message.command === WEBVIEW_COMMANDS.RETRY_LAST_MESSAGE) {
             try {
                 this._abortController = new AbortController();
                 await this._processAgentRun();
             } catch (error) {
-                this._handleAgentError(error, webviewView);
+                this._handleAgentError(error, ctx.webviewView);
             }
         } else if (message.command === WEBVIEW_COMMANDS.CANCEL_REQUEST) {
             if (this._abortController) {
@@ -165,7 +226,7 @@ export class ChatCommandHandler implements IChatCommandHandler {
             this._chatHistoryManager.clearHistory();
         } else if (message.command === WEBVIEW_COMMANDS.GET_SESSIONS) {
             const sessions = await this._chatHistoryManager.getSessions();
-            webviewView.webview.postMessage({
+            ctx.webviewView.webview.postMessage({
                 type: EXTENSION_EVENTS.SESSIONS_LIST,
                 sessions: sessions.map(s => {
                     const firstUserMessage = s.history.find(m => m.role === 'user');
@@ -182,7 +243,7 @@ export class ChatCommandHandler implements IChatCommandHandler {
             // Uncomment the following line to simulate a long loading time so that you can see the loading spinner
             // await new Promise(resolve => setTimeout(resolve, 2000));
             const enrichedHistory = this._toolUiProvider.enrichHistory(this._chatHistoryManager.getChatHistory());
-            webviewView.webview.postMessage({
+            ctx.webviewView.webview.postMessage({
                 type: EXTENSION_EVENTS.CHAT_HISTORY_LOADED,
                 history: enrichedHistory
             });
