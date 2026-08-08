@@ -1,5 +1,6 @@
 import { describe, it, expect, jest } from '@jest/globals';
 import { ChatCommandHandler } from '../../src/chat/chatCommandHandler.js';
+import { AgentCommandHandler } from '../../src/chat/commands/agentCommandHandler.js';
 import { EventBus } from '../../src/utils/eventBus.js';
 import { WEBVIEW_COMMANDS } from '../../src/constants/protocol.js';
 import type { IChatAgent, IContextBuilder, IChatWebviewEventBridge, IChatWebviewView } from '../../src/types.js';
@@ -13,7 +14,8 @@ import {
     createMockSecretManager,
     createMockHttpClient,
     createMockToolUiProvider,
-    createMockConfigProvider
+    createMockConfigProvider,
+    createMockEventLogger
 } from '../testUtils.js';
 
 describe('ChatCommandHandler', () => {
@@ -44,10 +46,25 @@ describe('ChatCommandHandler', () => {
             pushUpdate: jest.fn<() => Promise<void>>()
         };
 
-        const handler = new ChatCommandHandler({
+        const logger = createMockEventLogger();
+        let abortController: AbortController | undefined;
+        const agentHandler = new AgentCommandHandler({
             chatAgent,
             chatHistoryManager,
             buildContext,
+            configContainer,
+            eventBridge,
+            eventBus,
+            secretManager,
+            httpClient,
+            setAbortController: (ac) => { abortController = ac; },
+            getAbortController: () => abortController,
+            logger
+        });
+
+        const handler = new ChatCommandHandler({
+            handlers: [agentHandler],
+            chatHistoryManager,
             eventBus,
             diffManager,
             configContainer,
@@ -56,7 +73,8 @@ describe('ChatCommandHandler', () => {
             httpClient,
             toolUiProvider,
             eventBridge,
-            vscodeApi
+            vscodeApi,
+            getAbortController: () => abortController
         });
         handler.setView(view);
 

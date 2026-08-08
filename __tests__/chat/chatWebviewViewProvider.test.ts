@@ -2,7 +2,7 @@
 // It's designed to test the `ChatWebviewViewProvider` without actually using a full VS Code environment.
 // Instead, it uses "mocks" (fake versions) of VS Code API parts and other dependencies.
 
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect, jest } from '@jest/globals';
 // Import necessary types from the chat module. These define the shapes of objects
 // like URIs, VS Code API, profiles, webviews, and messages.
 import type {
@@ -21,6 +21,7 @@ import { ChatWebviewViewProvider } from '../../src/chat/chatWebviewViewProvider.
 import { ProfileMetadataProvider } from '../../src/chat/profileMetadataProvider.js';
 import { ChatWebviewEventBridge } from '../../src/chat/chatWebviewEventBridge.js';
 import { ChatCommandHandler } from '../../src/chat/chatCommandHandler.js';
+import { AgentCommandHandler } from '../../src/chat/commands/agentCommandHandler.js';
 import { ChatWebviewViewManager } from '../../src/chat/chatWebviewViewManager.js';
 import { EventBus } from '../../src/utils/eventBus.js';
 import {
@@ -37,11 +38,11 @@ import {
   createMockHttpClient,
   createMockToolUiProvider,
   createMockConfigProvider,
-  createMockExtensionContextMinimal
+  createMockExtensionContextMinimal,
+  createMockEventLogger,
 } from '../testUtils.js';
 import { CONFIG_DEFAULTS } from '../../src/constants/config.js';
 import { configProcessor } from '../../src/config/configProcessor.js';
-import { jest } from '@jest/globals';
 
 // `describe` is used to group tests. Here, we're testing the `ChatWebviewViewProvider`.
 // The description "integration, no vscode mocks" indicates that while we're using
@@ -82,10 +83,27 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
         deps.chatHistoryManager
     );
     const eventBridge = new ChatWebviewEventBridge(deps.eventBus, deps.toolUiProvider);
-    const commandHandler = new ChatCommandHandler({
+
+    // Construct specialized handlers
+    let abortController: AbortController | undefined;
+    const logger = createMockEventLogger();
+    const agentHandler = new AgentCommandHandler({
       chatAgent: deps.chatAgent || { run: async () => { } },
       chatHistoryManager: deps.chatHistoryManager,
       buildContext: deps.buildContext || { buildContext: async () => '' },
+      configContainer: deps.configContainer,
+      eventBridge,
+      eventBus: deps.eventBus,
+      secretManager: deps.secretManager,
+      httpClient: deps.httpClient,
+      setAbortController: (ac) => { abortController = ac; },
+      getAbortController: () => abortController,
+      logger
+    });
+
+    const commandHandler = new ChatCommandHandler({
+      handlers: [agentHandler],
+      chatHistoryManager: deps.chatHistoryManager,
       eventBus: deps.eventBus,
       diffManager: handlerOverrides.diffManager || createMockDiffManager(),
       configContainer: deps.configContainer,
@@ -94,7 +112,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       httpClient: deps.httpClient,
       toolUiProvider: deps.toolUiProvider,
       eventBridge,
-      vscodeApi: deps.vscodeApi
+      vscodeApi: deps.vscodeApi,
+      getAbortController: () => abortController
     });
 
     return new ChatWebviewViewProvider({

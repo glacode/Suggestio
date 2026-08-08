@@ -204,6 +204,13 @@ export const createMockLogger = (): jest.Mocked<ILogger> => ({
     setLogLevel: jest.fn(),
 });
 
+export const createMockEventLogger = (): Record<'debug' | 'info' | 'warn' | 'error', jest.Mock> => ({
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+});
+
 export const createMockIgnoreManager = (): jest.Mocked<IIgnoreManager> => ({
     shouldIgnore: jest.fn<(filePath: string) => Promise<boolean>>().mockResolvedValue(false),
 });

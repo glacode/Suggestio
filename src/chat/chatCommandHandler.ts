@@ -1,7 +1,5 @@
 import type {
-    IChatAgent,
     IPersistentChatHistoryManager,
-    IContextBuilder,
     IDiffManager,
     IConfigContainer,
     IConfigProvider,
@@ -20,7 +18,6 @@ import { APP_EVENTS } from '../constants/protocol.js';
 import { createEventLogger } from '../log/eventLogger.js';
 import { WEBVIEW_COMMANDS, EXTENSION_EVENTS } from '../constants/protocol.js';
 import { configProcessor } from '../config/configProcessor.js';
-import { AgentCommandHandler } from './commands/agentCommandHandler.js';
 
 /**
  * Context passed to each command handler, containing only the dependencies
@@ -29,8 +26,6 @@ import { AgentCommandHandler } from './commands/agentCommandHandler.js';
 export interface ICommandContext {
     readonly view: IChatWebviewView;
     readonly webviewView: IWebviewView;
-    readonly abortController: AbortController | undefined;
-    readonly getAbortController: () => AbortController | undefined;
     readonly eventBus: IEventBus;
     readonly logger: ReturnType<typeof createEventLogger>;
 }
@@ -51,11 +46,12 @@ export interface IWebviewCommandHandler {
 
 /**
  * Arguments for the ChatCommandHandler constructor.
+ * Handlers are injected to keep this class focused on dispatch logic
+ * rather than handler construction.
  */
 export interface IChatCommandHandlerArgs {
-    chatAgent: IChatAgent;
+    handlers: IWebviewCommandHandler[];
     chatHistoryManager: IPersistentChatHistoryManager;
-    buildContext: IContextBuilder;
     eventBus: IEventBus;
     diffManager: IDiffManager;
     configContainer: IConfigContainer;
@@ -65,6 +61,7 @@ export interface IChatCommandHandlerArgs {
     toolUiProvider: IToolUiProvider;
     eventBridge: IChatWebviewEventBridge;
     vscodeApi: IVscodeApiLocal;
+    getAbortController: () => AbortController | undefined;
 }
 
 /**
@@ -72,9 +69,7 @@ export interface IChatCommandHandlerArgs {
  * the corresponding actions in the extension.
  */
 export class ChatCommandHandler implements IChatCommandHandler {
-    private readonly _chatAgent: IChatAgent;
     private readonly _chatHistoryManager: IPersistentChatHistoryManager;
-    private readonly _buildContext: IContextBuilder;
     private readonly _eventBus: IEventBus;
     private readonly _diffManager: IDiffManager;
     private readonly _configContainer: IConfigContainer;
@@ -86,16 +81,14 @@ export class ChatCommandHandler implements IChatCommandHandler {
     private readonly _vscodeApi: IVscodeApiLocal;
     private _view?: IChatWebviewView;
 
-    private _abortController?: AbortController;
     private readonly _logger: ReturnType<typeof createEventLogger>;
-    private readonly _agentHandler: AgentCommandHandler;
+    private readonly _getAbortController: () => AbortController | undefined;
     private readonly _legacyHandler: IWebviewCommandHandler;
     private readonly _handlers: IWebviewCommandHandler[];
 
     constructor({
-        chatAgent,
+        handlers,
         chatHistoryManager,
-        buildContext,
         eventBus,
         diffManager,
         configContainer,
@@ -104,11 +97,10 @@ export class ChatCommandHandler implements IChatCommandHandler {
         httpClient,
         toolUiProvider,
         eventBridge,
-        vscodeApi
+        vscodeApi,
+        getAbortController
     }: IChatCommandHandlerArgs) {
-        this._chatAgent = chatAgent;
         this._chatHistoryManager = chatHistoryManager;
-        this._buildContext = buildContext;
         this._eventBus = eventBus;
         this._diffManager = diffManager;
         this._configContainer = configContainer;
@@ -118,33 +110,21 @@ export class ChatCommandHandler implements IChatCommandHandler {
         this._toolUiProvider = toolUiProvider;
         this._eventBridge = eventBridge;
         this._vscodeApi = vscodeApi;
+        this._getAbortController = getAbortController;
 
         this._logger = createEventLogger(eventBus);
 
-        this._agentHandler = new AgentCommandHandler({
-            chatAgent: this._chatAgent,
-            chatHistoryManager: this._chatHistoryManager,
-            buildContext: this._buildContext,
-            configContainer: this._configContainer,
-            eventBridge: this._eventBridge,
-            eventBus: this._eventBus,
-            secretManager: this._secretManager,
-            httpClient: this._httpClient,
-            setAbortController: (ac) => { this._abortController = ac; },
-            getAbortController: () => this._abortController,
-            logger: this._logger
-        });
-
+        // Legacy handler handles all commands not covered by specialized handlers.
+        // It will be incrementally replaced by dedicated handlers in future commits.
         this._legacyHandler = {
-            canHandle: (command: string) => command !== WEBVIEW_COMMANDS.SEND_MESSAGE
-                && command !== WEBVIEW_COMMANDS.RETRY_LAST_MESSAGE
-                && command !== WEBVIEW_COMMANDS.CANCEL_REQUEST,
+            canHandle: () => true, // handles everything not handled by specialized handlers
             handle: async (message: WebviewMessage, ctx: ICommandContext) => {
                 await this._handleMessageLegacy(message, ctx);
             }
         };
 
-        this._handlers = [this._agentHandler, this._legacyHandler];
+        // Specialized handlers are injected; legacy handler is added as fallback.
+        this._handlers = [...handlers, this._legacyHandler];
     }
 
     public setView(view: IChatWebviewView): void {
@@ -152,15 +132,13 @@ export class ChatCommandHandler implements IChatCommandHandler {
     }
 
     public getAbortController(): AbortController | undefined {
-        return this._abortController;
+        return this._getAbortController();
     }
 
     public async handleMessage(message: WebviewMessage, webviewView: IWebviewView): Promise<void> {
         const ctx: ICommandContext = {
             view: this._view!,
             webviewView,
-            abortController: this._abortController,
-            getAbortController: () => this._abortController,
             eventBus: this._eventBus,
             logger: this._logger
         };

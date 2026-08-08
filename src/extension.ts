@@ -37,7 +37,7 @@ import { Agent } from './agent/agent.js';
 import { ChatWebviewViewProvider } from './chat/chatWebviewViewProvider.js';
 import { ProfileMetadataProvider } from './chat/profileMetadataProvider.js';
 import { ChatWebviewEventBridge } from './chat/chatWebviewEventBridge.js';
-import { ChatCommandHandler } from './chat/chatCommandHandler.js';
+import { createChatCommandHandler } from './chat/chatCommandHandlers.js';
 import { ChatWebviewViewManager } from './chat/chatWebviewViewManager.js';
 import { ToolUiProvider } from './chat/toolUiProvider.js';
 import { getTools } from './tools/index.js';
@@ -308,7 +308,7 @@ export async function activate(context: vscode.ExtensionContext) {
     chatHistoryManager
   );
 
-  const chatCommandHandler = new ChatCommandHandler({
+  const chatCommandHandler = createChatCommandHandler({
     chatAgent: agent,
     chatHistoryManager,
     buildContext: contextBuilder,
