@@ -13,21 +13,20 @@ import type {
     WebviewMessage,
     IVscodeApiLocal,
     IChatCommandHandler,
-    ISecretManager
+    ISecretManager,
+    IEventBus
 } from '../types.js';
-import { IEventBus } from '../utils/eventBus.js';
 import { APP_EVENTS } from '../constants/protocol.js';
 import { createEventLogger } from '../log/eventLogger.js';
-import { ChatPrompt } from './chatPrompt.js';
-import { CHAT_MESSAGES, AGENT_LOGS, CONFIG_MESSAGES } from '../constants/messages.js';
-import { WEBVIEW_COMMANDS, EXTENSION_EVENTS, MESSAGE_SENDERS } from '../constants/protocol.js';
+import { WEBVIEW_COMMANDS, EXTENSION_EVENTS } from '../constants/protocol.js';
 import { configProcessor } from '../config/configProcessor.js';
+import { AgentCommandHandler } from './commands/agentCommandHandler.js';
 
 /**
  * Context passed to each command handler, containing only the dependencies
  * that are actually needed by multiple handlers.
  */
-interface ICommandContext {
+export interface ICommandContext {
     readonly view: IChatWebviewView;
     readonly webviewView: IWebviewView;
     readonly abortController: AbortController | undefined;
@@ -39,7 +38,7 @@ interface ICommandContext {
 /**
  * Interface for a handler that processes a specific webview command.
  */
-interface IWebviewCommandHandler {
+export interface IWebviewCommandHandler {
     /**
      * Returns true if this handler can process the given command.
      */
@@ -89,6 +88,9 @@ export class ChatCommandHandler implements IChatCommandHandler {
 
     private _abortController?: AbortController;
     private readonly _logger: ReturnType<typeof createEventLogger>;
+    private readonly _agentHandler: AgentCommandHandler;
+    private readonly _legacyHandler: IWebviewCommandHandler;
+    private readonly _handlers: IWebviewCommandHandler[];
 
     constructor({
         chatAgent,
@@ -118,20 +120,32 @@ export class ChatCommandHandler implements IChatCommandHandler {
         this._vscodeApi = vscodeApi;
 
         this._logger = createEventLogger(eventBus);
+
+        this._agentHandler = new AgentCommandHandler({
+            chatAgent: this._chatAgent,
+            chatHistoryManager: this._chatHistoryManager,
+            buildContext: this._buildContext,
+            configContainer: this._configContainer,
+            eventBridge: this._eventBridge,
+            eventBus: this._eventBus,
+            secretManager: this._secretManager,
+            httpClient: this._httpClient,
+            setAbortController: (ac) => { this._abortController = ac; },
+            getAbortController: () => this._abortController,
+            logger: this._logger
+        });
+
+        this._legacyHandler = {
+            canHandle: (command: string) => command !== WEBVIEW_COMMANDS.SEND_MESSAGE
+                && command !== WEBVIEW_COMMANDS.RETRY_LAST_MESSAGE
+                && command !== WEBVIEW_COMMANDS.CANCEL_REQUEST,
+            handle: async (message: WebviewMessage, ctx: ICommandContext) => {
+                await this._handleMessageLegacy(message, ctx);
+            }
+        };
+
+        this._handlers = [this._agentHandler, this._legacyHandler];
     }
-
-    /**
-     * Internal handler that wraps all legacy command logic.
-     * Will be incrementally replaced by dedicated handlers in follow-up commits.
-     */
-    private readonly _legacyHandler: IWebviewCommandHandler = {
-        canHandle: () => true, // handles everything for now
-        handle: async (message: WebviewMessage, ctx: ICommandContext) => {
-            await this._handleMessageLegacy(message, ctx);
-        }
-    };
-
-    private readonly _handlers: IWebviewCommandHandler[] = [this._legacyHandler];
 
     public setView(view: IChatWebviewView): void {
         this._view = view;
@@ -163,44 +177,7 @@ export class ChatCommandHandler implements IChatCommandHandler {
      * Legacy command handling logic — will be split into dedicated handlers.
      */
     private async _handleMessageLegacy(message: WebviewMessage, ctx: ICommandContext): Promise<void> {
-        if (message.command === WEBVIEW_COMMANDS.SEND_MESSAGE) {
-            try {
-                // Lazy resolution of API key if missing
-                const activeProfile = this._configContainer.config.activeChatProfile;
-                const profileConfig = this._configContainer.config.profiles[activeProfile];
-                if (profileConfig && !profileConfig.resolvedApiKey && profileConfig.apiKeyIdentifier) {
-                    this._eventBus.emit(APP_EVENTS.AGENT_NOTIFICATION, {
-                        text: CONFIG_MESSAGES.WAITING_FOR_API_KEY(profileConfig.apiKeyIdentifier)
-                    });
-
-                    await configProcessor.updateProviders(this._configContainer.config, this._eventBus, this._secretManager, this._httpClient, true);
-                    if (this._view) {
-                        await this._view.pushUpdate();
-                    }
-                    this._eventBus.emit(APP_EVENTS.AGENT_NOTIFICATION, { text: null });
-                }
-
-                this._abortController = new AbortController();
-                this._chatHistoryManager.addMessage({ role: 'user', content: message.text });
-                this._chatHistoryManager.persistCurrentSession();
-
-                await this._processAgentRun();
-            } catch (error) {
-                this._handleAgentError(error, ctx.webviewView);
-            }
-        } else if (message.command === WEBVIEW_COMMANDS.RETRY_LAST_MESSAGE) {
-            try {
-                this._abortController = new AbortController();
-                await this._processAgentRun();
-            } catch (error) {
-                this._handleAgentError(error, ctx.webviewView);
-            }
-        } else if (message.command === WEBVIEW_COMMANDS.CANCEL_REQUEST) {
-            if (this._abortController) {
-                this._logger.info(AGENT_LOGS.CANCEL_REQUEST);
-                this._abortController.abort();
-            }
-        } else if (message.command === WEBVIEW_COMMANDS.CONFIRM_TOOL_CALL) {
+        if (message.command === WEBVIEW_COMMANDS.CONFIRM_TOOL_CALL) {
             if (message.decision === 'always-allow-edit') {
                 await this._vscodeApi.commands.executeCommand('suggestio.enableAutoAcceptEdits');
             }
@@ -270,30 +247,5 @@ export class ChatCommandHandler implements IChatCommandHandler {
         } else if (message.command === WEBVIEW_COMMANDS.DELETE_PROFILE) {
             await this._configProvider.deleteProfile(message.profileId);
         }
-    }
-
-    private async _processAgentRun() {
-        let context = await this._buildContext.buildContext();
-        const anonymizer = this._configContainer.config.anonymizerInstance;
-        if (anonymizer) {
-            context = anonymizer.anonymize(context);
-        }
-        const prompt = new ChatPrompt(this._chatHistoryManager.getChatHistory(), context);
-        await this._chatAgent.run(prompt, this._abortController!.signal);
-        this._chatHistoryManager.persistCurrentSession();
-        this._eventBridge.sendCompletionMessage();
-    }
-
-    private _handleAgentError(error: any, webviewView: IWebviewView) {
-        if (this._abortController?.signal.aborted) {
-            this._logger.info(AGENT_LOGS.REQUEST_CANCELLED);
-            this._eventBridge.sendCompletionMessage();
-            return;
-        }
-        webviewView.webview.postMessage({
-            sender: MESSAGE_SENDERS.ASSISTANT,
-            type: EXTENSION_EVENTS.ERROR,
-            text: CHAT_MESSAGES.ERROR_PROCESSING_REQUEST(error)
-        });
     }
 }
