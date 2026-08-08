@@ -1,9 +1,7 @@
 import type {
     IPersistentChatHistoryManager,
     IDiffManager,
-    IConfigContainer,
     IConfigProvider,
-    IHttpClient,
     IToolUiProvider,
     IChatWebviewEventBridge,
     IChatWebviewView,
@@ -11,13 +9,11 @@ import type {
     WebviewMessage,
     IVscodeApiLocal,
     IChatCommandHandler,
-    ISecretManager,
     IEventBus
 } from '../types.js';
 import { APP_EVENTS } from '../constants/protocol.js';
 import { createEventLogger } from '../log/eventLogger.js';
 import { WEBVIEW_COMMANDS, EXTENSION_EVENTS } from '../constants/protocol.js';
-import { configProcessor } from '../config/configProcessor.js';
 
 /**
  * Context passed to each command handler, containing only the dependencies
@@ -54,10 +50,9 @@ export interface IChatCommandHandlerArgs {
     chatHistoryManager: IPersistentChatHistoryManager;
     eventBus: IEventBus;
     diffManager: IDiffManager;
-    configContainer: IConfigContainer;
+
     configProvider: IConfigProvider;
-    secretManager: ISecretManager;
-    httpClient: IHttpClient;
+
     toolUiProvider: IToolUiProvider;
     eventBridge: IChatWebviewEventBridge;
     vscodeApi: IVscodeApiLocal;
@@ -72,10 +67,8 @@ export class ChatCommandHandler implements IChatCommandHandler {
     private readonly _chatHistoryManager: IPersistentChatHistoryManager;
     private readonly _eventBus: IEventBus;
     private readonly _diffManager: IDiffManager;
-    private readonly _configContainer: IConfigContainer;
+
     private readonly _configProvider: IConfigProvider;
-    private readonly _secretManager: ISecretManager;
-    private readonly _httpClient: IHttpClient;
     private readonly _toolUiProvider: IToolUiProvider;
     private readonly _eventBridge: IChatWebviewEventBridge;
     private readonly _vscodeApi: IVscodeApiLocal;
@@ -91,10 +84,7 @@ export class ChatCommandHandler implements IChatCommandHandler {
         chatHistoryManager,
         eventBus,
         diffManager,
-        configContainer,
         configProvider,
-        secretManager,
-        httpClient,
         toolUiProvider,
         eventBridge,
         vscodeApi,
@@ -103,10 +93,8 @@ export class ChatCommandHandler implements IChatCommandHandler {
         this._chatHistoryManager = chatHistoryManager;
         this._eventBus = eventBus;
         this._diffManager = diffManager;
-        this._configContainer = configContainer;
+
         this._configProvider = configProvider;
-        this._secretManager = secretManager;
-        this._httpClient = httpClient;
         this._toolUiProvider = toolUiProvider;
         this._eventBridge = eventBridge;
         this._vscodeApi = vscodeApi;
@@ -174,9 +162,6 @@ export class ChatCommandHandler implements IChatCommandHandler {
             if (diffData) {
                 await this._diffManager.showDiff(diffData.filePath, diffData.oldContent, diffData.newContent);
             }
-        } else if (message.command === WEBVIEW_COMMANDS.CHAT_PROFILE_CHANGED) {
-            this._eventBus.emit(APP_EVENTS.CHAT_PROFILE_CHANGED, message.model);
-            await this._configProvider.updateConfig('activeChatProfile', message.model, true);
         } else if (message.command === WEBVIEW_COMMANDS.CLEAR_HISTORY) {
             this._chatHistoryManager.clearHistory();
         } else if (message.command === WEBVIEW_COMMANDS.GET_SESSIONS) {
@@ -205,25 +190,6 @@ export class ChatCommandHandler implements IChatCommandHandler {
         } else if (message.command === WEBVIEW_COMMANDS.COMPLETION_PROFILE_CHANGED) {
             this._eventBus.emit(APP_EVENTS.COMPLETION_PROFILE_CHANGED, message.model);
             this._configProvider.updateConfig('activeCompletionProfile', message.model, true);
-        } else if (message.command === WEBVIEW_COMMANDS.EDIT_API_KEY) {
-            await this._secretManager.updateAPIKey(message.identifier);
-            await configProcessor.updateProviders(this._configContainer.config, this._eventBus, this._secretManager, this._httpClient);
-            if (this._view) {
-                await this._view.pushUpdate();
-            }
-        } else if (message.command === WEBVIEW_COMMANDS.DELETE_API_KEY) {
-            await this._secretManager.deleteSecret(message.identifier);
-            await configProcessor.updateProviders(this._configContainer.config, this._eventBus, this._secretManager, this._httpClient);
-            if (this._view) {
-                await this._view.pushUpdate();
-            }
-        } else if (message.command === WEBVIEW_COMMANDS.ADD_PROFILE) {
-            const currentProfiles = this._configProvider.getProfiles();
-            const { id, ...profileData } = message.profile;
-            currentProfiles[id] = profileData;
-            await this._configProvider.updateConfig('profiles', currentProfiles, true);
-        } else if (message.command === WEBVIEW_COMMANDS.DELETE_PROFILE) {
-            await this._configProvider.deleteProfile(message.profileId);
         }
     }
 }

@@ -22,6 +22,7 @@ import { ProfileMetadataProvider } from '../../src/chat/profileMetadataProvider.
 import { ChatWebviewEventBridge } from '../../src/chat/chatWebviewEventBridge.js';
 import { ChatCommandHandler } from '../../src/chat/chatCommandHandler.js';
 import { AgentCommandHandler } from '../../src/chat/commands/agentCommandHandler.js';
+import { ProfileCommandHandler } from '../../src/chat/commands/profileCommandHandler.js';
 import { ChatWebviewViewManager } from '../../src/chat/chatWebviewViewManager.js';
 import { EventBus } from '../../src/utils/eventBus.js';
 import {
@@ -101,15 +102,21 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       logger
     });
 
-    const commandHandler = new ChatCommandHandler({
-      handlers: [agentHandler],
-      chatHistoryManager: deps.chatHistoryManager,
-      eventBus: deps.eventBus,
-      diffManager: handlerOverrides.diffManager || createMockDiffManager(),
-      configContainer: deps.configContainer,
+    // Add ProfileCommandHandler for profile-related commands
+    const profileHandler = new ProfileCommandHandler({
       configProvider: deps.configProvider,
       secretManager: deps.secretManager,
       httpClient: deps.httpClient,
+      configContainer: deps.configContainer,
+      eventBus: deps.eventBus
+    });
+
+    const commandHandler = new ChatCommandHandler({
+      handlers: [agentHandler, profileHandler],
+      chatHistoryManager: deps.chatHistoryManager,
+      eventBus: deps.eventBus,
+      diffManager: handlerOverrides.diffManager || createMockDiffManager(),
+      configProvider: deps.configProvider,
       toolUiProvider: deps.toolUiProvider,
       eventBridge,
       vscodeApi: deps.vscodeApi,

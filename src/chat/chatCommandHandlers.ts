@@ -15,6 +15,7 @@ import type {
 import { createEventLogger } from '../log/eventLogger.js';
 import { ChatCommandHandler, IWebviewCommandHandler } from './chatCommandHandler.js';
 import { AgentCommandHandler } from './commands/agentCommandHandler.js';
+import { ProfileCommandHandler } from './commands/profileCommandHandler.js';
 
 /**
  * Dependencies required to build the command handler chain.
@@ -71,7 +72,15 @@ export function createChatCommandHandler(deps: IChatCommandHandlerDependencies):
         logger
     });
 
-    const handlers: IWebviewCommandHandler[] = [agentHandler];
+    const profileHandler = new ProfileCommandHandler({
+        configProvider: deps.configProvider,
+        secretManager: deps.secretManager,
+        httpClient: deps.httpClient,
+        configContainer: deps.configContainer,
+        eventBus: deps.eventBus
+    });
+
+    const handlers: IWebviewCommandHandler[] = [agentHandler, profileHandler];
 
     // Future handlers will be constructed and added here:
     // const profileHandler = new ProfileCommandHandler({...});
@@ -82,10 +91,7 @@ export function createChatCommandHandler(deps: IChatCommandHandlerDependencies):
         chatHistoryManager: deps.chatHistoryManager,
         eventBus: deps.eventBus,
         diffManager: deps.diffManager,
-        configContainer: deps.configContainer,
         configProvider: deps.configProvider,
-        secretManager: deps.secretManager,
-        httpClient: deps.httpClient,
         toolUiProvider: deps.toolUiProvider,
         eventBridge: deps.eventBridge,
         vscodeApi: deps.vscodeApi,
