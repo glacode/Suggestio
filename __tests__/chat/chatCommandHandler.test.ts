@@ -8,10 +8,8 @@ import type { IChatAgent, IContextBuilder, IChatWebviewEventBridge, IChatWebview
 import {
     createMockConfigContainer,
     createMockPersistentHistoryManager,
-    createMockVscodeApi,
     createMockWebview,
     createMockWebviewView,
-    createMockDiffManager,
     createMockSecretManager,
     createMockHttpClient,
     createMockConfigProvider,
@@ -25,7 +23,6 @@ describe('ChatCommandHandler', () => {
         const chatAgent: IChatAgent = { run: jest.fn<(p: any, s: any) => Promise<void>>().mockResolvedValue(undefined) };
         const chatHistoryManager = createMockPersistentHistoryManager();
         const buildContext: IContextBuilder = { buildContext: jest.fn<() => Promise<string>>().mockResolvedValue('context') };
-        const diffManager = createMockDiffManager();
         const configContainer = createMockConfigContainer({ profiles: {}, activeChatProfile: 'p1' });
         const configProvider = createMockConfigProvider();
         configProvider.getProfiles.mockReturnValue({});
@@ -40,7 +37,6 @@ describe('ChatCommandHandler', () => {
             sendNotification: jest.fn(),
             sendCompletionMessage: jest.fn()
         };
-        const vscodeApi = createMockVscodeApi();
         const view: IChatWebviewView = {
             updateState: jest.fn<() => Promise<void>>(),
             pushUpdate: jest.fn<() => Promise<void>>()
@@ -70,10 +66,7 @@ describe('ChatCommandHandler', () => {
         const handler = new ChatCommandHandler({
             handlers: [agentHandler, historyHandler],
             eventBus,
-            diffManager,
             configProvider,
-            eventBridge,
-            vscodeApi,
             getAbortController: () => abortController
         });
         handler.setView(view);

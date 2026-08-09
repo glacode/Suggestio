@@ -1,11 +1,8 @@
 import type {
-    IDiffManager,
     IConfigProvider,
-    IChatWebviewEventBridge,
     IChatWebviewView,
     IWebviewView,
     WebviewMessage,
-    IVscodeApiLocal,
     IChatCommandHandler,
     IEventBus
 } from '../types.js';
@@ -46,12 +43,7 @@ export interface IWebviewCommandHandler {
 export interface IChatCommandHandlerArgs {
     handlers: IWebviewCommandHandler[];
     eventBus: IEventBus;
-    diffManager: IDiffManager;
-
     configProvider: IConfigProvider;
-
-    eventBridge: IChatWebviewEventBridge;
-    vscodeApi: IVscodeApiLocal;
     getAbortController: () => AbortController | undefined;
 }
 
@@ -61,11 +53,7 @@ export interface IChatCommandHandlerArgs {
  */
 export class ChatCommandHandler implements IChatCommandHandler {
     private readonly _eventBus: IEventBus;
-    private readonly _diffManager: IDiffManager;
-
     private readonly _configProvider: IConfigProvider;
-    private readonly _eventBridge: IChatWebviewEventBridge;
-    private readonly _vscodeApi: IVscodeApiLocal;
     private _view?: IChatWebviewView;
 
     private readonly _logger: ReturnType<typeof createEventLogger>;
@@ -76,18 +64,11 @@ export class ChatCommandHandler implements IChatCommandHandler {
     constructor({
         handlers,
         eventBus,
-        diffManager,
         configProvider,
-        eventBridge,
-        vscodeApi,
         getAbortController
     }: IChatCommandHandlerArgs) {
         this._eventBus = eventBus;
-        this._diffManager = diffManager;
-
         this._configProvider = configProvider;
-        this._eventBridge = eventBridge;
-        this._vscodeApi = vscodeApi;
         this._getAbortController = getAbortController;
 
         this._logger = createEventLogger(eventBus);
@@ -133,27 +114,7 @@ export class ChatCommandHandler implements IChatCommandHandler {
      * Legacy command handling logic — will be split into dedicated handlers.
      */
     private async _handleMessageLegacy(message: WebviewMessage): Promise<void> {
-        if (message.command === WEBVIEW_COMMANDS.CONFIRM_TOOL_CALL) {
-            if (message.decision === 'always-allow-edit') {
-                await this._vscodeApi.commands.executeCommand('suggestio.enableAutoAcceptEdits');
-            }
-            if (message.decision === 'deny') {
-                const diffData = this._eventBridge.getActiveDiff(message.toolCallId);
-                if (diffData) {
-                    await this._diffManager.closeDiff(diffData.filePath);
-                }
-            }
-            this._eventBus.emit(APP_EVENTS.USER_CONFIRMATION_RESPONSE, {
-                toolCallId: message.toolCallId,
-                decision: message.decision
-            });
-        } else if (message.command === WEBVIEW_COMMANDS.VIEW_DIFF) {
-            const diffData = this._eventBridge.getActiveDiff(message.toolCallId);
-            if (diffData) {
-                await this._diffManager.showDiff(diffData.filePath, diffData.oldContent, diffData.newContent);
-            }
-
-        } else if (message.command === WEBVIEW_COMMANDS.COMPLETION_PROFILE_CHANGED) {
+        if (message.command === WEBVIEW_COMMANDS.COMPLETION_PROFILE_CHANGED) {
             this._eventBus.emit(APP_EVENTS.COMPLETION_PROFILE_CHANGED, message.model);
             this._configProvider.updateConfig('activeCompletionProfile', message.model, true);
         }

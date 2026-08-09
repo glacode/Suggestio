@@ -24,6 +24,7 @@ import { ChatCommandHandler } from '../../src/chat/chatCommandHandler.js';
 import { AgentCommandHandler } from '../../src/chat/commands/agentCommandHandler.js';
 import { ProfileCommandHandler } from '../../src/chat/commands/profileCommandHandler.js';
 import { HistoryCommandHandler } from '../../src/chat/commands/historyCommandHandler.js';
+import { ToolCommandHandler } from '../../src/chat/commands/toolCommandHandler.js';
 import { ChatWebviewViewManager } from '../../src/chat/chatWebviewViewManager.js';
 import { EventBus } from '../../src/utils/eventBus.js';
 import {
@@ -70,9 +71,9 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       buildContext?: any,
       profileAccessor?: ILlmProviderAccessor,
       getChatWebviewContent?: any,
-      fileReader?: any
-    },
-    handlerOverrides: any = {}
+      fileReader?: any,
+      diffManager?: any
+    }
   ) => {
     const profileMetadataProvider = new ProfileMetadataProvider(deps.profileAccessor || { getChatProfiles: () => [], getActiveChatProfile: () => '' }, deps.configContainer, deps.secretManager);
     const viewManager = new ChatWebviewViewManager(
@@ -117,13 +118,17 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       toolUiProvider: deps.toolUiProvider
     });
 
-    const commandHandler = new ChatCommandHandler({
-      handlers: [agentHandler, profileHandler, historyHandler],
-      eventBus: deps.eventBus,
-      diffManager: handlerOverrides.diffManager || createMockDiffManager(),
-      configProvider: deps.configProvider,
+    const toolHandler = new ToolCommandHandler({
+      diffManager: deps.diffManager || createMockDiffManager(),
       eventBridge,
       vscodeApi: deps.vscodeApi,
+      eventBus: deps.eventBus
+    });
+
+    const commandHandler = new ChatCommandHandler({
+      handlers: [agentHandler, profileHandler, historyHandler, toolHandler],
+      eventBus: deps.eventBus,
+      configProvider: deps.configProvider,
       getAbortController: () => abortController
     });
 
@@ -565,8 +570,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const { configContainer } = createMocks();
     const config = configContainer.config;
 
-    const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager: createMockPersistentHistoryManager(), chatAgent: { run: async () => { } }, profileAccessor, configContainer: createMockConfigContainer(config) };
-    const provider = createTestProvider(deps, { diffManager });
+    const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager: createMockPersistentHistoryManager(), chatAgent: { run: async () => { } }, profileAccessor, configContainer: createMockConfigContainer(config), diffManager };
+    const provider = createTestProvider(deps);
 
     await provider.resolveWebviewView(webviewView);
 
@@ -601,8 +606,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const { configContainer } = createMocks();
     const config = configContainer.config;
 
-    const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager: createMockPersistentHistoryManager(), chatAgent: { run: async () => { } }, profileAccessor, configContainer: createMockConfigContainer(config) };
-    const provider = createTestProvider(deps, { diffManager });
+    const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager: createMockPersistentHistoryManager(), chatAgent: { run: async () => { } }, profileAccessor, configContainer: createMockConfigContainer(config), diffManager };
+    const provider = createTestProvider(deps);
 
     await provider.resolveWebviewView(webviewView);
 
