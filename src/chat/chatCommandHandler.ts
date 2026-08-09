@@ -1,8 +1,6 @@
 import type {
-    IPersistentChatHistoryManager,
     IDiffManager,
     IConfigProvider,
-    IToolUiProvider,
     IChatWebviewEventBridge,
     IChatWebviewView,
     IWebviewView,
@@ -13,7 +11,7 @@ import type {
 } from '../types.js';
 import { APP_EVENTS } from '../constants/protocol.js';
 import { createEventLogger } from '../log/eventLogger.js';
-import { WEBVIEW_COMMANDS, EXTENSION_EVENTS } from '../constants/protocol.js';
+import { WEBVIEW_COMMANDS } from '../constants/protocol.js';
 
 /**
  * Context passed to each command handler, containing only the dependencies
@@ -47,13 +45,11 @@ export interface IWebviewCommandHandler {
  */
 export interface IChatCommandHandlerArgs {
     handlers: IWebviewCommandHandler[];
-    chatHistoryManager: IPersistentChatHistoryManager;
     eventBus: IEventBus;
     diffManager: IDiffManager;
 
     configProvider: IConfigProvider;
 
-    toolUiProvider: IToolUiProvider;
     eventBridge: IChatWebviewEventBridge;
     vscodeApi: IVscodeApiLocal;
     getAbortController: () => AbortController | undefined;
@@ -64,12 +60,10 @@ export interface IChatCommandHandlerArgs {
  * the corresponding actions in the extension.
  */
 export class ChatCommandHandler implements IChatCommandHandler {
-    private readonly _chatHistoryManager: IPersistentChatHistoryManager;
     private readonly _eventBus: IEventBus;
     private readonly _diffManager: IDiffManager;
 
     private readonly _configProvider: IConfigProvider;
-    private readonly _toolUiProvider: IToolUiProvider;
     private readonly _eventBridge: IChatWebviewEventBridge;
     private readonly _vscodeApi: IVscodeApiLocal;
     private _view?: IChatWebviewView;
@@ -81,21 +75,17 @@ export class ChatCommandHandler implements IChatCommandHandler {
 
     constructor({
         handlers,
-        chatHistoryManager,
         eventBus,
         diffManager,
         configProvider,
-        toolUiProvider,
         eventBridge,
         vscodeApi,
         getAbortController
     }: IChatCommandHandlerArgs) {
-        this._chatHistoryManager = chatHistoryManager;
         this._eventBus = eventBus;
         this._diffManager = diffManager;
 
         this._configProvider = configProvider;
-        this._toolUiProvider = toolUiProvider;
         this._eventBridge = eventBridge;
         this._vscodeApi = vscodeApi;
         this._getAbortController = getAbortController;
@@ -106,8 +96,8 @@ export class ChatCommandHandler implements IChatCommandHandler {
         // It will be incrementally replaced by dedicated handlers in future commits.
         this._legacyHandler = {
             canHandle: () => true, // handles everything not handled by specialized handlers
-            handle: async (message: WebviewMessage, ctx: ICommandContext) => {
-                await this._handleMessageLegacy(message, ctx);
+            handle: async (message: WebviewMessage) => {
+                await this._handleMessageLegacy(message);
             }
         };
 
@@ -142,7 +132,7 @@ export class ChatCommandHandler implements IChatCommandHandler {
     /**
      * Legacy command handling logic — will be split into dedicated handlers.
      */
-    private async _handleMessageLegacy(message: WebviewMessage, ctx: ICommandContext): Promise<void> {
+    private async _handleMessageLegacy(message: WebviewMessage): Promise<void> {
         if (message.command === WEBVIEW_COMMANDS.CONFIRM_TOOL_CALL) {
             if (message.decision === 'always-allow-edit') {
                 await this._vscodeApi.commands.executeCommand('suggestio.enableAutoAcceptEdits');
@@ -162,31 +152,7 @@ export class ChatCommandHandler implements IChatCommandHandler {
             if (diffData) {
                 await this._diffManager.showDiff(diffData.filePath, diffData.oldContent, diffData.newContent);
             }
-        } else if (message.command === WEBVIEW_COMMANDS.CLEAR_HISTORY) {
-            this._chatHistoryManager.clearHistory();
-        } else if (message.command === WEBVIEW_COMMANDS.GET_SESSIONS) {
-            const sessions = await this._chatHistoryManager.getSessions();
-            ctx.webviewView.webview.postMessage({
-                type: EXTENSION_EVENTS.SESSIONS_LIST,
-                sessions: sessions.map(s => {
-                    const firstUserMessage = s.history.find(m => m.role === 'user');
-                    return {
-                        id: s.id,
-                        title: s.title,
-                        timestamp: s.timestamp,
-                        fullPrompt: firstUserMessage ? firstUserMessage.content.trim() : undefined
-                    };
-                })
-            });
-        } else if (message.command === WEBVIEW_COMMANDS.LOAD_SESSION) {
-            await this._chatHistoryManager.loadSession(message.sessionId);
-            // Uncomment the following line to simulate a long loading time so that you can see the loading spinner
-            // await new Promise(resolve => setTimeout(resolve, 2000));
-            const enrichedHistory = this._toolUiProvider.enrichHistory(this._chatHistoryManager.getChatHistory());
-            ctx.webviewView.webview.postMessage({
-                type: EXTENSION_EVENTS.CHAT_HISTORY_LOADED,
-                history: enrichedHistory
-            });
+
         } else if (message.command === WEBVIEW_COMMANDS.COMPLETION_PROFILE_CHANGED) {
             this._eventBus.emit(APP_EVENTS.COMPLETION_PROFILE_CHANGED, message.model);
             this._configProvider.updateConfig('activeCompletionProfile', message.model, true);

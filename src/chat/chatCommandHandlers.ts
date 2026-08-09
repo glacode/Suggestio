@@ -16,6 +16,7 @@ import { createEventLogger } from '../log/eventLogger.js';
 import { ChatCommandHandler, IWebviewCommandHandler } from './chatCommandHandler.js';
 import { AgentCommandHandler } from './commands/agentCommandHandler.js';
 import { ProfileCommandHandler } from './commands/profileCommandHandler.js';
+import { HistoryCommandHandler } from './commands/historyCommandHandler.js';
 
 /**
  * Dependencies required to build the command handler chain.
@@ -80,7 +81,12 @@ export function createChatCommandHandler(deps: IChatCommandHandlerDependencies):
         eventBus: deps.eventBus
     });
 
-    const handlers: IWebviewCommandHandler[] = [agentHandler, profileHandler];
+    const historyHandler = new HistoryCommandHandler({
+        chatHistoryManager: deps.chatHistoryManager,
+        toolUiProvider: deps.toolUiProvider
+    });
+
+    const handlers: IWebviewCommandHandler[] = [agentHandler, profileHandler, historyHandler];
 
     // Future handlers will be constructed and added here:
     // const profileHandler = new ProfileCommandHandler({...});
@@ -88,11 +94,9 @@ export function createChatCommandHandler(deps: IChatCommandHandlerDependencies):
 
     return new ChatCommandHandler({
         handlers,
-        chatHistoryManager: deps.chatHistoryManager,
         eventBus: deps.eventBus,
         diffManager: deps.diffManager,
         configProvider: deps.configProvider,
-        toolUiProvider: deps.toolUiProvider,
         eventBridge: deps.eventBridge,
         vscodeApi: deps.vscodeApi,
         getAbortController

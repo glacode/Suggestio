@@ -1,6 +1,7 @@
 import { describe, it, expect, jest } from '@jest/globals';
 import { ChatCommandHandler } from '../../src/chat/chatCommandHandler.js';
 import { AgentCommandHandler } from '../../src/chat/commands/agentCommandHandler.js';
+import { HistoryCommandHandler } from '../../src/chat/commands/historyCommandHandler.js';
 import { EventBus } from '../../src/utils/eventBus.js';
 import { WEBVIEW_COMMANDS } from '../../src/constants/protocol.js';
 import type { IChatAgent, IContextBuilder, IChatWebviewEventBridge, IChatWebviewView } from '../../src/types.js';
@@ -13,9 +14,9 @@ import {
     createMockDiffManager,
     createMockSecretManager,
     createMockHttpClient,
-    createMockToolUiProvider,
     createMockConfigProvider,
-    createMockEventLogger
+    createMockEventLogger,
+    createMockToolUiProvider
 } from '../testUtils.js';
 
 describe('ChatCommandHandler', () => {
@@ -30,7 +31,6 @@ describe('ChatCommandHandler', () => {
         configProvider.getProfiles.mockReturnValue({});
         const secretManager = createMockSecretManager();
         const httpClient = createMockHttpClient();
-        const toolUiProvider = createMockToolUiProvider();
         
         const eventBridge: IChatWebviewEventBridge = {
             setView: jest.fn(),
@@ -62,13 +62,16 @@ describe('ChatCommandHandler', () => {
             logger
         });
 
-        const handler = new ChatCommandHandler({
-            handlers: [agentHandler],
+        const historyHandler = new HistoryCommandHandler({
             chatHistoryManager,
+            toolUiProvider: createMockToolUiProvider()
+        });
+
+        const handler = new ChatCommandHandler({
+            handlers: [agentHandler, historyHandler],
             eventBus,
             diffManager,
             configProvider,
-            toolUiProvider,
             eventBridge,
             vscodeApi,
             getAbortController: () => abortController

@@ -23,6 +23,7 @@ import { ChatWebviewEventBridge } from '../../src/chat/chatWebviewEventBridge.js
 import { ChatCommandHandler } from '../../src/chat/chatCommandHandler.js';
 import { AgentCommandHandler } from '../../src/chat/commands/agentCommandHandler.js';
 import { ProfileCommandHandler } from '../../src/chat/commands/profileCommandHandler.js';
+import { HistoryCommandHandler } from '../../src/chat/commands/historyCommandHandler.js';
 import { ChatWebviewViewManager } from '../../src/chat/chatWebviewViewManager.js';
 import { EventBus } from '../../src/utils/eventBus.js';
 import {
@@ -111,13 +112,16 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       eventBus: deps.eventBus
     });
 
-    const commandHandler = new ChatCommandHandler({
-      handlers: [agentHandler, profileHandler],
+    const historyHandler = new HistoryCommandHandler({
       chatHistoryManager: deps.chatHistoryManager,
+      toolUiProvider: deps.toolUiProvider
+    });
+
+    const commandHandler = new ChatCommandHandler({
+      handlers: [agentHandler, profileHandler, historyHandler],
       eventBus: deps.eventBus,
       diffManager: handlerOverrides.diffManager || createMockDiffManager(),
       configProvider: deps.configProvider,
-      toolUiProvider: deps.toolUiProvider,
       eventBridge,
       vscodeApi: deps.vscodeApi,
       getAbortController: () => abortController
