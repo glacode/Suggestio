@@ -53,7 +53,6 @@ export class ChatCommandHandler implements IChatCommandHandler {
 
     private readonly _logger: ReturnType<typeof createEventLogger>;
     private readonly _getAbortController: () => AbortController | undefined;
-    private readonly _legacyHandler: IWebviewCommandHandler;
     private readonly _handlers: IWebviewCommandHandler[];
 
     constructor({
@@ -66,17 +65,8 @@ export class ChatCommandHandler implements IChatCommandHandler {
 
         this._logger = createEventLogger(eventBus);
 
-        // Legacy handler handles all commands not covered by specialized handlers.
-        // It will be incrementally replaced by dedicated handlers in future commits.
-        this._legacyHandler = {
-            canHandle: () => true, // handles everything not handled by specialized handlers
-            handle: async (message: WebviewMessage) => {
-                await this._handleMessageLegacy(message);
-            }
-        };
-
-        // Specialized handlers are injected; legacy handler is added as fallback.
-        this._handlers = [...handlers, this._legacyHandler];
+        // All commands are now handled by specialized handlers.
+        this._handlers = handlers;
     }
 
     public setView(view: IChatWebviewView): void {
@@ -101,13 +91,5 @@ export class ChatCommandHandler implements IChatCommandHandler {
                 return;
             }
         }
-    }
-
-    /**
-     * Legacy command handling logic — will be split into dedicated handlers.
-     */
-    private async _handleMessageLegacy(_message: WebviewMessage): Promise<void> {
-        // All commands have been moved to dedicated handlers
-        // This method is kept for now but should be removed once all commands are handled
     }
 }
