@@ -1,14 +1,11 @@
 import type {
-    IConfigProvider,
     IChatWebviewView,
     IWebviewView,
     WebviewMessage,
     IChatCommandHandler,
     IEventBus
 } from '../types.js';
-import { APP_EVENTS } from '../constants/protocol.js';
 import { createEventLogger } from '../log/eventLogger.js';
-import { WEBVIEW_COMMANDS } from '../constants/protocol.js';
 
 /**
  * Context passed to each command handler, containing only the dependencies
@@ -43,7 +40,6 @@ export interface IWebviewCommandHandler {
 export interface IChatCommandHandlerArgs {
     handlers: IWebviewCommandHandler[];
     eventBus: IEventBus;
-    configProvider: IConfigProvider;
     getAbortController: () => AbortController | undefined;
 }
 
@@ -53,7 +49,6 @@ export interface IChatCommandHandlerArgs {
  */
 export class ChatCommandHandler implements IChatCommandHandler {
     private readonly _eventBus: IEventBus;
-    private readonly _configProvider: IConfigProvider;
     private _view?: IChatWebviewView;
 
     private readonly _logger: ReturnType<typeof createEventLogger>;
@@ -64,11 +59,9 @@ export class ChatCommandHandler implements IChatCommandHandler {
     constructor({
         handlers,
         eventBus,
-        configProvider,
         getAbortController
     }: IChatCommandHandlerArgs) {
         this._eventBus = eventBus;
-        this._configProvider = configProvider;
         this._getAbortController = getAbortController;
 
         this._logger = createEventLogger(eventBus);
@@ -113,10 +106,8 @@ export class ChatCommandHandler implements IChatCommandHandler {
     /**
      * Legacy command handling logic — will be split into dedicated handlers.
      */
-    private async _handleMessageLegacy(message: WebviewMessage): Promise<void> {
-        if (message.command === WEBVIEW_COMMANDS.COMPLETION_PROFILE_CHANGED) {
-            this._eventBus.emit(APP_EVENTS.COMPLETION_PROFILE_CHANGED, message.model);
-            this._configProvider.updateConfig('activeCompletionProfile', message.model, true);
-        }
+    private async _handleMessageLegacy(_message: WebviewMessage): Promise<void> {
+        // All commands have been moved to dedicated handlers
+        // This method is kept for now but should be removed once all commands are handled
     }
 }

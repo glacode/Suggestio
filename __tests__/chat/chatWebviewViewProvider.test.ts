@@ -128,7 +128,6 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const commandHandler = new ChatCommandHandler({
       handlers: [agentHandler, profileHandler, historyHandler, toolHandler],
       eventBus: deps.eventBus,
-      configProvider: deps.configProvider,
       getAbortController: () => abortController
     });
 

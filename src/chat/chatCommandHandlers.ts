@@ -18,6 +18,7 @@ import { AgentCommandHandler } from './commands/agentCommandHandler.js';
 import { ProfileCommandHandler } from './commands/profileCommandHandler.js';
 import { HistoryCommandHandler } from './commands/historyCommandHandler.js';
 import { ToolCommandHandler } from './commands/toolCommandHandler.js';
+import { CompletionCommandHandler } from './commands/completionCommandHandler.js';
 
 /**
  * Dependencies required to build the command handler chain.
@@ -94,7 +95,12 @@ export function createChatCommandHandler(deps: IChatCommandHandlerDependencies):
         eventBus: deps.eventBus
     });
 
-    const handlers: IWebviewCommandHandler[] = [agentHandler, profileHandler, historyHandler, toolHandler];
+    const completionHandler = new CompletionCommandHandler({
+        configProvider: deps.configProvider,
+        eventBus: deps.eventBus
+    });
+
+    const handlers: IWebviewCommandHandler[] = [agentHandler, profileHandler, historyHandler, toolHandler, completionHandler];
 
     // Future handlers will be constructed and added here:
     // const profileHandler = new ProfileCommandHandler({...});
@@ -103,7 +109,6 @@ export function createChatCommandHandler(deps: IChatCommandHandlerDependencies):
     return new ChatCommandHandler({
         handlers,
         eventBus: deps.eventBus,
-        configProvider: deps.configProvider,
         getAbortController
     });
 }

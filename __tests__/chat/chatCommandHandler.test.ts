@@ -2,8 +2,9 @@ import { describe, it, expect, jest } from '@jest/globals';
 import { ChatCommandHandler } from '../../src/chat/chatCommandHandler.js';
 import { AgentCommandHandler } from '../../src/chat/commands/agentCommandHandler.js';
 import { HistoryCommandHandler } from '../../src/chat/commands/historyCommandHandler.js';
+import { CompletionCommandHandler } from '../../src/chat/commands/completionCommandHandler.js';
 import { EventBus } from '../../src/utils/eventBus.js';
-import { WEBVIEW_COMMANDS } from '../../src/constants/protocol.js';
+import { WEBVIEW_COMMANDS, APP_EVENTS } from '../../src/constants/protocol.js';
 import type { IChatAgent, IContextBuilder, IChatWebviewEventBridge, IChatWebviewView } from '../../src/types.js';
 import {
     createMockConfigContainer,
@@ -63,15 +64,19 @@ describe('ChatCommandHandler', () => {
             toolUiProvider: createMockToolUiProvider()
         });
 
-        const handler = new ChatCommandHandler({
-            handlers: [agentHandler, historyHandler],
-            eventBus,
+        const completionHandler = new CompletionCommandHandler({
             configProvider,
+            eventBus
+        });
+
+        const handler = new ChatCommandHandler({
+            handlers: [agentHandler, historyHandler, completionHandler],
+            eventBus,
             getAbortController: () => abortController
         });
         handler.setView(view);
 
-        return { handler, chatAgent, chatHistoryManager, buildContext, eventBus, view, eventBridge };
+        return { handler, chatAgent, chatHistoryManager, buildContext, eventBus, view, eventBridge, configProvider };
     };
 
     it('handles SEND_MESSAGE and triggers agent run', async () => {
@@ -110,5 +115,31 @@ describe('ChatCommandHandler', () => {
         await handler.handleMessage({ command: WEBVIEW_COMMANDS.CLEAR_HISTORY }, webviewView);
 
         expect(chatHistoryManager.clearHistory).toHaveBeenCalled();
+    });
+
+    it('handles COMPLETION_PROFILE_CHANGED', async () => {
+        const { handler, configProvider, eventBus } = createDependencies();
+        const webview = createMockWebview([]);
+        const webviewView = createMockWebviewView(webview);
+
+        const emittedEvents: any[] = [];
+        eventBus.on(APP_EVENTS.COMPLETION_PROFILE_CHANGED, (model: string) => {
+            emittedEvents.push({ event: APP_EVENTS.COMPLETION_PROFILE_CHANGED, model });
+        });
+
+        await handler.handleMessage({ 
+            command: WEBVIEW_COMMANDS.COMPLETION_PROFILE_CHANGED,
+            model: 'test-completion-profile'
+        }, webviewView);
+
+        expect(emittedEvents).toEqual([
+            { event: APP_EVENTS.COMPLETION_PROFILE_CHANGED, model: 'test-completion-profile' }
+        ]);
+        
+        expect(configProvider.updateConfig).toHaveBeenCalledWith(
+            'activeCompletionProfile',
+            'test-completion-profile',
+            true
+        );
     });
 });
