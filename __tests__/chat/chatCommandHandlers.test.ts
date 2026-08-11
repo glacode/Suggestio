@@ -1,7 +1,7 @@
 import { describe, it, expect, jest } from '@jest/globals';
 import { createChatCommandHandler } from '../../src/chat/chatCommandHandlers.js';
 import { EventBus } from '../../src/utils/eventBus.js';
-import type { IChatAgent, IContextBuilder, IChatWebviewEventBridge } from '../../src/types.js';
+import type { IChatAgent, IContextBuilder } from '../../src/types.js';
 import {
     createMockConfigContainer,
     createMockPersistentHistoryManager,
@@ -10,7 +10,8 @@ import {
     createMockConfigProvider,
     createMockToolUiProvider,
     createMockDiffManager,
-    createMockVscodeApi
+    createMockVscodeApi,
+    createMockEventBridge
 } from '../testUtils.js';
 
 describe('createChatCommandHandler', () => {
@@ -28,14 +29,7 @@ describe('createChatCommandHandler', () => {
         const secretManager = createMockSecretManager();
         const httpClient = createMockHttpClient();
         const toolUiProvider = createMockToolUiProvider();
-        const eventBridge: IChatWebviewEventBridge = {
-            setView: jest.fn(),
-            setAbortControllerAccessor: jest.fn(),
-            getActiveDiff: jest.fn<(id: string) => any>(),
-            deleteActiveDiff: jest.fn(),
-            sendNotification: jest.fn(),
-            sendCompletionMessage: jest.fn()
-        };
+        const eventBridge = createMockEventBridge();
 
         return {
             chatAgent,

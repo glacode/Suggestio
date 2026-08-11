@@ -5,7 +5,7 @@ import { HistoryCommandHandler } from '../../src/chat/commands/historyCommandHan
 import { CompletionCommandHandler } from '../../src/chat/commands/completionCommandHandler.js';
 import { EventBus } from '../../src/utils/eventBus.js';
 import { WEBVIEW_COMMANDS, APP_EVENTS } from '../../src/constants/protocol.js';
-import type { IChatAgent, IContextBuilder, IChatWebviewEventBridge, IChatWebviewView } from '../../src/types.js';
+import type { IChatAgent, IContextBuilder, IChatWebviewView } from '../../src/types.js';
 import {
     createMockConfigContainer,
     createMockPersistentHistoryManager,
@@ -15,7 +15,8 @@ import {
     createMockHttpClient,
     createMockConfigProvider,
     createMockEventLogger,
-    createMockToolUiProvider
+    createMockToolUiProvider,
+    createMockEventBridge
 } from '../testUtils.js';
 
 describe('ChatCommandHandler', () => {
@@ -30,14 +31,7 @@ describe('ChatCommandHandler', () => {
         const secretManager = createMockSecretManager();
         const httpClient = createMockHttpClient();
         
-        const eventBridge: IChatWebviewEventBridge = {
-            setView: jest.fn(),
-            setAbortControllerAccessor: jest.fn(),
-            getActiveDiff: jest.fn<(id: string) => any>(),
-            deleteActiveDiff: jest.fn(),
-            sendNotification: jest.fn(),
-            sendCompletionMessage: jest.fn()
-        };
+        const eventBridge = createMockEventBridge();
         const view: IChatWebviewView = {
             updateState: jest.fn<() => Promise<void>>(),
             pushUpdate: jest.fn<() => Promise<void>>()

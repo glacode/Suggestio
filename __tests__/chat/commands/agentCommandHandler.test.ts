@@ -2,9 +2,9 @@ import { describe, it, expect, jest } from '@jest/globals';
 import { AgentCommandHandler } from '../../../src/chat/commands/agentCommandHandler.js';
 import { EventBus } from '../../../src/utils/eventBus.js';
 import { WEBVIEW_COMMANDS } from '../../../src/constants/protocol.js';
-import type { IChatAgent, IContextBuilder, IChatWebviewEventBridge, IWebviewView, IChatWebviewView } from '../../../src/types.js';
+import type { IChatAgent, IContextBuilder, IWebviewView, IChatWebviewView } from '../../../src/types.js';
 import { createEventLogger } from '../../../src/log/eventLogger.js';
-import { createMockConfigContainer, createMockPersistentHistoryManager, createMockWebview, createMockWebviewView, createMockSecretManager, createMockHttpClient } from '../../testUtils.js';
+import { createMockConfigContainer, createMockPersistentHistoryManager, createMockWebview, createMockWebviewView, createMockSecretManager, createMockHttpClient, createMockEventBridge } from '../../testUtils.js';
 
 describe('AgentCommandHandler', () => {
     const createDependencies = () => {
@@ -13,14 +13,7 @@ describe('AgentCommandHandler', () => {
         const chatHistoryManager = createMockPersistentHistoryManager();
         const buildContext: IContextBuilder = { buildContext: jest.fn<() => Promise<string>>().mockResolvedValue('context') };
         const configContainer = createMockConfigContainer({ profiles: {}, activeChatProfile: 'p1' });
-        const eventBridge: IChatWebviewEventBridge = {
-            setView: jest.fn(),
-            setAbortControllerAccessor: jest.fn(),
-            getActiveDiff: jest.fn<(id: string) => any>(),
-            deleteActiveDiff: jest.fn(),
-            sendNotification: jest.fn(),
-            sendCompletionMessage: jest.fn()
-        };
+        const eventBridge = createMockEventBridge();
         const secretManager = createMockSecretManager();
         const httpClient = createMockHttpClient();
         let abortController: AbortController | undefined;

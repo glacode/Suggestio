@@ -2,22 +2,15 @@ import { describe, it, expect, jest } from '@jest/globals';
 import { ToolCommandHandler } from '../../../src/chat/commands/toolCommandHandler.js';
 import { EventBus } from '../../../src/utils/eventBus.js';
 import { WEBVIEW_COMMANDS, APP_EVENTS } from '../../../src/constants/protocol.js';
-import type { IChatWebviewEventBridge, IChatWebviewView } from '../../../src/types.js';
-import { createMockDiffManager, createMockVscodeApi, createMockWebviewView, createMockWebview, createMockEventLogger } from '../../testUtils.js';
+import type { IChatWebviewView } from '../../../src/types.js';
+import { createMockDiffManager, createMockVscodeApi, createMockWebviewView, createMockWebview, createMockEventLogger, createMockEventBridge } from '../../testUtils.js';
 import { ICommandContext } from '../../../src/chat/chatCommandHandler.js';
 
 describe('ToolCommandHandler', () => {
     const createDependencies = () => {
         const eventBus = new EventBus();
         const diffManager = createMockDiffManager();
-        const eventBridge: IChatWebviewEventBridge = {
-            setView: jest.fn(),
-            setAbortControllerAccessor: jest.fn(),
-            getActiveDiff: jest.fn<(_id: string) => { oldContent: string; newContent: string; filePath: string; } | undefined>().mockReturnValue(undefined),
-            deleteActiveDiff: jest.fn(),
-            sendNotification: jest.fn(),
-            sendCompletionMessage: jest.fn()
-        };
+        const eventBridge = createMockEventBridge();
         const vscodeApi = createMockVscodeApi();
         const posted: any[] = [];
         const webview = createMockWebview(posted);
