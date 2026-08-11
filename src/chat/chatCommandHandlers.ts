@@ -13,6 +13,7 @@ import type {
     ISecretManager
 } from '../types.js';
 import { createEventLogger } from '../log/eventLogger.js';
+import { WEBVIEW_COMMANDS } from '../constants/protocol.js';
 import { ChatCommandHandler, IWebviewCommandHandler } from './chatCommandHandler.js';
 import { AgentCommandHandler } from './commands/agentCommandHandler.js';
 import { ProfileCommandHandler } from './commands/profileCommandHandler.js';
@@ -106,9 +107,45 @@ export function createChatCommandHandler(deps: IChatCommandHandlerDependencies):
     // const profileHandler = new ProfileCommandHandler({...});
     // handlers.push(profileHandler);
 
+    // Fail fast at composition time if the assembled handlers don't cover
+    // every command in the WEBVIEW_COMMANDS protocol. This catches the
+    // silent-drop failure mode where handleMessage() would otherwise exit
+    // its for-loop without dispatching anything for an unknown command.
+    _validateCommandCoverage(handlers);
+
     return new ChatCommandHandler({
         handlers,
         eventBus: deps.eventBus,
         getAbortController
     });
+}
+
+/**
+ * Verifies that the supplied handlers collectively cover every command in
+ * the WEBVIEW_COMMANDS protocol. Throws an Error listing the missing
+ * commands if coverage is incomplete.
+ *
+ * This is the composition-root's responsibility: it is the only place that
+ * knows the full set of handlers, and therefore the only place that can
+ * make a statement about the protocol as a whole.
+ */
+function _validateCommandCoverage(handlers: IWebviewCommandHandler[]): void {
+    const allCommands = Object.values(WEBVIEW_COMMANDS);
+    const coveredCommands = new Set<string>();
+
+    for (const handler of handlers) {
+        for (const command of allCommands) {
+            if (handler.canHandle(command)) {
+                coveredCommands.add(command);
+            }
+        }
+    }
+
+    const uncoveredCommands = allCommands.filter(command => !coveredCommands.has(command));
+
+    if (uncoveredCommands.length > 0) {
+        throw new Error(
+            `createChatCommandHandler: commands not covered by any handler: ${uncoveredCommands.join(', ')}`
+        );
+    }
 }
