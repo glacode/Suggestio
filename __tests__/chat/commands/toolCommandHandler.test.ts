@@ -3,7 +3,7 @@ import { ToolCommandHandler } from '../../../src/chat/commands/toolCommandHandle
 import { EventBus } from '../../../src/utils/eventBus.js';
 import { WEBVIEW_COMMANDS, APP_EVENTS } from '../../../src/constants/protocol.js';
 import type { IChatWebviewEventBridge, IChatWebviewView } from '../../../src/types.js';
-import { createMockDiffManager, createMockVscodeApi, createMockWebviewView, createMockWebview } from '../../testUtils.js';
+import { createMockDiffManager, createMockVscodeApi, createMockWebviewView, createMockWebview, createMockEventLogger } from '../../testUtils.js';
 import { ICommandContext } from '../../../src/chat/chatCommandHandler.js';
 
 describe('ToolCommandHandler', () => {
@@ -41,7 +41,7 @@ describe('ToolCommandHandler', () => {
         view,
         webviewView,
         eventBus: new EventBus(),
-        logger: { debug: jest.fn(), info: jest.fn(), warn: jest.fn(), error: jest.fn() }
+        logger: createMockEventLogger()
     });
 
     describe('canHandle', () => {

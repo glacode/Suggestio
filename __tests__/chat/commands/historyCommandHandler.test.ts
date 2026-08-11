@@ -2,7 +2,7 @@ import { describe, it, expect, jest } from '@jest/globals';
 import { HistoryCommandHandler } from '../../../src/chat/commands/historyCommandHandler.js';
 import { EventBus } from '../../../src/utils/eventBus.js';
 import { WEBVIEW_COMMANDS } from '../../../src/constants/protocol.js';
-import { createMockPersistentHistoryManager, createMockToolUiProvider, createMockWebviewView, createMockWebview } from '../../testUtils.js';
+import { createMockPersistentHistoryManager, createMockToolUiProvider, createMockWebviewView, createMockWebview, createMockEventLogger } from '../../testUtils.js';
 import { ICommandContext } from '../../../src/chat/chatCommandHandler.js';
 import { IChatWebviewView } from '../../../src/types.js';
 
@@ -31,7 +31,7 @@ describe('HistoryCommandHandler', () => {
         view,
         webviewView,
         eventBus: new EventBus(),
-        logger: { debug: jest.fn(), info: jest.fn(), warn: jest.fn(), error: jest.fn() }
+        logger: createMockEventLogger()
     });
 
     describe('canHandle', () => {

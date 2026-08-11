@@ -455,12 +455,12 @@ export const createMockEventBridge = (): jest.Mocked<IChatWebviewEventBridge> =>
     sendCompletionMessage: jest.fn(),
 });
 
-export const createMockChatWebviewView = (overrides: Record<string, unknown> = {}): IChatWebviewView => {
-    const view: IChatWebviewView = {
+export const createMockChatWebviewView = (overrides: Partial<IChatWebviewView> = {}): IChatWebviewView => {
+    return {
         updateState: jest.fn<any>().mockResolvedValue(undefined),
         pushUpdate: jest.fn<any>().mockResolvedValue(undefined),
+        ...overrides,
     };
-    return { ...view, ...overrides } as IChatWebviewView;
 };
 
 export const createMockChatAgent = (): jest.Mocked<IChatAgent> => ({
