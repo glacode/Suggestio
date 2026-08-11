@@ -39,13 +39,20 @@ import {
   IExtensionContextMinimal,
   IToolUiProvider,
   IVscodeWorkspaceConfiguration,
-  ConfigTarget
+  ConfigTarget,
+  IChatWebviewEventBridge,
+  IChatWebviewView,
+  IChatAgent,
+  IContextBuilder
 } from "../src/types.js";
 import { ISecretManager } from "../src/types.js";
 import { ILogger } from "../src/log/logger.js";
 import { CONFIG_DEFAULTS } from "../src/constants/config.js";
 import { jest } from "@jest/globals";
 import * as path from 'path';
+import { ICommandContext } from "../src/chat/chatCommandHandler.js";
+import { createEventLogger } from "../src/log/eventLogger.js";
+import { EventBus } from "../src/utils/eventBus.js";
 
 export class FakeProvider implements ILlmProvider {
     private callCount = 0;
@@ -438,3 +445,57 @@ export const createMockExtensionContextMinimal = (overrides: Partial<IExtensionC
     globalStorageUri: createMockUri('/path/to/globalStorage'),
     ...overrides
 });
+
+export const createMockEventBridge = (): jest.Mocked<IChatWebviewEventBridge> => ({
+    setView: jest.fn(),
+    setAbortControllerAccessor: jest.fn(),
+    getActiveDiff: jest.fn<(toolCallId: string) => any>(),
+    deleteActiveDiff: jest.fn(),
+    sendNotification: jest.fn(),
+    sendCompletionMessage: jest.fn(),
+});
+
+export const createMockChatWebviewView = (overrides: Record<string, unknown> = {}): IChatWebviewView => {
+    const view: IChatWebviewView = {
+        updateState: jest.fn<any>().mockResolvedValue(undefined),
+        pushUpdate: jest.fn<any>().mockResolvedValue(undefined),
+    };
+    return { ...view, ...overrides } as IChatWebviewView;
+};
+
+export const createMockChatAgent = (): jest.Mocked<IChatAgent> => ({
+    run: jest.fn<(prompt: any, signal?: AbortSignal) => Promise<void>>().mockResolvedValue(undefined),
+});
+
+export const createMockContextBuilder = (context: string = 'context'): jest.Mocked<IContextBuilder> => ({
+    buildContext: jest.fn<() => Promise<string>>().mockResolvedValue(context),
+});
+
+/**
+ * Creates a mock ICommandContext for testing command handlers.
+ *
+ * The returned object satisfies the ICommandContext interface required by
+ * IWebviewCommandHandler.handle(). By default, it provides:
+ *   - a fresh EventBus
+ *   - a real (event-bus-backed) logger via createEventLogger, so handlers
+ *     that emit through the logger continue to fan out to subscribers
+ *   - a mock view and webviewView (callers can override via overrides)
+ *
+ * The `webviewView` field is typed as `any` here because its concrete type
+ * (IWebviewView) is a structural interface satisfied by any object literal;
+ * the strict typing is enforced at the callsite.
+ */
+export const createMockCommandContext = (overrides: {
+    view?: IChatWebviewView;
+    webviewView?: any;
+    eventBus?: IEventBus;
+    logger?: ReturnType<typeof createEventLogger>;
+} = {}): ICommandContext => {
+    const eventBus = overrides.eventBus ?? new EventBus();
+    return {
+        view: overrides.view ?? createMockChatWebviewView(),
+        webviewView: overrides.webviewView,
+        eventBus,
+        logger: overrides.logger ?? createEventLogger(eventBus),
+    };
+};
