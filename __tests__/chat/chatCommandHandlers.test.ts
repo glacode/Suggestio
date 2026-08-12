@@ -17,7 +17,7 @@ import {
 } from '../testUtils.js';
 
 describe('createChatCommandHandler', () => {
-    const buildDeps = () => {
+    const createDependencies = () => {
         const eventBus = new EventBus();
         const chatAgent = createMockChatAgent();
         const chatHistoryManager = createMockPersistentHistoryManager();
@@ -50,7 +50,7 @@ describe('createChatCommandHandler', () => {
         // dependency set, the resulting dispatcher has a handler for every
         // command in the protocol. If the guarantee is broken, this call
         // throws and the test fails.
-        const handler = createChatCommandHandler(buildDeps());
+        const handler = createChatCommandHandler(createDependencies());
         expect(handler).toBeDefined();
     });
 });
