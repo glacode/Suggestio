@@ -3,7 +3,7 @@ import { ToolCommandHandler } from '../../../src/chat/commands/toolCommandHandle
 import { EventBus } from '../../../src/utils/eventBus.js';
 import { WEBVIEW_COMMANDS, APP_EVENTS } from '../../../src/constants/protocol.js';
 import type { IChatWebviewView } from '../../../src/types.js';
-import { createMockDiffManager, createMockVscodeApi, createMockWebviewView, createMockWebview, createMockEventLogger, createMockEventBridge, createMockChatWebviewView } from '../../testUtils.js';
+import { createMockDiffManager, createMockVscodeApi, createMockWebviewView, createMockWebview, createMockEventBridge, createMockChatWebviewView, createMockCommandContext } from '../../testUtils.js';
 import { ICommandContext } from '../../../src/chat/chatCommandHandler.js';
 
 describe('ToolCommandHandler', () => {
@@ -27,12 +27,7 @@ describe('ToolCommandHandler', () => {
         return { handler, diffManager, eventBridge, vscodeApi, webviewView, webview, eventBus, view };
     };
 
-    const createMockContext = (webviewView: any, view: IChatWebviewView): ICommandContext => ({
-        view,
-        webviewView,
-        eventBus: new EventBus(),
-        logger: createMockEventLogger()
-    });
+    const createMockContext = (webviewView: any, view: IChatWebviewView): ICommandContext => createMockCommandContext({ view, webviewView });
 
     describe('canHandle', () => {
         it('should return true for tool-related commands', () => {

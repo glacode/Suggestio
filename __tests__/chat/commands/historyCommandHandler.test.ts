@@ -2,7 +2,7 @@ import { describe, it, expect, jest } from '@jest/globals';
 import { HistoryCommandHandler } from '../../../src/chat/commands/historyCommandHandler.js';
 import { EventBus } from '../../../src/utils/eventBus.js';
 import { WEBVIEW_COMMANDS } from '../../../src/constants/protocol.js';
-import { createMockPersistentHistoryManager, createMockToolUiProvider, createMockWebviewView, createMockWebview, createMockEventLogger, createMockChatWebviewView } from '../../testUtils.js';
+import { createMockPersistentHistoryManager, createMockToolUiProvider, createMockWebviewView, createMockWebview, createMockChatWebviewView, createMockCommandContext } from '../../testUtils.js';
 import { ICommandContext } from '../../../src/chat/chatCommandHandler.js';
 import { IChatWebviewView } from '../../../src/types.js';
 
@@ -24,12 +24,7 @@ describe('HistoryCommandHandler', () => {
         return { handler, chatHistoryManager, toolUiProvider, webviewView, webview, eventBus, view };
     };
 
-    const createMockContext = (webviewView: any, view: IChatWebviewView): ICommandContext => ({
-        view,
-        webviewView,
-        eventBus: new EventBus(),
-        logger: createMockEventLogger()
-    });
+    const createMockContext = (webviewView: any, view: IChatWebviewView): ICommandContext => createMockCommandContext({ view, webviewView });
 
     describe('canHandle', () => {
         it('should return true for history-related commands', () => {

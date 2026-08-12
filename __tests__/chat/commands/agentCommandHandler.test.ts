@@ -38,7 +38,7 @@ describe('AgentCommandHandler', () => {
         return { handler, chatAgent, chatHistoryManager, buildContext, eventBus, eventBridge };
     };
 
-    const createContext = (webviewView: IWebviewView) => {
+    const createMockContext = (webviewView: IWebviewView) => {
         const eventBus = new EventBus();
         const logger = createEventLogger(eventBus);
         const view = createMockChatWebviewView();
@@ -56,7 +56,7 @@ describe('AgentCommandHandler', () => {
         const { handler, chatAgent, chatHistoryManager, buildContext } = createDependencies();
         const webview = createMockWebview([]);
         const webviewView = createMockWebviewView(webview);
-        const ctx = createContext(webviewView);
+        const ctx = createMockContext(webviewView);
 
         await handler.handle({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' }, ctx);
 
@@ -69,7 +69,7 @@ describe('AgentCommandHandler', () => {
         const { handler } = createDependencies();
         const webview = createMockWebview([]);
         const webviewView = createMockWebviewView(webview);
-        const ctx = createContext(webviewView);
+        const ctx = createMockContext(webviewView);
 
         // First trigger a run to set the abort controller
         const runPromise = handler.handle({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' }, ctx);
@@ -86,7 +86,7 @@ describe('AgentCommandHandler', () => {
         const { handler, chatAgent, buildContext } = createDependencies();
         const webview = createMockWebview([]);
         const webviewView = createMockWebviewView(webview);
-        const ctx = createContext(webviewView);
+        const ctx = createMockContext(webviewView);
 
         await handler.handle({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' }, ctx);
         expect(chatAgent.run).toHaveBeenCalledTimes(1);
