@@ -5,7 +5,7 @@ import { HistoryCommandHandler } from '../../src/chat/commands/historyCommandHan
 import { CompletionCommandHandler } from '../../src/chat/commands/completionCommandHandler.js';
 import { EventBus } from '../../src/utils/eventBus.js';
 import { WEBVIEW_COMMANDS, APP_EVENTS } from '../../src/constants/protocol.js';
-import type { IChatAgent, IContextBuilder, IChatWebviewView } from '../../src/types.js';
+import type { IChatAgent, IContextBuilder } from '../../src/types.js';
 import {
     createMockConfigContainer,
     createMockPersistentHistoryManager,
@@ -16,7 +16,8 @@ import {
     createMockConfigProvider,
     createMockEventLogger,
     createMockToolUiProvider,
-    createMockEventBridge
+    createMockEventBridge,
+    createMockChatWebviewView
 } from '../testUtils.js';
 
 describe('ChatCommandHandler', () => {
@@ -32,10 +33,7 @@ describe('ChatCommandHandler', () => {
         const httpClient = createMockHttpClient();
         
         const eventBridge = createMockEventBridge();
-        const view: IChatWebviewView = {
-            updateState: jest.fn<() => Promise<void>>(),
-            pushUpdate: jest.fn<() => Promise<void>>()
-        };
+        const view = createMockChatWebviewView();
 
         const logger = createMockEventLogger();
         let abortController: AbortController | undefined;

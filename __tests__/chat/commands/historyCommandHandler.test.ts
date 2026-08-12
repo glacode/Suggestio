@@ -2,7 +2,7 @@ import { describe, it, expect, jest } from '@jest/globals';
 import { HistoryCommandHandler } from '../../../src/chat/commands/historyCommandHandler.js';
 import { EventBus } from '../../../src/utils/eventBus.js';
 import { WEBVIEW_COMMANDS } from '../../../src/constants/protocol.js';
-import { createMockPersistentHistoryManager, createMockToolUiProvider, createMockWebviewView, createMockWebview, createMockEventLogger } from '../../testUtils.js';
+import { createMockPersistentHistoryManager, createMockToolUiProvider, createMockWebviewView, createMockWebview, createMockEventLogger, createMockChatWebviewView } from '../../testUtils.js';
 import { ICommandContext } from '../../../src/chat/chatCommandHandler.js';
 import { IChatWebviewView } from '../../../src/types.js';
 
@@ -14,10 +14,7 @@ describe('HistoryCommandHandler', () => {
         const posted: any[] = [];
         const webview = createMockWebview(posted);
         const webviewView = createMockWebviewView(webview);
-        const view: IChatWebviewView = {
-            updateState: jest.fn<() => Promise<void>>(),
-            pushUpdate: jest.fn<() => Promise<void>>()
-        };
+        const view = createMockChatWebviewView();
 
         const handler = new HistoryCommandHandler({
             chatHistoryManager,

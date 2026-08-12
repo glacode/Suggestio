@@ -3,7 +3,7 @@ import { ToolCommandHandler } from '../../../src/chat/commands/toolCommandHandle
 import { EventBus } from '../../../src/utils/eventBus.js';
 import { WEBVIEW_COMMANDS, APP_EVENTS } from '../../../src/constants/protocol.js';
 import type { IChatWebviewView } from '../../../src/types.js';
-import { createMockDiffManager, createMockVscodeApi, createMockWebviewView, createMockWebview, createMockEventLogger, createMockEventBridge } from '../../testUtils.js';
+import { createMockDiffManager, createMockVscodeApi, createMockWebviewView, createMockWebview, createMockEventLogger, createMockEventBridge, createMockChatWebviewView } from '../../testUtils.js';
 import { ICommandContext } from '../../../src/chat/chatCommandHandler.js';
 
 describe('ToolCommandHandler', () => {
@@ -15,10 +15,7 @@ describe('ToolCommandHandler', () => {
         const posted: any[] = [];
         const webview = createMockWebview(posted);
         const webviewView = createMockWebviewView(webview);
-        const view: IChatWebviewView = {
-            updateState: jest.fn<() => Promise<void>>(),
-            pushUpdate: jest.fn<() => Promise<void>>()
-        };
+        const view = createMockChatWebviewView();
 
         const handler = new ToolCommandHandler({
             diffManager,
