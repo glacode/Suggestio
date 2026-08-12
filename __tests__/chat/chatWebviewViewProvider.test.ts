@@ -8,7 +8,6 @@ import { describe, it, expect, jest } from '@jest/globals';
 import type {
   IUriLike, // A type representing a URI (Uniform Resource Identifier), similar to a file path.
   ILlmProviderAccessor, // A type for accessing language model (LLM) profiles.
-  IChatAgent, // A type for handling chat logic (sending/receiving messages).
   MessageFromTheExtensionToTheWebview, // A type for messages sent *to* the webview (e.g., AI responses).
   IPrompt,
   IChatMessage,
@@ -43,6 +42,8 @@ import {
   createMockConfigProvider,
   createMockExtensionContextMinimal,
   createMockEventLogger,
+  createMockChatAgent,
+  createMockContextBuilder,
 } from '../testUtils.js';
 import { CONFIG_DEFAULTS } from '../../src/constants/config.js';
 import { configProcessor } from '../../src/config/configProcessor.js';
@@ -182,18 +183,17 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     // `tokensEmitted` will store the full prompts sent to the `chatAgent`.
     const promptsSent: IPrompt[] = [];
     // `chatAgent` is a fake `IChatAgent` that simulates the AI's response logic.
-    const chatAgent: IChatAgent = {
-      run: async (prompt: IPrompt) => {
-        eventBus.emit('agent:token', { token: 'tok1', type: 'content' });
-        eventBus.emit('agent:token', { token: 'tok2', type: 'content' });
-        promptsSent.push(prompt); // Record the prompt that was processed.
-        return Promise.resolve(); // Simulate successful completion.
-      }
-    };
+    const chatAgent = createMockChatAgent();
+    chatAgent.run = jest.fn(async (prompt: IPrompt) => {
+      eventBus.emit('agent:token', { token: 'tok1', type: 'content' });
+      eventBus.emit('agent:token', { token: 'tok2', type: 'content' });
+      promptsSent.push(prompt); // Record the prompt that was processed.
+      return Promise.resolve(); // Simulate successful completion.
+    });
 
     // `buildContext` is a simple fake builder object that returns an empty string by default.
     // This context is typically added to the user's prompt before sending it to the AI.
-    const buildContext = { buildContext: async () => '' };
+    const buildContext = createMockContextBuilder('');
 
     // `receivedArgs` will capture the arguments passed to `getChatWebviewContent`.
     // We initialize it to `null` and expect it to be populated.
@@ -330,7 +330,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const webview = createMockWebview(responseMessages);
     const webviewView = createMockWebviewView(webview, 'X');
 
-    const chatAgent: IChatAgent = { run: async () => { throw new Error('boom'); } };
+    const chatAgent = createMockChatAgent();
+    chatAgent.run = jest.fn(async () => { throw new Error('boom'); });
     const chatHistoryManager = createMockPersistentHistoryManager();
 
     const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager, chatAgent, profileAccessor };
@@ -383,12 +384,11 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const webviewView = createMockWebviewView(webview, 'X');
 
     const promptsSent: IPrompt[] = [];
-    const chatAgent: IChatAgent = {
-      run: async (prompt: IPrompt) => {
-        promptsSent.push(prompt);
-        return Promise.resolve();
-      }
-    };
+    const chatAgent = createMockChatAgent();
+    chatAgent.run = jest.fn(async (prompt: IPrompt) => {
+      promptsSent.push(prompt);
+      return Promise.resolve();
+    });
 
     const chatHistoryManager = createMockPersistentHistoryManager();
 
@@ -406,7 +406,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       })
     };
 
-    const buildContext = { buildContext: async (opts: any) => opts?.includeActiveEditor ? 'This is a SECRET' : '' };
+    const buildContext = createMockContextBuilder('');
+    buildContext.buildContext = jest.fn(async (opts: any) => opts?.includeActiveEditor ? 'This is a SECRET' : '');
     const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager, chatAgent, profileAccessor, configContainer, buildContext };
 
     const provider = createTestProvider(deps);
@@ -431,12 +432,11 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const webviewView = createMockWebviewView(webview, 'X');
 
     const promptsSent: IPrompt[] = [];
-    const chatAgent: IChatAgent = {
-      run: async (prompt: IPrompt) => {
-        promptsSent.push(prompt);
-        return Promise.resolve();
-      }
-    };
+    const chatAgent = createMockChatAgent();
+    chatAgent.run = jest.fn(async (prompt: IPrompt) => {
+      promptsSent.push(prompt);
+      return Promise.resolve();
+    });
 
     const chatHistoryManager = createMockPersistentHistoryManager();
 
@@ -452,7 +452,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       })
     };
 
-    const buildContext = { buildContext: async () => 'This is a SECRET' };
+    const buildContext = createMockContextBuilder('This is a SECRET');
     const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager, chatAgent, profileAccessor, configContainer, buildContext };
 
     const provider = createTestProvider(deps);
@@ -481,25 +481,22 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const eventBus = new EventBus();
 
     let signalAtFetch: AbortSignal | undefined;
-    const chatAgent: IChatAgent = {
-      run: async (_prompt: IPrompt, signal?: AbortSignal) => {
-        signalAtFetch = signal;
-        eventBus.emit('agent:token', { token: 'tok1', type: 'content' });
+    const chatAgent = createMockChatAgent();
+    chatAgent.run = jest.fn(async (_prompt: IPrompt, signal?: AbortSignal) => {
+      signalAtFetch = signal;
+      eventBus.emit('agent:token', { token: 'tok1', type: 'content' });
 
-        // Simulate cancellation mid-stream
-        if (webview.__handler) {
-          await webview.__handler({ command: WEBVIEW_COMMANDS.CANCEL_REQUEST });
-        }
-
-        eventBus.emit('agent:token', { token: 'tok2', type: 'content' });
-
-        if (signal?.aborted) {
-          throw new Error('AbortError');
-        }
-
-        return Promise.resolve();
+      // Simulate cancellation mid-stream
+      if (webview.__handler) {
+        await webview.__handler({ command: WEBVIEW_COMMANDS.CANCEL_REQUEST });
       }
-    };
+
+      eventBus.emit('agent:token', { token: 'tok2', type: 'content' });
+
+      if (signal?.aborted) {
+        throw new Error('AbortError');
+      }
+    });
 
     const chatHistoryManager = createMockPersistentHistoryManager();
 
@@ -685,13 +682,12 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const webview = createMockWebview(posted);
     const webviewView = createMockWebviewView(webview, 'X');
 
-    const chatAgent: IChatAgent = {
-      run: async () => {
-        eventBus.emit('agent:token', { token: 'thought', type: 'reasoning' });
-        eventBus.emit('agent:token', { token: 'result', type: 'content' });
-        return Promise.resolve();
-      }
-    };
+    const chatAgent = createMockChatAgent();
+    chatAgent.run = jest.fn(async () => {
+      eventBus.emit('agent:token', { token: 'thought', type: 'reasoning' });
+      eventBus.emit('agent:token', { token: 'result', type: 'content' });
+      return Promise.resolve();
+    });
 
     const { configContainer } = createMocks();
     const config = configContainer.config;

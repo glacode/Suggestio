@@ -1,7 +1,7 @@
-import { describe, it, expect, jest } from '@jest/globals';
+import { describe, it, expect } from '@jest/globals';
 import { createChatCommandHandler } from '../../src/chat/chatCommandHandlers.js';
 import { EventBus } from '../../src/utils/eventBus.js';
-import type { IChatAgent, IContextBuilder } from '../../src/types.js';
+
 import {
     createMockConfigContainer,
     createMockPersistentHistoryManager,
@@ -11,19 +11,17 @@ import {
     createMockToolUiProvider,
     createMockDiffManager,
     createMockVscodeApi,
-    createMockEventBridge
+    createMockEventBridge,
+    createMockChatAgent,
+    createMockContextBuilder
 } from '../testUtils.js';
 
 describe('createChatCommandHandler', () => {
     const buildDeps = () => {
         const eventBus = new EventBus();
-        const chatAgent: IChatAgent = {
-            run: jest.fn<(p: any, s: any) => Promise<void>>().mockResolvedValue(undefined)
-        };
+        const chatAgent = createMockChatAgent();
         const chatHistoryManager = createMockPersistentHistoryManager();
-        const buildContext: IContextBuilder = {
-            buildContext: jest.fn<() => Promise<string>>().mockResolvedValue('context')
-        };
+        const buildContext = createMockContextBuilder();
         const configContainer = createMockConfigContainer({ profiles: {}, activeChatProfile: 'p1' });
         const configProvider = createMockConfigProvider();
         const secretManager = createMockSecretManager();

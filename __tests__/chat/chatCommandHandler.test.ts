@@ -1,11 +1,11 @@
-import { describe, it, expect, jest } from '@jest/globals';
+import { describe, it, expect } from '@jest/globals';
 import { ChatCommandHandler } from '../../src/chat/chatCommandHandler.js';
 import { AgentCommandHandler } from '../../src/chat/commands/agentCommandHandler.js';
 import { HistoryCommandHandler } from '../../src/chat/commands/historyCommandHandler.js';
 import { CompletionCommandHandler } from '../../src/chat/commands/completionCommandHandler.js';
 import { EventBus } from '../../src/utils/eventBus.js';
 import { WEBVIEW_COMMANDS, APP_EVENTS } from '../../src/constants/protocol.js';
-import type { IChatAgent, IContextBuilder } from '../../src/types.js';
+
 import {
     createMockConfigContainer,
     createMockPersistentHistoryManager,
@@ -17,15 +17,17 @@ import {
     createMockEventLogger,
     createMockToolUiProvider,
     createMockEventBridge,
-    createMockChatWebviewView
+    createMockChatWebviewView,
+    createMockChatAgent,
+    createMockContextBuilder
 } from '../testUtils.js';
 
 describe('ChatCommandHandler', () => {
     const createDependencies = () => {
         const eventBus = new EventBus();
-        const chatAgent: IChatAgent = { run: jest.fn<(p: any, s: any) => Promise<void>>().mockResolvedValue(undefined) };
+        const chatAgent = createMockChatAgent();
         const chatHistoryManager = createMockPersistentHistoryManager();
-        const buildContext: IContextBuilder = { buildContext: jest.fn<() => Promise<string>>().mockResolvedValue('context') };
+        const buildContext = createMockContextBuilder();
         const configContainer = createMockConfigContainer({ profiles: {}, activeChatProfile: 'p1' });
         const configProvider = createMockConfigProvider();
         configProvider.getProfiles.mockReturnValue({});
