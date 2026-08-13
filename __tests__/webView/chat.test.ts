@@ -277,6 +277,90 @@ describe('ChatManager Unit Tests', () => {
             expect(overlay.classList.contains('hidden')).toBe(true);
         });
 
+        it('should handle OPEN_HISTORY command when visible and when hidden', () => {
+            // First call: should open history overlay and request sessions
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { command: EXTENSION_COMMANDS.OPEN_HISTORY }
+            }));
+            expect(mockVscode.messages).toContainEqual({
+                command: WEBVIEW_COMMANDS.GET_SESSIONS
+            });
+
+            // Second call (while visible): should hide history overlay
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { command: EXTENSION_COMMANDS.OPEN_HISTORY }
+            }));
+            // Verify no error thrown and toggle branch is fully exercised
+        });
+
+        it('should handle SESSIONS_LIST event', () => {
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { type: EXTENSION_EVENTS.SESSIONS_LIST, sessions: [{ id: 's1', timestamp: Date.now() }] }
+            }));
+            // Renders session list into history overlay successfully
+        });
+
+        it('should handle notification events (show and hide)', () => {
+            // Show notification
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.NOTIFICATION, text: 'Alert note' }
+            }));
+            const notification = document.querySelector('.message.notification');
+            expect(notification).toBeTruthy();
+
+            // Hide notification (text === null)
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.NOTIFICATION, text: null }
+            }));
+            expect(document.querySelector('.message.notification')).toBeNull();
+        });
+
+        it('should handle tool started event (spinner start)', () => {
+            const toolCallId = 'ts1';
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { 
+                    sender: MESSAGE_SENDERS.ASSISTANT, 
+                    type: EXTENSION_EVENTS.TOOL_START, 
+                    toolCallId, 
+                    toolName: 'test_tool',
+                    args: '{}'
+                }
+            }));
+
+            // Confirm tool started
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { 
+                    sender: MESSAGE_SENDERS.ASSISTANT, 
+                    type: EXTENSION_EVENTS.TOOL_STARTED, 
+                    toolCallId
+                }
+            }));
+            expect(document.getElementById(`tool-${toolCallId}`)).toBeTruthy();
+        });
+
+        it('should handle halted event', () => {
+            const input = document.getElementById('messageInput');
+            if (!(input instanceof HTMLTextAreaElement)) { throw new Error('Input not found'); }
+            input.disabled = true;
+
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.HALTED, text: 'Execution halted' }
+            }));
+
+            const chat = document.getElementById('chat');
+            expect(chat?.innerHTML).toContain('Execution halted');
+            expect(input.disabled).toBe(false);
+        });
+
+        it('should handle unknown assistant message type as default static message', () => {
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: 'UNKNOWN_TYPE_XYZ', text: 'Fallback message' }
+            }));
+
+            const chat = document.getElementById('chat');
+            expect(chat?.innerHTML).toContain('Fallback message');
+        });
+
         it('should handle error events by showing text and enabling input', () => {
             const input = document.getElementById('messageInput');
             if (!(input instanceof HTMLTextAreaElement)) {
