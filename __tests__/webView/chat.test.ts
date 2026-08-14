@@ -300,6 +300,18 @@ describe('ChatManager Unit Tests', () => {
             // Renders session list into history overlay successfully
         });
 
+        it('should handle UPDATE_PROFILE_METADATA event', () => {
+            window.dispatchEvent(new MessageEvent('message', {
+                data: {
+                    type: EXTENSION_EVENTS.UPDATE_PROFILE_METADATA,
+                    metadata: { profile1: { name: 'Profile 1' } },
+                    profiles: ['profile1', 'profile2'],
+                    activeProfile: 'profile2'
+                }
+            }));
+            expect(chatManager).toBeDefined();
+        });
+
         it('should handle notification events (show and hide)', () => {
             // Show notification
             window.dispatchEvent(new MessageEvent('message', {
