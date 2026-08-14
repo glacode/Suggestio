@@ -300,13 +300,34 @@ describe('ChatManager Unit Tests', () => {
             // Renders session list into history overlay successfully
         });
 
-        it('should handle UPDATE_PROFILE_METADATA event', () => {
+        it('should handle UPDATE_PROFILE_METADATA event with full profiles and activeProfile', () => {
             window.dispatchEvent(new MessageEvent('message', {
                 data: {
                     type: EXTENSION_EVENTS.UPDATE_PROFILE_METADATA,
                     metadata: { profile1: { name: 'Profile 1' } },
                     profiles: ['profile1', 'profile2'],
                     activeProfile: 'profile2'
+                }
+            }));
+            expect(chatManager).toBeDefined();
+        });
+
+        it('should handle UPDATE_PROFILE_METADATA event with partial or missing profile fields', () => {
+            // Missing activeProfile
+            window.dispatchEvent(new MessageEvent('message', {
+                data: {
+                    type: EXTENSION_EVENTS.UPDATE_PROFILE_METADATA,
+                    metadata: { profile1: { name: 'Profile 1' } },
+                    profiles: ['profile1', 'profile2']
+                }
+            }));
+
+            // Missing profiles
+            window.dispatchEvent(new MessageEvent('message', {
+                data: {
+                    type: EXTENSION_EVENTS.UPDATE_PROFILE_METADATA,
+                    metadata: { profile1: { name: 'Profile 1' } },
+                    activeProfile: 'profile1'
                 }
             }));
             expect(chatManager).toBeDefined();
