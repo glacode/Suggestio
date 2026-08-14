@@ -43,7 +43,8 @@ import {
   IChatWebviewEventBridge,
   IChatWebviewView,
   IChatAgent,
-  IContextBuilder
+  IContextBuilder,
+  ProfileMetadata
 } from "../src/types.js";
 import { ISecretManager } from "../src/types.js";
 import { ILogger } from "../src/log/logger.js";
@@ -333,6 +334,23 @@ export const createMockConfigProvider = (): jest.Mocked<IConfigProvider> => ({
 export const createMockProfileConfig = (overrides: Partial<IProfileConfig> = {}): IProfileConfig => ({
     model: "fake-model",
     apiKeyIdentifier: "fake-key",
+    ...overrides
+});
+
+/**
+ * Creates a valid ProfileMetadata object for webview tests.
+ */
+export const createMockProfileMetadata = (overrides: Partial<ProfileMetadata> = {}): ProfileMetadata => ({
+    id: 'test-profile',
+    model: 'gpt-4',
+    endpoint: 'https://api.openai.com/v1',
+    needsApiKey: true,
+    hasApiKey: false,
+    origin: 'bundled',
+    supportsTools: true,
+    excludeFromChat: false,
+    isActiveChat: false,
+    isActiveCompletion: false,
     ...overrides
 });
 

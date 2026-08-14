@@ -6,7 +6,7 @@ import { ChatManager } from '../../src/webView/chat.js';
 import { InitialState } from '../../src/types.js';
 import { SettingsOverlay } from '../../src/webView/settingsOverlay.js';
 import { HistoryOverlay } from '../../src/webView/historyOverlay.js';
-import { MockWebviewApi, setupChatDom, createMockDomRect } from '../testUtils.js';
+import { MockWebviewApi, setupChatDom, createMockDomRect, createMockProfileMetadata } from '../testUtils.js';
 import { WEBVIEW_COMMANDS, EXTENSION_EVENTS, EXTENSION_COMMANDS, MESSAGE_SENDERS } from '../../src/constants/protocol.js';
 
 describe('ChatManager Unit Tests', () => {
@@ -301,36 +301,72 @@ describe('ChatManager Unit Tests', () => {
         });
 
         it('should handle UPDATE_PROFILE_METADATA event with full profiles and activeProfile', () => {
+            const mockMetadata = [
+                createMockProfileMetadata({ id: 'profile1', isActiveChat: true }),
+                createMockProfileMetadata({ id: 'profile2' })
+            ];
+
             window.dispatchEvent(new MessageEvent('message', {
                 data: {
                     type: EXTENSION_EVENTS.UPDATE_PROFILE_METADATA,
-                    metadata: { profile1: { name: 'Profile 1' } },
+                    metadata: mockMetadata,
                     profiles: ['profile1', 'profile2'],
                     activeProfile: 'profile2'
                 }
             }));
-            expect(chatManager).toBeDefined();
+
+            // The settings overlay should have rendered with the metadata
+            const profileItems = document.querySelectorAll('.profile-item');
+            expect(profileItems.length).toBe(2);
+
+            // The profile selector dropdown should be updated with the new profiles
+            const dropdownContent = document.querySelector('#modelSelector .dropdown-content');
+            expect(dropdownContent).toBeTruthy();
+            const options = dropdownContent?.querySelectorAll('a');
+            expect(options?.length).toBe(3); // 2 profiles + "Manage Models..."
+            expect(options?.[0].textContent).toBe('profile1');
+            expect(options?.[1].textContent).toBe('profile2');
+
+            // The active profile label should be updated
+            const chatProfileLabel = document.querySelector('#modelSelector .chat-profile-label');
+            expect(chatProfileLabel?.textContent).toBe('profile2');
         });
 
         it('should handle UPDATE_PROFILE_METADATA event with partial or missing profile fields', () => {
-            // Missing activeProfile
+            const mockMetadata = [
+                createMockProfileMetadata({ id: 'profile1' }),
+                createMockProfileMetadata({ id: 'profile2' })
+            ];
+
+            // Missing activeProfile - should not call renderProfileSelector
             window.dispatchEvent(new MessageEvent('message', {
                 data: {
                     type: EXTENSION_EVENTS.UPDATE_PROFILE_METADATA,
-                    metadata: { profile1: { name: 'Profile 1' } },
+                    metadata: mockMetadata,
                     profiles: ['profile1', 'profile2']
                 }
             }));
 
-            // Missing profiles
+            // Missing profiles - should not call renderProfileSelector
             window.dispatchEvent(new MessageEvent('message', {
                 data: {
                     type: EXTENSION_EVENTS.UPDATE_PROFILE_METADATA,
-                    metadata: { profile1: { name: 'Profile 1' } },
+                    metadata: mockMetadata,
                     activeProfile: 'profile1'
                 }
             }));
-            expect(chatManager).toBeDefined();
+
+            // Both missing - should not call renderProfileSelector
+            window.dispatchEvent(new MessageEvent('message', {
+                data: {
+                    type: EXTENSION_EVENTS.UPDATE_PROFILE_METADATA,
+                    metadata: mockMetadata
+                }
+            }));
+
+            // Settings overlay should still render successfully
+            const profileItems = document.querySelectorAll('.profile-item');
+            expect(profileItems.length).toBeGreaterThan(0);
         });
 
         it('should handle notification events (show and hide)', () => {
