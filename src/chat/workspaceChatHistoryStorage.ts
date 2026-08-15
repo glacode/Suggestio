@@ -98,6 +98,26 @@ export class WorkspaceChatHistoryStorage implements IWorkspaceChatHistoryStorage
     }
 
     /**
+     * Deletes a chat session by its ID from the workspace storage.
+     * @param sessionId The ID of the session to delete
+     */
+    public async deleteSession(sessionId: string): Promise<void> {
+        const storageDir = this.getStorageDir();
+        if (!storageDir) {
+            return;
+        }
+
+        const fileName = `${sessionId}.json`;
+        const filePath = this.pathResolver.join(storageDir, fileName);
+
+        try {
+            await this.fileDeleter.delete(filePath);
+        } catch (error) {
+            console.error(`Failed to delete session ${sessionId}:`, error);
+        }
+    }
+
+    /**
      * Deletes sessions beyond the MAX_SESSIONS limit.
      */
     private pruneOldSessions(storageDir: string): void {

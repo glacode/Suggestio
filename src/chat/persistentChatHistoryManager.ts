@@ -76,6 +76,17 @@ export class PersistentChatHistoryManager implements IPersistentChatHistoryManag
         this.sessions = this.storage.loadSessions();
     }
 
+    public async deleteSession(sessionId: string): Promise<void> {
+        await this.storage.deleteSession(sessionId);
+        // Refresh local cache
+        this.sessions = this.storage.loadSessions();
+
+        // If deleting the current session, create a new one
+        if (this.currentSessionId === sessionId) {
+            this.newSession();
+        }
+    }
+
     private generateTitle(history: IStoredChatMessage[]): string {
         const firstUserMessage = history.find(m => m.role === 'user');
         if (!firstUserMessage) {

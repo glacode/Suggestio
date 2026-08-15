@@ -1330,6 +1330,22 @@ body.overlay-open textarea#messageInput {
     border-color: var(--vscode-focusBorder);
 }
 
+.history-item {
+    position: relative;
+}
+
+.history-item .delete-session-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    opacity: 0.7;
+    transition: opacity 0.1s;
+}
+
+.history-item:hover .delete-session-btn {
+    opacity: 1;
+}
+
 .history-info {
     display: flex;
     flex-direction: column;

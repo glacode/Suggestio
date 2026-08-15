@@ -33,7 +33,8 @@ export class HistoryCommandHandler implements IWebviewCommandHandler {
     canHandle(command: string): boolean {
         return command === WEBVIEW_COMMANDS.CLEAR_HISTORY
             || command === WEBVIEW_COMMANDS.GET_SESSIONS
-            || command === WEBVIEW_COMMANDS.LOAD_SESSION;
+            || command === WEBVIEW_COMMANDS.LOAD_SESSION
+            || command === WEBVIEW_COMMANDS.DELETE_SESSION;
     }
 
     async handle(message: WebviewMessage, ctx: ICommandContext): Promise<void> {
@@ -43,6 +44,8 @@ export class HistoryCommandHandler implements IWebviewCommandHandler {
             await this._handleGetSessions(ctx.webviewView);
         } else if (message.command === WEBVIEW_COMMANDS.LOAD_SESSION) {
             await this._handleLoadSession(message, ctx.webviewView);
+        } else if (message.command === WEBVIEW_COMMANDS.DELETE_SESSION) {
+            await this._handleDeleteSession(message, ctx.webviewView);
         }
     }
 
@@ -72,6 +75,23 @@ export class HistoryCommandHandler implements IWebviewCommandHandler {
         webviewView.webview.postMessage({
             type: EXTENSION_EVENTS.CHAT_HISTORY_LOADED,
             history: enrichedHistory
+        });
+    }
+
+    private async _handleDeleteSession(message: Extract<WebviewMessage, { command: typeof WEBVIEW_COMMANDS.DELETE_SESSION }>, webviewView: IWebviewView): Promise<void> {
+        await this._chatHistoryManager.deleteSession(message.sessionId);
+        const sessions = await this._chatHistoryManager.getSessions();
+        webviewView.webview.postMessage({
+            type: EXTENSION_EVENTS.SESSIONS_LIST,
+            sessions: sessions.map(s => {
+                const firstUserMessage = s.history.find(m => m.role === 'user');
+                return {
+                    id: s.id,
+                    title: s.title,
+                    timestamp: s.timestamp,
+                    fullPrompt: firstUserMessage ? firstUserMessage.content.trim() : undefined
+                };
+            })
         });
     }
 }

@@ -236,7 +236,8 @@ export const createMockPersistentHistoryManager = (recorded: IStoredChatMessage[
     getSessions: jest.fn<IPersistentChatHistoryManager["getSessions"]>().mockResolvedValue([]),
     loadSession: jest.fn<IPersistentChatHistoryManager["loadSession"]>().mockResolvedValue(undefined),
     newSession: jest.fn<IPersistentChatHistoryManager["newSession"]>(),
-    persistCurrentSession: jest.fn<IPersistentChatHistoryManager["persistCurrentSession"]>()
+    persistCurrentSession: jest.fn<IPersistentChatHistoryManager["persistCurrentSession"]>(),
+    deleteSession: jest.fn<IPersistentChatHistoryManager["deleteSession"]>().mockResolvedValue(undefined)
 });
 
 export const createMockDiffManager = (): jest.Mocked<IDiffManager> => ({
@@ -421,7 +422,8 @@ export function setupChatDom() {
 
 export const createMockWorkspaceChatHistoryStorage = (): jest.Mocked<IWorkspaceChatHistoryStorage> => ({
     loadSessions: jest.fn<IWorkspaceChatHistoryStorage["loadSessions"]>().mockReturnValue([]),
-    saveSession: jest.fn<IWorkspaceChatHistoryStorage["saveSession"]>()
+    saveSession: jest.fn<IWorkspaceChatHistoryStorage["saveSession"]>(),
+    deleteSession: jest.fn<IWorkspaceChatHistoryStorage["deleteSession"]>().mockResolvedValue(undefined)
 });
 
 export const createMockFileDeleter = (): jest.Mocked<IFileDeleter> => ({

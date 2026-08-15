@@ -344,6 +344,12 @@ export type WebviewMessage =
     sessionId: string;
   }
   | {
+    /** User wants to delete a specific chat session. */
+    command: typeof WEBVIEW_COMMANDS.DELETE_SESSION;
+    /** The ID of the session to delete. */
+    sessionId: string;
+  }
+  | {
     /** User wants to add a new custom profile. */
     command: typeof WEBVIEW_COMMANDS.ADD_PROFILE;
     /** The configuration for the new profile. */
@@ -656,6 +662,12 @@ export interface IWorkspaceChatHistoryStorage {
    * @param session The chat session to save.
    */
   saveSession(session: IChatSession): void;
+
+  /**
+   * Deletes a chat session by its ID from the workspace storage.
+   * @param sessionId The ID of the session to delete
+   */
+  deleteSession(sessionId: string): Promise<void>;
 }
 
 /**
@@ -697,6 +709,7 @@ export interface IPersistentChatHistoryManager extends IChatHistoryManager {
   /**
    * Retrieves all saved chat sessions.
    */
+  deleteSession(sessionId: string): Promise<void>;
   getSessions(): Promise<IChatSession[]>;
 
   /**

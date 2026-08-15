@@ -146,4 +146,67 @@ describe('HistoryCommandHandler', () => {
             postMessageSpy.mockRestore();
         });
     });
+
+    describe('DELETE_SESSION', () => {
+        it('should handle DELETE_SESSION command', async () => {
+            const { handler, chatHistoryManager, webviewView, webview, view } = createDependencies();
+            
+            const mockSessions = [
+                {
+                    id: 'session-1',
+                    title: 'Test Session 1',
+                    timestamp: Date.now(),
+                    history: [
+                        { role: 'user' as const, content: 'Hello world' },
+                        { role: 'assistant' as const, content: 'Hi there' }
+                    ]
+                },
+                {
+                    id: 'session-2',
+                    title: 'Test Session 2',
+                    timestamp: Date.now(),
+                    history: [
+                        { role: 'assistant' as const, content: 'How can I help?' }
+                    ]
+                }
+            ];
+            
+            chatHistoryManager.getSessions.mockResolvedValue(mockSessions);
+            const postMessageSpy = jest.spyOn(webview, 'postMessage');
+            
+            const ctx = createMockContext(webviewView, view);
+            await handler.handle({
+                command: WEBVIEW_COMMANDS.DELETE_SESSION,
+                sessionId: 'session-1'
+            }, ctx);
+
+            expect(chatHistoryManager.deleteSession).toHaveBeenCalledWith('session-1');
+            expect(chatHistoryManager.getSessions).toHaveBeenCalled();
+            expect(postMessageSpy).toHaveBeenCalledWith({
+                type: 'sessionsList',
+                sessions: [
+                    {
+                        id: 'session-1',
+                        title: 'Test Session 1',
+                        timestamp: mockSessions[0].timestamp,
+                        fullPrompt: 'Hello world'
+                    },
+                    {
+                        id: 'session-2',
+                        title: 'Test Session 2',
+                        timestamp: mockSessions[1].timestamp,
+                        fullPrompt: undefined
+                    }
+                ]
+            });
+            
+            postMessageSpy.mockRestore();
+        });
+
+        it('should return true for DELETE_SESSION in canHandle', () => {
+            const { handler } = createDependencies();
+            
+            expect(handler.canHandle(WEBVIEW_COMMANDS.DELETE_SESSION)).toBe(true);
+        });
+    });
 });
