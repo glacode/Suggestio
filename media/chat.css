@@ -1334,33 +1334,42 @@ body.overlay-open textarea#messageInput {
     position: relative;
 }
 
-.history-item .delete-session-btn {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    opacity: 0.7;
-    transition: opacity 0.1s;
-}
-
-.history-item:hover .delete-session-btn {
-    opacity: 1;
-}
-
 .history-info {
     display: flex;
     flex-direction: column;
     gap: 4px;
+    flex: 1;
+    min-width: 0;
+}
+
+.history-session-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 4px;
+}
+
+.history-session-footer .history-session-date {
+    font-size: 11px;
+    color: var(--vscode-descriptionForeground);
+    flex: 1;
+    min-width: 0;
+}
+
+.history-session-footer .delete-session-btn {
+    margin-left: 8px;
+    opacity: 0.7;
+    transition: opacity 0.1s;
+}
+
+.history-item:hover .history-session-footer .delete-session-btn {
+    opacity: 1;
 }
 
 .history-session-title {
     font-weight: 600;
     font-size: 13px;
     color: var(--vscode-foreground);
-}
-
-.history-session-date {
-    font-size: 11px;
-    color: var(--vscode-descriptionForeground);
 }
 
 .history-footer {

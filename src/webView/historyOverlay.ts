@@ -115,9 +115,11 @@ export class HistoryOverlay {
             item.innerHTML = `
                 <div class="history-info">
                     <div class="history-session-title">${session.title}</div>
-                    <div class="history-session-date">${date}</div>
+                    <div class="history-session-footer">
+                        <div class="history-session-date">${date}</div>
+                        <button class="icon-button delete-session-btn" title="Delete Session">${DELETE_ICON_HTML}</button>
+                    </div>
                 </div>
-                <button class="icon-button delete-session-btn" title="Delete Session">${DELETE_ICON_HTML}</button>
             `;
 
             const deleteBtn = item.querySelector('.delete-session-btn');
