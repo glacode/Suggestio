@@ -2,9 +2,10 @@ import type {
     IPersistentChatHistoryManager,
     IToolUiProvider,
     IWebviewView,
-    WebviewMessage
+    WebviewMessage,
+    IStoredChatMessage
 } from '../../types.js';
-import { WEBVIEW_COMMANDS, EXTENSION_EVENTS } from '../../constants/protocol.js';
+import { WEBVIEW_COMMANDS, EXTENSION_EVENTS, MESSAGE_SENDERS } from '../../constants/protocol.js';
 import { IWebviewCommandHandler, ICommandContext } from '../chatCommandHandler.js';
 
 /**
@@ -70,11 +71,59 @@ export class HistoryCommandHandler implements IWebviewCommandHandler {
     }
 
     private async _handleLoadSession(message: Extract<WebviewMessage, { command: typeof WEBVIEW_COMMANDS.LOAD_SESSION }>, webviewView: IWebviewView): Promise<void> {
-        await this._chatHistoryManager.loadSession(message.sessionId);
-        const enrichedHistory = this._toolUiProvider.enrichHistory(this._chatHistoryManager.getChatHistory());
-        webviewView.webview.postMessage({
-            type: EXTENSION_EVENTS.CHAT_HISTORY_LOADED,
-            history: enrichedHistory
+        try {
+            await this._chatHistoryManager.loadSession(message.sessionId);
+            const history = this._chatHistoryManager.getChatHistory();
+            
+            // Validate and clean history before enrichment
+            const validatedHistory = this._validateAndCleanHistory(history);
+            
+            const enrichedHistory = this._toolUiProvider.enrichHistory(validatedHistory);
+            webviewView.webview.postMessage({
+                type: EXTENSION_EVENTS.CHAT_HISTORY_LOADED,
+                history: enrichedHistory
+            });
+        } catch (error) {
+            console.error('Failed to load session:', error);
+            webviewView.webview.postMessage({
+                sender: MESSAGE_SENDERS.ASSISTANT,
+                type: EXTENSION_EVENTS.ERROR,
+                text: `Failed to load session: ${error instanceof Error ? error.message : String(error)}`
+            });
+        }
+    }
+
+    /**
+     * Validates and cleans chat history to handle malformed data
+     */
+    private _validateAndCleanHistory(history: IStoredChatMessage[]): IStoredChatMessage[] {
+        return history.map(message => {
+            // Clean tool calls - remove nulls and fix string arguments
+            if ('tool_calls' in message && Array.isArray(message.tool_calls)) {
+                const cleanedToolCalls = message.tool_calls
+                    .filter((call): call is NonNullable<typeof call> => call !== null)
+                    .map(call => {
+                        if (call && 'function' in call && 'arguments' in call.function) {
+                            // Arguments should be strings, but validate they're valid JSON strings
+                            if (typeof call.function.arguments === 'string') {
+                                try {
+                                    // Validate it's valid JSON (but keep as string)
+                                    JSON.parse(call.function.arguments);
+                                } catch (e) {
+                                    console.warn('Invalid JSON in tool call arguments, using empty object:', call.function.arguments);
+                                    call.function.arguments = '{}';
+                                }
+                            } else if (call.function.arguments === undefined) {
+                                // Ensure arguments field exists
+                                call.function.arguments = '{}';
+                            }
+                        }
+                        return call;
+                    });
+                
+                return { ...message, tool_calls: cleanedToolCalls };
+            }
+            return message;
         });
     }
 
