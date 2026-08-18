@@ -4,7 +4,7 @@ import { EventBus } from '../../../src/utils/eventBus.js';
 import { WEBVIEW_COMMANDS } from '../../../src/constants/protocol.js';
 import { createMockPersistentHistoryManager, createMockToolUiProvider, createMockWebviewView, createMockWebview, createMockChatWebviewView, createMockCommandContext } from '../../testUtils.js';
 import { ICommandContext } from '../../../src/chat/chatCommandHandler.js';
-import { IChatWebviewView, IStoredChatMessage } from '../../../src/types.js';
+import { IChatWebviewView, IStoredChatMessage, ToolCall } from '../../../src/types.js';
 
 describe('HistoryCommandHandler', () => {
     const createDependencies = () => {
@@ -224,6 +224,163 @@ describe('HistoryCommandHandler', () => {
             postMessageSpy.mockRestore();
         });
 
+        it('should default arguments to an empty JSON string when the arguments key is present but its value is undefined', async () => {
+            // Behavioral contract: a stored tool call whose `arguments` property
+            // exists but has no value must be repaired to a valid empty JSON
+            // object before the history is handed off to the UI provider.
+            const { handler, chatHistoryManager, toolUiProvider, webviewView, webview, view } = createDependencies();
+
+            // Build a well-typed ToolCall, then mutate the runtime value of
+            // `arguments` to undefined. The property still exists, so
+            // `'arguments' in call.function` evaluates true, but its value is
+            // undefined, taking the recovery branch.
+            const toolCall: ToolCall = {
+                id: 'call-undefined-args',
+                type: 'function',
+                function: { name: 'testTool', arguments: '{}' }
+            };
+            Object.defineProperty(toolCall.function, 'arguments', {
+                value: undefined,
+                writable: true,
+                enumerable: true,
+                configurable: true
+            });
+
+            const mockHistory: IStoredChatMessage[] = [
+                {
+                    role: 'assistant',
+                    content: 'Calling tool with missing arguments value',
+                    tool_calls: [toolCall]
+                }
+            ];
+
+            chatHistoryManager.getChatHistory.mockReturnValue(mockHistory);
+            toolUiProvider.enrichHistory.mockImplementation((hist) => hist);
+            const postMessageSpy = jest.spyOn(webview, 'postMessage');
+
+            const ctx = createMockContext(webviewView, view);
+            await handler.handle({
+                command: WEBVIEW_COMMANDS.LOAD_SESSION,
+                sessionId: 'test-session'
+            }, ctx);
+
+            expect(toolUiProvider.enrichHistory).toHaveBeenCalledWith([
+                {
+                    role: 'assistant',
+                    content: 'Calling tool with missing arguments value',
+                    tool_calls: [
+                        {
+                            id: 'call-undefined-args',
+                            type: 'function',
+                            function: { name: 'testTool', arguments: '{}' }
+                        }
+                    ]
+                }
+            ]);
+
+            postMessageSpy.mockRestore();
+        });
+
+        it('should leave arguments untouched when arguments is neither a string nor undefined', async () => {
+            // Behavioral contract: when the stored value of `arguments` is
+            // some other non-string value (null here), the loader does not
+            // attempt to coerce or replace it; it is forwarded as-is.
+            const { handler, chatHistoryManager, toolUiProvider, webviewView, webview, view } = createDependencies();
+
+            const toolCall: ToolCall = {
+                id: 'call-null-args',
+                type: 'function',
+                function: { name: 'testTool', arguments: '{}' }
+            };
+            Object.defineProperty(toolCall.function, 'arguments', {
+                value: null,
+                writable: true,
+                enumerable: true,
+                configurable: true
+            });
+
+            const mockHistory: IStoredChatMessage[] = [
+                {
+                    role: 'assistant',
+                    content: 'Calling tool with non-string arguments',
+                    tool_calls: [toolCall]
+                }
+            ];
+
+            chatHistoryManager.getChatHistory.mockReturnValue(mockHistory);
+            toolUiProvider.enrichHistory.mockImplementation((hist) => hist);
+            const postMessageSpy = jest.spyOn(webview, 'postMessage');
+
+            const ctx = createMockContext(webviewView, view);
+            await handler.handle({
+                command: WEBVIEW_COMMANDS.LOAD_SESSION,
+                sessionId: 'test-session'
+            }, ctx);
+
+            // Use partial matchers because the runtime value of `arguments` is
+            // null, which does not match the declared `string` type.
+            expect(toolUiProvider.enrichHistory).toHaveBeenCalledWith([
+                expect.objectContaining({
+                    role: 'assistant',
+                    content: 'Calling tool with non-string arguments',
+                    tool_calls: expect.arrayContaining([
+                        expect.objectContaining({
+                            id: 'call-null-args',
+                            type: 'function',
+                            function: expect.objectContaining({
+                                name: 'testTool',
+                                arguments: null
+                            })
+                        })
+                    ])
+                })
+            ]);
+
+            postMessageSpy.mockRestore();
+        });
+
+        it('should leave a tool call untouched when its function has no arguments property', async () => {
+            // Behavioral contract: a tool call whose `function` object lacks the
+            // `arguments` key entirely is returned as-is by the cleaner, without
+            // any validation attempt.
+            const { handler, chatHistoryManager, toolUiProvider, webviewView, webview, view } = createDependencies();
+
+            // `JSON.parse` returns `any`, which assigns cleanly to a `ToolCall`
+            // typed variable without any assertion. The resulting object is
+            // missing the `arguments` key, so the runtime check
+            // `'arguments' in call.function` is false.
+            const toolCall: ToolCall = JSON.parse(
+                '{"id":"call-no-args","type":"function","function":{"name":"testTool"}}'
+            );
+
+            const mockHistory: IStoredChatMessage[] = [
+                {
+                    role: 'assistant',
+                    content: 'Calling tool without arguments property',
+                    tool_calls: [toolCall]
+                }
+            ];
+
+            chatHistoryManager.getChatHistory.mockReturnValue(mockHistory);
+            toolUiProvider.enrichHistory.mockImplementation((hist) => hist);
+            const postMessageSpy = jest.spyOn(webview, 'postMessage');
+
+            const ctx = createMockContext(webviewView, view);
+            await handler.handle({
+                command: WEBVIEW_COMMANDS.LOAD_SESSION,
+                sessionId: 'test-session'
+            }, ctx);
+
+            // The cleaner must pass the call through without adding the
+            // `arguments` key. Verify the absence of the key at runtime.
+            const callArg = toolUiProvider.enrichHistory.mock.calls[0]?.[0];
+            const firstToolCall = callArg?.[0]?.tool_calls?.[0];
+            expect(firstToolCall).toBeDefined();
+            expect('arguments' in (firstToolCall?.function ?? {})).toBe(false);
+
+            postMessageSpy.mockRestore();
+        });
+
         it('should handle errors when loading session fails', async () => {
             const { handler, chatHistoryManager, webviewView, webview, view } = createDependencies();
             
@@ -329,8 +486,35 @@ describe('HistoryCommandHandler', () => {
 
         it('should return true for DELETE_SESSION in canHandle', () => {
             const { handler } = createDependencies();
-            
+
             expect(handler.canHandle(WEBVIEW_COMMANDS.DELETE_SESSION)).toBe(true);
+        });
+    });
+
+    describe('handle with non-history command', () => {
+        it('should ignore any command that is not a history command', async () => {
+            // Behavioral contract: when `handle` is invoked with a valid
+            // WebviewMessage whose command is not one of the history commands,
+            // the handler must do nothing — it must not call any chat-history
+            // method, must not invoke the UI provider, and must not post any
+            // message to the webview.
+            const { handler, chatHistoryManager, toolUiProvider, webviewView, webview, view } = createDependencies();
+            const postMessageSpy = jest.spyOn(webview, 'postMessage');
+
+            const ctx = createMockContext(webviewView, view);
+            await handler.handle({
+                command: WEBVIEW_COMMANDS.SEND_MESSAGE,
+                text: 'hello'
+            }, ctx);
+
+            expect(chatHistoryManager.clearHistory).not.toHaveBeenCalled();
+            expect(chatHistoryManager.getSessions).not.toHaveBeenCalled();
+            expect(chatHistoryManager.loadSession).not.toHaveBeenCalled();
+            expect(chatHistoryManager.deleteSession).not.toHaveBeenCalled();
+            expect(toolUiProvider.enrichHistory).not.toHaveBeenCalled();
+            expect(postMessageSpy).not.toHaveBeenCalled();
+
+            postMessageSpy.mockRestore();
         });
     });
 });
