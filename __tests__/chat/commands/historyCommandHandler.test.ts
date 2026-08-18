@@ -4,7 +4,7 @@ import { EventBus } from '../../../src/utils/eventBus.js';
 import { WEBVIEW_COMMANDS } from '../../../src/constants/protocol.js';
 import { createMockPersistentHistoryManager, createMockToolUiProvider, createMockWebviewView, createMockWebview, createMockChatWebviewView, createMockCommandContext } from '../../testUtils.js';
 import { ICommandContext } from '../../../src/chat/chatCommandHandler.js';
-import { IChatWebviewView } from '../../../src/types.js';
+import { IChatWebviewView, IStoredChatMessage } from '../../../src/types.js';
 
 describe('HistoryCommandHandler', () => {
     const createDependencies = () => {
@@ -143,6 +143,128 @@ describe('HistoryCommandHandler', () => {
                 history: enrichedHistory
             });
             
+            postMessageSpy.mockRestore();
+        });
+
+        it('should clean malformed tool calls (null entries, invalid JSON arguments, undefined arguments)', async () => {
+            const { handler, chatHistoryManager, toolUiProvider, webviewView, webview, view } = createDependencies();
+            
+            const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+            const invalidArgs = {};
+            const mockHistory: IStoredChatMessage[] = [
+                {
+                    role: 'assistant',
+                    content: 'Calling tools',
+                    tool_calls: [
+                        {
+                            id: 'call-1',
+                            type: 'function',
+                            function: { name: 'testTool', arguments: 'invalid-json' }
+                        },
+                        {
+                            id: 'call-2',
+                            type: 'function',
+                            function: { name: 'testTool2', arguments: JSON.stringify(invalidArgs) }
+                        },
+                        {
+                            id: 'call-3',
+                            type: 'function',
+                            function: { name: 'testTool3', arguments: '{"valid": true}' }
+                        }
+                    ]
+                },
+                {
+                    role: 'user',
+                    content: 'Regular message'
+                }
+            ];
+
+            chatHistoryManager.getChatHistory.mockReturnValue(mockHistory);
+            toolUiProvider.enrichHistory.mockImplementation((hist) => hist);
+            const postMessageSpy = jest.spyOn(webview, 'postMessage');
+
+            const ctx = createMockContext(webviewView, view);
+            await handler.handle({
+                command: WEBVIEW_COMMANDS.LOAD_SESSION,
+                sessionId: 'test-session'
+            }, ctx);
+
+            expect(toolUiProvider.enrichHistory).toHaveBeenCalledWith([
+                {
+                    role: 'assistant',
+                    content: 'Calling tools',
+                    tool_calls: [
+                        {
+                            id: 'call-1',
+                            type: 'function',
+                            function: { name: 'testTool', arguments: '{}' }
+                        },
+                        {
+                            id: 'call-2',
+                            type: 'function',
+                            function: { name: 'testTool2', arguments: '{}' }
+                        },
+                        {
+                            id: 'call-3',
+                            type: 'function',
+                            function: { name: 'testTool3', arguments: '{"valid": true}' }
+                        }
+                    ]
+                },
+                {
+                    role: 'user',
+                    content: 'Regular message'
+                }
+            ]);
+
+            consoleWarnSpy.mockRestore();
+            postMessageSpy.mockRestore();
+        });
+
+        it('should handle errors when loading session fails', async () => {
+            const { handler, chatHistoryManager, webviewView, webview, view } = createDependencies();
+            
+            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+            chatHistoryManager.loadSession.mockRejectedValue(new Error('Storage failure'));
+            const postMessageSpy = jest.spyOn(webview, 'postMessage');
+
+            const ctx = createMockContext(webviewView, view);
+            await handler.handle({
+                command: WEBVIEW_COMMANDS.LOAD_SESSION,
+                sessionId: 'bad-session'
+            }, ctx);
+
+            expect(postMessageSpy).toHaveBeenCalledWith({
+                sender: 'assistant',
+                type: 'error',
+                text: 'Failed to load session: Storage failure'
+            });
+
+            consoleErrorSpy.mockRestore();
+            postMessageSpy.mockRestore();
+        });
+
+        it('should handle non-Error objects when loading session fails', async () => {
+            const { handler, chatHistoryManager, webviewView, webview, view } = createDependencies();
+            
+            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+            chatHistoryManager.loadSession.mockRejectedValue('String error');
+            const postMessageSpy = jest.spyOn(webview, 'postMessage');
+
+            const ctx = createMockContext(webviewView, view);
+            await handler.handle({
+                command: WEBVIEW_COMMANDS.LOAD_SESSION,
+                sessionId: 'bad-session'
+            }, ctx);
+
+            expect(postMessageSpy).toHaveBeenCalledWith({
+                sender: 'assistant',
+                type: 'error',
+                text: 'Failed to load session: String error'
+            });
+
+            consoleErrorSpy.mockRestore();
             postMessageSpy.mockRestore();
         });
     });
