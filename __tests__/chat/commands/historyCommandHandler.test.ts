@@ -151,12 +151,14 @@ describe('HistoryCommandHandler', () => {
             
             const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
-            const invalidArgs = {};
+            const undefinedArgumentsValue = undefined;
+            const nullToolCall = null;
             const mockHistory: IStoredChatMessage[] = [
                 {
                     role: 'assistant',
                     content: 'Calling tools',
                     tool_calls: [
+                        nullToolCall!,
                         {
                             id: 'call-1',
                             type: 'function',
@@ -165,7 +167,7 @@ describe('HistoryCommandHandler', () => {
                         {
                             id: 'call-2',
                             type: 'function',
-                            function: { name: 'testTool2', arguments: JSON.stringify(invalidArgs) }
+                            function: { name: 'testTool2', arguments: undefinedArgumentsValue! }
                         },
                         {
                             id: 'call-3',
