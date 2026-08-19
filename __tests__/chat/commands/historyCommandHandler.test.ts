@@ -1,5 +1,5 @@
 import { describe, it, expect, jest } from '@jest/globals';
-import { HistoryCommandHandler } from '../../../src/chat/commands/historyCommandHandler.js';
+import { HistoryCommandHandler } from '../../../src/chat/commandHandlers/historyCommandHandler.js';
 import { EventBus } from '../../../src/utils/eventBus.js';
 import { WEBVIEW_COMMANDS } from '../../../src/constants/protocol.js';
 import { createMockPersistentHistoryManager, createMockToolUiProvider, createMockWebviewView, createMockWebview, createMockChatWebviewView, createMockCommandContext } from '../../testUtils.js';

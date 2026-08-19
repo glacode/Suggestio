@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
-import { AgentCommandHandler } from '../../../src/chat/commands/agentCommandHandler.js';
+import { AgentCommandHandler } from '../../../src/chat/commandHandlers/agentCommandHandler.js';
 import { EventBus } from '../../../src/utils/eventBus.js';
 import { WEBVIEW_COMMANDS } from '../../../src/constants/protocol.js';
 import type { IWebviewView } from '../../../src/types.js';

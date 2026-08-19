@@ -1,8 +1,8 @@
 import { describe, it, expect } from '@jest/globals';
 import { ChatCommandHandler } from '../../src/chat/chatCommandHandler.js';
-import { AgentCommandHandler } from '../../src/chat/commands/agentCommandHandler.js';
-import { HistoryCommandHandler } from '../../src/chat/commands/historyCommandHandler.js';
-import { CompletionCommandHandler } from '../../src/chat/commands/completionCommandHandler.js';
+import { AgentCommandHandler } from '../../src/chat/commandHandlers/agentCommandHandler.js';
+import { HistoryCommandHandler } from '../../src/chat/commandHandlers/historyCommandHandler.js';
+import { CompletionCommandHandler } from '../../src/chat/commandHandlers/completionCommandHandler.js';
 import { EventBus } from '../../src/utils/eventBus.js';
 import { WEBVIEW_COMMANDS, APP_EVENTS } from '../../src/constants/protocol.js';
 

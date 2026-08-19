@@ -15,11 +15,11 @@ import type {
 import { createEventLogger } from '../log/eventLogger.js';
 import { WEBVIEW_COMMANDS } from '../constants/protocol.js';
 import { ChatCommandHandler, IWebviewCommandHandler } from './chatCommandHandler.js';
-import { AgentCommandHandler } from './commands/agentCommandHandler.js';
-import { ProfileCommandHandler } from './commands/profileCommandHandler.js';
-import { HistoryCommandHandler } from './commands/historyCommandHandler.js';
-import { ToolCommandHandler } from './commands/toolCommandHandler.js';
-import { CompletionCommandHandler } from './commands/completionCommandHandler.js';
+import { AgentCommandHandler } from './commandHandlers/agentCommandHandler.js';
+import { ProfileCommandHandler } from './commandHandlers/profileCommandHandler.js';
+import { HistoryCommandHandler } from './commandHandlers/historyCommandHandler.js';
+import { ToolCommandHandler } from './commandHandlers/toolCommandHandler.js';
+import { CompletionCommandHandler } from './commandHandlers/completionCommandHandler.js';
 
 /**
  * Dependencies required to build the command handler chain.

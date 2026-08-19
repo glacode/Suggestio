@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
-import { CompletionCommandHandler } from '../../../src/chat/commands/completionCommandHandler.js';
+import { CompletionCommandHandler } from '../../../src/chat/commandHandlers/completionCommandHandler.js';
 import { WEBVIEW_COMMANDS } from '../../../src/constants/protocol.js';
 import { APP_EVENTS } from '../../../src/constants/protocol.js';
 import { EventBus } from '../../../src/utils/eventBus.js';

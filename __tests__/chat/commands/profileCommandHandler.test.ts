@@ -1,5 +1,5 @@
 import { describe, it, expect, jest } from '@jest/globals';
-import { ProfileCommandHandler } from '../../../src/chat/commands/profileCommandHandler.js';
+import { ProfileCommandHandler } from '../../../src/chat/commandHandlers/profileCommandHandler.js';
 import { EventBus } from '../../../src/utils/eventBus.js';
 import { WEBVIEW_COMMANDS } from '../../../src/constants/protocol.js';
 import { createMockConfigProvider, createMockSecretManager, createMockHttpClient, createMockConfigContainer } from '../../testUtils.js';

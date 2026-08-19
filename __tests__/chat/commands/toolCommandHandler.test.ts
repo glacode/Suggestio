@@ -1,5 +1,5 @@
 import { describe, it, expect, jest } from '@jest/globals';
-import { ToolCommandHandler } from '../../../src/chat/commands/toolCommandHandler.js';
+import { ToolCommandHandler } from '../../../src/chat/commandHandlers/toolCommandHandler.js';
 import { EventBus } from '../../../src/utils/eventBus.js';
 import { WEBVIEW_COMMANDS, APP_EVENTS } from '../../../src/constants/protocol.js';
 import type { IChatWebviewView } from '../../../src/types.js';

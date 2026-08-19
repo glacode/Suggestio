@@ -20,10 +20,10 @@ import { ChatWebviewViewProvider } from '../../src/chat/chatWebviewViewProvider.
 import { ProfileMetadataProvider } from '../../src/chat/profileMetadataProvider.js';
 import { ChatWebviewEventBridge } from '../../src/chat/chatWebviewEventBridge.js';
 import { ChatCommandHandler } from '../../src/chat/chatCommandHandler.js';
-import { AgentCommandHandler } from '../../src/chat/commands/agentCommandHandler.js';
-import { ProfileCommandHandler } from '../../src/chat/commands/profileCommandHandler.js';
-import { HistoryCommandHandler } from '../../src/chat/commands/historyCommandHandler.js';
-import { ToolCommandHandler } from '../../src/chat/commands/toolCommandHandler.js';
+import { AgentCommandHandler } from '../../src/chat/commandHandlers/agentCommandHandler.js';
+import { ProfileCommandHandler } from '../../src/chat/commandHandlers/profileCommandHandler.js';
+import { HistoryCommandHandler } from '../../src/chat/commandHandlers/historyCommandHandler.js';
+import { ToolCommandHandler } from '../../src/chat/commandHandlers/toolCommandHandler.js';
 import { ChatWebviewViewManager } from '../../src/chat/chatWebviewViewManager.js';
 import { EventBus } from '../../src/utils/eventBus.js';
 import {
