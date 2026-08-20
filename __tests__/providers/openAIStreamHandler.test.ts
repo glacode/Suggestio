@@ -116,4 +116,51 @@ describe('OpenAIStreamHandler', () => {
     };
     await expect(handler.handleStream(response)).rejects.toThrow(/Response body is null/);
   });
+
+  it('should NOT split tool calls into separate messages when whitespace content appears between them', async () => {
+    // This reproduces the bug where newlines between tool calls cause the stream handler
+    // to flush the tool_calls message and start a new one, creating sparse arrays
+    const chunks = [
+      // First tool call
+      'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"read_file","arguments":"{\\"path\\":\\"file1.ts\\"}"}}]}}]}\n',
+      // Whitespace content (newline) between tool calls - this should NOT cause a phase change
+      'data: {"choices":[{"delta":{"content":"\\n"}}]}\n',
+      // Second tool call
+      'data: {"choices":[{"delta":{"tool_calls":[{"index":1,"id":"call_2","type":"function","function":{"name":"read_file","arguments":"{\\"path\\":\\"file2.ts\\"}"}}]}}]}\n',
+      // More whitespace
+      'data: {"choices":[{"delta":{"content":"\\n"}}]}\n',
+      // Third tool call
+      'data: {"choices":[{"delta":{"tool_calls":[{"index":2,"id":"call_3","type":"function","function":{"name":"read_file","arguments":"{\\"path\\":\\"file3.ts\\"}"}}]}}]}\n',
+      'data: [DONE]\n'
+    ];
+
+    const response: IHttpResponse = {
+      body: createAsyncIterable(chunks),
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      json: jest.fn<() => Promise<any>>().mockResolvedValue({}),
+      text: jest.fn<() => Promise<string>>().mockResolvedValue('')
+    };
+
+    const results = await handler.handleStream(response);
+
+    // Should produce only ONE message with all 3 tool calls, not multiple messages
+    // The bug would cause 3 separate tool_calls messages (each with sparse arrays)
+    expect(results).toHaveLength(1);
+    expect(results[0].tool_calls).toHaveLength(3);
+    expect(results[0].tool_calls?.[0].function.name).toBe('read_file');
+    expect(results[0].tool_calls?.[0].function.arguments).toContain('file1.ts');
+    expect(results[0].tool_calls?.[1].function.name).toBe('read_file');
+    expect(results[0].tool_calls?.[1].function.arguments).toContain('file2.ts');
+    expect(results[0].tool_calls?.[2].function.name).toBe('read_file');
+    expect(results[0].tool_calls?.[2].function.arguments).toContain('file3.ts');
+    
+    // Verify no undefined elements in the tool_calls array (no sparse array)
+    for (const tc of results[0].tool_calls || []) {
+      expect(tc).toBeDefined();
+      expect(tc.function).toBeDefined();
+      expect(tc.function.name).toBeDefined();
+    }
+  });
 });

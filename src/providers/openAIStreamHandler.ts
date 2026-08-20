@@ -137,13 +137,22 @@ export class OpenAIStreamHandler implements IOpenAIStreamHandler {
           }
 
           if (hasContent) {
-              if (content.length > 0 || (currentPhase !== 'reasoning' && !hasReasoning)) {
+              // Don't switch from tool_calls to content for whitespace-only content.
+              // Tool calls in OpenAI streaming can be separated by newlines within the same message.
+              const isWhitespaceOnly = content.trim() === "";
+              const shouldSwitchToContent = content.length > 0 && !isWhitespaceOnly || (currentPhase !== 'reasoning' && !hasReasoning && currentPhase !== 'tool_calls');
+              
+              if (shouldSwitchToContent) {
                   if (currentPhase !== 'content') {
                       flushCurrentMessage();
                       currentPhase = 'content';
                   }
                   currentContent += content;
+              } else if (currentPhase === 'content' || currentPhase === 'reasoning') {
+                  // Still accumulate content if we're already in content/reasoning phase
+                  currentContent += content;
               }
+              // If in tool_calls phase and content is whitespace-only, ignore it (don't switch phase)
           }
 
           // 2. Detect tool calls delta
