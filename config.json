@@ -1,6 +1,6 @@
 {
   "$schema": "./resources/config.schema.json",
-  "activeChatProfile": "mistral-devstral-2512",
+  "activeChatProfile": "gemini-3-5-flash-lite",
   "activeCompletionProfile": "mistral-devstral-small-2512",
   "profiles": {
     "llm7-fast-noapikey": {
