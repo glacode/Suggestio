@@ -19,19 +19,11 @@
       "endpoint": "https://api.llm7.io/v1/chat/completions",
       "isApiKeyRequired": false
     },
-    "publicai-apertus-70b": {
+    "publicai-apertus-v1-5-70b-thinking": {
       "endpoint": "https://api.publicai.co/v1/chat/completions",
-      "model": "swiss-ai/apertus-70b-instruct",
+      "model": "swiss-ai/apertus-v1.5-70b-thinking",
       "apiKeyIdentifier": "PUBLICAI_API_KEY",
-      "supportsTools": true,
-      "excludeFromChat": true
-    },
-    "publicai-olmo3-7b": {
-      "endpoint": "https://api.publicai.co/v1/chat/completions",
-      "model": "allenai/Olmo-3-7B-Instruct",
-      "apiKeyIdentifier": "PUBLICAI_API_KEY",
-      "supportsTools": true,
-      "excludeFromChat": true
+      "supportsTools": true
     },
     "groq-gpt-oss-120b": {
       "endpoint": "https://api.groq.com/openai/v1/chat/completions",
@@ -81,8 +73,8 @@
       "model": "nvidia/nemotron-3-super-120b-a12b:free",
       "apiKeyIdentifier": "OPENROUTER_API_KEY"
     },
-    "openrouter-poolside-laguna-m-1-free": {
-      "model": "poolside/laguna-m.1:free",
+    "openrouter-stealth-ox-alpha": {
+      "model": "stealth/ox-alpha",
       "endpoint": "https://openrouter.ai/api/v1/chat/completions",
       "apiKeyIdentifier": "OPENROUTER_API_KEY",
       "isApiKeyRequired": true
