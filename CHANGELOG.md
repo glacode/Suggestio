@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.7] - 2026-08-22
+
+### Added
+- **Chat Session Deletion:** Added direct session deletion functionality to the chat history panel with a clean UI button in the bottom-right corner to prevent text overlap.
+- **Full Prompt Tooltip:** Added full prompt hover tooltips to items in the chat history panel for better visibility of long prompts.
+- **New Free Model: NVIDIA Nemotron 3.5 Lightning 30B A3B:** Added configuration support for NVIDIA's Nemotron 3.5 Lightning model via NVIDIA NIM.
+- **Robust Malformed Session Error Handling:** Added comprehensive error handling and validation for saved chat session data to prevent UI crashes on corrupted history files.
+
+### Changed
+- **Default Chat Profile:** Updated default active chat profile from `mistral-devstral-2512` to `gemini-3-5-flash-lite`.
+- **Model Refresh:** Replaced Groq Llama 3 70B with Qwen 3.6 27B (`groq-qwen-qwen3-6-27b`) and updated PublicAI profile to `publicai-apertus-v1-5-70b-thinking`.
+- **Max Saved Sessions:** Increased default `maxSavedChatSessions` from default to 10 for better history retention.
+- **Chat Command Refactoring:** Decomposed legacy chat handler monolith into clean, dedicated command handlers (`AgentCommandHandler`, `CompletionCommandHandler`, `HistoryCommandHandler`, `ProfileCommandHandler`, `ToolCommandHandler`) with dependency injection and full test coverage.
+
+### Fixed
+- **Stream Handler Tool Call Splitting:** Prevented OpenAI stream handler from incorrectly splitting tool calls on whitespace-only chunks (such as newlines), fixing multi-tool agentic loops with models like NVIDIA Nemotron 3.5 Lightning.
+- **E2E Environment Fix:** Stripped `ELECTRON_RUN_AS_NODE` from spawned VS Code processes in e2e tests.
+
 ## [0.1.6] - 2026-07-25
 
 ### Added
