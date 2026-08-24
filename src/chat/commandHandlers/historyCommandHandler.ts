@@ -44,7 +44,7 @@ export class HistoryCommandHandler implements IWebviewCommandHandler {
         } else if (message.command === WEBVIEW_COMMANDS.GET_SESSIONS) {
             await this._handleGetSessions(ctx.webviewView);
         } else if (message.command === WEBVIEW_COMMANDS.LOAD_SESSION) {
-            await this._handleLoadSession(message, ctx.webviewView);
+            await this._handleLoadSession(message, ctx);
         } else if (message.command === WEBVIEW_COMMANDS.DELETE_SESSION) {
             await this._handleDeleteSession(message, ctx.webviewView);
         }
@@ -70,13 +70,14 @@ export class HistoryCommandHandler implements IWebviewCommandHandler {
         });
     }
 
-    private async _handleLoadSession(message: Extract<WebviewMessage, { command: typeof WEBVIEW_COMMANDS.LOAD_SESSION }>, webviewView: IWebviewView): Promise<void> {
+    private async _handleLoadSession(message: Extract<WebviewMessage, { command: typeof WEBVIEW_COMMANDS.LOAD_SESSION }>, ctx: ICommandContext): Promise<void> {
+        const { webviewView, logger } = ctx;
         try {
             await this._chatHistoryManager.loadSession(message.sessionId);
             const history = this._chatHistoryManager.getChatHistory();
             
             // Validate and clean history before enrichment
-            const validatedHistory = this._validateAndCleanHistory(history);
+            const validatedHistory = this._validateAndCleanHistory(history, logger);
             
             const enrichedHistory = this._toolUiProvider.enrichHistory(validatedHistory);
             webviewView.webview.postMessage({
@@ -84,7 +85,7 @@ export class HistoryCommandHandler implements IWebviewCommandHandler {
                 history: enrichedHistory
             });
         } catch (error) {
-            console.error('Failed to load session:', error);
+            logger.error(`Failed to load session: ${error instanceof Error ? error.message : String(error)}`);
             webviewView.webview.postMessage({
                 sender: MESSAGE_SENDERS.ASSISTANT,
                 type: EXTENSION_EVENTS.ERROR,
@@ -96,7 +97,7 @@ export class HistoryCommandHandler implements IWebviewCommandHandler {
     /**
      * Validates and cleans chat history to handle malformed data
      */
-    private _validateAndCleanHistory(history: IStoredChatMessage[]): IStoredChatMessage[] {
+    private _validateAndCleanHistory(history: IStoredChatMessage[], logger: ICommandContext['logger']): IStoredChatMessage[] {
         return history.map(message => {
             // Clean tool calls - remove nulls and fix string arguments
             if ('tool_calls' in message && Array.isArray(message.tool_calls)) {
@@ -110,7 +111,7 @@ export class HistoryCommandHandler implements IWebviewCommandHandler {
                                     // Validate it's valid JSON (but keep as string)
                                     JSON.parse(call.function.arguments);
                                 } catch (e) {
-                                    console.warn('Invalid JSON in tool call arguments, using empty object:', call.function.arguments);
+                                    logger.warn(`Invalid JSON in tool call arguments, using empty object: ${call.function.arguments}`);
                                     call.function.arguments = '{}';
                                 }
                             } else if (call.function.arguments === undefined) {
