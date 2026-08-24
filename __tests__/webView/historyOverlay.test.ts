@@ -110,9 +110,13 @@ describe('HistoryOverlay', () => {
             const sessionItems = document.querySelectorAll('.history-item');
             expect(sessionItems.length).toBe(2);
             
-            // Check first session title
+            // Check first session title and delete button SVG icon
             const firstTitle = document.querySelector('.history-session-title')?.textContent;
             expect(firstTitle).toContain('First Session');
+
+            const deleteSessionBtn = sessionItems[0].querySelector('.delete-session-btn');
+            expect(deleteSessionBtn).not.toBeNull();
+            expect(deleteSessionBtn?.querySelector('svg')).not.toBeNull();
         });
 
         it('should show "No history" message when sessions list is empty', () => {

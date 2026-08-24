@@ -208,6 +208,9 @@ describe('SettingsOverlay Unit Tests', () => {
             const editKeyBtn = p1.querySelector('.edit-key-btn');
             const deleteKeyBtn = p1.querySelector('.delete-key-btn');
 
+            expect(editKeyBtn?.querySelector('svg')).not.toBeNull();
+            expect(deleteKeyBtn?.querySelector('svg')).not.toBeNull();
+
             if (!(editKeyBtn instanceof HTMLElement) || !(deleteKeyBtn instanceof HTMLElement)) {
                 throw new Error('Buttons not found');
             }
@@ -239,8 +242,12 @@ describe('SettingsOverlay Unit Tests', () => {
             expect(items[0].querySelector('.delete-profile-btn')).toBeNull();
             
             // p2 is 'user' -> has structural edit and delete profile
-            expect(items[1].querySelector('.edit-profile-btn')).not.toBeNull();
-            expect(items[1].querySelector('.delete-profile-btn')).not.toBeNull();
+            const editProfileBtn = items[1].querySelector('.edit-profile-btn');
+            const deleteProfileBtn = items[1].querySelector('.delete-profile-btn');
+            expect(editProfileBtn).not.toBeNull();
+            expect(editProfileBtn?.querySelector('svg')).not.toBeNull();
+            expect(deleteProfileBtn).not.toBeNull();
+            expect(deleteProfileBtn?.querySelector('svg')).not.toBeNull();
         });
 
         it('should transition to delete confirmation page when trash icon is clicked', () => {
