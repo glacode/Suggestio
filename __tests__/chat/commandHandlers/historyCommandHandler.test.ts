@@ -3,8 +3,7 @@ import { HistoryCommandHandler } from '../../../src/chat/commandHandlers/history
 import { EventBus } from '../../../src/utils/eventBus.js';
 import { WEBVIEW_COMMANDS } from '../../../src/constants/protocol.js';
 import { createMockPersistentHistoryManager, createMockToolUiProvider, createMockWebviewView, createMockWebview, createMockChatWebviewView, createMockCommandContext } from '../../testUtils.js';
-import { ICommandContext } from '../../../src/chat/chatCommandHandler.js';
-import { IChatWebviewView, IStoredChatMessage, ToolCall } from '../../../src/types.js';
+import { IStoredChatMessage, ToolCall } from '../../../src/types.js';
 
 describe('HistoryCommandHandler', () => {
     const createDependencies = () => {
@@ -23,8 +22,6 @@ describe('HistoryCommandHandler', () => {
 
         return { handler, chatHistoryManager, toolUiProvider, webviewView, webview, eventBus, view };
     };
-
-    const createMockContext = (webviewView: any, view: IChatWebviewView): ICommandContext => createMockCommandContext({ view, webviewView });
 
     describe('canHandle', () => {
         it('should return true for history-related commands', () => {
@@ -48,7 +45,7 @@ describe('HistoryCommandHandler', () => {
         it('should clear chat history', async () => {
             const { handler, chatHistoryManager, webviewView, view } = createDependencies();
             
-            const ctx = createMockContext(webviewView, view);
+            const ctx = createMockCommandContext({ view, webviewView });
             await handler.handle({
                 command: WEBVIEW_COMMANDS.CLEAR_HISTORY
             }, ctx);
@@ -84,7 +81,7 @@ describe('HistoryCommandHandler', () => {
             chatHistoryManager.getSessions.mockResolvedValue(mockSessions);
             const postMessageSpy = jest.spyOn(webview, 'postMessage');
             
-            const ctx = createMockContext(webviewView, view);
+            const ctx = createMockCommandContext({ view, webviewView });
             await handler.handle({
                 command: WEBVIEW_COMMANDS.GET_SESSIONS
             }, ctx);
@@ -130,7 +127,7 @@ describe('HistoryCommandHandler', () => {
             toolUiProvider.enrichHistory.mockReturnValue(enrichedHistory);
             const postMessageSpy = jest.spyOn(webview, 'postMessage');
             
-            const ctx = createMockContext(webviewView, view);
+            const ctx = createMockCommandContext({ view, webviewView });
             await handler.handle({
                 command: WEBVIEW_COMMANDS.LOAD_SESSION,
                 sessionId: 'test-session'
@@ -186,7 +183,7 @@ describe('HistoryCommandHandler', () => {
             toolUiProvider.enrichHistory.mockImplementation((hist) => hist);
             const postMessageSpy = jest.spyOn(webview, 'postMessage');
 
-            const ctx = createMockContext(webviewView, view);
+            const ctx = createMockCommandContext({ view, webviewView });
             await handler.handle({
                 command: WEBVIEW_COMMANDS.LOAD_SESSION,
                 sessionId: 'test-session'
@@ -258,7 +255,7 @@ describe('HistoryCommandHandler', () => {
             toolUiProvider.enrichHistory.mockImplementation((hist) => hist);
             const postMessageSpy = jest.spyOn(webview, 'postMessage');
 
-            const ctx = createMockContext(webviewView, view);
+            const ctx = createMockCommandContext({ view, webviewView });
             await handler.handle({
                 command: WEBVIEW_COMMANDS.LOAD_SESSION,
                 sessionId: 'test-session'
@@ -311,7 +308,7 @@ describe('HistoryCommandHandler', () => {
             toolUiProvider.enrichHistory.mockImplementation((hist) => hist);
             const postMessageSpy = jest.spyOn(webview, 'postMessage');
 
-            const ctx = createMockContext(webviewView, view);
+            const ctx = createMockCommandContext({ view, webviewView });
             await handler.handle({
                 command: WEBVIEW_COMMANDS.LOAD_SESSION,
                 sessionId: 'test-session'
@@ -365,7 +362,7 @@ describe('HistoryCommandHandler', () => {
             toolUiProvider.enrichHistory.mockImplementation((hist) => hist);
             const postMessageSpy = jest.spyOn(webview, 'postMessage');
 
-            const ctx = createMockContext(webviewView, view);
+            const ctx = createMockCommandContext({ view, webviewView });
             await handler.handle({
                 command: WEBVIEW_COMMANDS.LOAD_SESSION,
                 sessionId: 'test-session'
@@ -388,7 +385,7 @@ describe('HistoryCommandHandler', () => {
             chatHistoryManager.loadSession.mockRejectedValue(new Error('Storage failure'));
             const postMessageSpy = jest.spyOn(webview, 'postMessage');
 
-            const ctx = createMockContext(webviewView, view);
+            const ctx = createMockCommandContext({ view, webviewView });
             await handler.handle({
                 command: WEBVIEW_COMMANDS.LOAD_SESSION,
                 sessionId: 'bad-session'
@@ -411,7 +408,7 @@ describe('HistoryCommandHandler', () => {
             chatHistoryManager.loadSession.mockRejectedValue('String error');
             const postMessageSpy = jest.spyOn(webview, 'postMessage');
 
-            const ctx = createMockContext(webviewView, view);
+            const ctx = createMockCommandContext({ view, webviewView });
             await handler.handle({
                 command: WEBVIEW_COMMANDS.LOAD_SESSION,
                 sessionId: 'bad-session'
@@ -455,7 +452,7 @@ describe('HistoryCommandHandler', () => {
             chatHistoryManager.getSessions.mockResolvedValue(mockSessions);
             const postMessageSpy = jest.spyOn(webview, 'postMessage');
             
-            const ctx = createMockContext(webviewView, view);
+            const ctx = createMockCommandContext({ view, webviewView });
             await handler.handle({
                 command: WEBVIEW_COMMANDS.DELETE_SESSION,
                 sessionId: 'session-1'
@@ -501,7 +498,7 @@ describe('HistoryCommandHandler', () => {
             const { handler, chatHistoryManager, toolUiProvider, webviewView, webview, view } = createDependencies();
             const postMessageSpy = jest.spyOn(webview, 'postMessage');
 
-            const ctx = createMockContext(webviewView, view);
+            const ctx = createMockCommandContext({ view, webviewView });
             await handler.handle({
                 command: WEBVIEW_COMMANDS.SEND_MESSAGE,
                 text: 'hello'
