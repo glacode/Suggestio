@@ -70,8 +70,8 @@ export class HistoryCommandHandler implements IWebviewCommandHandler {
         });
     }
 
-    private async _handleLoadSession(message: Extract<WebviewMessage, { command: typeof WEBVIEW_COMMANDS.LOAD_SESSION }>, ctx: ICommandContext): Promise<void> {
-        const { webviewView, logger } = ctx;
+    private async _handleLoadSession(message: Extract<WebviewMessage, { command: typeof WEBVIEW_COMMANDS.LOAD_SESSION }>, commandContext: ICommandContext): Promise<void> {
+        const { webviewView, logger } = commandContext;
         try {
             await this._chatHistoryManager.loadSession(message.sessionId);
             const history = this._chatHistoryManager.getChatHistory();

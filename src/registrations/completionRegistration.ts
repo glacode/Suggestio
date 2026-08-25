@@ -11,7 +11,7 @@ export function registerCompletionProvider(
   eventBus: IEventBus
 ) {
   const provider: vscode.InlineCompletionItemProvider = {
-    provideInlineCompletionItems: async (doc, pos, _ctx, token) => {
+    provideInlineCompletionItems: async (doc, pos, inlineCompletionContext, token) => {
       const result = await provideInlineCompletionItems(
         configContainer.config.llmProviderForInlineCompletion,
         configContainer.config,
@@ -19,7 +19,7 @@ export function registerCompletionProvider(
         doc,
         pos,
         eventBus,
-        _ctx,
+        inlineCompletionContext,
         token
       );
 

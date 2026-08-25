@@ -43,7 +43,7 @@ export class ToolCommandHandler implements IWebviewCommandHandler {
             || command === WEBVIEW_COMMANDS.VIEW_DIFF;
     }
 
-    async handle(message: WebviewMessage, _ctx: ICommandContext): Promise<void> {
+    async handle(message: WebviewMessage, _commandContext: ICommandContext): Promise<void> {
         if (message.command === WEBVIEW_COMMANDS.CONFIRM_TOOL_CALL) {
             await this._handleConfirmToolCall(message);
         } else if (message.command === WEBVIEW_COMMANDS.VIEW_DIFF) {
