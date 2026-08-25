@@ -38,15 +38,15 @@ export class HistoryCommandHandler implements IWebviewCommandHandler {
             || command === WEBVIEW_COMMANDS.DELETE_SESSION;
     }
 
-    async handle(message: WebviewMessage, ctx: ICommandContext): Promise<void> {
+    async handle(message: WebviewMessage, commandContext: ICommandContext): Promise<void> {
         if (message.command === WEBVIEW_COMMANDS.CLEAR_HISTORY) {
             await this._handleClearHistory();
         } else if (message.command === WEBVIEW_COMMANDS.GET_SESSIONS) {
-            await this._handleGetSessions(ctx.webviewView);
+            await this._handleGetSessions(commandContext.webviewView);
         } else if (message.command === WEBVIEW_COMMANDS.LOAD_SESSION) {
-            await this._handleLoadSession(message, ctx);
+            await this._handleLoadSession(message, commandContext);
         } else if (message.command === WEBVIEW_COMMANDS.DELETE_SESSION) {
-            await this._handleDeleteSession(message, ctx.webviewView);
+            await this._handleDeleteSession(message, commandContext.webviewView);
         }
     }
 
