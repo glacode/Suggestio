@@ -1,7 +1,7 @@
 import type {
     IChatAgent,
     IPersistentChatHistoryManager,
-    IContextBuilder,
+    IPromptContextBuilder,
     IDiffManager,
     IConfigContainer,
     IConfigProvider,
@@ -28,7 +28,7 @@ import { CompletionCommandHandler } from './commandHandlers/completionCommandHan
 export interface IChatCommandHandlerDependencies {
     chatAgent: IChatAgent;
     chatHistoryManager: IPersistentChatHistoryManager;
-    buildContext: IContextBuilder;
+    buildContext: IPromptContextBuilder;
     eventBus: IEventBus;
     diffManager: IDiffManager;
     configContainer: IConfigContainer;

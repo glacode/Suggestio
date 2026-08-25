@@ -1,7 +1,7 @@
 import type {
     IChatAgent,
     IPersistentChatHistoryManager,
-    IContextBuilder,
+    IPromptContextBuilder,
     IConfigContainer,
     IChatWebviewEventBridge,
     IWebviewView,
@@ -24,7 +24,7 @@ import { IWebviewCommandHandler, ICommandContext } from '../chatCommandHandler.j
 export interface IAgentCommandHandlerArgs {
     chatAgent: IChatAgent;
     chatHistoryManager: IPersistentChatHistoryManager;
-    buildContext: IContextBuilder;
+    buildContext: IPromptContextBuilder;
     configContainer: IConfigContainer;
     eventBridge: IChatWebviewEventBridge;
     eventBus: IEventBus;
@@ -45,7 +45,7 @@ function isSendMessage(message: WebviewMessage): message is Extract<WebviewMessa
 export class AgentCommandHandler implements IWebviewCommandHandler {
     private readonly _chatAgent: IChatAgent;
     private readonly _chatHistoryManager: IPersistentChatHistoryManager;
-    private readonly _buildContext: IContextBuilder;
+    private readonly _buildContext: IPromptContextBuilder;
     private readonly _configContainer: IConfigContainer;
     private readonly _eventBridge: IChatWebviewEventBridge;
     private readonly _eventBus: IEventBus;

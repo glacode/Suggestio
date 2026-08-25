@@ -1001,7 +1001,7 @@ export interface IContextOptions {
  * Contract for building a context string to be used as additional information in a system prompt.
  * This context might be derived from the active editor, workspace, etc.
  */
-export interface IContextBuilder {
+export interface IPromptContextBuilder {
   /**
    * Builds the context string based on the provided options.
    * @param options Options to control what context is included.
