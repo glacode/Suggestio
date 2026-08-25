@@ -13,7 +13,7 @@ import {
     createMockVscodeApi,
     createMockEventBridge,
     createMockChatAgent,
-    createMockContextBuilder
+    createMockPromptContextBuilder
 } from '../testUtils.js';
 
 describe('createChatCommandHandler', () => {
@@ -21,7 +21,7 @@ describe('createChatCommandHandler', () => {
         const eventBus = new EventBus();
         const chatAgent = createMockChatAgent();
         const chatHistoryManager = createMockPersistentHistoryManager();
-        const buildContext = createMockContextBuilder();
+        const buildContext = createMockPromptContextBuilder();
         const configContainer = createMockConfigContainer({ profiles: {}, activeChatProfile: 'p1' });
         const configProvider = createMockConfigProvider();
         const secretManager = createMockSecretManager();

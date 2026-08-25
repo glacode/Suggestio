@@ -43,7 +43,7 @@ import {
   createMockExtensionContextMinimal,
   createMockEventLogger,
   createMockChatAgent,
-  createMockContextBuilder,
+  createMockPromptContextBuilder,
 } from '../testUtils.js';
 import { CONFIG_DEFAULTS } from '../../src/constants/config.js';
 import { configProcessor } from '../../src/config/configProcessor.js';
@@ -193,7 +193,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
     // `buildContext` is a simple fake builder object that returns an empty string by default.
     // This context is typically added to the user's prompt before sending it to the AI.
-    const buildContext = createMockContextBuilder('');
+    const buildContext = createMockPromptContextBuilder('');
 
     // `receivedArgs` will capture the arguments passed to `getChatWebviewContent`.
     // We initialize it to `null` and expect it to be populated.
@@ -406,7 +406,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       })
     };
 
-    const buildContext = createMockContextBuilder('');
+    const buildContext = createMockPromptContextBuilder('');
     buildContext.buildContext = jest.fn(async (opts: any) => opts?.includeActiveEditor ? 'This is a SECRET' : '');
     const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager, chatAgent, profileAccessor, configContainer, buildContext };
 
@@ -452,7 +452,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       })
     };
 
-    const buildContext = createMockContextBuilder('This is a SECRET');
+    const buildContext = createMockPromptContextBuilder('This is a SECRET');
     const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager, chatAgent, profileAccessor, configContainer, buildContext };
 
     const provider = createTestProvider(deps);

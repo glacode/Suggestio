@@ -19,7 +19,7 @@ import {
     createMockEventBridge,
     createMockChatWebviewView,
     createMockChatAgent,
-    createMockContextBuilder
+    createMockPromptContextBuilder
 } from '../testUtils.js';
 
 describe('ChatCommandHandler', () => {
@@ -27,7 +27,7 @@ describe('ChatCommandHandler', () => {
         const eventBus = new EventBus();
         const chatAgent = createMockChatAgent();
         const chatHistoryManager = createMockPersistentHistoryManager();
-        const buildContext = createMockContextBuilder();
+        const buildContext = createMockPromptContextBuilder();
         const configContainer = createMockConfigContainer({ profiles: {}, activeChatProfile: 'p1' });
         const configProvider = createMockConfigProvider();
         configProvider.getProfiles.mockReturnValue({});

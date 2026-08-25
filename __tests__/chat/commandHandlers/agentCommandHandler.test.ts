@@ -4,14 +4,14 @@ import { EventBus } from '../../../src/utils/eventBus.js';
 import { WEBVIEW_COMMANDS } from '../../../src/constants/protocol.js';
 import type { IWebviewView } from '../../../src/types.js';
 import { createEventLogger } from '../../../src/log/eventLogger.js';
-import { createMockConfigContainer, createMockPersistentHistoryManager, createMockWebview, createMockWebviewView, createMockSecretManager, createMockHttpClient, createMockEventBridge, createMockChatWebviewView, createMockChatAgent, createMockContextBuilder } from '../../testUtils.js';
+import { createMockConfigContainer, createMockPersistentHistoryManager, createMockWebview, createMockWebviewView, createMockSecretManager, createMockHttpClient, createMockEventBridge, createMockChatWebviewView, createMockChatAgent, createMockPromptContextBuilder } from '../../testUtils.js';
 
 describe('AgentCommandHandler', () => {
     const createDependencies = () => {
         const eventBus = new EventBus();
         const chatAgent = createMockChatAgent();
         const chatHistoryManager = createMockPersistentHistoryManager();
-        const buildContext = createMockContextBuilder();
+        const buildContext = createMockPromptContextBuilder();
         const configContainer = createMockConfigContainer({ profiles: {}, activeChatProfile: 'p1' });
         const eventBridge = createMockEventBridge();
         const secretManager = createMockSecretManager();
