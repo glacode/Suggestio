@@ -2,9 +2,19 @@ import { describe, it, expect } from '@jest/globals';
 import { AgentCommandHandler } from '../../../src/chat/commandHandlers/agentCommandHandler.js';
 import { EventBus } from '../../../src/utils/eventBus.js';
 import { WEBVIEW_COMMANDS } from '../../../src/constants/protocol.js';
-import type { IWebviewView } from '../../../src/types.js';
 import { createEventLogger } from '../../../src/log/eventLogger.js';
-import { createMockConfigContainer, createMockPersistentHistoryManager, createMockWebview, createMockWebviewView, createMockSecretManager, createMockHttpClient, createMockEventBridge, createMockChatWebviewView, createMockChatAgent, createMockPromptContextBuilder } from '../../testUtils.js';
+import { 
+    createMockConfigContainer, 
+    createMockPersistentHistoryManager, 
+    createMockWebview, 
+    createMockWebviewView, 
+    createMockSecretManager, 
+    createMockHttpClient, 
+    createMockEventBridge, 
+    createMockChatAgent, 
+    createMockPromptContextBuilder,
+    createMockCommandContext
+} from '../../testUtils.js';
 
 describe('AgentCommandHandler', () => {
     const createDependencies = () => {
@@ -38,25 +48,11 @@ describe('AgentCommandHandler', () => {
         return { handler, chatAgent, chatHistoryManager, buildContext, eventBus, eventBridge };
     };
 
-    const createMockContext = (webviewView: IWebviewView) => {
-        const eventBus = new EventBus();
-        const logger = createEventLogger(eventBus);
-        const view = createMockChatWebviewView();
-        return {
-            view,
-            webviewView,
-            abortController: undefined,
-            getAbortController: () => undefined,
-            eventBus,
-            logger
-        };
-    };
-
     it('handles SEND_MESSAGE and triggers agent run', async () => {
         const { handler, chatAgent, chatHistoryManager, buildContext } = createDependencies();
         const webview = createMockWebview([]);
         const webviewView = createMockWebviewView(webview);
-        const ctx = createMockContext(webviewView);
+        const ctx = createMockCommandContext({ webviewView });
 
         await handler.handle({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' }, ctx);
 
@@ -69,7 +65,7 @@ describe('AgentCommandHandler', () => {
         const { handler } = createDependencies();
         const webview = createMockWebview([]);
         const webviewView = createMockWebviewView(webview);
-        const ctx = createMockContext(webviewView);
+        const ctx = createMockCommandContext({ webviewView });
 
         // First trigger a run to set the abort controller
         const runPromise = handler.handle({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' }, ctx);
@@ -86,7 +82,7 @@ describe('AgentCommandHandler', () => {
         const { handler, chatAgent, buildContext } = createDependencies();
         const webview = createMockWebview([]);
         const webviewView = createMockWebviewView(webview);
-        const ctx = createMockContext(webviewView);
+        const ctx = createMockCommandContext({ webviewView });
 
         await handler.handle({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' }, ctx);
         expect(chatAgent.run).toHaveBeenCalledTimes(1);
@@ -98,15 +94,17 @@ describe('AgentCommandHandler', () => {
 
     it('canHandle returns true for agent commands', () => {
         const { handler } = createDependencies();
+        
         expect(handler.canHandle(WEBVIEW_COMMANDS.SEND_MESSAGE)).toBe(true);
-        expect(handler.canHandle(WEBVIEW_COMMANDS.RETRY_LAST_MESSAGE)).toBe(true);
         expect(handler.canHandle(WEBVIEW_COMMANDS.CANCEL_REQUEST)).toBe(true);
+        expect(handler.canHandle(WEBVIEW_COMMANDS.RETRY_LAST_MESSAGE)).toBe(true);
     });
 
     it('canHandle returns false for non-agent commands', () => {
         const { handler } = createDependencies();
+        
+        expect(handler.canHandle('unknownCommand')).toBe(false);
         expect(handler.canHandle(WEBVIEW_COMMANDS.CLEAR_HISTORY)).toBe(false);
-        expect(handler.canHandle(WEBVIEW_COMMANDS.CHAT_PROFILE_CHANGED)).toBe(false);
-        expect(handler.canHandle(WEBVIEW_COMMANDS.VIEW_DIFF)).toBe(false);
+        expect(handler.canHandle(WEBVIEW_COMMANDS.CONFIRM_TOOL_CALL)).toBe(false);
     });
 });
