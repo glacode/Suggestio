@@ -2,9 +2,7 @@ import { describe, it, expect, jest } from '@jest/globals';
 import { ToolCommandHandler } from '../../../src/chat/commandHandlers/toolCommandHandler.js';
 import { EventBus } from '../../../src/utils/eventBus.js';
 import { WEBVIEW_COMMANDS, APP_EVENTS } from '../../../src/constants/protocol.js';
-import type { IChatWebviewView } from '../../../src/types.js';
 import { createMockDiffManager, createMockVscodeApi, createMockWebviewView, createMockWebview, createMockEventBridge, createMockChatWebviewView, createMockCommandContext } from '../../testUtils.js';
-import { ICommandContext } from '../../../src/chat/chatCommandHandler.js';
 
 describe('ToolCommandHandler', () => {
     const createDependencies = () => {
@@ -26,8 +24,6 @@ describe('ToolCommandHandler', () => {
 
         return { handler, diffManager, eventBridge, vscodeApi, webviewView, webview, eventBus, view };
     };
-
-    const createMockContext = (webviewView: any, view: IChatWebviewView): ICommandContext => createMockCommandContext({ view, webviewView });
 
     describe('canHandle', () => {
         it('should return true for tool-related commands', () => {
@@ -54,7 +50,7 @@ describe('ToolCommandHandler', () => {
                 command: WEBVIEW_COMMANDS.CONFIRM_TOOL_CALL,
                 decision: 'always-allow-edit',
                 toolCallId: 'test-tool-call'
-            }, createMockContext(webviewView, view));
+            }, createMockCommandContext({ view, webviewView }));
 
             expect(vscodeApi.commands.executeCommand).toHaveBeenCalledWith('suggestio.enableAutoAcceptEdits');
         });
@@ -74,7 +70,7 @@ describe('ToolCommandHandler', () => {
                 command: WEBVIEW_COMMANDS.CONFIRM_TOOL_CALL,
                 decision: 'deny',
                 toolCallId: 'test-tool-call'
-            }, createMockContext(webviewView, view));
+            }, createMockCommandContext({ view, webviewView }));
 
             expect(eventBridge.getActiveDiff).toHaveBeenCalledWith('test-tool-call');
             expect(diffManager.closeDiff).toHaveBeenCalledWith('test-file.txt');
@@ -89,7 +85,7 @@ describe('ToolCommandHandler', () => {
                 command: WEBVIEW_COMMANDS.CONFIRM_TOOL_CALL,
                 decision: 'allow',
                 toolCallId: 'test-tool-call'
-            }, createMockContext(webviewView, view));
+            }, createMockCommandContext({ view, webviewView }));
 
             expect(emitSpy).toHaveBeenCalledWith(APP_EVENTS.USER_CONFIRMATION_RESPONSE, {
                 toolCallId: 'test-tool-call',
@@ -115,7 +111,7 @@ describe('ToolCommandHandler', () => {
             await handler.handle({
                 command: WEBVIEW_COMMANDS.VIEW_DIFF,
                 toolCallId: 'test-tool-call'
-            }, createMockContext(webviewView, view));
+            }, createMockCommandContext({ view, webviewView }));
 
             expect(eventBridge.getActiveDiff).toHaveBeenCalledWith('test-tool-call');
             expect(diffManager.showDiff).toHaveBeenCalledWith('test-file.txt', 'old content', 'new content');
@@ -129,7 +125,7 @@ describe('ToolCommandHandler', () => {
             await handler.handle({
                 command: WEBVIEW_COMMANDS.VIEW_DIFF,
                 toolCallId: 'test-tool-call'
-            }, createMockContext(webviewView, view));
+            }, createMockCommandContext({ view, webviewView }));
 
             expect(eventBridge.getActiveDiff).toHaveBeenCalledWith('test-tool-call');
             expect(diffManager.showDiff).not.toHaveBeenCalled();
