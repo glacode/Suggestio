@@ -29,7 +29,7 @@ export interface IWebviewCommandHandler {
     /**
      * Processes the command.
      */
-    handle(message: WebviewMessage, ctx: ICommandContext): Promise<void>;
+    handle(message: WebviewMessage, commandContext: ICommandContext): Promise<void>;
 }
 
 /**
@@ -78,7 +78,7 @@ export class ChatCommandHandler implements IChatCommandHandler {
     }
 
     public async handleMessage(message: WebviewMessage, webviewView: IWebviewView): Promise<void> {
-        const ctx: ICommandContext = {
+        const commandContext: ICommandContext = {
             view: this._view!,
             webviewView,
             eventBus: this._eventBus,
@@ -87,7 +87,7 @@ export class ChatCommandHandler implements IChatCommandHandler {
 
         for (const handler of this._handlers) {
             if (handler.canHandle(message.command)) {
-                await handler.handle(message, ctx);
+                await handler.handle(message, commandContext);
                 return;
             }
         }

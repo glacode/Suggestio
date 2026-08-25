@@ -87,17 +87,17 @@ export class AgentCommandHandler implements IWebviewCommandHandler {
             || command === WEBVIEW_COMMANDS.CANCEL_REQUEST;
     }
 
-    async handle(message: WebviewMessage, ctx: ICommandContext): Promise<void> {
+    async handle(message: WebviewMessage, commandContext: ICommandContext): Promise<void> {
         if (isSendMessage(message)) {
-            await this._handleSendMessage(message, ctx);
+            await this._handleSendMessage(message, commandContext);
         } else if (message.command === WEBVIEW_COMMANDS.RETRY_LAST_MESSAGE) {
-            await this._handleRetryLastMessage(ctx);
+            await this._handleRetryLastMessage(commandContext);
         } else if (message.command === WEBVIEW_COMMANDS.CANCEL_REQUEST) {
             this._handleCancelRequest();
         }
     }
 
-    private async _handleSendMessage(message: Extract<WebviewMessage, { command: typeof WEBVIEW_COMMANDS.SEND_MESSAGE }>, ctx: ICommandContext): Promise<void> {
+    private async _handleSendMessage(message: Extract<WebviewMessage, { command: typeof WEBVIEW_COMMANDS.SEND_MESSAGE }>, commandContext: ICommandContext): Promise<void> {
         try {
             // Lazy resolution of API key if missing
             const activeProfile = this._configContainer.config.activeChatProfile;
@@ -108,8 +108,8 @@ export class AgentCommandHandler implements IWebviewCommandHandler {
                 });
 
                 await configProcessor.updateProviders(this._configContainer.config, this._eventBus, this._secretManager, this._httpClient, true);
-                if (ctx.view) {
-                    await ctx.view.pushUpdate();
+                if (commandContext.view) {
+                    await commandContext.view.pushUpdate();
                 }
                 this._eventBus.emit(APP_EVENTS.AGENT_NOTIFICATION, { text: null });
             }
@@ -120,16 +120,16 @@ export class AgentCommandHandler implements IWebviewCommandHandler {
 
             await this._processAgentRun();
         } catch (error) {
-            this._handleAgentError(error, ctx.webviewView);
+            this._handleAgentError(error, commandContext.webviewView);
         }
     }
 
-    private async _handleRetryLastMessage(ctx: ICommandContext): Promise<void> {
+    private async _handleRetryLastMessage(commandContext: ICommandContext): Promise<void> {
         try {
             this._setAbortController(new AbortController());
             await this._processAgentRun();
         } catch (error) {
-            this._handleAgentError(error, ctx.webviewView);
+            this._handleAgentError(error, commandContext.webviewView);
         }
     }
 
