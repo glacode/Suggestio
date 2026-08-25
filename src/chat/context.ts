@@ -2,11 +2,11 @@
  * Build context string from the active VSCode editor.
  * Includes file path and full content if available.
  */
-import { IPromptContextBuilder, IActiveTextEditorProvider, IIgnoreManager, IWorkspaceProvider, IPathResolver, IContextOptions } from '../types.js';
+import { IPromptContextBuilder, IActiveTextEditorProvider, IIgnoreManager, IWorkspaceProvider, IPathResolver, IPromptContextOptions } from '../types.js';
 
 /**
- * Default implementation of `IContextBuilder` that reads from the
- * current active editor via an injected `IActiveTextEditorProvider`.
+ * Default implementation of `IPromptContextBuilder` that assembles prompt context
+ * from the active text editor and workspace state.
  */
 export class ContextBuilder implements IPromptContextBuilder {
     constructor(
@@ -16,7 +16,7 @@ export class ContextBuilder implements IPromptContextBuilder {
         private readonly pathResolver: IPathResolver,
     ) {}
 
-    async buildContext(options?: IContextOptions): Promise<string> {
+    async buildContext(options?: IPromptContextOptions): Promise<string> {
         // Disabled by default to avoid context bloat in agentic workflows.
         // Agents should use tools (like ReadFileTool) to gather context.
         if (!options?.includeActiveEditor) {

@@ -987,27 +987,27 @@ export interface IActiveTextEditorProvider {
 }
 
 /**
- * Options for building the context string.
+ * Options controlling how prompt context (such as active editor content) is assembled.
  */
-export interface IContextOptions {
+export interface IPromptContextOptions {
   /**
-   * Whether to include the content of the currently active text editor.
+   * Whether to include the content of the currently active text editor into the prompt.
    * Defaults to false to avoid context bloat in agentic workflows.
    */
   includeActiveEditor?: boolean;
 }
 
 /**
- * Contract for building a context string to be used as additional information in a system prompt.
- * This context might be derived from the active editor, workspace, etc.
+ * Contract for building additional prompt context (e.g., from the active editor or workspace files)
+ * to be injected into LLM system prompts.
  */
 export interface IPromptContextBuilder {
   /**
-   * Builds the context string based on the provided options.
-   * @param options Options to control what context is included.
-   * @returns A promise that resolves to the context string.
+   * Builds the prompt context string based on the provided options.
+   * @param options Options controlling what workspace/editor context is included.
+   * @returns A promise that resolves to the formatted prompt context string.
    */
-  buildContext(options?: IContextOptions): Promise<string>;
+  buildContext(options?: IPromptContextOptions): Promise<string>;
 }
 
 /**
