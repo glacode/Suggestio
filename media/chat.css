@@ -401,6 +401,13 @@ html, body {
     font-size: 14px;
     display: flex;
     align-items: center;
+    flex-shrink: 0;
+}
+
+.tool-status-text {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .tool-call-status-icon.spinning .tool-spinner {
@@ -469,6 +476,8 @@ html, body {
 
 .tool-confirmation-message {
     margin-bottom: 8px;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .tool-confirmation-buttons {
