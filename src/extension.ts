@@ -42,7 +42,7 @@ import { ChatWebviewViewManager } from './chat/chatWebviewViewManager.js';
 import { ToolUiProvider } from './chat/toolUiProvider.js';
 import { getTools } from './tools/index.js';
 import { WorkspaceScanner } from './utils/workspaceScanner.js';
-import { PromptContextBuilder } from './chat/context.js';
+import { PromptContextBuilder } from './chat/promptContextBuilder.js';
 import { IgnoreManager } from './chat/ignoreManager.js';
 import { getChatWebviewContent } from './chat/chatWebviewContent.js';
 import './chat/activeEditorTracker.js';

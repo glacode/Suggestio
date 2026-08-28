@@ -1,6 +1,6 @@
 // __tests__/src/chat/context.test.ts
 import { describe, expect, beforeEach } from '@jest/globals';
-import { PromptContextBuilder } from '../../src/chat/context.js';
+import { PromptContextBuilder } from '../../src/chat/promptContextBuilder.js';
 import { IActiveTextEditorProvider, IIgnoreManager, IWorkspaceProvider, IPathResolver } from '../../src/types.js';
 import { createMockIgnoreManager, createMockWorkspaceProvider, createMockPathResolver, createMockUri } from '../testUtils.js';
 import { jest } from '@jest/globals';
