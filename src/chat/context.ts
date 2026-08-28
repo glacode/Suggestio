@@ -8,7 +8,7 @@ import { IPromptContextBuilder, IActiveTextEditorProvider, IIgnoreManager, IWork
  * Default implementation of `IPromptContextBuilder` that assembles prompt context
  * from the active text editor and workspace state.
  */
-export class ContextBuilder implements IPromptContextBuilder {
+export class PromptContextBuilder implements IPromptContextBuilder {
     constructor(
         private readonly editorProvider: IActiveTextEditorProvider,
         private readonly ignoreManager: IIgnoreManager,

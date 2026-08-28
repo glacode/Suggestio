@@ -42,7 +42,7 @@ import { ChatWebviewViewManager } from './chat/chatWebviewViewManager.js';
 import { ToolUiProvider } from './chat/toolUiProvider.js';
 import { getTools } from './tools/index.js';
 import { WorkspaceScanner } from './utils/workspaceScanner.js';
-import { ContextBuilder } from './chat/context.js';
+import { PromptContextBuilder } from './chat/context.js';
 import { IgnoreManager } from './chat/ignoreManager.js';
 import { getChatWebviewContent } from './chat/chatWebviewContent.js';
 import './chat/activeEditorTracker.js';
@@ -296,7 +296,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   const profileMetadataProvider = new ProfileMetadataProvider(providerAccessor, configContainer, secretManager);
   const eventBridge = new ChatWebviewEventBridge(eventBus, toolUiProvider);
-  const contextBuilder = new ContextBuilder(vscode.window, ignoreManager, workspaceProvider, pathResolver);
+  const promptContextBuilder = new PromptContextBuilder(vscode.window, ignoreManager, workspaceProvider, pathResolver);
 
   const viewManager = new ChatWebviewViewManager(
     context,
@@ -311,7 +311,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const chatCommandHandler = createChatCommandHandler({
     chatAgent: agent,
     chatHistoryManager,
-    buildContext: contextBuilder,
+    buildContext: promptContextBuilder,
     eventBus,
     diffManager,
     configContainer,
