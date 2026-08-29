@@ -1007,7 +1007,7 @@ export interface IPromptContextBuilder {
    * @param options Options controlling what workspace/editor context is included.
    * @returns A promise that resolves to the formatted prompt context string.
    */
-  buildContext(options?: IPromptContextOptions): Promise<string>;
+  buildPromptContext(options?: IPromptContextOptions): Promise<string>;
 }
 
 /**

@@ -57,7 +57,7 @@ describe('AgentCommandHandler', () => {
         await handler.handle({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' }, ctx);
 
         expect(chatHistoryManager.addMessage).toHaveBeenCalledWith({ role: 'user', content: 'hello' });
-        expect(buildContext.buildContext).toHaveBeenCalled();
+        expect(buildContext.buildPromptContext).toHaveBeenCalled();
         expect(chatAgent.run).toHaveBeenCalled();
     });
 
@@ -89,7 +89,7 @@ describe('AgentCommandHandler', () => {
 
         await handler.handle({ command: WEBVIEW_COMMANDS.RETRY_LAST_MESSAGE }, ctx);
         expect(chatAgent.run).toHaveBeenCalledTimes(2);
-        expect(buildContext.buildContext).toHaveBeenCalledTimes(2);
+        expect(buildContext.buildPromptContext).toHaveBeenCalledTimes(2);
     });
 
     it('canHandle returns true for agent commands', () => {

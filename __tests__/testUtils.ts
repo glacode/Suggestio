@@ -488,7 +488,7 @@ export const createMockChatAgent = (): jest.Mocked<IChatAgent> => ({
 });
 
 export const createMockPromptContextBuilder = (context: string = 'context'): jest.Mocked<IPromptContextBuilder> => ({
-    buildContext: jest.fn<() => Promise<string>>().mockResolvedValue(context),
+    buildPromptContext: jest.fn<() => Promise<string>>().mockResolvedValue(context),
 });
 
 /**

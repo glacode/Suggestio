@@ -45,7 +45,7 @@ function isSendMessage(message: WebviewMessage): message is Extract<WebviewMessa
 export class AgentCommandHandler implements IWebviewCommandHandler {
     private readonly _chatAgent: IChatAgent;
     private readonly _chatHistoryManager: IPersistentChatHistoryManager;
-    private readonly _buildContext: IPromptContextBuilder;
+    private readonly _promptContextBuilder: IPromptContextBuilder;
     private readonly _configContainer: IConfigContainer;
     private readonly _eventBridge: IChatWebviewEventBridge;
     private readonly _eventBus: IEventBus;
@@ -70,7 +70,7 @@ export class AgentCommandHandler implements IWebviewCommandHandler {
     }: IAgentCommandHandlerArgs) {
         this._chatAgent = chatAgent;
         this._chatHistoryManager = chatHistoryManager;
-        this._buildContext = buildContext;
+        this._promptContextBuilder = buildContext;
         this._configContainer = configContainer;
         this._eventBridge = eventBridge;
         this._eventBus = eventBus;
@@ -142,7 +142,7 @@ export class AgentCommandHandler implements IWebviewCommandHandler {
     }
 
     private async _processAgentRun(): Promise<void> {
-        let context = await this._buildContext.buildContext();
+        let context = await this._promptContextBuilder.buildPromptContext();
         const anonymizer = this._configContainer.config.anonymizerInstance;
         if (anonymizer) {
             context = anonymizer.anonymize(context);

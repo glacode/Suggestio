@@ -82,7 +82,7 @@ describe('ChatCommandHandler', () => {
         await handler.handleMessage({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' }, webviewView);
 
         expect(chatHistoryManager.addMessage).toHaveBeenCalledWith({ role: 'user', content: 'hello' });
-        expect(buildContext.buildContext).toHaveBeenCalled();
+        expect(buildContext.buildPromptContext).toHaveBeenCalled();
         expect(chatAgent.run).toHaveBeenCalled();
     });
 

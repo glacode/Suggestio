@@ -94,7 +94,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const agentHandler = new AgentCommandHandler({
       chatAgent: deps.chatAgent || { run: async () => { } },
       chatHistoryManager: deps.chatHistoryManager,
-      buildContext: deps.buildContext || { buildContext: async () => '' },
+      buildContext: deps.buildContext || { buildPromptContext: async () => '' },
       configContainer: deps.configContainer,
       eventBridge,
       eventBus: deps.eventBus,
@@ -407,7 +407,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     };
 
     const buildContext = createMockPromptContextBuilder('');
-    buildContext.buildContext = jest.fn(async (opts: any) => opts?.includeActiveEditor ? 'This is a SECRET' : '');
+    buildContext.buildPromptContext = jest.fn(async (opts: any) => opts?.includeActiveEditor ? 'This is a SECRET' : '');
     const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager, chatAgent, profileAccessor, configContainer, buildContext };
 
     const provider = createTestProvider(deps);

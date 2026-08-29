@@ -16,7 +16,7 @@ export class PromptContextBuilder implements IPromptContextBuilder {
         private readonly pathResolver: IPathResolver,
     ) {}
 
-    async buildContext(options?: IPromptContextOptions): Promise<string> {
+    async buildPromptContext(options?: IPromptContextOptions): Promise<string> {
         // Disabled by default to avoid context bloat in agentic workflows.
         // Agents should use tools (like ReadFileTool) to gather context.
         if (!options?.includeActiveEditor) {
