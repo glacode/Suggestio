@@ -289,7 +289,9 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
 
   });
 
-  it('does not add buildContext to chat history user messages', async () => {
+  it('does not add promptContext to chat history user messages when saving conversation history', async () => {
+    // Ensures that any dynamic prompt context or extra prompt metadata injected during prompt generation
+    // is kept separate and is not persisted into the stored chat history for user messages.
     const eventBus = new EventBus();
     const vscodeApi = createMockVscodeApi();
     const profileAccessor: ILlmProviderAccessor = { getChatProfiles: () => [], getActiveChatProfile: () => '' };
