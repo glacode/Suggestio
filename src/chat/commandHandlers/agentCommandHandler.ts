@@ -24,7 +24,7 @@ import { IWebviewCommandHandler, ICommandContext } from '../chatCommandHandler.j
 export interface IAgentCommandHandlerArgs {
     chatAgent: IChatAgent;
     chatHistoryManager: IPersistentChatHistoryManager;
-    buildContext: IPromptContextBuilder;
+    promptContextBuilder: IPromptContextBuilder;
     configContainer: IConfigContainer;
     eventBridge: IChatWebviewEventBridge;
     eventBus: IEventBus;
@@ -58,7 +58,7 @@ export class AgentCommandHandler implements IWebviewCommandHandler {
     constructor({
         chatAgent,
         chatHistoryManager,
-        buildContext,
+        promptContextBuilder,
         configContainer,
         eventBridge,
         eventBus,
@@ -70,7 +70,7 @@ export class AgentCommandHandler implements IWebviewCommandHandler {
     }: IAgentCommandHandlerArgs) {
         this._chatAgent = chatAgent;
         this._chatHistoryManager = chatHistoryManager;
-        this._promptContextBuilder = buildContext;
+        this._promptContextBuilder = promptContextBuilder;
         this._configContainer = configContainer;
         this._eventBridge = eventBridge;
         this._eventBus = eventBus;

@@ -27,7 +27,7 @@ describe('ChatCommandHandler', () => {
         const eventBus = new EventBus();
         const chatAgent = createMockChatAgent();
         const chatHistoryManager = createMockPersistentHistoryManager();
-        const buildContext = createMockPromptContextBuilder();
+        const promptContextBuilder = createMockPromptContextBuilder();
         const configContainer = createMockConfigContainer({ profiles: {}, activeChatProfile: 'p1' });
         const configProvider = createMockConfigProvider();
         configProvider.getProfiles.mockReturnValue({});
@@ -42,7 +42,7 @@ describe('ChatCommandHandler', () => {
         const agentHandler = new AgentCommandHandler({
             chatAgent,
             chatHistoryManager,
-            buildContext,
+            promptContextBuilder: promptContextBuilder,
             configContainer,
             eventBridge,
             eventBus,
@@ -70,11 +70,11 @@ describe('ChatCommandHandler', () => {
         });
         handler.setView(view);
 
-        return { handler, chatAgent, chatHistoryManager, buildContext, eventBus, view, eventBridge, configProvider };
+        return { handler, chatAgent, chatHistoryManager, promptContextBuilder, eventBus, view, eventBridge, configProvider };
     };
 
     it('handles SEND_MESSAGE and triggers agent run', async () => {
-        const { handler, chatAgent, chatHistoryManager, buildContext } = createDependencies();
+        const { handler, chatAgent, chatHistoryManager, promptContextBuilder } = createDependencies();
         const posted: any[] = [];
         const webview = createMockWebview(posted);
         const webviewView = createMockWebviewView(webview);
@@ -82,7 +82,7 @@ describe('ChatCommandHandler', () => {
         await handler.handleMessage({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' }, webviewView);
 
         expect(chatHistoryManager.addMessage).toHaveBeenCalledWith({ role: 'user', content: 'hello' });
-        expect(buildContext.buildPromptContext).toHaveBeenCalled();
+        expect(promptContextBuilder.buildPromptContext).toHaveBeenCalled();
         expect(chatAgent.run).toHaveBeenCalled();
     });
 

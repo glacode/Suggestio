@@ -69,7 +69,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       vscodeApi: any,
       chatHistoryManager: any,
       chatAgent?: any,
-      buildContext?: any,
+      promptContextBuilder?: any,
       profileAccessor?: ILlmProviderAccessor,
       getChatWebviewContent?: any,
       fileReader?: any,
@@ -94,7 +94,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const agentHandler = new AgentCommandHandler({
       chatAgent: deps.chatAgent || { run: async () => { } },
       chatHistoryManager: deps.chatHistoryManager,
-      buildContext: deps.buildContext || { buildPromptContext: async () => '' },
+      promptContextBuilder: deps.promptContextBuilder || { buildPromptContext: async () => '' },
       configContainer: deps.configContainer,
       eventBridge,
       eventBus: deps.eventBus,
@@ -191,9 +191,9 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       return Promise.resolve(); // Simulate successful completion.
     });
 
-    // `buildContext` is a simple fake builder object that returns an empty string by default.
+    // `promptContextBuilder` is a simple fake builder object that returns an empty string by default.
     // This context is typically added to the user's prompt before sending it to the AI.
-    const buildContext = createMockPromptContextBuilder('');
+    const promptContextBuilder = createMockPromptContextBuilder('');
 
     // `receivedArgs` will capture the arguments passed to `getChatWebviewContent`.
     // We initialize it to `null` and expect it to be populated.
@@ -208,7 +208,7 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
     const recorded: IStoredChatMessage[] = [];
     const chatHistoryManager = createMockPersistentHistoryManager(recorded);
 
-    const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager, chatAgent, buildContext, profileAccessor, getChatWebviewContent, fileReader };
+    const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager, chatAgent, promptContextBuilder, profileAccessor, getChatWebviewContent, fileReader };
 
     // ********************************************************************************
     //  Instantiate the ChatWebviewViewProvider with all our fake dependencies.
@@ -406,9 +406,9 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       })
     };
 
-    const buildContext = createMockPromptContextBuilder('');
-    buildContext.buildPromptContext = jest.fn(async (opts: any) => opts?.includeActiveEditor ? 'This is a SECRET' : '');
-    const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager, chatAgent, profileAccessor, configContainer, buildContext };
+    const promptContextBuilder = createMockPromptContextBuilder('');
+    promptContextBuilder.buildPromptContext = jest.fn(async (opts: any) => opts?.includeActiveEditor ? 'This is a SECRET' : '');
+    const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager, chatAgent, profileAccessor, configContainer, promptContextBuilder };
 
     const provider = createTestProvider(deps);
 
@@ -452,8 +452,8 @@ describe('ChatWebviewViewProvider (integration, no vscode mocks)', () => {
       })
     };
 
-    const buildContext = createMockPromptContextBuilder('This is a SECRET');
-    const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager, chatAgent, profileAccessor, configContainer, buildContext };
+    const promptContextBuilder = createMockPromptContextBuilder('This is a SECRET');
+    const deps = { ...createMocks(), eventBus, vscodeApi, chatHistoryManager, chatAgent, profileAccessor, configContainer, promptContextBuilder };
 
     const provider = createTestProvider(deps);
 

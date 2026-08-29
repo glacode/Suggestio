@@ -28,7 +28,7 @@ import { CompletionCommandHandler } from './commandHandlers/completionCommandHan
 export interface IChatCommandHandlerDependencies {
     chatAgent: IChatAgent;
     chatHistoryManager: IPersistentChatHistoryManager;
-    buildContext: IPromptContextBuilder;
+    promptContextBuilder: IPromptContextBuilder;
     eventBus: IEventBus;
     diffManager: IDiffManager;
     configContainer: IConfigContainer;
@@ -65,7 +65,7 @@ export function createChatCommandHandler(deps: IChatCommandHandlerDependencies):
     const agentHandler = new AgentCommandHandler({
         chatAgent: deps.chatAgent,
         chatHistoryManager: deps.chatHistoryManager,
-        buildContext: deps.buildContext,
+        promptContextBuilder: deps.promptContextBuilder,
         configContainer: deps.configContainer,
         eventBridge: deps.eventBridge,
         eventBus: deps.eventBus,

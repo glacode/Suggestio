@@ -311,7 +311,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const chatCommandHandler = createChatCommandHandler({
     chatAgent: agent,
     chatHistoryManager,
-    buildContext: promptContextBuilder,
+    promptContextBuilder: promptContextBuilder,
     eventBus,
     diffManager,
     configContainer,

@@ -21,7 +21,7 @@ describe('createChatCommandHandler', () => {
         const eventBus = new EventBus();
         const chatAgent = createMockChatAgent();
         const chatHistoryManager = createMockPersistentHistoryManager();
-        const buildContext = createMockPromptContextBuilder();
+        const promptContextBuilder = createMockPromptContextBuilder();
         const configContainer = createMockConfigContainer({ profiles: {}, activeChatProfile: 'p1' });
         const configProvider = createMockConfigProvider();
         const secretManager = createMockSecretManager();
@@ -32,7 +32,7 @@ describe('createChatCommandHandler', () => {
         return {
             chatAgent,
             chatHistoryManager,
-            buildContext,
+            promptContextBuilder,
             eventBus,
             diffManager: createMockDiffManager(),
             configContainer,

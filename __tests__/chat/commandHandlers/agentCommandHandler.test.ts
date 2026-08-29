@@ -21,7 +21,7 @@ describe('AgentCommandHandler', () => {
         const eventBus = new EventBus();
         const chatAgent = createMockChatAgent();
         const chatHistoryManager = createMockPersistentHistoryManager();
-        const buildContext = createMockPromptContextBuilder();
+        const promptContextBuilder = createMockPromptContextBuilder();
         const configContainer = createMockConfigContainer({ profiles: {}, activeChatProfile: 'p1' });
         const eventBridge = createMockEventBridge();
         const secretManager = createMockSecretManager();
@@ -34,7 +34,7 @@ describe('AgentCommandHandler', () => {
         const handler = new AgentCommandHandler({
             chatAgent,
             chatHistoryManager,
-            buildContext,
+            promptContextBuilder,
             configContainer,
             eventBridge,
             eventBus,
@@ -45,11 +45,11 @@ describe('AgentCommandHandler', () => {
             logger
         });
 
-        return { handler, chatAgent, chatHistoryManager, buildContext, eventBus, eventBridge };
+        return { handler, chatAgent, chatHistoryManager, promptContextBuilder, eventBus, eventBridge };
     };
 
     it('handles SEND_MESSAGE and triggers agent run', async () => {
-        const { handler, chatAgent, chatHistoryManager, buildContext } = createDependencies();
+        const { handler, chatAgent, chatHistoryManager, promptContextBuilder } = createDependencies();
         const webview = createMockWebview([]);
         const webviewView = createMockWebviewView(webview);
         const ctx = createMockCommandContext({ webviewView });
@@ -57,7 +57,7 @@ describe('AgentCommandHandler', () => {
         await handler.handle({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' }, ctx);
 
         expect(chatHistoryManager.addMessage).toHaveBeenCalledWith({ role: 'user', content: 'hello' });
-        expect(buildContext.buildPromptContext).toHaveBeenCalled();
+        expect(promptContextBuilder.buildPromptContext).toHaveBeenCalled();
         expect(chatAgent.run).toHaveBeenCalled();
     });
 
@@ -79,7 +79,7 @@ describe('AgentCommandHandler', () => {
     });
 
     it('handles RETRY_LAST_MESSAGE and triggers agent run again', async () => {
-        const { handler, chatAgent, buildContext } = createDependencies();
+        const { handler, chatAgent, promptContextBuilder } = createDependencies();
         const webview = createMockWebview([]);
         const webviewView = createMockWebviewView(webview);
         const ctx = createMockCommandContext({ webviewView });
@@ -89,7 +89,7 @@ describe('AgentCommandHandler', () => {
 
         await handler.handle({ command: WEBVIEW_COMMANDS.RETRY_LAST_MESSAGE }, ctx);
         expect(chatAgent.run).toHaveBeenCalledTimes(2);
-        expect(buildContext.buildPromptContext).toHaveBeenCalledTimes(2);
+        expect(promptContextBuilder.buildPromptContext).toHaveBeenCalledTimes(2);
     });
 
     it('canHandle returns true for agent commands', () => {
