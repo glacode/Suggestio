@@ -125,12 +125,6 @@
       "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
       "apiKeyIdentifier": "NVIDIA_API_KEY"
     },
-    "nvidia-stepfun-ai-step-3-7-flash": {
-      "model": "stepfun-ai/step-3.7-flash",
-      "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
-      "apiKeyIdentifier": "NVIDIA_API_KEY",
-      "isApiKeyRequired": true
-    },
     "nvidia-minimaxai-minimax-m3": {
       "model": "minimaxai/minimax-m3",
       "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
