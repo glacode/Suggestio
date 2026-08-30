@@ -1,4 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
+import { ChatRole } from '../../../src/types.js';
 import { AgentCommandHandler } from '../../../src/chat/commandHandlers/agentCommandHandler.js';
 import { EventBus } from '../../../src/utils/eventBus.js';
 import { WEBVIEW_COMMANDS } from '../../../src/constants/protocol.js';
@@ -106,5 +107,75 @@ describe('AgentCommandHandler', () => {
         expect(handler.canHandle('unknownCommand')).toBe(false);
         expect(handler.canHandle(WEBVIEW_COMMANDS.CLEAR_HISTORY)).toBe(false);
         expect(handler.canHandle(WEBVIEW_COMMANDS.CONFIRM_TOOL_CALL)).toBe(false);
+    });
+
+    it('handles CONTINUE_GENERATION and sends existing history without modification', async () => {
+        const { handler, chatAgent, chatHistoryManager, promptContextBuilder } = createDependencies();
+        const webview = createMockWebview([]);
+        const webviewView = createMockWebviewView(webview);
+        const ctx = createMockCommandContext({ webviewView });
+
+        // Simulate history with user message and partial assistant response
+        const existingHistory: { role: ChatRole; content: string }[] = [
+            { role: 'user', content: 'Write a function' },
+            { role: 'assistant', content: '```python\ndef my_func():' }  // truncated
+        ];
+        chatHistoryManager.getChatHistory.mockReturnValue(existingHistory);
+
+        await handler.handle({ command: WEBVIEW_COMMANDS.CONTINUE_GENERATION }, ctx);
+
+        // Verify history was retrieved
+        expect(chatHistoryManager.getChatHistory).toHaveBeenCalled();
+        
+        // Verify NOTHING was added to history (no new user message)
+        expect(chatHistoryManager.addMessage).not.toHaveBeenCalled();
+        
+        // Verify agent was called
+        expect(promptContextBuilder.buildPromptContext).toHaveBeenCalled();
+        expect(chatAgent.run).toHaveBeenCalled();
+        
+        // Verify the prompt contains the existing history
+        const runCall = chatAgent.run.mock.calls[0];
+        const prompt = runCall[0];
+        expect(prompt).toBeDefined();
+        
+        // The prompt should contain the existing history
+        const history = prompt.generateChatHistory();
+        expect(history).toContainEqual(existingHistory[0]);
+        expect(history).toContainEqual(existingHistory[1]);
+    });
+
+    it('canHandle returns true for CONTINUE_GENERATION', () => {
+        const { handler } = createDependencies();
+
+        expect(handler.canHandle(WEBVIEW_COMMANDS.CONTINUE_GENERATION)).toBe(true);
+    });
+
+    it('CONTINUE_GENERATION sends history even if it only contains user messages', async () => {
+        const { handler, chatAgent, chatHistoryManager } = createDependencies();
+        const webview = createMockWebview([]);
+        const webviewView = createMockWebviewView(webview);
+        const ctx = createMockCommandContext({ webviewView });
+
+        // Simulate history with only a user message (e.g., after an error)
+        const userOnlyHistory: { role: ChatRole; content: string }[] = [{ role: 'user', content: 'hi' }];
+        chatHistoryManager.getChatHistory.mockReturnValue(userOnlyHistory);
+
+        await handler.handle({ command: WEBVIEW_COMMANDS.CONTINUE_GENERATION }, ctx);
+
+        // Verify history was retrieved
+        expect(chatHistoryManager.getChatHistory).toHaveBeenCalled();
+        
+        // Verify NOTHING was added to history
+        expect(chatHistoryManager.addMessage).not.toHaveBeenCalled();
+        
+        // Verify agent was called
+        expect(chatAgent.run).toHaveBeenCalled();
+        
+        // Verify the user message was included in the prompt
+        const runCall = chatAgent.run.mock.calls[0];
+        const prompt = runCall[0];
+        const history = prompt.generateChatHistory();
+        expect(history).toContainEqual(userOnlyHistory[0]);
     });
 });

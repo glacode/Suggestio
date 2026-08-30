@@ -867,7 +867,24 @@ export class ChatManager implements IChatManagerActions {
 
     sendMessage() {
         const text = this.messageInput.value.trim();
+        
         if (!text) {
+            // If input is empty, check if we have history to continue from
+            const hasHistory = this.chatContainer.querySelectorAll('.message, .tool-call-container, .tool-confirmation-container').length > 0;
+            if (hasHistory) {
+                this.clearStaleButtons();
+
+                const emptyChatContent = document.getElementById('emptyChatContent');
+                if (emptyChatContent) {
+                    emptyChatContent.classList.remove('show-flex');
+                    emptyChatContent.classList.add('hidden');
+                }
+
+                this.currentAssistantMessage = new AssistantMessage(this, this.chatContainer);
+                this.disableInput();
+
+                this.vscode.postMessage({ command: WEBVIEW_COMMANDS.CONTINUE_GENERATION });
+            }
             return;
         }
 

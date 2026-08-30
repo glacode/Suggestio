@@ -17,6 +17,7 @@ export const WEBVIEW_COMMANDS = {
     DELETE_SESSION: 'deleteSession',
     ADD_PROFILE: 'addProfile',
     DELETE_PROFILE: 'deleteProfile',
+    CONTINUE_GENERATION: 'continueGeneration',
 } as const;
 
 /**

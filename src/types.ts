@@ -330,6 +330,10 @@ export type WebviewMessage =
     identifier: string;
   }
   | {
+    /** User wants to continue generation when the response was truncated. */
+    command: typeof WEBVIEW_COMMANDS.CONTINUE_GENERATION;
+  }
+  | {
     /** User wants to retry the last message. */
     command: typeof WEBVIEW_COMMANDS.RETRY_LAST_MESSAGE;
   }

@@ -84,7 +84,8 @@ export class AgentCommandHandler implements IWebviewCommandHandler {
     canHandle(command: string): boolean {
         return command === WEBVIEW_COMMANDS.SEND_MESSAGE
             || command === WEBVIEW_COMMANDS.RETRY_LAST_MESSAGE
-            || command === WEBVIEW_COMMANDS.CANCEL_REQUEST;
+            || command === WEBVIEW_COMMANDS.CANCEL_REQUEST
+            || command === WEBVIEW_COMMANDS.CONTINUE_GENERATION;
     }
 
     async handle(message: WebviewMessage, commandContext: ICommandContext): Promise<void> {
@@ -94,6 +95,8 @@ export class AgentCommandHandler implements IWebviewCommandHandler {
             await this._handleRetryLastMessage(commandContext);
         } else if (message.command === WEBVIEW_COMMANDS.CANCEL_REQUEST) {
             this._handleCancelRequest();
+        } else if (message.command === WEBVIEW_COMMANDS.CONTINUE_GENERATION) {
+            await this._handleContinueGeneration(commandContext);
         }
     }
 
@@ -138,6 +141,15 @@ export class AgentCommandHandler implements IWebviewCommandHandler {
         if (abortController) {
             this._logger.info(AGENT_LOGS.CANCEL_REQUEST);
             abortController.abort();
+        }
+    }
+
+    private async _handleContinueGeneration(commandContext: ICommandContext): Promise<void> {
+        try {
+            this._setAbortController(new AbortController());
+            await this._processAgentRun();
+        } catch (error) {
+            this._handleAgentError(error, commandContext.webviewView);
         }
     }
 
