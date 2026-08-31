@@ -75,6 +75,41 @@ describe('ChatManager Unit Tests', () => {
             expect(mockVscode.messages.length).toBe(0);
         });
 
+        it('should send CONTINUE_GENERATION when input is empty and history exists', () => {
+            // Add some existing chat history to the DOM
+            const chat = document.getElementById('chat');
+            if (!(chat instanceof HTMLElement)) {
+                throw new Error('Chat not found');
+            }
+            
+            // Create a user message element
+            const userMsg = document.createElement('div');
+            userMsg.className = 'message user';
+            userMsg.textContent = 'Previous message';
+            chat.appendChild(userMsg);
+
+            // Clear the input
+            const input = document.getElementById('messageInput');
+            if (!(input instanceof HTMLTextAreaElement)) {
+                throw new Error('Input not found');
+            }
+            input.value = '';
+
+            chatManager.sendMessage();
+
+            // Should send CONTINUE_GENERATION command
+            expect(mockVscode.messages).toContainEqual({
+                command: WEBVIEW_COMMANDS.CONTINUE_GENERATION
+            });
+
+            // Should have created a new assistant message bubble
+            const assistantMsg = chat.querySelector('.message.assistant');
+            expect(assistantMsg).toBeTruthy();
+
+            // Should have disabled the input
+            expect(input.disabled).toBe(true);
+        });
+
         it('should send cancelRequest when cancelRequest is called', () => {
             chatManager.cancelRequest();
             expect(mockVscode.messages).toContainEqual({
