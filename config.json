@@ -130,6 +130,12 @@
       "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
       "apiKeyIdentifier": "NVIDIA_API_KEY",
       "isApiKeyRequired": true
+    },
+    "z-ai-glm-4-7-flash": {
+      "model": "glm-4.7-flash",
+      "endpoint": "https://api.z.ai/api/paas/v4/chat/completions",
+      "isApiKeyRequired": true,
+      "apiKeyIdentifier": "ZAI_API_KEY"
     }
   }
 }
