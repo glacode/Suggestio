@@ -73,8 +73,8 @@
       "model": "nvidia/nemotron-3-super-120b-a12b:free",
       "apiKeyIdentifier": "OPENROUTER_API_KEY"
     },
-    "openrouter-stealth-ox-alpha": {
-      "model": "stealth/ox-alpha",
+    "openrouter-minimax-m3-free": {
+      "model": "minimax/minimax-m3:free",
       "endpoint": "https://openrouter.ai/api/v1/chat/completions",
       "apiKeyIdentifier": "OPENROUTER_API_KEY",
       "isApiKeyRequired": true
