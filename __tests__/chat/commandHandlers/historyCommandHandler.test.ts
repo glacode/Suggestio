@@ -45,10 +45,10 @@ describe('HistoryCommandHandler', () => {
         it('should clear chat history', async () => {
             const { handler, chatHistoryManager, webviewView, view } = createDependencies();
             
-            const ctx = createMockCommandContext({ view, webviewView });
+            const commandContext = createMockCommandContext({ view, webviewView });
             await handler.handle({
                 command: WEBVIEW_COMMANDS.CLEAR_HISTORY
-            }, ctx);
+            }, commandContext);
 
             expect(chatHistoryManager.clearHistory).toHaveBeenCalled();
         });
@@ -81,10 +81,10 @@ describe('HistoryCommandHandler', () => {
             chatHistoryManager.getSessions.mockResolvedValue(mockSessions);
             const postMessageSpy = jest.spyOn(webview, 'postMessage');
             
-            const ctx = createMockCommandContext({ view, webviewView });
+            const commandContext = createMockCommandContext({ view, webviewView });
             await handler.handle({
                 command: WEBVIEW_COMMANDS.GET_SESSIONS
-            }, ctx);
+            }, commandContext);
 
             expect(chatHistoryManager.getSessions).toHaveBeenCalled();
             expect(postMessageSpy).toHaveBeenCalledWith({
@@ -127,11 +127,11 @@ describe('HistoryCommandHandler', () => {
             toolUiProvider.enrichHistory.mockReturnValue(enrichedHistory);
             const postMessageSpy = jest.spyOn(webview, 'postMessage');
             
-            const ctx = createMockCommandContext({ view, webviewView });
+            const commandContext = createMockCommandContext({ view, webviewView });
             await handler.handle({
                 command: WEBVIEW_COMMANDS.LOAD_SESSION,
                 sessionId: 'test-session'
-            }, ctx);
+            }, commandContext);
 
             expect(chatHistoryManager.loadSession).toHaveBeenCalledWith('test-session');
             expect(toolUiProvider.enrichHistory).toHaveBeenCalledWith(mockHistory);
@@ -183,11 +183,11 @@ describe('HistoryCommandHandler', () => {
             toolUiProvider.enrichHistory.mockImplementation((hist) => hist);
             const postMessageSpy = jest.spyOn(webview, 'postMessage');
 
-            const ctx = createMockCommandContext({ view, webviewView });
+            const commandContext = createMockCommandContext({ view, webviewView });
             await handler.handle({
                 command: WEBVIEW_COMMANDS.LOAD_SESSION,
                 sessionId: 'test-session'
-            }, ctx);
+            }, commandContext);
 
             expect(toolUiProvider.enrichHistory).toHaveBeenCalledWith([
                 {
@@ -255,11 +255,11 @@ describe('HistoryCommandHandler', () => {
             toolUiProvider.enrichHistory.mockImplementation((hist) => hist);
             const postMessageSpy = jest.spyOn(webview, 'postMessage');
 
-            const ctx = createMockCommandContext({ view, webviewView });
+            const commandContext = createMockCommandContext({ view, webviewView });
             await handler.handle({
                 command: WEBVIEW_COMMANDS.LOAD_SESSION,
                 sessionId: 'test-session'
-            }, ctx);
+            }, commandContext);
 
             expect(toolUiProvider.enrichHistory).toHaveBeenCalledWith([
                 {
@@ -308,11 +308,11 @@ describe('HistoryCommandHandler', () => {
             toolUiProvider.enrichHistory.mockImplementation((hist) => hist);
             const postMessageSpy = jest.spyOn(webview, 'postMessage');
 
-            const ctx = createMockCommandContext({ view, webviewView });
+            const commandContext = createMockCommandContext({ view, webviewView });
             await handler.handle({
                 command: WEBVIEW_COMMANDS.LOAD_SESSION,
                 sessionId: 'test-session'
-            }, ctx);
+            }, commandContext);
 
             // Use partial matchers because the runtime value of `arguments` is
             // null, which does not match the declared `string` type.
@@ -362,11 +362,11 @@ describe('HistoryCommandHandler', () => {
             toolUiProvider.enrichHistory.mockImplementation((hist) => hist);
             const postMessageSpy = jest.spyOn(webview, 'postMessage');
 
-            const ctx = createMockCommandContext({ view, webviewView });
+            const commandContext = createMockCommandContext({ view, webviewView });
             await handler.handle({
                 command: WEBVIEW_COMMANDS.LOAD_SESSION,
                 sessionId: 'test-session'
-            }, ctx);
+            }, commandContext);
 
             // The cleaner must pass the call through without adding the
             // `arguments` key. Verify the absence of the key at runtime.
@@ -385,11 +385,11 @@ describe('HistoryCommandHandler', () => {
             chatHistoryManager.loadSession.mockRejectedValue(new Error('Storage failure'));
             const postMessageSpy = jest.spyOn(webview, 'postMessage');
 
-            const ctx = createMockCommandContext({ view, webviewView });
+            const commandContext = createMockCommandContext({ view, webviewView });
             await handler.handle({
                 command: WEBVIEW_COMMANDS.LOAD_SESSION,
                 sessionId: 'bad-session'
-            }, ctx);
+            }, commandContext);
 
             expect(postMessageSpy).toHaveBeenCalledWith({
                 sender: 'assistant',
@@ -408,11 +408,11 @@ describe('HistoryCommandHandler', () => {
             chatHistoryManager.loadSession.mockRejectedValue('String error');
             const postMessageSpy = jest.spyOn(webview, 'postMessage');
 
-            const ctx = createMockCommandContext({ view, webviewView });
+            const commandContext = createMockCommandContext({ view, webviewView });
             await handler.handle({
                 command: WEBVIEW_COMMANDS.LOAD_SESSION,
                 sessionId: 'bad-session'
-            }, ctx);
+            }, commandContext);
 
             expect(postMessageSpy).toHaveBeenCalledWith({
                 sender: 'assistant',
@@ -452,11 +452,11 @@ describe('HistoryCommandHandler', () => {
             chatHistoryManager.getSessions.mockResolvedValue(mockSessions);
             const postMessageSpy = jest.spyOn(webview, 'postMessage');
             
-            const ctx = createMockCommandContext({ view, webviewView });
+            const commandContext = createMockCommandContext({ view, webviewView });
             await handler.handle({
                 command: WEBVIEW_COMMANDS.DELETE_SESSION,
                 sessionId: 'session-1'
-            }, ctx);
+            }, commandContext);
 
             expect(chatHistoryManager.deleteSession).toHaveBeenCalledWith('session-1');
             expect(chatHistoryManager.getSessions).toHaveBeenCalled();
@@ -498,11 +498,11 @@ describe('HistoryCommandHandler', () => {
             const { handler, chatHistoryManager, toolUiProvider, webviewView, webview, view } = createDependencies();
             const postMessageSpy = jest.spyOn(webview, 'postMessage');
 
-            const ctx = createMockCommandContext({ view, webviewView });
+            const commandContext = createMockCommandContext({ view, webviewView });
             await handler.handle({
                 command: WEBVIEW_COMMANDS.SEND_MESSAGE,
                 text: 'hello'
-            }, ctx);
+            }, commandContext);
 
             expect(chatHistoryManager.clearHistory).not.toHaveBeenCalled();
             expect(chatHistoryManager.getSessions).not.toHaveBeenCalled();

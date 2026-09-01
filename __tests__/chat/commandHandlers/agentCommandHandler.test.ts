@@ -53,9 +53,9 @@ describe('AgentCommandHandler', () => {
         const { handler, chatAgent, chatHistoryManager, promptContextBuilder } = createDependencies();
         const webview = createMockWebview([]);
         const webviewView = createMockWebviewView(webview);
-        const ctx = createMockCommandContext({ webviewView });
+        const commandContext = createMockCommandContext({ webviewView });
 
-        await handler.handle({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' }, ctx);
+        await handler.handle({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' }, commandContext);
 
         expect(chatHistoryManager.addMessage).toHaveBeenCalledWith({ role: 'user', content: 'hello' });
         expect(promptContextBuilder.buildPromptContext).toHaveBeenCalled();
@@ -66,12 +66,12 @@ describe('AgentCommandHandler', () => {
         const { handler } = createDependencies();
         const webview = createMockWebview([]);
         const webviewView = createMockWebviewView(webview);
-        const ctx = createMockCommandContext({ webviewView });
+        const commandContext = createMockCommandContext({ webviewView });
 
         // First trigger a run to set the abort controller
-        const runPromise = handler.handle({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' }, ctx);
+        const runPromise = handler.handle({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' }, commandContext);
         
-        await handler.handle({ command: WEBVIEW_COMMANDS.CANCEL_REQUEST }, ctx);
+        await handler.handle({ command: WEBVIEW_COMMANDS.CANCEL_REQUEST }, commandContext);
         
         // We need to check if the abort controller was actually called
         // In the current implementation, it sets the controller on the handler
@@ -83,12 +83,12 @@ describe('AgentCommandHandler', () => {
         const { handler, chatAgent, promptContextBuilder } = createDependencies();
         const webview = createMockWebview([]);
         const webviewView = createMockWebviewView(webview);
-        const ctx = createMockCommandContext({ webviewView });
+        const commandContext = createMockCommandContext({ webviewView });
 
-        await handler.handle({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' }, ctx);
+        await handler.handle({ command: WEBVIEW_COMMANDS.SEND_MESSAGE, text: 'hello' }, commandContext);
         expect(chatAgent.run).toHaveBeenCalledTimes(1);
 
-        await handler.handle({ command: WEBVIEW_COMMANDS.RETRY_LAST_MESSAGE }, ctx);
+        await handler.handle({ command: WEBVIEW_COMMANDS.RETRY_LAST_MESSAGE }, commandContext);
         expect(chatAgent.run).toHaveBeenCalledTimes(2);
         expect(promptContextBuilder.buildPromptContext).toHaveBeenCalledTimes(2);
     });
@@ -113,7 +113,7 @@ describe('AgentCommandHandler', () => {
         const { handler, chatAgent, chatHistoryManager, promptContextBuilder } = createDependencies();
         const webview = createMockWebview([]);
         const webviewView = createMockWebviewView(webview);
-        const ctx = createMockCommandContext({ webviewView });
+        const commandContext = createMockCommandContext({ webviewView });
 
         // Simulate history with user message and partial assistant response
         const existingHistory: { role: ChatRole; content: string }[] = [
@@ -122,7 +122,7 @@ describe('AgentCommandHandler', () => {
         ];
         chatHistoryManager.getChatHistory.mockReturnValue(existingHistory);
 
-        await handler.handle({ command: WEBVIEW_COMMANDS.CONTINUE_GENERATION }, ctx);
+        await handler.handle({ command: WEBVIEW_COMMANDS.CONTINUE_GENERATION }, commandContext);
 
         // Verify history was retrieved
         expect(chatHistoryManager.getChatHistory).toHaveBeenCalled();
@@ -155,13 +155,13 @@ describe('AgentCommandHandler', () => {
         const { handler, chatAgent, chatHistoryManager } = createDependencies();
         const webview = createMockWebview([]);
         const webviewView = createMockWebviewView(webview);
-        const ctx = createMockCommandContext({ webviewView });
+        const commandContext = createMockCommandContext({ webviewView });
 
         // Simulate history with only a user message (e.g., after an error)
         const userOnlyHistory: { role: ChatRole; content: string }[] = [{ role: 'user', content: 'hi' }];
         chatHistoryManager.getChatHistory.mockReturnValue(userOnlyHistory);
 
-        await handler.handle({ command: WEBVIEW_COMMANDS.CONTINUE_GENERATION }, ctx);
+        await handler.handle({ command: WEBVIEW_COMMANDS.CONTINUE_GENERATION }, commandContext);
 
         // Verify history was retrieved
         expect(chatHistoryManager.getChatHistory).toHaveBeenCalled();
