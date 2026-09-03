@@ -163,4 +163,50 @@ describe('OpenAIStreamHandler', () => {
       expect(tc.function.name).toBeDefined();
     }
   });
+
+  it('should NOT emit null tool_calls when indices are non-sequential', async () => {
+    // Some models (e.g. qwen/devstral-family, Nemotron) assign tool call IDs out
+    // of order, emitting a higher index before lower ones (here index 2 before
+    // index 1). The accumulation logic writes at toolCalls[index], which for a
+    // non-sequential index leaves trailing HOLES in the array.
+    //
+    // Holes survive Array.prototype.map() (it skips but preserves them) and get
+    // serialized to `null` by JSON.stringify, causing OpenAI-compatible APIs to
+    // reject the request with e.g. "invalid type: null, expected struct
+    // ChatCompletionMessageToolCall". This test locks in the fix.
+    const chunks = [
+      // First tool call at index 0
+      'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_0","type":"function","function":{"name":"read_file","arguments":"{\\"path\\":\\"file1.ts\\"}"}}]}}]}\n',
+      // Second tool call at index 2, SKIPPING index 1 -> creates a hole
+      'data: {"choices":[{"delta":{"tool_calls":[{"index":2,"id":"call_2","type":"function","function":{"name":"grep_search","arguments":"{\\"q\\":\\"chat\\"}"}}]}}]}\n',
+      'data: [DONE]\n'
+    ];
+
+    const response: IHttpResponse = {
+      body: createAsyncIterable(chunks),
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      json: jest.fn<() => Promise<any>>().mockResolvedValue({}),
+      text: jest.fn<() => Promise<string>>().mockResolvedValue('')
+    };
+
+    const results = await handler.handleStream(response);
+    const toolCalls = results[0].tool_calls!;
+
+    // The two real tool calls must be present.
+    expect(toolCalls).toHaveLength(2);
+    expect(toolCalls[0].function.name).toBe('read_file');
+    expect(toolCalls[1].function.name).toBe('grep_search');
+
+    // The critical assertion: no holes remain, so serialization produces no nulls.
+    expect(JSON.stringify(toolCalls)).not.toContain('null');
+
+    // Every element must be a concrete, defined tool call (no dummy fillers).
+    for (const tc of toolCalls) {
+      expect(tc).toBeDefined();
+      expect(tc.function).toBeDefined();
+      expect(tc.function.name).toBeTruthy();
+    }
+  });
 });

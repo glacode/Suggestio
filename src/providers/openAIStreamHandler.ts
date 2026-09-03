@@ -73,7 +73,26 @@ export class OpenAIStreamHandler implements IOpenAIStreamHandler {
             }
             currentContent = "";
         } else if (currentPhase === 'tool_calls' && currentToolCalls.length > 0) {
-            messageToPush = { role: 'assistant', content: '', tool_calls: currentToolCalls };
+            // Compaction: guard against sparse tool_calls arrays.
+            //
+            // `applyToolCallDelta` writes at `toolCalls[index]` using the raw
+            // `index` reported by the model. Some models (e.g. qwen/devstral,
+            // Nemotron) assign tool call IDs out of order, so a later index can
+            // arrive before earlier ones. When that index exceeds the current
+            // array length, the assignment leaves trailing HOLEs (empty slots)
+            // in the array.
+            //
+            // Holes are insidious: `Array.prototype.map` (used downstream in
+            // `prepareHistoryMessage`) SKIPS holes but PRESERVES them in its
+            // result, and `JSON.stringify` converts them to `null`. The API then
+            // rejects the message with e.g. "invalid type: null, expected struct
+            // ChatCompletionMessageToolCall".
+            //
+            // Filtering out any null/undefined entries copies the array into a
+            // fresh, dense one containing only the real tool calls - no holes,
+            // no nulls, and no dummy/placeholder objects sent to the model.
+            const denseToolCalls = currentToolCalls.filter((tc) => tc !== null && tc !== undefined);
+            messageToPush = { role: 'assistant', content: '', tool_calls: denseToolCalls };
             currentToolCalls = [];
         }
 
