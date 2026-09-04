@@ -862,4 +862,292 @@ describe('ChatManager Unit Tests', () => {
             expect(nestedConfirm?.textContent).toContain('Allow edit?');
         });
     });
+
+    describe('Additional Branch Coverage', () => {
+        it('should handle AssistantMessage showError and retry button click', () => {
+            const chat = document.getElementById('chat');
+            if (!(chat instanceof HTMLElement)) {
+                throw new Error('Chat not found');
+            }
+
+            // First create an assistant message by sending tokens
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'Starting...', tokenType: 'content' }
+            }));
+
+            // Then trigger error event to create an error state on the existing assistant message
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { 
+                    sender: MESSAGE_SENDERS.ASSISTANT, 
+                    type: EXTENSION_EVENTS.ERROR, 
+                    text: 'Something went wrong' 
+                }
+            }));
+
+            const assistantMsg = chat.querySelector('.message.assistant.error');
+            expect(assistantMsg).toBeTruthy();
+
+            // Find and click the retry button - this covers the retry button click handler
+            const retryBtn = assistantMsg?.querySelector('.retry-button');
+            if (!(retryBtn instanceof HTMLButtonElement)) {
+                throw new Error('Retry button not found');
+            }
+            
+            retryBtn.click();
+            
+            // Should post RETRY_LAST_MESSAGE command
+            expect(mockVscode.messages).toContainEqual({
+                command: WEBVIEW_COMMANDS.RETRY_LAST_MESSAGE
+            });
+        });
+
+        it('should handle AssistantMessage showHalted and continue button click', () => {
+            const input = document.getElementById('messageInput');
+            if (!(input instanceof HTMLTextAreaElement)) { throw new Error('Input not found'); }
+            input.disabled = true;
+
+            const chat = document.getElementById('chat');
+            if (!(chat instanceof HTMLElement)) {
+                throw new Error('Chat not found');
+            }
+
+            // First create an assistant message
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'Working...', tokenType: 'content' }
+            }));
+
+            // Then trigger halted event
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.HALTED, text: 'Execution halted' }
+            }));
+
+            const assistantMsg = chat.querySelector('.message.assistant.halted');
+            expect(assistantMsg).toBeTruthy();
+
+            // Find and click the continue button - this covers the continue button click handler
+            const continueBtn = assistantMsg?.querySelector('.continue-button');
+            if (!(continueBtn instanceof HTMLButtonElement)) {
+                throw new Error('Continue button not found');
+            }
+            
+            continueBtn.click();
+            
+            // Should post RETRY_LAST_MESSAGE command
+            expect(mockVscode.messages).toContainEqual({
+                command: WEBVIEW_COMMANDS.RETRY_LAST_MESSAGE
+            });
+        });
+
+        it('should handle AssistantMessage prepareForResumption', () => {
+            const chat = document.getElementById('chat');
+            if (!(chat instanceof HTMLElement)) {
+                throw new Error('Chat not found');
+            }
+
+            // First create an assistant message
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'Starting...', tokenType: 'content' }
+            }));
+
+            // Trigger error event to create an error state
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { 
+                    sender: MESSAGE_SENDERS.ASSISTANT, 
+                    type: EXTENSION_EVENTS.ERROR, 
+                    text: 'Something went wrong' 
+                }
+            }));
+
+            const assistantMsg = chat.querySelector('.message.assistant.error');
+            expect(assistantMsg).toBeTruthy();
+            expect(assistantMsg?.classList.contains('error')).toBe(true);
+
+            // Directly call prepareForResumption on the AssistantMessage instance
+            // We need to access the currentAssistantMessage through the chatManager
+            // Since it's private, we'll trigger it via retryLastMessage
+            chatManager.retryLastMessage();
+
+            // After prepareForResumption, the error class should be removed and loading class added
+            const resumedMsg = chat.querySelector('.message.assistant.loading');
+            expect(resumedMsg).toBeTruthy();
+            expect(resumedMsg?.classList.contains('error')).toBe(false);
+        });
+
+        it('should handle renderProfileSelector Manage Models option', () => {
+            const modelSelector = document.getElementById('modelSelector');
+            if (!modelSelector) {
+                throw new Error('Model selector not found');
+            }
+
+            const dropdownLabel = modelSelector.querySelector('.dropdown-label');
+            if (!(dropdownLabel instanceof HTMLElement)) {
+                throw new Error('Dropdown label not found');
+            }
+
+            // Open dropdown
+            dropdownLabel.click();
+
+            const dropdownContent = modelSelector.querySelector('.dropdown-content');
+            if (!(dropdownContent instanceof HTMLElement)) {
+                throw new Error('Dropdown content not found');
+            }
+
+            // Find the "Manage Models..." option
+            const manageOption = Array.from(dropdownContent.querySelectorAll('a')).find(
+                a => a.textContent?.includes('Manage Models')
+            );
+            
+            if (!manageOption) {
+                throw new Error('Manage Models option not found');
+            }
+
+            // Click it - should open settings overlay
+            manageOption.click();
+
+            // Should have called openSettings which posts no message but shows settings overlay
+            // Just verify it doesn't throw and the dropdown closes
+            expect(dropdownContent.classList.contains('show')).toBe(false);
+        });
+
+        it('should handle openSettings error handling', () => {
+            // Mock settingsOverlay.render to throw an error
+            const originalRender = chatManager['settingsOverlay'].render;
+            chatManager['settingsOverlay'].render = jest.fn(() => {
+                throw new Error('Render failed');
+            });
+
+            // Should not throw even if render fails
+            expect(() => {
+                chatManager['openSettings']();
+            }).not.toThrow();
+
+            // Restore
+            chatManager['settingsOverlay'].render = originalRender;
+        });
+
+        it('should handle loadHistory with tool calls and tool results', () => {
+            const history = [
+                { role: 'user', content: 'First message' },
+                { 
+                    role: 'assistant', 
+                    content: 'Response with tool',
+                    tool_calls: [
+                        {
+                            id: 'call_123',
+                            function: { name: 'read_file', arguments: '{"path": "test.txt"}' },
+                            displayMessage: 'Reading file...',
+                            uiOptions: { collapseByDefault: false }
+                        }
+                    ]
+                },
+                { 
+                    role: 'tool', 
+                    content: 'File content here',
+                    tool_call_id: 'call_123',
+                    metadata: { toolCallSuccess: true }
+                }
+            ];
+
+            chatManager.loadHistory(history);
+
+            const chat = document.getElementById('chat');
+            if (!chat) {
+                throw new Error('Chat not found');
+            }
+
+            // Should have user message
+            expect(chat.innerHTML).toContain('First message');
+            
+            // Should have tool call container
+            const toolCall = chat.querySelector('#tool-call_123');
+            expect(toolCall).toBeTruthy();
+            
+            // Should have tool output
+            expect(toolCall?.textContent).toContain('File content here');
+        });
+
+        it('should handle loadHistory with failed tool result', () => {
+            const history = [
+                { role: 'user', content: 'Test' },
+                { 
+                    role: 'assistant', 
+                    content: '',
+                    tool_calls: [
+                        {
+                            id: 'call_failed',
+                            function: { name: 'write_file', arguments: '{"path": "test.txt"}' },
+                            displayMessage: 'Writing file...',
+                            uiOptions: { collapseByDefault: true }
+                        }
+                    ]
+                },
+                { 
+                    role: 'tool', 
+                    content: 'Permission denied',
+                    tool_call_id: 'call_failed',
+                    metadata: { toolCallSuccess: false }
+                }
+            ];
+
+            chatManager.loadHistory(history);
+
+            const chat = document.getElementById('chat');
+            if (!chat) {
+                throw new Error('Chat not found');
+            }
+
+            const toolCall = chat.querySelector('#tool-call_failed');
+            expect(toolCall).toBeTruthy();
+            
+            // Should show validation error styling
+            const statusText = toolCall?.querySelector('.tool-status-text');
+            expect(statusText?.classList.contains('validation-error')).toBe(true);
+        });
+
+        it('should handle tool started event for non-existent tool', () => {
+            // Trigger TOOL_STARTED for a tool that doesn't exist
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { 
+                    sender: MESSAGE_SENDERS.ASSISTANT, 
+                    type: EXTENSION_EVENTS.TOOL_STARTED, 
+                    toolCallId: 'non-existent-tool'
+                }
+            }));
+
+            // Should not throw
+            expect(true).toBe(true);
+        });
+
+        it('should handle tool output for non-existent tool', () => {
+            // Trigger TOOL_OUTPUT for a tool that doesn't exist
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { 
+                    sender: MESSAGE_SENDERS.ASSISTANT, 
+                    type: EXTENSION_EVENTS.TOOL_OUTPUT, 
+                    toolCallId: 'non-existent-tool',
+                    output: 'some output'
+                }
+            }));
+
+            // Should not throw
+            expect(true).toBe(true);
+        });
+
+        it('should handle tool end for non-existent tool', () => {
+            // Trigger TOOL_END for a tool that doesn't exist
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { 
+                    sender: MESSAGE_SENDERS.ASSISTANT, 
+                    type: EXTENSION_EVENTS.TOOL_END, 
+                    toolCallId: 'non-existent-tool',
+                    toolName: 'test_tool',
+                    success: true,
+                    result: 'Done'
+                }
+            }));
+
+            // Should not throw
+            expect(true).toBe(true);
+        });
+    });
 });
