@@ -253,6 +253,60 @@ describe('ChatManager Unit Tests', () => {
         });
     });
 
+    describe('Settings & Profiles', () => {
+        it('should handle renderProfileSelector Manage Models option', () => {
+            const modelSelector = document.getElementById('modelSelector');
+            if (!modelSelector) {
+                throw new Error('Model selector not found');
+            }
+
+            const dropdownLabel = modelSelector.querySelector('.dropdown-label');
+            if (!(dropdownLabel instanceof HTMLElement)) {
+                throw new Error('Dropdown label not found');
+            }
+
+            // Open dropdown
+            dropdownLabel.click();
+
+            const dropdownContent = modelSelector.querySelector('.dropdown-content');
+            if (!(dropdownContent instanceof HTMLElement)) {
+                throw new Error('Dropdown content not found');
+            }
+
+            // Find the "Manage Models..." option
+            const manageOption = Array.from(dropdownContent.querySelectorAll('a')).find(
+                a => a.textContent?.includes('Manage Models')
+            );
+            
+            if (!manageOption) {
+                throw new Error('Manage Models option not found');
+            }
+
+            // Click it - should open settings overlay
+            manageOption.click();
+
+            // Should have called openSettings which posts no message but shows settings overlay
+            // Just verify it doesn't throw and the dropdown closes
+            expect(dropdownContent.classList.contains('show')).toBe(false);
+        });
+
+        it('should handle openSettings error handling', () => {
+            // Mock settingsOverlay.render to throw an error
+            const originalRender = chatManager['settingsOverlay'].render;
+            chatManager['settingsOverlay'].render = jest.fn(() => {
+                throw new Error('Render failed');
+            });
+
+            // Should not throw even if render fails
+            expect(() => {
+                chatManager['openSettings']();
+            }).not.toThrow();
+
+            // Restore
+            chatManager['settingsOverlay'].render = originalRender;
+        });
+    });
+
     describe('Extension Events', () => {
         it('should handle user messages from extension', () => {
             const chat = document.getElementById('chat');
@@ -1100,60 +1154,6 @@ describe('ChatManager Unit Tests', () => {
 
             // Should not throw
             expect(true).toBe(true);
-        });
-    });
-
-    describe('Settings & Profiles', () => {
-        it('should handle renderProfileSelector Manage Models option', () => {
-            const modelSelector = document.getElementById('modelSelector');
-            if (!modelSelector) {
-                throw new Error('Model selector not found');
-            }
-
-            const dropdownLabel = modelSelector.querySelector('.dropdown-label');
-            if (!(dropdownLabel instanceof HTMLElement)) {
-                throw new Error('Dropdown label not found');
-            }
-
-            // Open dropdown
-            dropdownLabel.click();
-
-            const dropdownContent = modelSelector.querySelector('.dropdown-content');
-            if (!(dropdownContent instanceof HTMLElement)) {
-                throw new Error('Dropdown content not found');
-            }
-
-            // Find the "Manage Models..." option
-            const manageOption = Array.from(dropdownContent.querySelectorAll('a')).find(
-                a => a.textContent?.includes('Manage Models')
-            );
-            
-            if (!manageOption) {
-                throw new Error('Manage Models option not found');
-            }
-
-            // Click it - should open settings overlay
-            manageOption.click();
-
-            // Should have called openSettings which posts no message but shows settings overlay
-            // Just verify it doesn't throw and the dropdown closes
-            expect(dropdownContent.classList.contains('show')).toBe(false);
-        });
-
-        it('should handle openSettings error handling', () => {
-            // Mock settingsOverlay.render to throw an error
-            const originalRender = chatManager['settingsOverlay'].render;
-            chatManager['settingsOverlay'].render = jest.fn(() => {
-                throw new Error('Render failed');
-            });
-
-            // Should not throw even if render fails
-            expect(() => {
-                chatManager['openSettings']();
-            }).not.toThrow();
-
-            // Restore
-            chatManager['settingsOverlay'].render = originalRender;
         });
     });
 });
