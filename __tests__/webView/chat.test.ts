@@ -1109,7 +1109,7 @@ describe('ChatManager Unit Tests', () => {
         });
     });
 
-    describe('Tool Event Handling', () => {
+    describe('Tool Lifecycle', () => {
         it('should handle tool started event for non-existent tool', () => {
             // Trigger TOOL_STARTED for a tool that doesn't exist
             window.dispatchEvent(new MessageEvent('message', {
