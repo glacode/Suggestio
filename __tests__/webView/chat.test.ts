@@ -50,6 +50,7 @@ describe('ChatManager Unit Tests', () => {
     });
 
     afterEach(() => {
+        chatManager.dispose();
         jest.useRealTimers();
         jest.restoreAllMocks();
     });
@@ -1025,6 +1026,51 @@ describe('ChatManager Unit Tests', () => {
             const resumedMsg = chat.querySelector('.message.assistant.loading');
             expect(resumedMsg).toBeTruthy();
             expect(resumedMsg?.classList.contains('error')).toBe(false);
+        });
+
+        it('should finish the existing assistant message for unknown message type', () => {
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'In progress...', tokenType: 'content' }
+            }));
+
+            const streamingMsg = document.querySelector('.message.assistant.loading');
+            expect(streamingMsg).toBeTruthy();
+
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: 'UNKNOWN_TYPE_XYZ', text: 'Fallback message' }
+            }));
+
+            expect(streamingMsg?.classList.contains('loading')).toBe(false);
+            expect(streamingMsg?.classList.contains('visible')).toBe(true);
+
+            const chat = document.getElementById('chat');
+            expect(chat?.innerHTML).toContain('Fallback message');
+        });
+
+        it('should remove pending confirmation segment when the turn finishes', () => {
+            const toolCallId = 'pending-confirm';
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'Working...', tokenType: 'content' }
+            }));
+
+            window.dispatchEvent(new MessageEvent('message', {
+                data: {
+                    sender: MESSAGE_SENDERS.ASSISTANT,
+                    type: EXTENSION_EVENTS.REQUEST_CONFIRMATION,
+                    toolCallId,
+                    toolName: 'write_file',
+                    message: 'Allow?'
+                }
+            }));
+
+            const confirmEl = document.getElementById(`confirm-${toolCallId}`);
+            expect(confirmEl).toBeTruthy();
+
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.COMPLETION }
+            }));
+
+            expect(document.getElementById(`confirm-${toolCallId}`)).toBeNull();
         });
     });
 

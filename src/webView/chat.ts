@@ -526,6 +526,31 @@ export class ChatManager implements IChatManagerActions {
     private messageInput!: HTMLTextAreaElement;
     public currentAssistantMessage: AssistantMessage | null = null;
     private currentNotification: HTMLElement | null = null;
+    // init() registers three listeners on the shared global event targets
+    // (window 'message'/'focus', document 'click'). They were previously
+    // anonymous arrow functions that could never be unregistered. They are
+    // stored here as named handlers — bodies unchanged — so that dispose()
+    // can detach exactly what init() attached. This is behavior-neutral.
+    private handleMessage: ((event: MessageEvent) => void) | null = null;
+    private readonly handleWindowFocus = () => {
+        setTimeout(() => { this.messageInput.focus(); }, 50);
+    };
+    // Previously this handler captured `modelSelector` from the enclosing
+    // setupProfileSelector() closure. Re-querying it by id is equivalent:
+    // the id is unique and the element is never recreated, so both lookups
+    // resolve to the same node; only its classes are ever toggled.
+    private readonly handleDocumentClick = (e: Event) => {
+        const modelSelector = document.getElementById('modelSelector');
+        // Defensive: setupProfileSelector() already throws when the element
+        // is missing, so this early return is unreachable in practice.
+        if (!modelSelector) {
+            return;
+        }
+        const dropdownContent = modelSelector.querySelector('.dropdown-content');
+        if (dropdownContent instanceof HTMLElement && e.target instanceof Node && !modelSelector.contains(e.target)) {
+            dropdownContent.classList.remove('show');
+        }
+    };
 
     /**
      * @param vscode The VS Code Webview API instance.
@@ -568,9 +593,9 @@ export class ChatManager implements IChatManagerActions {
         this.adjustTextareaHeight();
         this.messageInput.focus();
 
-        window.addEventListener('focus', () => {
-            setTimeout(() => { this.messageInput.focus(); }, 50);
-        });
+        // Same handler as before — moved to a named field so dispose() can
+        // remove it; the 50ms refocus behavior is unchanged.
+        window.addEventListener('focus', this.handleWindowFocus);
 
         this.setupProfileSelector();
         // Initialize overlays attached to the full webview (body)
@@ -587,6 +612,19 @@ export class ChatManager implements IChatManagerActions {
             console.warn('Failed to init overlays', e);
         }
         this.setupMessageListener();
+    }
+
+    /**
+     * Removes the three global listeners that init() attached. The tests call
+     * this after every test so one ChatManager instance cannot leak handlers
+     * into the next; in production it is safe to call on teardown.
+     */
+    dispose() {
+        if (this.handleMessage) {
+            window.removeEventListener('message', this.handleMessage);
+        }
+        window.removeEventListener('focus', this.handleWindowFocus);
+        document.removeEventListener('click', this.handleDocumentClick);
     }
 
     private setupProfileSelector() {
@@ -622,12 +660,8 @@ export class ChatManager implements IChatManagerActions {
             }
         });
 
-        document.addEventListener('click', (e) => {
-            const dropdownContent = modelSelector.querySelector('.dropdown-content');
-            if (dropdownContent instanceof HTMLElement && e.target instanceof Node && !modelSelector.contains(e.target)) {
-                dropdownContent.classList.remove('show');
-            }
-        });
+        // Same outside-click-to-close behavior, now attached via the named handler.
+        document.addEventListener('click', this.handleDocumentClick);
     }
 
     private renderProfileSelector(chatProfileIds: string[], activeChatProfileId: string) {
@@ -693,7 +727,9 @@ export class ChatManager implements IChatManagerActions {
     }
 
     private setupMessageListener() {
-        window.addEventListener('message', event => {
+        // Same handler body as before; it is assigned to a field so dispose()
+        // can reference the exact function when unregistering it.
+        this.handleMessage = event => {
             const { sender, type, text, tokenType, command } = event.data;
 
             // Handle extension-initiated commands
@@ -842,7 +878,8 @@ export class ChatManager implements IChatManagerActions {
             } else if (sender === MESSAGE_SENDERS.USER) {
                 this.appendUserMessage(text);
             }
-        });
+        };
+        window.addEventListener('message', this.handleMessage);
     }
 
     /**
