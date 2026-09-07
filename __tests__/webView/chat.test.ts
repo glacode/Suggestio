@@ -599,30 +599,6 @@ describe('ChatManager Unit Tests', () => {
 
             expect(input.disabled).toBe(false);
         });
-
-        it('should handle viewDiff command', () => {
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { 
-                    sender: MESSAGE_SENDERS.ASSISTANT, 
-                    type: EXTENSION_EVENTS.REQUEST_CONFIRMATION, 
-                    toolCallId: 'diff1', 
-                    toolName: 'write_file',
-                    message: 'Diff?',
-                    diffData: { old: '', new: '', path: '' }
-                }
-            }));
-
-            const diffBtn = document.querySelector('.view-diff-btn');
-            if (!(diffBtn instanceof HTMLButtonElement)) {
-                throw new Error('Diff button not found');
-            }
-            diffBtn.click();
-
-            expect(mockVscode.messages).toContainEqual({
-                command: WEBVIEW_COMMANDS.VIEW_DIFF,
-                toolCallId: 'diff1'
-            });
-        });
     });
 
     describe('Auto-scrolling Logic', () => {
@@ -752,33 +728,6 @@ describe('ChatManager Unit Tests', () => {
             expect(msg?.textContent).toContain('some thoughts');
         });
 
-        it('should handle complex interleaving (Reasoning -> Tool -> Content)', () => {
-            // 1. Reasoning
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'Think', tokenType: 'reasoning' }
-            }));
-            // 2. Tool inside Reasoning
-            const toolCallId = 't-nested';
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOOL_START, toolCallId, toolName: 't', args: '{}' }
-            }));
-            // 3. Content (Collapses reasoning)
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'Done', tokenType: 'content' }
-            }));
-
-            const reasoning = document.querySelector('.reasoning-container');
-            if (!(reasoning instanceof HTMLElement)) {
-                throw new Error('Reasoning container not found');
-            }
-            const content = reasoning.querySelector('.reasoning-content');
-            if (!(content instanceof HTMLElement)) {
-                throw new Error('Reasoning content not found');
-            }
-            expect(content.classList.contains('collapsed')).toBe(true);
-            expect(reasoning.innerHTML).toContain(toolCallId); // Tool was nested
-        });
-
         it('should toggle reasoning visibility when header is clicked', () => {
             window.dispatchEvent(new MessageEvent('message', {
                 data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'Thinking...', tokenType: 'reasoning' }
@@ -799,33 +748,6 @@ describe('ChatManager Unit Tests', () => {
             // Toggle again
             header.click();
             expect(content.classList.contains('collapsed')).toBe(false);
-        });
-
-        it('should handle nested confirmation inside reasoning', () => {
-            // 1. Start reasoning
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'I am thinking...', tokenType: 'reasoning' }
-            }));
-
-            // 2. Send confirmation request while reasoning is active
-            const toolCallId = 'nested-confirm';
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { 
-                    sender: MESSAGE_SENDERS.ASSISTANT, 
-                    type: EXTENSION_EVENTS.REQUEST_CONFIRMATION, 
-                    toolCallId, 
-                    toolName: 'write_file',
-                    message: 'Allow edit?'
-                }
-            }));
-
-            const reasoning = document.querySelector('.reasoning-container');
-            if (!(reasoning instanceof HTMLElement)) { throw new Error('Reasoning block not found'); }
-            
-            // The confirmation should be INSIDE the reasoning content
-            const nestedConfirm = reasoning.querySelector(`#confirm-${toolCallId}`);
-            expect(nestedConfirm).toBeTruthy();
-            expect(nestedConfirm?.textContent).toContain('Allow edit?');
         });
     });
 
@@ -956,32 +878,6 @@ describe('ChatManager Unit Tests', () => {
 
             const chat = document.getElementById('chat');
             expect(chat?.innerHTML).toContain('Fallback message');
-        });
-
-        it('should remove pending confirmation segment when the turn finishes', () => {
-            const toolCallId = 'pending-confirm';
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'Working...', tokenType: 'content' }
-            }));
-
-            window.dispatchEvent(new MessageEvent('message', {
-                data: {
-                    sender: MESSAGE_SENDERS.ASSISTANT,
-                    type: EXTENSION_EVENTS.REQUEST_CONFIRMATION,
-                    toolCallId,
-                    toolName: 'write_file',
-                    message: 'Allow?'
-                }
-            }));
-
-            const confirmEl = document.getElementById(`confirm-${toolCallId}`);
-            expect(confirmEl).toBeTruthy();
-
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.COMPLETION }
-            }));
-
-            expect(document.getElementById(`confirm-${toolCallId}`)).toBeNull();
         });
     });
 
@@ -1153,6 +1049,110 @@ describe('ChatManager Unit Tests', () => {
                 decision: 'deny'
             });
             // Should be removed from DOM
+            expect(document.getElementById(`confirm-${toolCallId}`)).toBeNull();
+        });
+
+        it('should handle viewDiff command', () => {
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { 
+                    sender: MESSAGE_SENDERS.ASSISTANT, 
+                    type: EXTENSION_EVENTS.REQUEST_CONFIRMATION, 
+                    toolCallId: 'diff1', 
+                    toolName: 'write_file',
+                    message: 'Diff?',
+                    diffData: { old: '', new: '', path: '' }
+                }
+            }));
+
+            const diffBtn = document.querySelector('.view-diff-btn');
+            if (!(diffBtn instanceof HTMLButtonElement)) {
+                throw new Error('Diff button not found');
+            }
+            diffBtn.click();
+
+            expect(mockVscode.messages).toContainEqual({
+                command: WEBVIEW_COMMANDS.VIEW_DIFF,
+                toolCallId: 'diff1'
+            });
+        });
+
+        it('should handle complex interleaving (Reasoning -> Tool -> Content)', () => {
+            // 1. Reasoning
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'Think', tokenType: 'reasoning' }
+            }));
+            // 2. Tool inside Reasoning
+            const toolCallId = 't-nested';
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOOL_START, toolCallId, toolName: 't', args: '{}' }
+            }));
+            // 3. Content (Collapses reasoning)
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'Done', tokenType: 'content' }
+            }));
+
+            const reasoning = document.querySelector('.reasoning-container');
+            if (!(reasoning instanceof HTMLElement)) {
+                throw new Error('Reasoning container not found');
+            }
+            const content = reasoning.querySelector('.reasoning-content');
+            if (!(content instanceof HTMLElement)) {
+                throw new Error('Reasoning content not found');
+            }
+            expect(content.classList.contains('collapsed')).toBe(true);
+            expect(reasoning.innerHTML).toContain(toolCallId); // Tool was nested
+        });
+
+        it('should handle nested confirmation inside reasoning', () => {
+            // 1. Start reasoning
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'I am thinking...', tokenType: 'reasoning' }
+            }));
+
+            // 2. Send confirmation request while reasoning is active
+            const toolCallId = 'nested-confirm';
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { 
+                    sender: MESSAGE_SENDERS.ASSISTANT, 
+                    type: EXTENSION_EVENTS.REQUEST_CONFIRMATION, 
+                    toolCallId, 
+                    toolName: 'write_file',
+                    message: 'Allow edit?'
+                }
+            }));
+
+            const reasoning = document.querySelector('.reasoning-container');
+            if (!(reasoning instanceof HTMLElement)) { throw new Error('Reasoning block not found'); }
+            
+            // The confirmation should be INSIDE the reasoning content
+            const nestedConfirm = reasoning.querySelector(`#confirm-${toolCallId}`);
+            expect(nestedConfirm).toBeTruthy();
+            expect(nestedConfirm?.textContent).toContain('Allow edit?');
+        });
+
+        it('should remove pending confirmation segment when the turn finishes', () => {
+            const toolCallId = 'pending-confirm';
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'Working...', tokenType: 'content' }
+            }));
+
+            window.dispatchEvent(new MessageEvent('message', {
+                data: {
+                    sender: MESSAGE_SENDERS.ASSISTANT,
+                    type: EXTENSION_EVENTS.REQUEST_CONFIRMATION,
+                    toolCallId,
+                    toolName: 'write_file',
+                    message: 'Allow?'
+                }
+            }));
+
+            const confirmEl = document.getElementById(`confirm-${toolCallId}`);
+            expect(confirmEl).toBeTruthy();
+
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.COMPLETION }
+            }));
+
             expect(document.getElementById(`confirm-${toolCallId}`)).toBeNull();
         });
 
