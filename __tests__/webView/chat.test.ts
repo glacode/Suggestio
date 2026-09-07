@@ -474,29 +474,6 @@ describe('ChatManager Unit Tests', () => {
             expect(document.querySelector('.message.notification')).toBeNull();
         });
 
-        it('should handle tool started event (spinner start)', () => {
-            const toolCallId = 'ts1';
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { 
-                    sender: MESSAGE_SENDERS.ASSISTANT, 
-                    type: EXTENSION_EVENTS.TOOL_START, 
-                    toolCallId, 
-                    toolName: 'test_tool',
-                    args: '{}'
-                }
-            }));
-
-            // Confirm tool started
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { 
-                    sender: MESSAGE_SENDERS.ASSISTANT, 
-                    type: EXTENSION_EVENTS.TOOL_STARTED, 
-                    toolCallId
-                }
-            }));
-            expect(document.getElementById(`tool-${toolCallId}`)).toBeTruthy();
-        });
-
         it('should handle halted event', () => {
             const input = document.getElementById('messageInput');
             if (!(input instanceof HTMLTextAreaElement)) { throw new Error('Input not found'); }
@@ -1156,6 +1133,29 @@ describe('ChatManager Unit Tests', () => {
     });
 
     describe('Tool Lifecycle', () => {
+        it('should handle tool started event (spinner start)', () => {
+            const toolCallId = 'ts1';
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { 
+                    sender: MESSAGE_SENDERS.ASSISTANT, 
+                    type: EXTENSION_EVENTS.TOOL_START, 
+                    toolCallId, 
+                    toolName: 'test_tool',
+                    args: '{}'
+                }
+            }));
+
+            // Confirm tool started
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { 
+                    sender: MESSAGE_SENDERS.ASSISTANT, 
+                    type: EXTENSION_EVENTS.TOOL_STARTED, 
+                    toolCallId
+                }
+            }));
+            expect(document.getElementById(`tool-${toolCallId}`)).toBeTruthy();
+        });
+
         it('should handle tool started event for non-existent tool', () => {
             // Trigger TOOL_STARTED for a tool that doesn't exist
             window.dispatchEvent(new MessageEvent('message', {
