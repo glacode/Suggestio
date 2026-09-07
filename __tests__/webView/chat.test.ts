@@ -600,39 +600,6 @@ describe('ChatManager Unit Tests', () => {
             expect(input.disabled).toBe(false);
         });
 
-        it('should render tool start and update on end', () => {
-            const toolCallId = 't1';
-            
-            // Start
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { 
-                    sender: MESSAGE_SENDERS.ASSISTANT, 
-                    type: EXTENSION_EVENTS.TOOL_START, 
-                    toolCallId, 
-                    toolName: 'test_tool',
-                    args: '{}'
-                }
-            }));
-            const toolEl = document.getElementById(`tool-${toolCallId}`);
-            if (!toolEl) {
-                throw new Error('Tool element not found');
-            }
-            expect(toolEl).toBeTruthy();
-
-            // End (Success)
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { 
-                    sender: MESSAGE_SENDERS.ASSISTANT, 
-                    type: EXTENSION_EVENTS.TOOL_END, 
-                    toolCallId, 
-                    toolName: 'test_tool',
-                    success: true,
-                    result: 'Done'
-                }
-            }));
-            expect(toolEl.textContent).toContain('✅');
-        });
-
         it('should handle tool confirmation request and response', () => {
             const toolCallId = 'c1';
             window.dispatchEvent(new MessageEvent('message', {
@@ -1154,6 +1121,39 @@ describe('ChatManager Unit Tests', () => {
                 }
             }));
             expect(document.getElementById(`tool-${toolCallId}`)).toBeTruthy();
+        });
+
+        it('should render tool start and update on end', () => {
+            const toolCallId = 't1';
+            
+            // Start
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { 
+                    sender: MESSAGE_SENDERS.ASSISTANT, 
+                    type: EXTENSION_EVENTS.TOOL_START, 
+                    toolCallId, 
+                    toolName: 'test_tool',
+                    args: '{}'
+                }
+            }));
+            const toolEl = document.getElementById(`tool-${toolCallId}`);
+            if (!toolEl) {
+                throw new Error('Tool element not found');
+            }
+            expect(toolEl).toBeTruthy();
+
+            // End (Success)
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { 
+                    sender: MESSAGE_SENDERS.ASSISTANT, 
+                    type: EXTENSION_EVENTS.TOOL_END, 
+                    toolCallId, 
+                    toolName: 'test_tool',
+                    success: true,
+                    result: 'Done'
+                }
+            }));
+            expect(toolEl.textContent).toContain('✅');
         });
 
         it('should handle tool started event for non-existent tool', () => {
