@@ -325,28 +325,6 @@ describe('ChatManager Unit Tests', () => {
             expect(userMsg.textContent).toBe('message from backend');
         });
 
-        it('should handle newChat command via window message', () => {
-            const chat = document.getElementById('chat');
-            if (!chat) { throw new Error('Chat container not found'); }
-            chat.innerHTML = '<div class="message">X</div>';
-            
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { command: EXTENSION_COMMANDS.NEW_CHAT }
-            }));
-
-            expect(chat.querySelectorAll('.message').length).toBe(0);
-        });
-
-        it('should handle newChat call directly', () => {
-            const chat = document.getElementById('chat');
-            if (!chat) { throw new Error('Chat container not found'); }
-            chat.innerHTML = '<div class="message">X</div>';
-            
-            chatManager.newChat();
-
-            expect(chat.querySelectorAll('.message').length).toBe(0);
-        });
-
         it('should toggle settings overlay when OPEN_SETTINGS command is received', () => {
             const overlay = document.getElementById('settingsOverlay');
             if (!overlay) { throw new Error('Settings overlay not found'); }
@@ -960,6 +938,28 @@ describe('ChatManager Unit Tests', () => {
             const statusText = toolCall?.querySelector('.tool-status-text');
             expect(statusText?.classList.contains('validation-error')).toBe(true);
         });
+        it('should handle newChat command via window message', () => {
+            const chat = document.getElementById('chat');
+            if (!chat) { throw new Error('Chat container not found'); }
+            chat.innerHTML = '<div class="message">X</div>';
+            
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { command: EXTENSION_COMMANDS.NEW_CHAT }
+            }));
+
+            expect(chat.querySelectorAll('.message').length).toBe(0);
+        });
+
+        it('should handle newChat call directly', () => {
+            const chat = document.getElementById('chat');
+            if (!chat) { throw new Error('Chat container not found'); }
+            chat.innerHTML = '<div class="message">X</div>';
+            
+            chatManager.newChat();
+
+            expect(chat.querySelectorAll('.message').length).toBe(0);
+        });
+
     });
 
     describe('Tool Lifecycle', () => {
