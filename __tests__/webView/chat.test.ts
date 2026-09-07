@@ -600,39 +600,6 @@ describe('ChatManager Unit Tests', () => {
             expect(input.disabled).toBe(false);
         });
 
-        it('should handle tool confirmation request and response', () => {
-            const toolCallId = 'c1';
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { 
-                    sender: MESSAGE_SENDERS.ASSISTANT, 
-                    type: EXTENSION_EVENTS.REQUEST_CONFIRMATION, 
-                    toolCallId, 
-                    toolName: 'write_file',
-                    message: 'Confirm?'
-                }
-            }));
-
-            const confirmEl = document.getElementById(`confirm-${toolCallId}`);
-            if (!confirmEl) {
-                throw new Error('Confirm element not found');
-            }
-            expect(confirmEl).toBeTruthy();
-
-            const denyBtn = confirmEl.querySelector('.deny-btn');
-            if (!(denyBtn instanceof HTMLButtonElement)) {
-                throw new Error('Deny button not found');
-            }
-            denyBtn.click();
-
-            expect(mockVscode.messages).toContainEqual({
-                command: WEBVIEW_COMMANDS.CONFIRM_TOOL_CALL,
-                toolCallId,
-                decision: 'deny'
-            });
-            // Should be removed from DOM
-            expect(document.getElementById(`confirm-${toolCallId}`)).toBeNull();
-        });
-
         it('should handle viewDiff command', () => {
             window.dispatchEvent(new MessageEvent('message', {
                 data: { 
@@ -1154,6 +1121,39 @@ describe('ChatManager Unit Tests', () => {
                 }
             }));
             expect(toolEl.textContent).toContain('✅');
+        });
+
+        it('should handle tool confirmation request and response', () => {
+            const toolCallId = 'c1';
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { 
+                    sender: MESSAGE_SENDERS.ASSISTANT, 
+                    type: EXTENSION_EVENTS.REQUEST_CONFIRMATION, 
+                    toolCallId, 
+                    toolName: 'write_file',
+                    message: 'Confirm?'
+                }
+            }));
+
+            const confirmEl = document.getElementById(`confirm-${toolCallId}`);
+            if (!confirmEl) {
+                throw new Error('Confirm element not found');
+            }
+            expect(confirmEl).toBeTruthy();
+
+            const denyBtn = confirmEl.querySelector('.deny-btn');
+            if (!(denyBtn instanceof HTMLButtonElement)) {
+                throw new Error('Deny button not found');
+            }
+            denyBtn.click();
+
+            expect(mockVscode.messages).toContainEqual({
+                command: WEBVIEW_COMMANDS.CONFIRM_TOOL_CALL,
+                toolCallId,
+                decision: 'deny'
+            });
+            // Should be removed from DOM
+            expect(document.getElementById(`confirm-${toolCallId}`)).toBeNull();
         });
 
         it('should handle tool started event for non-existent tool', () => {
