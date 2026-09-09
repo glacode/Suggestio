@@ -309,22 +309,6 @@ describe('ChatManager Unit Tests', () => {
     });
 
     describe('Extension Events', () => {
-        it('should handle user messages from extension', () => {
-            const chat = document.getElementById('chat');
-            if (!chat) { throw new Error('Chat container not found'); }
-
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: MESSAGE_SENDERS.USER, text: 'message from backend' }
-            }));
-
-            const userMsg = chat.querySelector('.message.user');
-            if (!(userMsg instanceof HTMLElement)) { throw new Error('User message not found'); }
-            
-            // Checking textContent instead of chat.innerHTML because JSDOM 
-            // doesn't reflect innerText into innerHTML during tests.
-            expect(userMsg.textContent).toBe('message from backend');
-        });
-
         it('should toggle settings overlay when OPEN_SETTINGS command is received', () => {
             const overlay = document.getElementById('settingsOverlay');
             if (!overlay) { throw new Error('Settings overlay not found'); }
@@ -450,29 +434,6 @@ describe('ChatManager Unit Tests', () => {
                 data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.NOTIFICATION, text: null }
             }));
             expect(document.querySelector('.message.notification')).toBeNull();
-        });
-
-        it('should handle unknown assistant message type as default static message', () => {
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: 'UNKNOWN_TYPE_XYZ', text: 'Fallback message' }
-            }));
-
-            const chat = document.getElementById('chat');
-            expect(chat?.innerHTML).toContain('Fallback message');
-        });
-
-        it('should handle completion event', () => {
-            const input = document.getElementById('messageInput');
-            if (!(input instanceof HTMLTextAreaElement)) {
-                throw new Error('Input not found');
-            }
-            input.disabled = true;
-
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.COMPLETION }
-            }));
-
-            expect(input.disabled).toBe(false);
         });
     });
 
@@ -626,6 +587,66 @@ describe('ChatManager Unit Tests', () => {
         });
     });
 
+    describe('Assistant Streaming & Message Rendering', () => {
+        it('should handle user messages from extension', () => {
+            const chat = document.getElementById('chat');
+            if (!chat) { throw new Error('Chat container not found'); }
+
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.USER, text: 'message from backend' }
+            }));
+
+            const userMsg = chat.querySelector('.message.user');
+            if (!(userMsg instanceof HTMLElement)) { throw new Error('User message not found'); }
+            
+            // Checking textContent instead of chat.innerHTML because JSDOM 
+            // doesn't reflect innerText into innerHTML during tests.
+            expect(userMsg.textContent).toBe('message from backend');
+        });
+
+        it('should handle unknown assistant message type as default static message', () => {
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: 'UNKNOWN_TYPE_XYZ', text: 'Fallback message' }
+            }));
+
+            const chat = document.getElementById('chat');
+            expect(chat?.innerHTML).toContain('Fallback message');
+        });
+
+        it('should handle completion event', () => {
+            const input = document.getElementById('messageInput');
+            if (!(input instanceof HTMLTextAreaElement)) {
+                throw new Error('Input not found');
+            }
+            input.disabled = true;
+
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.COMPLETION }
+            }));
+
+            expect(input.disabled).toBe(false);
+        });
+
+        it('should finish the existing assistant message for unknown message type', () => {
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'In progress...', tokenType: 'content' }
+            }));
+
+            const streamingMsg = document.querySelector('.message.assistant.loading');
+            expect(streamingMsg).toBeTruthy();
+
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: 'UNKNOWN_TYPE_XYZ', text: 'Fallback message' }
+            }));
+
+            expect(streamingMsg?.classList.contains('loading')).toBe(false);
+            expect(streamingMsg?.classList.contains('visible')).toBe(true);
+
+            const chat = document.getElementById('chat');
+            expect(chat?.innerHTML).toContain('Fallback message');
+        });
+    });
+
     describe('Assistant Message States', () => {
         it('should handle AssistantMessage showError and retry button click', () => {
             const chat = document.getElementById('chat');
@@ -734,25 +755,6 @@ describe('ChatManager Unit Tests', () => {
             const resumedMsg = chat.querySelector('.message.assistant.loading');
             expect(resumedMsg).toBeTruthy();
             expect(resumedMsg?.classList.contains('error')).toBe(false);
-        });
-
-        it('should finish the existing assistant message for unknown message type', () => {
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'In progress...', tokenType: 'content' }
-            }));
-
-            const streamingMsg = document.querySelector('.message.assistant.loading');
-            expect(streamingMsg).toBeTruthy();
-
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: 'UNKNOWN_TYPE_XYZ', text: 'Fallback message' }
-            }));
-
-            expect(streamingMsg?.classList.contains('loading')).toBe(false);
-            expect(streamingMsg?.classList.contains('visible')).toBe(true);
-
-            const chat = document.getElementById('chat');
-            expect(chat?.innerHTML).toContain('Fallback message');
         });
         it('should handle halted event', () => {
             const input = document.getElementById('messageInput');
