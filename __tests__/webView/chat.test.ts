@@ -527,7 +527,7 @@ describe('ChatManager Unit Tests', () => {
         });
     });
 
-    describe('Edge Cases & Branch Coverage', () => {
+    describe('Reasoning UI', () => {
         it('should toggle reasoning visibility when header is clicked', () => {
             window.dispatchEvent(new MessageEvent('message', {
                 data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'Thinking...', tokenType: 'reasoning' }
