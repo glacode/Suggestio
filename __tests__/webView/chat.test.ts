@@ -528,42 +528,6 @@ describe('ChatManager Unit Tests', () => {
     });
 
     describe('Edge Cases & Branch Coverage', () => {
-        it('should remove empty assistant messages on finish', () => {
-            const chat = document.getElementById('chat');
-            if (!(chat instanceof HTMLElement)) {
-                throw new Error('Chat not found');
-            }
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: '   ', tokenType: 'content' }
-            }));
-            
-            const msg = chat.querySelector('.message.assistant');
-            expect(msg).toBeTruthy();
-
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.COMPLETION }
-            }));
-
-            expect(chat.querySelector('.message.assistant')).toBeNull();
-        });
-
-        it('should preserve assistant message with reasoning content on finish', () => {
-            const chat = document.getElementById('chat');
-            if (!(chat instanceof HTMLElement)) { throw new Error('Chat not found'); }
-
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'some thoughts', tokenType: 'reasoning' }
-            }));
-
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.COMPLETION }
-            }));
-
-            const msg = chat.querySelector('.message.assistant');
-            expect(msg).toBeTruthy();
-            expect(msg?.textContent).toContain('some thoughts');
-        });
-
         it('should toggle reasoning visibility when header is clicked', () => {
             window.dispatchEvent(new MessageEvent('message', {
                 data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'Thinking...', tokenType: 'reasoning' }
@@ -644,6 +608,42 @@ describe('ChatManager Unit Tests', () => {
 
             const chat = document.getElementById('chat');
             expect(chat?.innerHTML).toContain('Fallback message');
+        });
+
+        it('should remove empty assistant messages on finish', () => {
+            const chat = document.getElementById('chat');
+            if (!(chat instanceof HTMLElement)) {
+                throw new Error('Chat not found');
+            }
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: '   ', tokenType: 'content' }
+            }));
+            
+            const msg = chat.querySelector('.message.assistant');
+            expect(msg).toBeTruthy();
+
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.COMPLETION }
+            }));
+
+            expect(chat.querySelector('.message.assistant')).toBeNull();
+        });
+
+        it('should preserve assistant message with reasoning content on finish', () => {
+            const chat = document.getElementById('chat');
+            if (!(chat instanceof HTMLElement)) { throw new Error('Chat not found'); }
+
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'some thoughts', tokenType: 'reasoning' }
+            }));
+
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.COMPLETION }
+            }));
+
+            const msg = chat.querySelector('.message.assistant');
+            expect(msg).toBeTruthy();
+            expect(msg?.textContent).toContain('some thoughts');
         });
     });
 
