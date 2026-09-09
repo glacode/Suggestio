@@ -452,20 +452,6 @@ describe('ChatManager Unit Tests', () => {
             expect(document.querySelector('.message.notification')).toBeNull();
         });
 
-        it('should handle halted event', () => {
-            const input = document.getElementById('messageInput');
-            if (!(input instanceof HTMLTextAreaElement)) { throw new Error('Input not found'); }
-            input.disabled = true;
-
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.HALTED, text: 'Execution halted' }
-            }));
-
-            const chat = document.getElementById('chat');
-            expect(chat?.innerHTML).toContain('Execution halted');
-            expect(input.disabled).toBe(false);
-        });
-
         it('should handle unknown assistant message type as default static message', () => {
             window.dispatchEvent(new MessageEvent('message', {
                 data: { sender: MESSAGE_SENDERS.ASSISTANT, type: 'UNKNOWN_TYPE_XYZ', text: 'Fallback message' }
@@ -473,25 +459,6 @@ describe('ChatManager Unit Tests', () => {
 
             const chat = document.getElementById('chat');
             expect(chat?.innerHTML).toContain('Fallback message');
-        });
-
-        it('should handle error events by showing text and enabling input', () => {
-            const input = document.getElementById('messageInput');
-            if (!(input instanceof HTMLTextAreaElement)) {
-                throw new Error('Input not found');
-            }
-            input.disabled = true;
-
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.ERROR, text: 'Something went wrong' }
-            }));
-
-            const chat = document.getElementById('chat');
-            if (!chat) {
-                throw new Error('Chat not found');
-            }
-            expect(chat.innerHTML).toContain('Something went wrong');
-            expect(input.disabled).toBe(false);
         });
 
         it('should handle completion event', () => {
@@ -787,6 +754,39 @@ describe('ChatManager Unit Tests', () => {
             const chat = document.getElementById('chat');
             expect(chat?.innerHTML).toContain('Fallback message');
         });
+        it('should handle halted event', () => {
+            const input = document.getElementById('messageInput');
+            if (!(input instanceof HTMLTextAreaElement)) { throw new Error('Input not found'); }
+            input.disabled = true;
+
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.HALTED, text: 'Execution halted' }
+            }));
+
+            const chat = document.getElementById('chat');
+            expect(chat?.innerHTML).toContain('Execution halted');
+            expect(input.disabled).toBe(false);
+        });
+
+        it('should handle error events by showing text and enabling input', () => {
+            const input = document.getElementById('messageInput');
+            if (!(input instanceof HTMLTextAreaElement)) {
+                throw new Error('Input not found');
+            }
+            input.disabled = true;
+
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.ERROR, text: 'Something went wrong' }
+            }));
+
+            const chat = document.getElementById('chat');
+            if (!chat) {
+                throw new Error('Chat not found');
+            }
+            expect(chat.innerHTML).toContain('Something went wrong');
+            expect(input.disabled).toBe(false);
+        });
+
     });
 
     describe('History & Loading', () => {
