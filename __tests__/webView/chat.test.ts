@@ -397,7 +397,7 @@ describe('ChatManager Unit Tests', () => {
         });
     });
 
-    describe('Extension Events', () => {
+    describe('Overlays & Notifications', () => {
         it('should handle OPEN_HISTORY command when visible and when hidden', () => {
             // First call: should open history overlay and request sessions
             window.dispatchEvent(new MessageEvent('message', {
