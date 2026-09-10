@@ -306,9 +306,7 @@ describe('ChatManager Unit Tests', () => {
             // Restore
             chatManager['settingsOverlay'].render = originalRender;
         });
-    });
 
-    describe('Extension Events', () => {
         it('should toggle settings overlay when OPEN_SETTINGS command is received', () => {
             const overlay = document.getElementById('settingsOverlay');
             if (!overlay) { throw new Error('Settings overlay not found'); }
@@ -327,29 +325,6 @@ describe('ChatManager Unit Tests', () => {
                 data: { command: EXTENSION_COMMANDS.OPEN_SETTINGS }
             }));
             expect(overlay.classList.contains('hidden')).toBe(true);
-        });
-
-        it('should handle OPEN_HISTORY command when visible and when hidden', () => {
-            // First call: should open history overlay and request sessions
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { command: EXTENSION_COMMANDS.OPEN_HISTORY }
-            }));
-            expect(mockVscode.messages).toContainEqual({
-                command: WEBVIEW_COMMANDS.GET_SESSIONS
-            });
-
-            // Second call (while visible): should hide history overlay
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { command: EXTENSION_COMMANDS.OPEN_HISTORY }
-            }));
-            // Verify no error thrown and toggle branch is fully exercised
-        });
-
-        it('should handle SESSIONS_LIST event', () => {
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { type: EXTENSION_EVENTS.SESSIONS_LIST, sessions: [{ id: 's1', timestamp: Date.now() }] }
-            }));
-            // Renders session list into history overlay successfully
         });
 
         it('should handle UPDATE_PROFILE_METADATA event with full profiles and activeProfile', () => {
@@ -419,6 +394,31 @@ describe('ChatManager Unit Tests', () => {
             // Settings overlay should still render successfully
             const profileItems = document.querySelectorAll('.profile-item');
             expect(profileItems.length).toBeGreaterThan(0);
+        });
+    });
+
+    describe('Extension Events', () => {
+        it('should handle OPEN_HISTORY command when visible and when hidden', () => {
+            // First call: should open history overlay and request sessions
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { command: EXTENSION_COMMANDS.OPEN_HISTORY }
+            }));
+            expect(mockVscode.messages).toContainEqual({
+                command: WEBVIEW_COMMANDS.GET_SESSIONS
+            });
+
+            // Second call (while visible): should hide history overlay
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { command: EXTENSION_COMMANDS.OPEN_HISTORY }
+            }));
+            // Verify no error thrown and toggle branch is fully exercised
+        });
+
+        it('should handle SESSIONS_LIST event', () => {
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { type: EXTENSION_EVENTS.SESSIONS_LIST, sessions: [{ id: 's1', timestamp: Date.now() }] }
+            }));
+            // Renders session list into history overlay successfully
         });
 
         it('should handle notification events (show and hide)', () => {
