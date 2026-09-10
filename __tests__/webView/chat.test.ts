@@ -397,158 +397,177 @@ describe('ChatManager Unit Tests', () => {
         });
     });
 
-    describe('Overlays & Notifications', () => {
-        it('should handle OPEN_HISTORY command when visible and when hidden', () => {
-            // First call: should open history overlay and request sessions
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { command: EXTENSION_COMMANDS.OPEN_HISTORY }
-            }));
-            expect(mockVscode.messages).toContainEqual({
-                command: WEBVIEW_COMMANDS.GET_SESSIONS
-            });
+    describe('Chat History & Loading', () => {
+        it('should handle loadHistory with tool calls and tool results', () => {
+            const history = [
+                { role: 'user', content: 'First message' },
+                { 
+                    role: 'assistant', 
+                    content: 'Response with tool',
+                    tool_calls: [
+                        {
+                            id: 'call_123',
+                            function: { name: 'read_file', arguments: '{"path": "test.txt"}' },
+                            displayMessage: 'Reading file...',
+                            uiOptions: { collapseByDefault: false }
+                        }
+                    ]
+                },
+                { 
+                    role: 'tool', 
+                    content: 'File content here',
+                    tool_call_id: 'call_123',
+                    metadata: { toolCallSuccess: true }
+                }
+            ];
 
-            // Second call (while visible): should hide history overlay
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { command: EXTENSION_COMMANDS.OPEN_HISTORY }
-            }));
-            // Verify no error thrown and toggle branch is fully exercised
-        });
+            chatManager.loadHistory(history);
 
-        it('should handle SESSIONS_LIST event', () => {
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { type: EXTENSION_EVENTS.SESSIONS_LIST, sessions: [{ id: 's1', timestamp: Date.now() }] }
-            }));
-            // Renders session list into history overlay successfully
-        });
-
-        it('should handle notification events (show and hide)', () => {
-            // Show notification
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.NOTIFICATION, text: 'Alert note' }
-            }));
-            const notification = document.querySelector('.message.notification');
-            expect(notification).toBeTruthy();
-
-            // Hide notification (text === null)
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.NOTIFICATION, text: null }
-            }));
-            expect(document.querySelector('.message.notification')).toBeNull();
-        });
-    });
-
-    describe('Auto-scrolling Logic', () => {
-        it('should scroll to bottom when user is near the bottom during streaming', () => {
             const chat = document.getElementById('chat');
-            if (!(chat instanceof HTMLElement)) {
+            if (!chat) {
                 throw new Error('Chat not found');
             }
 
-            // Mock container dimensions to simulate a scrolled state
-            Object.defineProperty(chat, 'scrollHeight', { value: 1000, configurable: true });
-            Object.defineProperty(chat, 'clientHeight', { value: 500, configurable: true });
+            // Should have user message
+            expect(chat.innerHTML).toContain('First message');
             
-            // Set scrollTop to be near the bottom (e.g., 450px from top)
-            // Distance from bottom = 1000 - 450 - 500 = 50px (within the 100px threshold)
-            chat.scrollTop = 450;
-
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'scroll test', tokenType: 'content' }
-            }));
-
-            expect(chat.scrollTop).toBe(1000);
-        });
-
-        it('should NOT scroll to bottom when user has scrolled up', () => {
-            const chat = document.getElementById('chat');
-            if (!(chat instanceof HTMLElement)) {
-                throw new Error('Chat not found');
-            }
-
-            Object.defineProperty(chat, 'scrollHeight', { value: 1000, configurable: true });
-            Object.defineProperty(chat, 'clientHeight', { value: 500, configurable: true });
+            // Should have tool call container
+            const toolCall = chat.querySelector('#tool-call_123');
+            expect(toolCall).toBeTruthy();
             
-            // Set scrollTop to be far from the bottom (e.g., 100px from top)
-            // Distance from bottom = 1000 - 100 - 500 = 400px (outside the 100px threshold)
-            chat.scrollTop = 100;
-
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'scroll test', tokenType: 'content' }
-            }));
-
-            expect(chat.scrollTop).toBe(100); // Should remain unchanged
+            // Should have tool output
+            expect(toolCall?.textContent).toContain('File content here');
         });
 
-        it('should scroll to bottom when tool output is received', () => {
+        it('should handle loadHistory with failed tool result', () => {
+            const history = [
+                { role: 'user', content: 'Test' },
+                { 
+                    role: 'assistant', 
+                    content: '',
+                    tool_calls: [
+                        {
+                            id: 'call_failed',
+                            function: { name: 'write_file', arguments: '{"path": "test.txt"}' },
+                            displayMessage: 'Writing file...',
+                            uiOptions: { collapseByDefault: true }
+                        }
+                    ]
+                },
+                { 
+                    role: 'tool', 
+                    content: 'Permission denied',
+                    tool_call_id: 'call_failed',
+                    metadata: { toolCallSuccess: false }
+                }
+            ];
+
+            chatManager.loadHistory(history);
+
             const chat = document.getElementById('chat');
-            if (!(chat instanceof HTMLElement)) {
+            if (!chat) {
                 throw new Error('Chat not found');
             }
-            Object.defineProperty(chat, 'scrollHeight', { value: 1000, configurable: true });
-            Object.defineProperty(chat, 'clientHeight', { value: 500, configurable: true });
-            chat.scrollTop = 450;
 
-            // First, start a tool to ensure we have an assistant message and tool call
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOOL_START, toolCallId: 'test-id', toolName: 'test-tool', displayMessage: 'Testing...', args: '{}' }
-            }));
-
-            // Then receive output
-            window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOOL_OUTPUT, toolCallId: 'test-id', output: 'some output' }
-            }));
-
-            expect(chat.scrollTop).toBe(1000);
+            const toolCall = chat.querySelector('#tool-call_failed');
+            expect(toolCall).toBeTruthy();
+            
+            // Should show validation error styling
+            const statusText = toolCall?.querySelector('.tool-status-text');
+            expect(statusText?.classList.contains('validation-error')).toBe(true);
         });
-
-        it('should scroll to bottom when tool details are toggled', () => {
+        it('should handle newChat command via window message', () => {
             const chat = document.getElementById('chat');
-            if (!(chat instanceof HTMLElement)) {
-                throw new Error('Chat not found');
-            }
-            Object.defineProperty(chat, 'scrollHeight', { value: 1000, configurable: true });
-            Object.defineProperty(chat, 'clientHeight', { value: 500, configurable: true });
-            chat.scrollTop = 450;
-
-            // Create a tool call
+            if (!chat) { throw new Error('Chat container not found'); }
+            chat.innerHTML = '<div class="message">X</div>';
+            
             window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOOL_START, toolCallId: 'test-id', toolName: 'test-tool', displayMessage: 'Testing...', args: '{}' }
+                data: { command: EXTENSION_COMMANDS.NEW_CHAT }
             }));
 
-            const details = chat.querySelector('details');
-            if (!details) {
-                throw new Error('Details element not found');
-            }
-
-            // Simulate the toggle event
-            details.dispatchEvent(new Event('toggle'));
-
-            expect(chat.scrollTop).toBe(1000);
+            expect(chat.querySelectorAll('.message').length).toBe(0);
         });
-    });
 
-    describe('Reasoning UI', () => {
-        it('should toggle reasoning visibility when header is clicked', () => {
+        it('should handle newChat call directly', () => {
+            const chat = document.getElementById('chat');
+            if (!chat) { throw new Error('Chat container not found'); }
+            chat.innerHTML = '<div class="message">X</div>';
+            
+            chatManager.newChat();
+
+            expect(chat.querySelectorAll('.message').length).toBe(0);
+        });
+
+        // Helper function to set up loading overlay for tests
+        const setupLoadingOverlay = (): HTMLElement => {
+            const chatContainer = document.querySelector('.chat-container');
+            if (!chatContainer) { throw new Error('Chat container not found'); }
+            chatContainer.innerHTML += '<div id="loadingOverlay" class="loading-overlay visible"></div>';
+            
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            if (!loadingOverlay) { throw new Error('Loading overlay not found'); }
+            return loadingOverlay;
+        };
+
+        it('should hide loading spinner when CHAT_HISTORY_LOADED event is received', () => {
+            // Setup: Show loading spinner initially
+            const loadingOverlay = setupLoadingOverlay();
+            expect(loadingOverlay.classList.contains('visible')).toBe(true);
+
+            // Trigger CHAT_HISTORY_LOADED event
             window.dispatchEvent(new MessageEvent('message', {
-                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'Thinking...', tokenType: 'reasoning' }
+                data: {
+                    type: EXTENSION_EVENTS.CHAT_HISTORY_LOADED,
+                    history: [
+                        { role: 'user', content: 'Test message' }
+                    ]
+                }
             }));
 
-            const header = document.querySelector('.reasoning-header');
-            if (!(header instanceof HTMLElement)) { throw new Error('Header not found'); }
-            const content = document.querySelector('.reasoning-content');
-            if (!(content instanceof HTMLElement)) { throw new Error('Content not found'); }
+            // Fast-forward timers to run the scheduled loading and spinner removal
+            jest.runAllTimers();
 
-            // Initial state (expanded)
-            expect(content.classList.contains('collapsed')).toBe(false);
-
-            // Toggle (click)
-            header.click();
-            expect(content.classList.contains('collapsed')).toBe(true);
-
-            // Toggle again
-            header.click();
-            expect(content.classList.contains('collapsed')).toBe(false);
+            // Verify spinner is hidden
+            expect(loadingOverlay.classList.contains('visible')).toBe(false);
         });
+
+        it('should hide loading spinner when error occurs during loading', () => {
+            // Setup: Show loading spinner initially
+            const loadingOverlay = setupLoadingOverlay();
+            expect(loadingOverlay.classList.contains('visible')).toBe(true);
+
+            // Trigger error event
+            window.dispatchEvent(new MessageEvent('message', {
+                data: {
+                    sender: MESSAGE_SENDERS.ASSISTANT,
+                    type: EXTENSION_EVENTS.ERROR,
+                    text: 'Failed to load session'
+                }
+            }));
+
+            // Verify spinner is hidden
+            expect(loadingOverlay.classList.contains('visible')).toBe(false);
+        });
+
+        it('should handle loading spinner when no overlay exists in DOM', () => {
+            // Setup: Remove loading overlay from DOM
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            if (loadingOverlay) {
+                loadingOverlay.remove();
+            }
+
+            // Trigger CHAT_HISTORY_LOADED event should not throw error
+            expect(() => {
+                window.dispatchEvent(new MessageEvent('message', {
+                    data: {
+                        type: EXTENSION_EVENTS.CHAT_HISTORY_LOADED,
+                        history: []
+                    }
+                }));
+                jest.runAllTimers();
+            }).not.toThrow();
+        });
+
     });
 
     describe('Assistant Streaming & Message Rendering', () => {
@@ -791,177 +810,94 @@ describe('ChatManager Unit Tests', () => {
 
     });
 
-    describe('History & Loading', () => {
-        it('should handle loadHistory with tool calls and tool results', () => {
-            const history = [
-                { role: 'user', content: 'First message' },
-                { 
-                    role: 'assistant', 
-                    content: 'Response with tool',
-                    tool_calls: [
-                        {
-                            id: 'call_123',
-                            function: { name: 'read_file', arguments: '{"path": "test.txt"}' },
-                            displayMessage: 'Reading file...',
-                            uiOptions: { collapseByDefault: false }
-                        }
-                    ]
-                },
-                { 
-                    role: 'tool', 
-                    content: 'File content here',
-                    tool_call_id: 'call_123',
-                    metadata: { toolCallSuccess: true }
-                }
-            ];
-
-            chatManager.loadHistory(history);
-
+    describe('Auto-scrolling Logic', () => {
+        it('should scroll to bottom when user is near the bottom during streaming', () => {
             const chat = document.getElementById('chat');
-            if (!chat) {
+            if (!(chat instanceof HTMLElement)) {
                 throw new Error('Chat not found');
             }
 
-            // Should have user message
-            expect(chat.innerHTML).toContain('First message');
+            // Mock container dimensions to simulate a scrolled state
+            Object.defineProperty(chat, 'scrollHeight', { value: 1000, configurable: true });
+            Object.defineProperty(chat, 'clientHeight', { value: 500, configurable: true });
             
-            // Should have tool call container
-            const toolCall = chat.querySelector('#tool-call_123');
-            expect(toolCall).toBeTruthy();
-            
-            // Should have tool output
-            expect(toolCall?.textContent).toContain('File content here');
+            // Set scrollTop to be near the bottom (e.g., 450px from top)
+            // Distance from bottom = 1000 - 450 - 500 = 50px (within the 100px threshold)
+            chat.scrollTop = 450;
+
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'scroll test', tokenType: 'content' }
+            }));
+
+            expect(chat.scrollTop).toBe(1000);
         });
 
-        it('should handle loadHistory with failed tool result', () => {
-            const history = [
-                { role: 'user', content: 'Test' },
-                { 
-                    role: 'assistant', 
-                    content: '',
-                    tool_calls: [
-                        {
-                            id: 'call_failed',
-                            function: { name: 'write_file', arguments: '{"path": "test.txt"}' },
-                            displayMessage: 'Writing file...',
-                            uiOptions: { collapseByDefault: true }
-                        }
-                    ]
-                },
-                { 
-                    role: 'tool', 
-                    content: 'Permission denied',
-                    tool_call_id: 'call_failed',
-                    metadata: { toolCallSuccess: false }
-                }
-            ];
-
-            chatManager.loadHistory(history);
-
+        it('should NOT scroll to bottom when user has scrolled up', () => {
             const chat = document.getElementById('chat');
-            if (!chat) {
+            if (!(chat instanceof HTMLElement)) {
                 throw new Error('Chat not found');
             }
 
-            const toolCall = chat.querySelector('#tool-call_failed');
-            expect(toolCall).toBeTruthy();
+            Object.defineProperty(chat, 'scrollHeight', { value: 1000, configurable: true });
+            Object.defineProperty(chat, 'clientHeight', { value: 500, configurable: true });
             
-            // Should show validation error styling
-            const statusText = toolCall?.querySelector('.tool-status-text');
-            expect(statusText?.classList.contains('validation-error')).toBe(true);
+            // Set scrollTop to be far from the bottom (e.g., 100px from top)
+            // Distance from bottom = 1000 - 100 - 500 = 400px (outside the 100px threshold)
+            chat.scrollTop = 100;
+
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'scroll test', tokenType: 'content' }
+            }));
+
+            expect(chat.scrollTop).toBe(100); // Should remain unchanged
         });
-        it('should handle newChat command via window message', () => {
+
+        it('should scroll to bottom when tool output is received', () => {
             const chat = document.getElementById('chat');
-            if (!chat) { throw new Error('Chat container not found'); }
-            chat.innerHTML = '<div class="message">X</div>';
-            
+            if (!(chat instanceof HTMLElement)) {
+                throw new Error('Chat not found');
+            }
+            Object.defineProperty(chat, 'scrollHeight', { value: 1000, configurable: true });
+            Object.defineProperty(chat, 'clientHeight', { value: 500, configurable: true });
+            chat.scrollTop = 450;
+
+            // First, start a tool to ensure we have an assistant message and tool call
             window.dispatchEvent(new MessageEvent('message', {
-                data: { command: EXTENSION_COMMANDS.NEW_CHAT }
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOOL_START, toolCallId: 'test-id', toolName: 'test-tool', displayMessage: 'Testing...', args: '{}' }
             }));
 
-            expect(chat.querySelectorAll('.message').length).toBe(0);
+            // Then receive output
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOOL_OUTPUT, toolCallId: 'test-id', output: 'some output' }
+            }));
+
+            expect(chat.scrollTop).toBe(1000);
         });
 
-        it('should handle newChat call directly', () => {
+        it('should scroll to bottom when tool details are toggled', () => {
             const chat = document.getElementById('chat');
-            if (!chat) { throw new Error('Chat container not found'); }
-            chat.innerHTML = '<div class="message">X</div>';
-            
-            chatManager.newChat();
+            if (!(chat instanceof HTMLElement)) {
+                throw new Error('Chat not found');
+            }
+            Object.defineProperty(chat, 'scrollHeight', { value: 1000, configurable: true });
+            Object.defineProperty(chat, 'clientHeight', { value: 500, configurable: true });
+            chat.scrollTop = 450;
 
-            expect(chat.querySelectorAll('.message').length).toBe(0);
-        });
-
-        // Helper function to set up loading overlay for tests
-        const setupLoadingOverlay = (): HTMLElement => {
-            const chatContainer = document.querySelector('.chat-container');
-            if (!chatContainer) { throw new Error('Chat container not found'); }
-            chatContainer.innerHTML += '<div id="loadingOverlay" class="loading-overlay visible"></div>';
-            
-            const loadingOverlay = document.getElementById('loadingOverlay');
-            if (!loadingOverlay) { throw new Error('Loading overlay not found'); }
-            return loadingOverlay;
-        };
-
-        it('should hide loading spinner when CHAT_HISTORY_LOADED event is received', () => {
-            // Setup: Show loading spinner initially
-            const loadingOverlay = setupLoadingOverlay();
-            expect(loadingOverlay.classList.contains('visible')).toBe(true);
-
-            // Trigger CHAT_HISTORY_LOADED event
+            // Create a tool call
             window.dispatchEvent(new MessageEvent('message', {
-                data: {
-                    type: EXTENSION_EVENTS.CHAT_HISTORY_LOADED,
-                    history: [
-                        { role: 'user', content: 'Test message' }
-                    ]
-                }
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOOL_START, toolCallId: 'test-id', toolName: 'test-tool', displayMessage: 'Testing...', args: '{}' }
             }));
 
-            // Fast-forward timers to run the scheduled loading and spinner removal
-            jest.runAllTimers();
-
-            // Verify spinner is hidden
-            expect(loadingOverlay.classList.contains('visible')).toBe(false);
-        });
-
-        it('should hide loading spinner when error occurs during loading', () => {
-            // Setup: Show loading spinner initially
-            const loadingOverlay = setupLoadingOverlay();
-            expect(loadingOverlay.classList.contains('visible')).toBe(true);
-
-            // Trigger error event
-            window.dispatchEvent(new MessageEvent('message', {
-                data: {
-                    sender: MESSAGE_SENDERS.ASSISTANT,
-                    type: EXTENSION_EVENTS.ERROR,
-                    text: 'Failed to load session'
-                }
-            }));
-
-            // Verify spinner is hidden
-            expect(loadingOverlay.classList.contains('visible')).toBe(false);
-        });
-
-        it('should handle loading spinner when no overlay exists in DOM', () => {
-            // Setup: Remove loading overlay from DOM
-            const loadingOverlay = document.getElementById('loadingOverlay');
-            if (loadingOverlay) {
-                loadingOverlay.remove();
+            const details = chat.querySelector('details');
+            if (!details) {
+                throw new Error('Details element not found');
             }
 
-            // Trigger CHAT_HISTORY_LOADED event should not throw error
-            expect(() => {
-                window.dispatchEvent(new MessageEvent('message', {
-                    data: {
-                        type: EXTENSION_EVENTS.CHAT_HISTORY_LOADED,
-                        history: []
-                    }
-                }));
-                jest.runAllTimers();
-            }).not.toThrow();
-        });
+            // Simulate the toggle event
+            details.dispatchEvent(new Event('toggle'));
 
+            expect(chat.scrollTop).toBe(1000);
+        });
     });
 
     describe('Tool Lifecycle', () => {
@@ -1202,6 +1138,70 @@ describe('ChatManager Unit Tests', () => {
 
             // Should not throw
             expect(true).toBe(true);
+        });
+    });
+
+    describe('Reasoning UI', () => {
+        it('should toggle reasoning visibility when header is clicked', () => {
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'Thinking...', tokenType: 'reasoning' }
+            }));
+
+            const header = document.querySelector('.reasoning-header');
+            if (!(header instanceof HTMLElement)) { throw new Error('Header not found'); }
+            const content = document.querySelector('.reasoning-content');
+            if (!(content instanceof HTMLElement)) { throw new Error('Content not found'); }
+
+            // Initial state (expanded)
+            expect(content.classList.contains('collapsed')).toBe(false);
+
+            // Toggle (click)
+            header.click();
+            expect(content.classList.contains('collapsed')).toBe(true);
+
+            // Toggle again
+            header.click();
+            expect(content.classList.contains('collapsed')).toBe(false);
+        });
+    });
+
+    describe('Overlays & Notifications', () => {
+        it('should handle OPEN_HISTORY command when visible and when hidden', () => {
+            // First call: should open history overlay and request sessions
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { command: EXTENSION_COMMANDS.OPEN_HISTORY }
+            }));
+            expect(mockVscode.messages).toContainEqual({
+                command: WEBVIEW_COMMANDS.GET_SESSIONS
+            });
+
+            // Second call (while visible): should hide history overlay
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { command: EXTENSION_COMMANDS.OPEN_HISTORY }
+            }));
+            // Verify no error thrown and toggle branch is fully exercised
+        });
+
+        it('should handle SESSIONS_LIST event', () => {
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { type: EXTENSION_EVENTS.SESSIONS_LIST, sessions: [{ id: 's1', timestamp: Date.now() }] }
+            }));
+            // Renders session list into history overlay successfully
+        });
+
+        it('should handle notification events (show and hide)', () => {
+            // Show notification
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.NOTIFICATION, text: 'Alert note' }
+            }));
+            const notification = document.querySelector('.message.notification');
+            expect(notification).toBeTruthy();
+
+            // Hide notification (text === null)
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.NOTIFICATION, text: null }
+            }));
+            expect(document.querySelector('.message.notification')).toBeNull();
         });
     });
 });
