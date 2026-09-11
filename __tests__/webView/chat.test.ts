@@ -6,7 +6,7 @@ import { ChatManager } from '../../src/webView/chat.js';
 import { InitialState } from '../../src/types.js';
 import { SettingsOverlay } from '../../src/webView/settingsOverlay.js';
 import { HistoryOverlay } from '../../src/webView/historyOverlay.js';
-import { MockWebviewApi, setupChatDom, createMockDomRect, createMockProfileMetadata } from '../testUtils.js';
+import { MockWebviewApi, setupChatDom, createMockDomRect, createMockProfileMetadata, setupLoadingOverlay } from '../testUtils.js';
 import { WEBVIEW_COMMANDS, EXTENSION_EVENTS, EXTENSION_COMMANDS, MESSAGE_SENDERS } from '../../src/constants/protocol.js';
 
 describe('ChatManager Unit Tests', () => {
@@ -497,17 +497,6 @@ describe('ChatManager Unit Tests', () => {
 
             expect(chat.querySelectorAll('.message').length).toBe(0);
         });
-
-        // Helper function to set up loading overlay for tests
-        const setupLoadingOverlay = (): HTMLElement => {
-            const chatContainer = document.querySelector('.chat-container');
-            if (!chatContainer) { throw new Error('Chat container not found'); }
-            chatContainer.innerHTML += '<div id="loadingOverlay" class="loading-overlay visible"></div>';
-            
-            const loadingOverlay = document.getElementById('loadingOverlay');
-            if (!loadingOverlay) { throw new Error('Loading overlay not found'); }
-            return loadingOverlay;
-        };
 
         it('should hide loading spinner when CHAT_HISTORY_LOADED event is received', () => {
             // Setup: Show loading spinner initially

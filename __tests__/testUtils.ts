@@ -420,6 +420,17 @@ export function setupChatDom() {
     `;
 }
 
+// Helper function to set up loading overlay for tests
+export const setupLoadingOverlay = (): HTMLElement => {
+    const chatContainer = document.querySelector('.chat-container');
+    if (!chatContainer) { throw new Error('Chat container not found'); }
+    chatContainer.innerHTML += '<div id="loadingOverlay" class="loading-overlay visible"></div>';
+
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (!loadingOverlay) { throw new Error('Loading overlay not found'); }
+    return loadingOverlay;
+};
+
 export const createMockWorkspaceChatHistoryStorage = (): jest.Mocked<IWorkspaceChatHistoryStorage> => ({
     loadSessions: jest.fn<IWorkspaceChatHistoryStorage["loadSessions"]>().mockReturnValue([]),
     saveSession: jest.fn<IWorkspaceChatHistoryStorage["saveSession"]>(),
