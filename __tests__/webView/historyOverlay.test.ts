@@ -4,7 +4,7 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
 import { HistoryOverlay } from '../../src/webView/historyOverlay.js';
 import { WEBVIEW_COMMANDS } from '../../src/constants/protocol.js';
-import { setupChatDom, MockWebviewApi } from '../testUtils.js';
+import { setupChatDom, MockWebviewApi, loadChatStyles } from '../testUtils.js';
 
 describe('HistoryOverlay', () => {
     let overlay: HistoryOverlay;
@@ -125,6 +125,22 @@ describe('HistoryOverlay', () => {
             const noHistory = document.querySelector('.no-history');
             expect(noHistory).toBeTruthy();
             expect(noHistory?.textContent).toContain('No chat history found');
+        });
+
+        it('should wrap long unbroken title text in session items', () => {
+            loadChatStyles();
+            const longTitle = '{},"finish_reason":"stop","logprobs":null}],"created":1789066071,"model":"meta/muse-glimmer-30b","service_tier":null,"system_fingerprint":null,"object":"chat.completion.chunk","usage":{"prompt_tokens":12404,"completion_tokens":9,"total_tokens":12413,"prompt_tokens_details":';
+
+            overlay.render(mockWebviewApi, [
+                { id: 'session-long', title: longTitle, timestamp: Date.now() }
+            ]);
+
+            const title = document.querySelector('.history-session-title');
+            if (!(title instanceof HTMLElement)) { throw new Error('Session title not found'); }
+
+            const styles = window.getComputedStyle(title);
+            expect(styles.getPropertyValue('overflow-wrap')).toBe('anywhere');
+            expect(styles.getPropertyValue('word-break')).toBe('break-word');
         });
     });
 });

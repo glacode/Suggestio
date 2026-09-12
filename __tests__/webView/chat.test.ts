@@ -578,7 +578,7 @@ describe('ChatManager Unit Tests', () => {
 
         it('should wrap long unbroken text in user message bubbles', () => {
             loadChatStyles();
-            const longString = '{},"finish_reason":"stop","logprobs":null}],"created":1789066071,"model":"meta/muse-glimmer-30b","service_tier":null,"system_fingerprint":null,"object":"chat.completion.chunk","usage":{"prompt_tokens":12404,"completion_tokens":9,"total_tokens":12413,"prompt_tokens_details":';
+            const longString = '{},"finish_reason":"stop","logprobs":null}],"created":1789866071,"model":"meta/muse-glimmer-30b","service_tier":null,"system_fingerprint":null,"object":"chat.completion.chunk","usage":{"prompt_tokens":12404,"completion_tokens":9,"total_tokens":12413,"prompt_tokens_details":';
             chatManager.appendUserMessage(longString);
 
             const bubble = document.getElementById('chat')?.querySelector('.message.user');

@@ -1381,6 +1381,8 @@ body.overlay-open textarea#messageInput {
     font-weight: 600;
     font-size: 13px;
     color: var(--vscode-foreground);
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .history-footer {
