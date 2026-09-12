@@ -356,7 +356,8 @@ html, body {
 }
 
 .message-content {
-    word-wrap: break-word;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .message-content p:first-child {

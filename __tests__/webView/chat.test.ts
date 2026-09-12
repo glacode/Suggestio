@@ -589,6 +589,18 @@ describe('ChatManager Unit Tests', () => {
             expect(styles.getPropertyValue('word-break')).toBe('break-word');
         });
 
+        it('should harden message-content wrapping to match message bubbles', () => {
+            loadChatStyles();
+            chatManager.appendStaticAssistantMessage('hello world');
+
+            const content = document.getElementById('chat')?.querySelector('.message-content');
+            if (!(content instanceof HTMLElement)) { throw new Error('Message content not found'); }
+
+            const styles = window.getComputedStyle(content);
+            expect(styles.getPropertyValue('overflow-wrap')).toBe('anywhere');
+            expect(styles.getPropertyValue('word-break')).toBe('break-word');
+        });
+
         it('should handle unknown assistant message type as default static message', () => {
             window.dispatchEvent(new MessageEvent('message', {
                 data: { sender: MESSAGE_SENDERS.ASSISTANT, type: 'UNKNOWN_TYPE_XYZ', text: 'Fallback message' }
