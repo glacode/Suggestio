@@ -50,6 +50,7 @@ import { ISecretManager } from "../src/types.js";
 import { ILogger } from "../src/log/logger.js";
 import { CONFIG_DEFAULTS } from "../src/constants/config.js";
 import { jest } from "@jest/globals";
+import * as fs from 'fs';
 import * as path from 'path';
 import { ICommandContext } from "../src/chat/chatCommandHandler.js";
 import { createEventLogger } from "../src/log/eventLogger.js";
@@ -394,6 +395,18 @@ export function createMockDomRect(overrides: Partial<DOMRect> = {}): DOMRect {
         toJSON: () => ({}),
         ...overrides
     };
+}
+
+/**
+ * Loads the real media/chat.css stylesheet into jsdom so tests can assert
+ * computed styles against the same CSS the webview ships with.
+ */
+export function loadChatStyles(): void {
+    document.head.querySelectorAll('#chat-css-fixture').forEach(el => el.remove());
+    const style = document.createElement('style');
+    style.id = 'chat-css-fixture';
+    style.textContent = fs.readFileSync(path.resolve(process.cwd(), 'media/chat.css'), 'utf8');
+    document.head.appendChild(style);
 }
 
 export function setupChatDom() {

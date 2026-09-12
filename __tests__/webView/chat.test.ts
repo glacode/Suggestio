@@ -6,7 +6,7 @@ import { ChatManager } from '../../src/webView/chat.js';
 import { InitialState } from '../../src/types.js';
 import { SettingsOverlay } from '../../src/webView/settingsOverlay.js';
 import { HistoryOverlay } from '../../src/webView/historyOverlay.js';
-import { MockWebviewApi, setupChatDom, createMockDomRect, createMockProfileMetadata, setupLoadingOverlay } from '../testUtils.js';
+import { MockWebviewApi, setupChatDom, createMockDomRect, createMockProfileMetadata, setupLoadingOverlay, loadChatStyles } from '../testUtils.js';
 import { WEBVIEW_COMMANDS, EXTENSION_EVENTS, EXTENSION_COMMANDS, MESSAGE_SENDERS } from '../../src/constants/protocol.js';
 
 describe('ChatManager Unit Tests', () => {
@@ -574,6 +574,19 @@ describe('ChatManager Unit Tests', () => {
             // Checking textContent instead of chat.innerHTML because JSDOM 
             // doesn't reflect innerText into innerHTML during tests.
             expect(userMsg.textContent).toBe('message from backend');
+        });
+
+        it('should wrap long unbroken text in user message bubbles', () => {
+            loadChatStyles();
+            const longString = '{},"finish_reason":"stop","logprobs":null}],"created":1789066071,"model":"meta/muse-glimmer-30b","service_tier":null,"system_fingerprint":null,"object":"chat.completion.chunk","usage":{"prompt_tokens":12404,"completion_tokens":9,"total_tokens":12413,"prompt_tokens_details":';
+            chatManager.appendUserMessage(longString);
+
+            const bubble = document.getElementById('chat')?.querySelector('.message.user');
+            if (!(bubble instanceof HTMLElement)) { throw new Error('User message not found'); }
+
+            const styles = window.getComputedStyle(bubble);
+            expect(styles.getPropertyValue('overflow-wrap')).toBe('anywhere');
+            expect(styles.getPropertyValue('word-break')).toBe('break-word');
         });
 
         it('should handle unknown assistant message type as default static message', () => {
