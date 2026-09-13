@@ -1,7 +1,7 @@
 {
   "$schema": "./resources/config.schema.json",
   "activeChatProfile": "gemini-3-5-flash-lite",
-  "activeCompletionProfile": "mistral-devstral-small-2512",
+  "activeCompletionProfile": "mistral-ministral-14b-2512",
   "profiles": {
     "llm7-fast-noapikey": {
       "endpoint": "https://api.llm7.io/v1/chat/completions",
@@ -53,19 +53,9 @@
       "model": "minimax-m3:cloud",
       "apiKeyIdentifier": "OLLAMA_API_KEY"
     },
-    "mistral-medium-3-5": {
+    "mistral-ministral-14b-2512": {
       "endpoint": "https://api.mistral.ai/v1/chat/completions",
-      "model": "mistral-medium-3-5",
-      "apiKeyIdentifier": "MISTRAL_API_KEY"
-    },
-    "mistral-devstral-2512": {
-      "endpoint": "https://api.mistral.ai/v1/chat/completions",
-      "model": "devstral-2512",
-      "apiKeyIdentifier": "MISTRAL_API_KEY"
-    },
-    "mistral-devstral-small-2512": {
-      "endpoint": "https://api.mistral.ai/v1/chat/completions",
-      "model": "labs-devstral-small-2512",
+      "model": "ministral-14b-2512",
       "apiKeyIdentifier": "MISTRAL_API_KEY"
     },
     "openrouter-nvidia-nemotron-3-super-120b-a12b:free": {
