@@ -115,8 +115,8 @@
       "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
       "apiKeyIdentifier": "NVIDIA_API_KEY"
     },
-    "nvidia-minimaxai-minimax-m3": {
-      "model": "minimaxai/minimax-m3",
+    "nvidia-meta-muse-glimmer-30b": {
+      "model": "meta/muse-glimmer-30b",
       "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
       "apiKeyIdentifier": "NVIDIA_API_KEY",
       "isApiKeyRequired": true
