@@ -156,3 +156,6 @@ dist-e2e/
 test-results/
 test-fixtures/
 scripts/tools/test-providers.html
+
+.opencode
+.suggestio
