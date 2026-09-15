@@ -48,11 +48,6 @@
       "model": "gpt-oss:120b-cloud",
       "apiKeyIdentifier": "OLLAMA_API_KEY"
     },
-    "ollama-minimax-m3": {
-      "endpoint": "https://ollama.com/v1/chat/completions",
-      "model": "minimax-m3:cloud",
-      "apiKeyIdentifier": "OLLAMA_API_KEY"
-    },
     "mistral-ministral-14b-2512": {
       "endpoint": "https://api.mistral.ai/v1/chat/completions",
       "model": "ministral-14b-2512",
