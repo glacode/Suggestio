@@ -58,12 +58,6 @@
       "model": "nvidia/nemotron-3-super-120b-a12b:free",
       "apiKeyIdentifier": "OPENROUTER_API_KEY"
     },
-    "openrouter-minimax-m3-free": {
-      "model": "minimax/minimax-m3:free",
-      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
-      "apiKeyIdentifier": "OPENROUTER_API_KEY",
-      "isApiKeyRequired": true
-    },
     "openrouter-poolside-laguna-s-2-1-free": {
       "model": "poolside/laguna-s-2.1:free",
       "endpoint": "https://openrouter.ai/api/v1/chat/completions",
