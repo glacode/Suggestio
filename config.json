@@ -19,9 +19,9 @@
       "endpoint": "https://api.llm7.io/v1/chat/completions",
       "isApiKeyRequired": false
     },
-    "publicai-apertus-v1-5-70b-thinking": {
+    "publicai-swiss-ai-apertus-v-1-5-70b": {
       "endpoint": "https://api.publicai.co/v1/chat/completions",
-      "model": "swiss-ai/apertus-v1.5-70b-thinking",
+      "model": "swiss-ai/apertus-v1.5-70b",
       "apiKeyIdentifier": "PUBLICAI_API_KEY",
       "supportsTools": true
     },
