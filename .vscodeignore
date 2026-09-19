@@ -22,6 +22,9 @@ coverage/**
 test-fixtures/**
 test-results/**
 .github/**
+**/.opencode/**
+**/.suggestio/**
+**/.local/**
 tsconfig.e2e.json
 dist-e2e/**
 dist/__mocks__/**
