@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.8] - 2026-09-19
+
+### Added
+- **Continue Generation:** When the message input is empty and the conversation already has history, pressing **Enter** (or the send button) is now interpreted as **"continue"** instead of being a no-op — the agent re-runs against the existing chat history (a previously truncated assistant message stays in place) and extends the response, with **no new user message** added. (Separate from the "Continue" button shown on max-iteration halts.)
+- **New Free Model: Z.ai GLM 4.7 Flash:** Added `z-ai-glm-4-7-flash` profile for Zhipu AI's GLM 4.7 Flash via the `api.z.ai` endpoint.
+- **New Free Models via OpenRouter:** Added `openrouter-cohere-north-mini-code-free`, `openrouter-nex-agi-nex-n-2-5-pro-free`, and `openrouter-nvidia-nemotron-3-super-120b-a12b-free` profiles.
+- **New Free Model: NVIDIA Meta Muse Glimmer 30B:** Added `nvidia-meta-muse-glimmer-30b` profile via NVIDIA NIM.
+- **Model Refresh:** Updated Groq, Hugging Face, Mistral, and PublicAI profiles to current generations (Qwen 3.8 27B, GLM 5.3, Ministral 14B 2512, Apertus v1.5 70B).
+
+### Changed
+- **Default Completion Profile:** Updated the default inline completion profile from `mistral-devstral-small-2512` to `groq-qwen-qwen3-8-27b`.
+- **Prompt Context Renaming:** Renamed the `ContextBuilder` abstraction to `PromptContextBuilder` (`IPromptContextBuilder` / `buildPromptContext`) for clearer intent.
+- **Webview Icon Centralization:** Consolidated overlay SVG icons into a shared `icons` module (DRY).
+- **UI Polish:** Improved long-text wrapping (`overflow-wrap: anywhere`) across message bubbles, tool call/confirmation bubbles, and history overlay titles.
+
+### Removed
+- **Retired Models:** Removed profiles for discontinued endpoints: `ollama-minimax-m3`, `openrouter-minimax-m3-free`, `openrouter-stealth-ox-alpha`, `nvidia-stepfun-ai-step-3-7-flash`, `nvidia-minimaxai-minimax-m3`, `mistral-medium-3-5`, `mistral-devstral-2512`, `mistral-devstral-small-2512`, `huggingface-zai-org-glm-5-2-zai-org`, and `publicai-apertus-v1-5-70b-thinking`.
+
+### Fixed
+- **Sparse Tool Call Compaction:** Guarded against holey `tool_calls` arrays in the OpenAI stream handler — some models (e.g. qwen, devstral, Nemotron) emit tool call indexes out of order, which produced `null` entries that the API rejected with `ChatCompletionMessageToolCall` errors. Sparse entries are now filtered out before pushing the message.
+- **Webview Listener Leak:** Global `message`/`focus`/`click` listeners are now registered as named handlers and removed via a new `dispose()`, preventing leaks across repeated webview lifetimes.
+
 ## [0.1.7] - 2026-08-22
 
 ### Added

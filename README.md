@@ -18,6 +18,7 @@ The core of Suggestio is an **autonomous agent** that can help you solve complex
 - **Surgical Edits:** Can propose precise changes to your files. You review every change in a **native side-by-side diff** before accepting.
 - **Shell Integration:** Can run tests, build commands, or linters to verify its own work.
 - **Reasoning Support:** Optimized for "reasoning" models so you can see the agent's step-by-step thought process.
+- **Continue a Stalled Response:** If the model stops before finishing — cancelled, errored, or cut off mid-answer — press **Enter** (or click the **send icon**) with an empty input to continue the last response from the existing conversation, no new prompt needed.
 - **Lightweight Design:** With an installed size of less than 3MB, Suggestio provides full agentic power with minimal resource consumption.
 
 ## ✍️ Inline Completions
@@ -54,10 +55,10 @@ You just need a free API key from a provider like [Google Gemini](https://aistud
 Suggestio is designed to leverage providers that offer generous free tiers. Here are our current recommendations for high-quality models that can be used without a paid subscription:
 
 - **Google Gemini 3.5 Flash Lite (default chat profile):** A lightweight, fast Gemini tier with native tool-calling support and now Suggestio's default active chat profile — great for quick agentic tasks.
-- **Mistral Devstral 2512:** Mistral has consistently offered free access to their specialized coding models, including Devstral 2512 (Large) and Devstral Small 2512. Both are exceptionally fast and capable.
-- **minimax m3 (via Ollama Cloud):** A model with strong coding and reasoning capabilities, available on Ollama's free cloud tier. minimax m3 delivers high-quality completions and agentic responses with generous rate limits, making it an excellent choice for both chat and tool-calling workflows.
-- **StepFun Step 3.7 Flash (via NVIDIA NIM):** Available through NVIDIA's free endpoint registry. This model utilizes a sparse Mixture-of-Experts (MoE) architecture with ~11B active parameters per token, providing very low latency and fast token generation alongside support for tool-calling and agentic tasks.
-- **Poolside Laguna S 2.1 (via OpenRouter):** A new free coding-specialized model from Poolside, now available in the profile list.
+- **Qwen 3.8 27B (via Groq):** The default inline completion profile and the strongest completion quality we've measured so far — a fast, free coding model on Groq's free tier.
+- **Meta Muse Glimmer 30B (via NVIDIA NIM):** Available through NVIDIA's free endpoint registry, with low-latency generation and tool-calling support for agentic tasks.
+- **Z.ai GLM 4.7 Flash:** A fast free coding model from Zhipu AI, ready out of the box with tool-calling support.
+- **Cohere North Mini Code & Nex AGI N2.5 Pro (via OpenRouter):** Free coding-specialized models now included in the profile list.
 - **llm7.io (No API Key Required):** You can use the predefined models available via llm7.io to immediately test Suggestio's agentic features without an API key. While not intended for heavy production use, they provide an effortless way to explore the extension.
 
 ---
