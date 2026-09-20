@@ -1035,6 +1035,38 @@ describe('ChatManager Unit Tests', () => {
             expect(document.getElementById(`confirm-${toolCallId}`)).toBeNull();
         });
 
+        it('should always-allow an edit when the always-allow button is clicked with diff data', () => {
+            const toolCallId = 'c3';
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { 
+                    sender: MESSAGE_SENDERS.ASSISTANT, 
+                    type: EXTENSION_EVENTS.REQUEST_CONFIRMATION, 
+                    toolCallId, 
+                    toolName: 'write_file',
+                    message: 'Confirm?',
+                    diffData: { old: 'a', new: 'b', path: 'file.txt' }
+                }
+            }));
+
+            const confirmEl = document.getElementById(`confirm-${toolCallId}`);
+            if (!(confirmEl instanceof HTMLElement)) {
+                throw new Error('Confirm element not found');
+            }
+
+            const alwaysAllowBtn = confirmEl.querySelector('.always-allow-btn');
+            if (!(alwaysAllowBtn instanceof HTMLButtonElement)) {
+                throw new Error('Always allow button not found');
+            }
+            alwaysAllowBtn.click();
+
+            expect(mockVscode.messages).toContainEqual({
+                command: WEBVIEW_COMMANDS.CONFIRM_TOOL_CALL,
+                toolCallId,
+                decision: 'always-allow-edit'
+            });
+            expect(document.getElementById(`confirm-${toolCallId}`)).toBeNull();
+        });
+
         it('should handle viewDiff command', () => {
             window.dispatchEvent(new MessageEvent('message', {
                 data: { 
