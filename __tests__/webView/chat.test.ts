@@ -1004,6 +1004,37 @@ describe('ChatManager Unit Tests', () => {
             expect(document.getElementById(`confirm-${toolCallId}`)).toBeNull();
         });
 
+        it('should allow a tool call when the allow button is clicked', () => {
+            const toolCallId = 'c2';
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { 
+                    sender: MESSAGE_SENDERS.ASSISTANT, 
+                    type: EXTENSION_EVENTS.REQUEST_CONFIRMATION, 
+                    toolCallId, 
+                    toolName: 'write_file',
+                    message: 'Confirm?'
+                }
+            }));
+
+            const confirmEl = document.getElementById(`confirm-${toolCallId}`);
+            if (!(confirmEl instanceof HTMLElement)) {
+                throw new Error('Confirm element not found');
+            }
+
+            const allowBtn = confirmEl.querySelector('.allow-btn');
+            if (!(allowBtn instanceof HTMLButtonElement)) {
+                throw new Error('Allow button not found');
+            }
+            allowBtn.click();
+
+            expect(mockVscode.messages).toContainEqual({
+                command: WEBVIEW_COMMANDS.CONFIRM_TOOL_CALL,
+                toolCallId,
+                decision: 'allow'
+            });
+            expect(document.getElementById(`confirm-${toolCallId}`)).toBeNull();
+        });
+
         it('should handle viewDiff command', () => {
             window.dispatchEvent(new MessageEvent('message', {
                 data: { 
