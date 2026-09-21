@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 import { describe, it, expect, beforeEach, jest, afterEach } from '@jest/globals';
-import { ChatManager } from '../../src/webView/chat.js';
+import { ChatManager, ReasoningSegment } from '../../src/webView/chat.js';
 import { InitialState } from '../../src/types.js';
 import { SettingsOverlay } from '../../src/webView/settingsOverlay.js';
 import { HistoryOverlay } from '../../src/webView/historyOverlay.js';
@@ -1270,6 +1270,20 @@ describe('ChatManager Unit Tests', () => {
             // Toggle again
             header.click();
             expect(content.classList.contains('collapsed')).toBe(false);
+        });
+
+        it('should throw when the reasoning content element is missing', () => {
+            const container = document.createElement('div');
+            const originalCreateElement = document.createElement.bind(document);
+            const createElementSpy = jest.spyOn(document, 'createElement');
+            createElementSpy.mockImplementation((tagName: string, options?: ElementCreationOptions) => {
+                const el = originalCreateElement(tagName, options);
+                jest.spyOn(el, 'querySelector').mockImplementation(() => null);
+                return el;
+            });
+
+            expect(() => new ReasoningSegment(chatManager, container)).toThrow('Reasoning content element not found');
+            createElementSpy.mockRestore();
         });
     });
 
