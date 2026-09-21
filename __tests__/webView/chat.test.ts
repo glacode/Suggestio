@@ -1067,6 +1067,37 @@ describe('ChatManager Unit Tests', () => {
             expect(document.getElementById(`confirm-${toolCallId}`)).toBeNull();
         });
 
+        it('should always-allow a command when the always-allow button is clicked for run_command', () => {
+            const toolCallId = 'c4';
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { 
+                    sender: MESSAGE_SENDERS.ASSISTANT, 
+                    type: EXTENSION_EVENTS.REQUEST_CONFIRMATION, 
+                    toolCallId, 
+                    toolName: 'run_command',
+                    message: 'Run?'
+                }
+            }));
+
+            const confirmEl = document.getElementById(`confirm-${toolCallId}`);
+            if (!(confirmEl instanceof HTMLElement)) {
+                throw new Error('Confirm element not found');
+            }
+
+            const alwaysAllowBtn = confirmEl.querySelector('.always-allow-btn');
+            if (!(alwaysAllowBtn instanceof HTMLButtonElement)) {
+                throw new Error('Always allow button not found');
+            }
+            alwaysAllowBtn.click();
+
+            expect(mockVscode.messages).toContainEqual({
+                command: WEBVIEW_COMMANDS.CONFIRM_TOOL_CALL,
+                toolCallId,
+                decision: 'always-allow-command'
+            });
+            expect(document.getElementById(`confirm-${toolCallId}`)).toBeNull();
+        });
+
         it('should handle viewDiff command', () => {
             window.dispatchEvent(new MessageEvent('message', {
                 data: { 
