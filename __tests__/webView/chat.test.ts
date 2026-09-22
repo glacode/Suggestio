@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 import { describe, it, expect, beforeEach, jest, afterEach } from '@jest/globals';
-import { ChatManager, ReasoningSegment } from '../../src/webView/chat.js';
+import { ChatManager, ReasoningSegment, AssistantMessage } from '../../src/webView/chat.js';
 import { InitialState } from '../../src/types.js';
 import { SettingsOverlay } from '../../src/webView/settingsOverlay.js';
 import { HistoryOverlay } from '../../src/webView/historyOverlay.js';
@@ -788,6 +788,24 @@ describe('ChatManager Unit Tests', () => {
             const resumedMsg = chat.querySelector('.message.assistant.loading');
             expect(resumedMsg).toBeTruthy();
             expect(resumedMsg?.classList.contains('error')).toBe(false);
+        });
+        it('should recreate the typing indicator when prepareForResumption finds none', () => {
+            const chat = document.getElementById('chat');
+            if (!(chat instanceof HTMLElement)) {
+                throw new Error('Chat not found');
+            }
+
+            const msg = new AssistantMessage(chatManager, chat);
+            // Force the defensive path where the indicator was never found at construction
+            msg['indicator'] = null;
+
+            msg.prepareForResumption();
+
+            expect(msg.isStreaming).toBe(true);
+            expect(msg.element.classList.contains('loading')).toBe(true);
+            const indicator = msg.element.querySelector('.typing-indicator');
+            expect(indicator).toBeTruthy();
+            expect(msg.element.contains(indicator)).toBe(true);
         });
         it('should handle halted event', () => {
             const input = document.getElementById('messageInput');
