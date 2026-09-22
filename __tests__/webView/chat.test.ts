@@ -72,6 +72,23 @@ describe('ChatManager Unit Tests', () => {
 
             expect(() => freshManager.init()).toThrow('Chat container not found');
         });
+
+        it('should throw when the message input is missing', () => {
+            const messageInput = document.getElementById('messageInput');
+            if (!(messageInput instanceof HTMLTextAreaElement)) {
+                throw new Error('Message input not found');
+            }
+            messageInput.remove();
+
+            const freshManager = new ChatManager(
+                new MockWebviewApi(),
+                { chatProfileIds: [], activeChatProfileId: '' },
+                new SettingsOverlay(),
+                new HistoryOverlay()
+            );
+
+            expect(() => freshManager.init()).toThrow('Message input not found');
+        });
     });
 
     describe('Messaging & Input', () => {
