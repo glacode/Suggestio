@@ -252,6 +252,19 @@ describe('ChatManager Unit Tests', () => {
             document.dispatchEvent(new MouseEvent('click', { bubbles: true }));
             expect(dropdownContent.classList.contains('show')).toBe(false);
         });
+
+        it('should no-op the outside click handler when the model selector is missing', () => {
+            const modelSelector = document.getElementById('modelSelector');
+            if (!(modelSelector instanceof HTMLElement)) {
+                throw new Error('Model selector not found');
+            }
+            modelSelector.remove();
+
+            // The handler early-returns without touching the DOM; this must not throw
+            expect(() => {
+                document.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            }).not.toThrow();
+        });
     });
 
     describe('Settings & Profiles', () => {
