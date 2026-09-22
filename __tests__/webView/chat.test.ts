@@ -55,6 +55,25 @@ describe('ChatManager Unit Tests', () => {
         jest.restoreAllMocks();
     });
 
+    describe('ChatManager initialization', () => {
+        it('should throw when the chat container is missing', () => {
+            const chat = document.getElementById('chat');
+            if (!(chat instanceof HTMLElement)) {
+                throw new Error('Chat container not found');
+            }
+            chat.remove();
+
+            const freshManager = new ChatManager(
+                new MockWebviewApi(),
+                { chatProfileIds: [], activeChatProfileId: '' },
+                new SettingsOverlay(),
+                new HistoryOverlay()
+            );
+
+            expect(() => freshManager.init()).toThrow('Chat container not found');
+        });
+    });
+
     describe('Messaging & Input', () => {
         it('should post a message to the extension when sendMessage is called', () => {
             const input = document.getElementById('messageInput');
