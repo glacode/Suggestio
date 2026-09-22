@@ -1323,6 +1323,37 @@ describe('ChatManager Unit Tests', () => {
             expect(() => new ReasoningSegment(chatManager, container)).toThrow('Reasoning toggle icon not found');
             createElementSpy.mockRestore();
         });
+
+        it('should keep a reasoning message with only a tool call when it finishes', () => {
+            const chat = document.getElementById('chat');
+            if (!(chat instanceof HTMLElement)) {
+                throw new Error('Chat not found');
+            }
+
+            // Whitespace-only reasoning so hasContent's ContentSegment check returns
+            // false and iteration continues to the nested tool call segment.
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: '   ', tokenType: 'reasoning' }
+            }));
+            window.dispatchEvent(new MessageEvent('message', {
+                data: {
+                    sender: MESSAGE_SENDERS.ASSISTANT,
+                    type: EXTENSION_EVENTS.TOOL_START,
+                    toolCallId: 'only-tool-in-reasoning',
+                    toolName: 'test_tool',
+                    args: '{}'
+                }
+            }));
+
+            // Finish the turn without any content segment
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.COMPLETION }
+            }));
+
+            // The message has no content text, only a tool call inside reasoning,
+            // so hasContent must still consider it non-empty and keep it in the DOM.
+            expect(chat.querySelector('.message.assistant')).toBeTruthy();
+        });
     });
 
     describe('Overlays & Notifications', () => {
