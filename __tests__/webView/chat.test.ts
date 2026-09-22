@@ -89,6 +89,25 @@ describe('ChatManager Unit Tests', () => {
 
             expect(() => freshManager.init()).toThrow('Message input not found');
         });
+
+        it('should warn and continue when an overlay fails to initialize', () => {
+            const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+            const failingOverlay = new SettingsOverlay();
+            jest.spyOn(failingOverlay, 'init').mockImplementation(() => {
+                throw new Error('overlay boom');
+            });
+
+            const freshManager = new ChatManager(
+                new MockWebviewApi(),
+                { chatProfileIds: [], activeChatProfileId: '' },
+                failingOverlay,
+                new HistoryOverlay()
+            );
+            freshManager.init();
+
+            expect(warnSpy).toHaveBeenCalledWith('Failed to init overlays', expect.any(Error));
+            freshManager.dispose();
+        });
     });
 
     describe('Messaging & Input', () => {
