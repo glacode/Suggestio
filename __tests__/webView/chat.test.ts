@@ -108,6 +108,24 @@ describe('ChatManager Unit Tests', () => {
             expect(warnSpy).toHaveBeenCalledWith('Failed to init overlays', expect.any(Error));
             freshManager.dispose();
         });
+
+        it('should throw when the model selector is missing during init', () => {
+            const modelSelector = document.getElementById('modelSelector');
+            if (!(modelSelector instanceof HTMLElement)) {
+                throw new Error('Model selector not found');
+            }
+            modelSelector.remove();
+
+            const freshManager = new ChatManager(
+                new MockWebviewApi(),
+                { chatProfileIds: [], activeChatProfileId: '' },
+                new SettingsOverlay(),
+                new HistoryOverlay()
+            );
+
+            expect(() => freshManager.init()).toThrow('Model selector not found');
+            freshManager.dispose();
+        });
     });
 
     describe('Messaging & Input', () => {
