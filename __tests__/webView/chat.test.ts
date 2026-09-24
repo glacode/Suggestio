@@ -126,6 +126,24 @@ describe('ChatManager Unit Tests', () => {
             expect(() => freshManager.init()).toThrow('Model selector not found');
             freshManager.dispose();
         });
+
+        it('should throw when the dropdown label is missing during init', () => {
+            const dropdownLabel = document.querySelector('.dropdown-label');
+            if (!(dropdownLabel instanceof HTMLElement)) {
+                throw new Error('Dropdown label not found');
+            }
+            dropdownLabel.remove();
+
+            const freshManager = new ChatManager(
+                new MockWebviewApi(),
+                { chatProfileIds: [], activeChatProfileId: '' },
+                new SettingsOverlay(),
+                new HistoryOverlay()
+            );
+
+            expect(() => freshManager.init()).toThrow('Dropdown elements not found');
+            freshManager.dispose();
+        });
     });
 
     describe('Messaging & Input', () => {
