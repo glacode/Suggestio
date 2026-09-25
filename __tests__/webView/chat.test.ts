@@ -144,6 +144,29 @@ describe('ChatManager Unit Tests', () => {
             expect(() => freshManager.init()).toThrow('Dropdown elements not found');
             freshManager.dispose();
         });
+
+        it('should no-op profile rendering when the dropdown content is missing', () => {
+            const modelSelector = document.getElementById('modelSelector');
+            if (!(modelSelector instanceof HTMLElement)) {
+                throw new Error('Model selector not found');
+            }
+            const dropdownContent = modelSelector.querySelector('.dropdown-content');
+            if (!(dropdownContent instanceof HTMLElement)) {
+                throw new Error('Dropdown content not found');
+            }
+            dropdownContent.remove();
+
+            const freshManager = new ChatManager(
+                new MockWebviewApi(),
+                { chatProfileIds: [], activeChatProfileId: '' },
+                new SettingsOverlay(),
+                new HistoryOverlay()
+            );
+
+            // renderProfileSelector early-returns instead of rendering the list
+            expect(() => freshManager.init()).not.toThrow();
+            freshManager.dispose();
+        });
     });
 
     describe('Messaging & Input', () => {
