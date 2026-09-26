@@ -185,6 +185,41 @@ describe('ChatManager Unit Tests', () => {
             expect(input.value).toBe('');
         });
 
+        it('should clear stale error and halted states before sending', () => {
+            const chat = document.getElementById('chat');
+            if (!(chat instanceof HTMLElement)) {
+                throw new Error('Chat container not found');
+            }
+
+            // Arrange an error + halted state: message bubbles with the styling
+            // and their dedicated containers, as left behind by a failed run.
+            const errorBubble = document.createElement('div');
+            errorBubble.className = 'message assistant error';
+            chat.appendChild(errorBubble);
+            const haltedBubble = document.createElement('div');
+            haltedBubble.className = 'message assistant halted';
+            chat.appendChild(haltedBubble);
+            const errorContainer = document.createElement('div');
+            errorContainer.className = 'error-container';
+            chat.appendChild(errorContainer);
+            const haltedContainer = document.createElement('div');
+            haltedContainer.className = 'halted-container';
+            chat.appendChild(haltedContainer);
+
+            const input = document.getElementById('messageInput');
+            if (!(input instanceof HTMLTextAreaElement)) {
+                throw new Error('Input not found');
+            }
+            input.value = 'new message';
+            chatManager.sendMessage();
+
+            // clearStaleButtons strips the styling and removes the containers
+            expect(errorBubble.classList.contains('error')).toBe(false);
+            expect(haltedBubble.classList.contains('halted')).toBe(false);
+            expect(chat.querySelector('.error-container')).toBeNull();
+            expect(chat.querySelector('.halted-container')).toBeNull();
+        });
+
         it('should not send empty messages', () => {
             chatManager.sendMessage();
             expect(mockVscode.messages.length).toBe(0);
