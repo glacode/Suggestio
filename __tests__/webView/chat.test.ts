@@ -969,6 +969,26 @@ describe('ChatManager Unit Tests', () => {
             expect(indicator).toBeTruthy();
             expect(msg.element.contains(indicator)).toBe(true);
         });
+        it('should recreate an assistant message on retry when none is in flight', () => {
+            const chat = document.getElementById('chat');
+            if (!(chat instanceof HTMLElement)) {
+                throw new Error('Chat not found');
+            }
+
+            // loadHistory leaves no assistant message in flight (and finishes on
+            // nulling currentAssistantMessage), so retry hits the fallback path.
+            chatManager.loadHistory([{ role: 'user', content: 'hello' }]);
+            expect(chat.querySelector('.message.assistant')).toBeNull();
+
+            chatManager.retryLastMessage();
+
+            const bubble = chat.querySelector('.message.assistant');
+            expect(bubble).toBeTruthy();
+            expect(bubble?.querySelector('.typing-indicator')).toBeTruthy();
+            expect(mockVscode.messages).toContainEqual({
+                command: WEBVIEW_COMMANDS.RETRY_LAST_MESSAGE
+            });
+        });
         it('should handle halted event', () => {
             const input = document.getElementById('messageInput');
             if (!(input instanceof HTMLTextAreaElement)) { throw new Error('Input not found'); }
