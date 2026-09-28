@@ -638,6 +638,30 @@ describe('ChatManager Unit Tests', () => {
             const statusText = toolCall?.querySelector('.tool-status-text');
             expect(statusText?.classList.contains('validation-error')).toBe(true);
         });
+        it('should handle loadHistory with reasoning and a following user message', () => {
+            const history = [
+                { role: 'assistant', reasoning: 'Thinking step by step', content: 'Main answer' },
+                { role: 'user', content: 'Follow-up question' }
+            ];
+
+            chatManager.loadHistory(history);
+
+            const chat = document.getElementById('chat');
+            if (!chat) {
+                throw new Error('Chat not found');
+            }
+
+            // Assistant reasoning renders in the reasoning segment
+            const reasoningContent = chat.querySelector('.reasoning-content');
+            expect(reasoningContent).toBeTruthy();
+            expect(reasoningContent?.textContent).toContain('Thinking step by step');
+            expect(chat.innerHTML).toContain('Main answer');
+
+            // The following user message closes the in-flight assistant message
+            const userMsg = chat.querySelector('.message.user');
+            expect(userMsg).toBeTruthy();
+            expect(userMsg?.textContent).toContain('Follow-up question');
+        });
         it('should handle newChat command via window message', () => {
             const chat = document.getElementById('chat');
             if (!chat) { throw new Error('Chat container not found'); }
