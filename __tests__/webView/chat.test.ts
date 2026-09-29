@@ -453,20 +453,23 @@ describe('ChatManager Unit Tests', () => {
             expect(dropdownContent.classList.contains('show')).toBe(false);
         });
 
-        it('should handle openSettings error handling', () => {
-            // Mock settingsOverlay.render to throw an error
-            const originalRender = chatManager['settingsOverlay'].render;
-            chatManager['settingsOverlay'].render = jest.fn(() => {
+        it('should not fail when the settings overlay render throws', () => {
+            const overlay = document.getElementById('settingsOverlay');
+            if (!(overlay instanceof HTMLElement)) {
+                throw new Error('Settings overlay not found');
+            }
+            // Boundary mock: force the public collaborator render() to throw
+            jest.spyOn(SettingsOverlay.prototype, 'render').mockImplementation(() => {
                 throw new Error('Render failed');
             });
 
-            // Should not throw even if render fails
+            // openSettings swallows the failure and still shows the overlay
             expect(() => {
-                chatManager['openSettings']();
+                window.dispatchEvent(new MessageEvent('message', {
+                    data: { command: EXTENSION_COMMANDS.OPEN_SETTINGS }
+                }));
             }).not.toThrow();
-
-            // Restore
-            chatManager['settingsOverlay'].render = originalRender;
+            expect(overlay.classList.contains('hidden')).toBe(false);
         });
 
         it('should toggle settings overlay when OPEN_SETTINGS command is received', () => {
