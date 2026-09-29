@@ -267,7 +267,7 @@ export class ReasoningSegment extends MessageSegment {
 }
 
 export class AssistantMessage {
-    private indicator: HTMLDivElement | null;
+    private indicator: HTMLDivElement;
     private segments: MessageSegment[] = [];
     private toolCalls = new Map<string, ToolCallSegment>();
     private activeReasoningSegment: ReasoningSegment | null = null;
@@ -278,17 +278,17 @@ export class AssistantMessage {
     constructor(private chatManager: IChatManagerActions, container: HTMLElement) {
         this.element = document.createElement('div');
         this.element.className = 'message assistant loading';
-        this.element.innerHTML = `
-            <div class="typing-indicator">
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
-                <span class="loading-text">Working...</span>
-            </div>
-        `;
 
-        const ind = this.element.querySelector('.typing-indicator');
-        this.indicator = ind instanceof HTMLDivElement ? ind : null;
+        const typingIndicator = document.createElement('div');
+        typingIndicator.className = 'typing-indicator';
+        typingIndicator.innerHTML = `
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <span class="loading-text">Working...</span>
+        `;
+        this.element.appendChild(typingIndicator);
+        this.indicator = typingIndicator;
 
         container.appendChild(this.element);
         this.element.scrollIntoView();
@@ -467,18 +467,8 @@ export class AssistantMessage {
         this.element.querySelector('.error-container')?.remove();
         this.element.querySelector('.halted-container')?.remove();
 
-        // Re-add the indicator if it was removed
-        if (!this.indicator) {
-            this.indicator = document.createElement('div');
-            this.indicator.className = 'typing-indicator';
-            this.indicator.innerHTML = `
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
-                <span class="loading-text">Working...</span>
-            `;
-            this.element.appendChild(this.indicator);
-        } else if (!this.element.contains(this.indicator)) {
+        // Re-attach the indicator if it was removed from the DOM
+        if (!this.element.contains(this.indicator)) {
             this.element.appendChild(this.indicator);
         }
         
