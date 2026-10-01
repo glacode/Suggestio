@@ -267,7 +267,7 @@ export class ReasoningSegment extends MessageSegment {
 }
 
 export class AssistantMessage {
-    private indicator: HTMLDivElement;
+    private typingIndicator: HTMLDivElement;
     private segments: MessageSegment[] = [];
     private toolCalls = new Map<string, ToolCallSegment>();
     private activeReasoningSegment: ReasoningSegment | null = null;
@@ -279,16 +279,15 @@ export class AssistantMessage {
         this.element = document.createElement('div');
         this.element.className = 'message assistant loading';
 
-        const typingIndicator = document.createElement('div');
-        typingIndicator.className = 'typing-indicator';
-        typingIndicator.innerHTML = `
+        this.typingIndicator = document.createElement('div');
+        this.typingIndicator.className = 'typing-indicator';
+        this.typingIndicator.innerHTML = `
             <div class="typing-dot"></div>
             <div class="typing-dot"></div>
             <div class="typing-dot"></div>
             <span class="loading-text">Working...</span>
         `;
-        this.element.appendChild(typingIndicator);
-        this.indicator = typingIndicator;
+        this.element.appendChild(this.typingIndicator);
 
         container.appendChild(this.element);
         this.element.scrollIntoView();
@@ -390,8 +389,8 @@ export class AssistantMessage {
         this.isStreaming = false;
         this.element.classList.remove('loading');
         this.element.classList.add('error');
-        if (this.indicator) {
-            this.indicator.remove();
+        if (this.typingIndicator) {
+            this.typingIndicator.remove();
         }
 
         // Clean up confirmations if an error occurred
@@ -426,8 +425,8 @@ export class AssistantMessage {
         this.isStreaming = false;
         this.element.classList.remove('loading');
         this.element.classList.add('halted');
-        if (this.indicator) {
-            this.indicator.remove();
+        if (this.typingIndicator) {
+            this.typingIndicator.remove();
         }
 
         // Clean up confirmations if agent halted
@@ -467,9 +466,9 @@ export class AssistantMessage {
         this.element.querySelector('.error-container')?.remove();
         this.element.querySelector('.halted-container')?.remove();
 
-        // Re-attach the indicator if it was removed from the DOM
-        if (!this.element.contains(this.indicator)) {
-            this.element.appendChild(this.indicator);
+        // Re-attach the typing indicator if it was removed from the DOM
+        if (!this.element.contains(this.typingIndicator)) {
+            this.element.appendChild(this.typingIndicator);
         }
         
         this.chatManager.scrollToBottom(true);
@@ -479,8 +478,8 @@ export class AssistantMessage {
         this.isStreaming = false;
         this.element.classList.remove('loading');
         this.element.classList.add('visible');
-        if (this.indicator) {
-            this.indicator.remove();
+        if (this.typingIndicator) {
+            this.typingIndicator.remove();
         }
 
         // Clean up any lingering confirmation segments when the turn finishes.
