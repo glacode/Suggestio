@@ -198,32 +198,31 @@ export class ReasoningSegment extends MessageSegment {
     constructor(private chatManager: IChatManagerActions, container: HTMLElement) {
         super(container, 'reasoning');
         this.element.className = 'reasoning-container';
-        this.element.innerHTML = `
-            <div class="reasoning-header">
-                <span class="reasoning-toggle-icon">
-                    <svg width="14" height="14" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
-                        <path fill="currentColor" d="M7.976 10.072l4.357-4.357.62.618L8.284 11h-.618L3 6.333l.619-.618 4.357 4.357z"/>
-                    </svg>
-                </span>
-                <span>Thought Process</span>
-            </div>
-            <div class="reasoning-content"></div>
-        `;
-        const content = this.element.querySelector('.reasoning-content');
-        if (content instanceof HTMLDivElement) {
-            this.contentElement = content;
-        } else {
-            throw new Error('Reasoning content element not found');
-        }
+        const header = document.createElement('div');
+        header.className = 'reasoning-header';
 
-        const icon = this.element.querySelector('.reasoning-toggle-icon');
-        if (icon instanceof HTMLSpanElement) {
-            this.toggleIcon = icon;
-        } else {
-            throw new Error('Reasoning toggle icon not found');
-        }
-        
-        this.element.querySelector('.reasoning-header')?.addEventListener('click', () => {
+        const toggleIcon = document.createElement('span');
+        toggleIcon.className = 'reasoning-toggle-icon';
+        toggleIcon.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+                <path fill="currentColor" d="M7.976 10.072l4.357-4.357.62.618L8.284 11h-.618L3 6.333l.619-.618 4.357 4.357z"/>
+            </svg>
+        `;
+        header.appendChild(toggleIcon);
+
+        const label = document.createElement('span');
+        label.textContent = 'Thought Process';
+        header.appendChild(label);
+
+        const contentElement = document.createElement('div');
+        contentElement.className = 'reasoning-content';
+
+        this.element.appendChild(header);
+        this.element.appendChild(contentElement);
+        this.contentElement = contentElement;
+        this.toggleIcon = toggleIcon;
+
+        header.addEventListener('click', () => {
             this.toggleReasoning();
         });
     }
