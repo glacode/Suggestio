@@ -167,6 +167,37 @@ describe('ChatManager Unit Tests', () => {
             expect(() => freshManager.init()).not.toThrow();
             freshManager.dispose();
         });
+
+        it('should attach overlays to the body when the chat container wrapper is missing', () => {
+            const wrapper = document.querySelector('.chat-container');
+            if (!(wrapper instanceof HTMLElement)) {
+                throw new Error('Chat container wrapper not found');
+            }
+
+            // Remove overlays left by the shared init so only the fresh ones are observed
+            document.getElementById('settingsOverlay')?.remove();
+            document.getElementById('historyOverlay')?.remove();
+
+            // Unwrap: move the chat DOM to body level so there is no `.chat-container`
+            while (wrapper.firstChild) {
+                const child: ChildNode = wrapper.firstChild;
+                document.body.insertBefore(child, wrapper);
+            }
+            wrapper.remove();
+            expect(document.querySelector('.chat-container')).toBeNull();
+
+            const freshManager = new ChatManager(
+                new MockWebviewApi(),
+                { chatProfileIds: [], activeChatProfileId: '' },
+                new SettingsOverlay(),
+                new HistoryOverlay()
+            );
+
+            expect(() => freshManager.init()).not.toThrow();
+            expect(document.getElementById('settingsOverlay')?.parentElement).toBe(document.body);
+            expect(document.getElementById('historyOverlay')?.parentElement).toBe(document.body);
+            freshManager.dispose();
+        });
     });
 
     describe('Messaging & Input', () => {

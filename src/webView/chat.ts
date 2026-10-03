@@ -588,14 +588,10 @@ export class ChatManager implements IChatManagerActions {
         this.setupProfileSelector();
         // Initialize overlays attached to the full webview (body)
         try {
-            const root = document.querySelector('.chat-container') || document.body;
-            if (root instanceof HTMLElement) {
-                this.settingsOverlay.init(root);
-                this.historyOverlay.init(root);
-            } else {
-                this.settingsOverlay.init(document.body);
-                this.historyOverlay.init(document.body);
-            }
+            const candidate = document.querySelector('.chat-container');
+            const root = candidate instanceof HTMLElement ? candidate : document.body;
+            this.settingsOverlay.init(root);
+            this.historyOverlay.init(root);
         } catch (e) {
             console.warn('Failed to init overlays', e);
         }
