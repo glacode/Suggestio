@@ -180,7 +180,7 @@ export class ConfirmationSegment extends MessageSegment {
         const alwaysAllowBtn = this.element.querySelector('.always-allow-btn');
         if (alwaysAllowBtn) {
             alwaysAllowBtn.addEventListener('click', () => {
-                const decision: ToolCallDecision = payload.diffData ? 'always-allow-edit' : (payload.toolName === 'run_command' ? 'always-allow-command' : 'always-allow-edit');
+                const decision: ToolCallDecision = payload.diffData ? 'always-allow-edit' : 'always-allow-command';
                 this.chatManager.confirmTool(this.toolCallId, decision);
             });
         }
