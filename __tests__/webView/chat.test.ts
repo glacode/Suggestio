@@ -1363,9 +1363,12 @@ describe('ChatManager Unit Tests', () => {
         });
 
         it('should handle complex interleaving (Reasoning -> Tool -> Content)', () => {
-            // 1. Reasoning
+            // 1. Reasoning, in two consecutive chunks as in real streaming
             window.dispatchEvent(new MessageEvent('message', {
                 data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'Think', tokenType: 'reasoning' }
+            }));
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'ing deeper', tokenType: 'reasoning' }
             }));
             // 2. Tool inside Reasoning
             const toolCallId = 't-nested';
@@ -1387,6 +1390,9 @@ describe('ChatManager Unit Tests', () => {
             }
             expect(content.classList.contains('collapsed')).toBe(true);
             expect(reasoning.innerHTML).toContain(toolCallId); // Tool was nested
+            // The second chunk joined the existing content segment instead of creating a new one
+            expect(content.querySelectorAll('.message-content').length).toBe(1);
+            expect(content.textContent).toContain('Thinking deeper');
         });
 
         it('should handle nested confirmation inside reasoning', () => {
