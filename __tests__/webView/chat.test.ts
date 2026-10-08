@@ -981,10 +981,18 @@ describe('ChatManager Unit Tests', () => {
                 throw new Error('Chat not found');
             }
 
-            // First create an assistant message
+            // First create an assistant message, streamed in two consecutive chunks
             window.dispatchEvent(new MessageEvent('message', {
                 data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'Starting...', tokenType: 'content' }
             }));
+            window.dispatchEvent(new MessageEvent('message', {
+                data: { sender: MESSAGE_SENDERS.ASSISTANT, type: EXTENSION_EVENTS.TOKENS, text: 'ing strong', tokenType: 'content' }
+            }));
+
+            // The second chunk joined the existing content segment instead of creating a new one
+            const streamingMsg = chat.querySelector('.message.assistant.loading');
+            expect(streamingMsg?.querySelectorAll('.message-content').length).toBe(1);
+            expect(streamingMsg?.textContent).toContain('Starting...ing strong');
 
             // Trigger error event to create an error state
             window.dispatchEvent(new MessageEvent('message', {
