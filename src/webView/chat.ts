@@ -371,15 +371,15 @@ export class AssistantMessage {
      */
     private removeConfirmations(toolCallId?: string) {
         // Helper function to filter a segments array (handles recursion for ReasoningSegments)
-        const filterSegments = (segments: MessageSegment[]): MessageSegment[] => {
-            return segments.filter(s => {
-                if (s instanceof ConfirmationSegment) {
-                    if (!toolCallId || s.toolCallId === toolCallId) {
-                        s.element.remove();
+        const filterSegments = (messageSegments: MessageSegment[]): MessageSegment[] => {
+            return messageSegments.filter(messageSegment => {
+                if (messageSegment instanceof ConfirmationSegment) {
+                    if (!toolCallId || messageSegment.toolCallId === toolCallId) {
+                        messageSegment.element.remove();
                         return false;
                     }
-                } else if (s instanceof ReasoningSegment) {
-                    s.internalSegments = filterSegments(s.internalSegments);
+                } else if (messageSegment instanceof ReasoningSegment) {
+                    messageSegment.internalSegments = filterSegments(messageSegment.internalSegments);
                 }
                 return true;
             });
