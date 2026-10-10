@@ -667,10 +667,48 @@ describe('ChatManager Unit Tests', () => {
 
             const toolCall = chat.querySelector('#tool-call_failed');
             expect(toolCall).toBeTruthy();
-            
+
             // Should show validation error styling
             const statusText = toolCall?.querySelector('.tool-status-text');
             expect(statusText?.classList.contains('validation-error')).toBe(true);
+        });
+
+        it('should handle loadHistory with a tool result missing metadata', () => {
+            const history = [
+                { role: 'user', content: 'Test' },
+                {
+                    role: 'assistant',
+                    content: '',
+                    tool_calls: [
+                        {
+                            id: 'call_legacy',
+                            function: { name: 'read_file', arguments: '{"path": "old.txt"}' },
+                            displayMessage: 'Reading file...',
+                            uiOptions: { collapseByDefault: false }
+                        }
+                    ]
+                },
+                {
+                    role: 'tool',
+                    content: 'Old file content',
+                    tool_call_id: 'call_legacy'
+                }
+            ];
+
+            chatManager.loadHistory(history);
+
+            const chat = document.getElementById('chat');
+            if (!chat) {
+                throw new Error('Chat not found');
+            }
+
+            const toolCall = chat.querySelector('#tool-call_legacy');
+            expect(toolCall).toBeTruthy();
+
+            // Missing metadata defaults to success: check mark, no error styling
+            expect(toolCall?.textContent).toContain('✅');
+            const statusText = toolCall?.querySelector('.tool-status-text');
+            expect(statusText?.classList.contains('validation-error')).toBe(false);
         });
         it('should handle loadHistory with reasoning and a following user message', () => {
             const history = [
