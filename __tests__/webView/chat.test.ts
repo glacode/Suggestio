@@ -710,6 +710,39 @@ describe('ChatManager Unit Tests', () => {
             const statusText = toolCall?.querySelector('.tool-status-text');
             expect(statusText?.classList.contains('validation-error')).toBe(false);
         });
+
+        it('should handle loadHistory with a tool call missing its result', () => {
+            const history = [
+                { role: 'user', content: 'Test' },
+                {
+                    role: 'assistant',
+                    content: '',
+                    tool_calls: [
+                        {
+                            id: 'call_orphan',
+                            function: { name: 'read_file', arguments: '{"path": "gone.txt"}' },
+                            displayMessage: 'Reading file...',
+                            uiOptions: { collapseByDefault: false }
+                        }
+                    ]
+                }
+            ];
+
+            chatManager.loadHistory(history);
+
+            const chat = document.getElementById('chat');
+            if (!chat) {
+                throw new Error('Chat not found');
+            }
+
+            // The tool renders in its running state: gear icon, never completed
+            const toolCall = chat.querySelector('#tool-call_orphan');
+            expect(toolCall).toBeTruthy();
+            const statusIcon = toolCall?.querySelector('.tool-call-status-icon');
+            expect(statusIcon?.textContent).toBe('⚙️');
+            expect(toolCall?.textContent).not.toContain('✅');
+            expect(toolCall?.textContent).not.toContain('❌');
+        });
         it('should handle loadHistory with reasoning and a following user message', () => {
             const history = [
                 { role: 'assistant', reasoning: 'Thinking step by step', content: 'Main answer' },
