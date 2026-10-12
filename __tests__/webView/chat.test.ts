@@ -609,11 +609,15 @@ describe('ChatManager Unit Tests', () => {
                         }
                     ]
                 },
-                { 
-                    role: 'tool', 
+                {
+                    role: 'tool',
                     content: 'File content here',
                     tool_call_id: 'call_123',
                     metadata: { toolCallSuccess: true }
+                },
+                {
+                    role: 'assistant',
+                    content: 'All done'
                 }
             ];
 
@@ -626,13 +630,19 @@ describe('ChatManager Unit Tests', () => {
 
             // Should have user message
             expect(chat.innerHTML).toContain('First message');
-            
+
             // Should have tool call container
             const toolCall = chat.querySelector('#tool-call_123');
             expect(toolCall).toBeTruthy();
-            
+
             // Should have tool output
             expect(toolCall?.textContent).toContain('File content here');
+
+            // The trailing answer joined the existing assistant bubble
+            // instead of creating a new one
+            const assistantBubbles = chat.querySelectorAll('.message.assistant');
+            expect(assistantBubbles.length).toBe(1);
+            expect(assistantBubbles[0]?.textContent).toContain('All done');
         });
 
         it('should handle loadHistory with failed tool result', () => {
