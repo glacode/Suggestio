@@ -237,25 +237,25 @@ export class ReasoningSegment extends MessageSegment {
 
     append(text: string) {
         if (this.lastInternalTokenType !== 'content' || !this.internalSegments.length) {
-            const seg = new ContentSegment(this.contentElement);
-            this.internalSegments.push(seg);
+            const contentSegment = new ContentSegment(this.contentElement);
+            this.internalSegments.push(contentSegment);
         }
         this.internalSegments[this.internalSegments.length - 1].append(text);
         this.lastInternalTokenType = 'content';
     }
 
     addToolCall(payload: any) {
-        const seg = new ToolCallSegment(this.chatManager, this.contentElement, payload);
-        this.internalSegments.push(seg);
+        const toolCallSegment = new ToolCallSegment(this.chatManager, this.contentElement, payload);
+        this.internalSegments.push(toolCallSegment);
         this.lastInternalTokenType = 'tool_call';
-        return seg;
+        return toolCallSegment;
     }
 
     addConfirmation(payload: any) {
-        const seg = new ConfirmationSegment(this.chatManager, this.contentElement, payload);
-        this.internalSegments.push(seg);
+        const confirmationSegment = new ConfirmationSegment(this.chatManager, this.contentElement, payload);
+        this.internalSegments.push(confirmationSegment);
         this.lastInternalTokenType = 'confirmation';
-        return seg;
+        return confirmationSegment;
     }
 
     collapse() {
@@ -314,8 +314,8 @@ export class AssistantMessage {
                 this.activeReasoningSegment = null;
             }
             if (this.lastTokenType !== 'content' || !this.segments.length) {
-                const seg = new ContentSegment(this.element);
-                this.segments.push(seg);
+                const contentSegment = new ContentSegment(this.element);
+                this.segments.push(contentSegment);
             }
             this.segments[this.segments.length - 1].append(text);
         }
