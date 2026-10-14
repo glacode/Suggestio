@@ -2,6 +2,7 @@ import { WEBVIEW_COMMANDS, EXTENSION_EVENTS, EXTENSION_COMMANDS, MESSAGE_SENDERS
 import { SettingsOverlay } from './settingsOverlay.js';
 import { HistoryOverlay } from './historyOverlay.js';
 import type { IWebviewApi, InitialState, ToolCallDecision, IChatManagerActions } from '../types.js';
+import { MessageSegment } from './messageSegment.js';
 
 // These are provided by the environment (main.ts)
 declare const window: Window & { 
@@ -10,16 +11,6 @@ declare const window: Window & {
 
 const SEND_ICON_HTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="12" x2="7" y2="12"></line><polygon points="22 12 2 2 7 12 2 22 22 12"></polygon></svg>';
 const STOP_ICON_HTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"></rect></svg>';
-
-export abstract class MessageSegment {
-    public element: HTMLDivElement;
-    constructor(protected container: HTMLElement, public type: string) {
-        this.element = document.createElement('div');
-        this.container.appendChild(this.element);
-    }
-    abstract append(text: string): void;
-    abstract update(data: any): void;
-}
 
 export class ContentSegment extends MessageSegment {
     public contentText = '';
