@@ -5,6 +5,7 @@ import type { IWebviewApi, InitialState, ToolCallDecision, IChatManagerActions }
 import { MessageSegment } from './messageSegment.js';
 import { ContentSegment } from './contentSegment.js';
 import { ToolCallSegment } from './toolCallSegment.js';
+import { ConfirmationSegment } from './confirmationSegment.js';
 
 // These are provided by the environment (main.ts)
 declare const window: Window & { 
@@ -13,87 +14,6 @@ declare const window: Window & {
 
 const SEND_ICON_HTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="12" x2="7" y2="12"></line><polygon points="22 12 2 2 7 12 2 22 22 12"></polygon></svg>';
 const STOP_ICON_HTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"></rect></svg>';
-
-export class ConfirmationSegment extends MessageSegment {
-    public toolCallId: string;
-    constructor(private chatManager: IChatManagerActions, container: HTMLElement, payload: any) {
-        super(container, 'confirmation');
-        this.toolCallId = payload.toolCallId;
-        this.element.className = 'tool-confirmation-container';
-        this.element.id = 'confirm-' + this.toolCallId;
-        const header = document.createElement('div');
-        header.className = 'tool-confirmation-header';
-
-        const headerIcon = document.createElement('span');
-        headerIcon.className = 'tool-confirmation-icon';
-        headerIcon.textContent = 'ℹ️';
-        header.appendChild(headerIcon);
-
-        const headerLabel = document.createElement('span');
-        headerLabel.textContent = 'Tool Request';
-        header.appendChild(headerLabel);
-
-        this.element.appendChild(header);
-
-        const messageContainer = document.createElement('div');
-        messageContainer.className = 'tool-confirmation-message';
-        messageContainer.innerHTML = payload.message;
-        this.element.appendChild(messageContainer);
-
-        if (payload.diffData) {
-            const viewDiffContainer = document.createElement('div');
-            viewDiffContainer.className = 'mt-8 flex-center';
-
-            const viewDiffButton = document.createElement('button');
-            viewDiffButton.className = 'tool-button tool-button-secondary view-diff-btn full-width';
-            viewDiffButton.textContent = '🔍 View Diff';
-            viewDiffButton.addEventListener('click', () => {
-                this.chatManager.viewDiff(this.toolCallId);
-            });
-
-            viewDiffContainer.appendChild(viewDiffButton);
-            this.element.appendChild(viewDiffContainer);
-        }
-
-        const buttonsRow = document.createElement('div');
-        buttonsRow.className = 'tool-confirmation-buttons';
-
-        const allowButton = document.createElement('button');
-        allowButton.className = 'tool-button tool-button-primary allow-btn';
-        allowButton.textContent = 'Allow';
-        allowButton.addEventListener('click', () => {
-            this.chatManager.confirmTool(this.toolCallId, 'allow');
-        });
-        buttonsRow.appendChild(allowButton);
-
-        if (payload.diffData || payload.toolName === 'run_command') {
-            const alwaysAllowButton = document.createElement('button');
-            alwaysAllowButton.className = 'tool-button tool-button-secondary always-allow-btn';
-            alwaysAllowButton.dataset.tooltip = payload.diffData
-                ? 'Enable auto-accept for all edits in this session'
-                : 'Always allow this exact command in this session';
-            alwaysAllowButton.textContent = 'Always Allow';
-            alwaysAllowButton.addEventListener('click', () => {
-                const decision: ToolCallDecision = payload.diffData ? 'always-allow-edit' : 'always-allow-command';
-                this.chatManager.confirmTool(this.toolCallId, decision);
-            });
-            buttonsRow.appendChild(alwaysAllowButton);
-        }
-
-        const denyButton = document.createElement('button');
-        denyButton.className = 'tool-button tool-button-secondary deny-btn';
-        denyButton.textContent = 'Deny';
-        denyButton.addEventListener('click', () => {
-            this.chatManager.confirmTool(this.toolCallId, 'deny');
-        });
-        buttonsRow.appendChild(denyButton);
-
-        this.element.appendChild(buttonsRow);
-    }
-
-    append() {}
-    update() {}
-}
 
 export class ReasoningSegment extends MessageSegment {
     private contentElement: HTMLDivElement;
