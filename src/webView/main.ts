@@ -1,4 +1,4 @@
-import { ChatManager } from './chat.js';
+import { ChatManager } from './chatManager.js';
 import { SettingsOverlay } from './settingsOverlay.js';
 import { HistoryOverlay } from './historyOverlay.js';
 import { IWebviewApi, InitialState } from '../types.js';
