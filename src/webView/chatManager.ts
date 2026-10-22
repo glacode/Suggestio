@@ -92,6 +92,7 @@ export class ChatManager implements IChatManagerActions {
         window.addEventListener('focus', this.handleWindowFocus);
 
         this.setupProfileSelector();
+        this.setupSendButton();
         // Initialize overlays attached to the full webview (body)
         try {
             const candidate = document.querySelector('.chat-container');
@@ -124,21 +125,10 @@ export class ChatManager implements IChatManagerActions {
         }
 
         const dropdownLabel = modelSelector.querySelector('.dropdown-label');
-        const sendIcon = document.querySelector('.send-icon');
 
-        if (!(dropdownLabel instanceof HTMLElement) || 
-            !(sendIcon instanceof HTMLElement)) {
+        if (!(dropdownLabel instanceof HTMLElement)) {
             throw new Error('Dropdown elements not found');
         }
-
-        sendIcon.innerHTML = SEND_ICON_HTML;
-        sendIcon.addEventListener('click', () => {
-            if (this.messageInput.disabled) {
-                this.cancelRequest();
-            } else {
-                this.sendMessage();
-            }
-        });
 
         const { chatProfileIds, activeChatProfileId } = this.initialState;
         this.renderProfileSelector(chatProfileIds, activeChatProfileId);
@@ -152,6 +142,23 @@ export class ChatManager implements IChatManagerActions {
 
         // Same outside-click-to-close behavior, now attached via the named handler.
         document.addEventListener('click', this.handleDocumentClick);
+    }
+
+    private setupSendButton() {
+        const sendIcon = document.querySelector('.send-icon');
+
+        if (!(sendIcon instanceof HTMLElement)) {
+            throw new Error('Send button not found');
+        }
+
+        sendIcon.innerHTML = SEND_ICON_HTML;
+        sendIcon.addEventListener('click', () => {
+            if (this.messageInput.disabled) {
+                this.cancelRequest();
+            } else {
+                this.sendMessage();
+            }
+        });
     }
 
     private renderProfileSelector(chatProfileIds: string[], activeChatProfileId: string) {
