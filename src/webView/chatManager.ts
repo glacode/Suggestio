@@ -3,6 +3,7 @@ import { SettingsOverlay } from './settingsOverlay.js';
 import { HistoryOverlay } from './historyOverlay.js';
 import type { IWebviewApi, InitialState, ToolCallDecision, IChatManagerActions } from '../types.js';
 import { AssistantMessage } from './assistantMessage.js';
+import { ProfileSelector } from './profileSelector.js';
 
 // These are provided by the environment (main.ts)
 declare const window: Window & { 
@@ -23,27 +24,13 @@ export class ChatManager implements IChatManagerActions {
     // init() registers three listeners on the shared global event targets
     // (window 'message'/'focus', document 'click'). They were previously
     // anonymous arrow functions that could never be unregistered. They are
-    // stored here as named handlers — bodies unchanged — so that dispose()
-    // can detach exactly what init() attached. This is behavior-neutral.
+    // stored as named handlers — here and in ProfileSelector — so that
+    // dispose() can detach exactly what init() attached. This is
+    // behavior-neutral.
     private handleMessage: ((event: MessageEvent) => void) | null = null;
+    private readonly profileSelector: ProfileSelector;
     private readonly handleWindowFocus = () => {
         setTimeout(() => { this.messageInput.focus(); }, 50);
-    };
-    // Previously this handler captured `modelSelector` from the enclosing
-    // setupProfileSelector() closure. Re-querying it by id is equivalent:
-    // the id is unique and the element is never recreated, so both lookups
-    // resolve to the same node; only its classes are ever toggled.
-    private readonly handleDocumentClick = (e: Event) => {
-        const modelSelector = document.getElementById('modelSelector');
-        // Defensive: setupProfileSelector() already throws when the element
-        // is missing, so this early return is unreachable in practice.
-        if (!modelSelector) {
-            return;
-        }
-        const dropdownContent = modelSelector.querySelector('.dropdown-content');
-        if (dropdownContent instanceof HTMLElement && e.target instanceof Node && !modelSelector.contains(e.target)) {
-            dropdownContent.classList.remove('show');
-        }
     };
 
     /**
@@ -57,7 +44,9 @@ export class ChatManager implements IChatManagerActions {
         private initialState: InitialState,
         private settingsOverlay: SettingsOverlay,
         private historyOverlay: HistoryOverlay
-    ) {}
+    ) {
+        this.profileSelector = new ProfileSelector(vscode, () => this.openSettings());
+    }
 
     /**
      * Initializes the UI components and event listeners.
@@ -115,33 +104,14 @@ export class ChatManager implements IChatManagerActions {
             window.removeEventListener('message', this.handleMessage);
         }
         window.removeEventListener('focus', this.handleWindowFocus);
-        document.removeEventListener('click', this.handleDocumentClick);
+        this.profileSelector.dispose();
     }
 
     private setupProfileSelector() {
-        const modelSelector = document.getElementById('modelSelector');
-        if (!modelSelector) {
-            throw new Error('Model selector not found');
-        }
-
-        const dropdownLabel = modelSelector.querySelector('.dropdown-label');
-
-        if (!(dropdownLabel instanceof HTMLElement)) {
-            throw new Error('Dropdown elements not found');
-        }
+        this.profileSelector.init();
 
         const { chatProfileIds, activeChatProfileId } = this.initialState;
-        this.renderProfileSelector(chatProfileIds, activeChatProfileId);
-
-        dropdownLabel.addEventListener('click', () => {
-            const dropdownContent = modelSelector.querySelector('.dropdown-content');
-            if (dropdownContent instanceof HTMLElement) {
-                dropdownContent.classList.toggle('show');
-            }
-        });
-
-        // Same outside-click-to-close behavior, now attached via the named handler.
-        document.addEventListener('click', this.handleDocumentClick);
+        this.profileSelector.render(chatProfileIds, activeChatProfileId);
     }
 
     private setupSendButton() {
@@ -159,55 +129,6 @@ export class ChatManager implements IChatManagerActions {
                 this.sendMessage();
             }
         });
-    }
-
-    private renderProfileSelector(chatProfileIds: string[], activeChatProfileId: string) {
-        const modelSelector = document.getElementById('modelSelector');
-        const dropdownContent = modelSelector?.querySelector('.dropdown-content');
-        const chatProfileLabel = modelSelector?.querySelector('.chat-profile-label');
-
-        if (!dropdownContent || !chatProfileLabel) {
-            return;
-        }
-
-        chatProfileLabel.textContent = activeChatProfileId;
-        dropdownContent.innerHTML = '';
-
-        chatProfileIds.forEach(profileId => {
-            const option = document.createElement('a');
-            option.href = '#';
-            option.textContent = profileId;
-            option.addEventListener('click', (e) => {
-                e.preventDefault();
-                chatProfileLabel.textContent = profileId;
-                if (dropdownContent instanceof HTMLElement) {
-                    dropdownContent.classList.remove('show');
-                }
-                this.vscode.postMessage({ 
-                    command: WEBVIEW_COMMANDS.CHAT_PROFILE_CHANGED, 
-                    model: profileId 
-                });
-            });
-            dropdownContent.appendChild(option);
-        });
-
-        // Add "Manage Models..." entry
-        const divider = document.createElement('div');
-        divider.className = 'dropdown-divider';
-        dropdownContent.appendChild(divider);
-
-        const manageOption = document.createElement('a');
-        manageOption.href = '#';
-        manageOption.textContent = 'Manage Models...';
-        manageOption.className = 'manage-profiles-item';
-        manageOption.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (dropdownContent instanceof HTMLElement) {
-                dropdownContent.classList.remove('show');
-            }
-            this.openSettings();
-        });
-        dropdownContent.appendChild(manageOption);
     }
 
     private openSettings() {
@@ -282,7 +203,7 @@ export class ChatManager implements IChatManagerActions {
                     this.settingsOverlay.render(this.vscode, this.initialState);
                     // Update dropdown if full profile list is provided
                     if (event.data.profiles && event.data.activeProfile) {
-                        this.renderProfileSelector(event.data.profiles, event.data.activeProfile);
+                        this.profileSelector.render(event.data.profiles, event.data.activeProfile);
                     }
                 } catch (e) { }
                 return;
