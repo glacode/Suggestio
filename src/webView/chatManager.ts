@@ -367,9 +367,9 @@ export class ChatManager implements IChatManagerActions {
         containers.forEach(container => container.remove());
 
         // Remove error and halted classes from assistant message bubbles to reset their styling
-        const assistantMessages = this.chatContainer.querySelectorAll('.message.assistant.error, .message.assistant.halted');
-        assistantMessages.forEach(msg => {
-            msg.classList.remove('error', 'halted');
+        const assistantMessageElements = this.chatContainer.querySelectorAll('.message.assistant.error, .message.assistant.halted');
+        assistantMessageElements.forEach(assistantMessageElement => {
+            assistantMessageElement.classList.remove('error', 'halted');
         });
     }
 
