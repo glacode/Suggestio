@@ -54,6 +54,11 @@
             "type": "boolean",
             "default": false,
             "description": "Whether to exclude this model from the chat interface. This is useful for models where the free tier is too restrictive for chat (e.g., very small context windows or low Tokens Per Minute/TPM limits) but remains useful for inline completions."
+          },
+          "maxTokens": {
+            "type": "number",
+            "default": 8192,
+            "description": "Optional override for the maximum number of tokens the model may generate (the `max_tokens` field of OpenAI-compatible requests). When omitted, defaults to 8192. Gemini profiles ignore this setting."
           }
         },
         "required": ["model"],

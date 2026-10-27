@@ -58,6 +58,7 @@ export function getLlmProvider(
       endpoint: profileConfig.endpoint,
       apiKey,
       model: profileConfig.model,
+      maxTokens: profileConfig.maxTokens,
       eventBus,
       anonymizer,
       maxRetries: config.maxRetries,

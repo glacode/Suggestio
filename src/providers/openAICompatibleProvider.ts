@@ -10,6 +10,15 @@ import { createEventLogger } from "../log/eventLogger.js";
 import { withRetry } from "../utils/retry.js";
 
 /**
+ * Default maximum number of completion tokens requested from providers
+ * (sent as the `max_tokens` field of OpenAI-compatible requests).
+ * Previously hard-coded in the request body construction; it was chosen
+ * for a Groq Compound model and remains the explicit default that
+ * runtime profile configuration can override via `maxTokens`.
+ */
+export const DEFAULT_MAX_TOKENS = 8192;
+
+/**
  * Arguments for the OpenAICompatibleProvider constructor.
  */
 export interface IOpenAICompatibleProviderArgs {
@@ -29,6 +38,8 @@ export interface IOpenAICompatibleProviderArgs {
   maxRetries: number;
   /** Initial delay for exponential backoff in ms. */
   initialDelay: number;
+  /** Optional override for the completion budget (see DEFAULT_MAX_TOKENS). */
+  maxTokens?: number;
   /** Optional reasoning processor to handle various model formats. */
   reasoningProcessor?: IReasoningProcessor;
   /** Optional response parser for validating API results. */
@@ -48,6 +59,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
   private anonymizer?: IAnonymizer;
   private maxRetries: number;
   private initialDelay: number;
+  private maxTokens: number;
   private reasoningProcessor: IReasoningProcessor;
   private parser: IOpenAIResponseParser;
   private formatter: IOpenAIRequestFormatter;
@@ -69,6 +81,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     anonymizer,
     maxRetries,
     initialDelay,
+    maxTokens,
     reasoningProcessor,
     parser,
     formatter,
@@ -82,6 +95,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     this.anonymizer = anonymizer;
     this.maxRetries = maxRetries;
     this.initialDelay = initialDelay;
+    this.maxTokens = maxTokens ?? DEFAULT_MAX_TOKENS;
     this.reasoningProcessor = reasoningProcessor || new StandardReasoningProcessor();
     this.parser = parser || new OpenAIResponseParser();
     this.formatter = formatter || new OpenAIRequestFormatter(this.reasoningProcessor, anonymizer);
@@ -103,7 +117,7 @@ export class OpenAICompatibleProvider implements ILlmProvider {
     stream: boolean
   ): OpenAIRequestBody {
     return this.formatter.formatRequest(prompt, this.model, {
-      maxTokens: 8192, // TODO this is a Groq Compound model hard-coded limit
+      maxTokens: this.maxTokens,
       stream,
       tools
     });

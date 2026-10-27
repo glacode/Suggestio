@@ -94,6 +94,36 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
     }));
   });
 
+  describe("completion token budget", () => {
+    it("should request the override maxTokens value in the outgoing body", async () => {
+      mockHttpClient.post.mockResolvedValue(createMockResponse({
+        json: { choices: [{ message: { content: "ok" } }] }
+      }));
+
+      const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus, maxRetries: 0, initialDelay: 0, maxTokens: 1024 });
+      const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
+      await provider.query(prompt);
+
+      const callArgs = mockHttpClient.post.mock.calls[0][1];
+      if (!callArgs) { throw new Error("post not called"); }
+      expect(JSON.parse(callArgs.body).max_tokens).toBe(1024);
+    });
+
+    it("should request the 8192 default in the outgoing body when maxTokens is omitted", async () => {
+      mockHttpClient.post.mockResolvedValue(createMockResponse({
+        json: { choices: [{ message: { content: "ok" } }] }
+      }));
+
+      const provider = new OpenAICompatibleProvider({ httpClient: mockHttpClient, endpoint, apiKey, model, eventBus: mockEventBus, maxRetries: 0, initialDelay: 0 });
+      const prompt = new TestPrompt([{ role: "user", content: "Hi" }]);
+      await provider.query(prompt);
+
+      const callArgs = mockHttpClient.post.mock.calls[0][1];
+      if (!callArgs) { throw new Error("post not called"); }
+      expect(JSON.parse(callArgs.body).max_tokens).toBe(8192);
+    });
+  });
+
   it("should get a streamed response from the queryStream method", async () => {
     mockHttpClient.post.mockResolvedValue(createMockResponse({
       body: createStream([

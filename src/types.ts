@@ -1950,6 +1950,14 @@ export interface IProfileConfig {
    * Minute (TPM) limit is too low—while still being adequate for single-turn inline completions.
    */
   excludeFromChat?: boolean;
+  /**
+   * Optional override for the maximum number of tokens the model may generate
+   * (sent as the `max_tokens` field of OpenAI-compatible requests).
+   * When omitted, the request falls back to the provider default
+   * (8192); profile presets live in the bundled profile configuration.
+   * Consumed by the OpenAI-compatible path only; `type: "gemini"` ignores it.
+   */
+  maxTokens?: number;
 }
 
 export interface IAnonymizerConfig {

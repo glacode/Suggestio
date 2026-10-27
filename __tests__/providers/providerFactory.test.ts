@@ -1,10 +1,11 @@
 import { jest } from "@jest/globals";
 import * as vscode from "vscode";
+import type { IOpenAICompatibleProviderArgs } from "../../src/providers/openAICompatibleProvider.js";
 import { PROVIDER_MESSAGES } from "../../src/constants/messages.js";
 import { createMockEventBus, createDefaultConfig } from "../testUtils.js";
 
 // Mock profiles BEFORE importing getLlmProvider
-const mockOpenAICompatibleProvider = jest.fn();
+const mockOpenAICompatibleProvider = jest.fn<(_args: IOpenAICompatibleProviderArgs) => void>();
 const mockGeminiProvider = jest.fn();
 
 jest.unstable_mockModule("../../src/providers/openAICompatibleProvider.js", () => ({
@@ -91,6 +92,46 @@ describe("providerFactory", () => {
       expect(OpenAICompatibleProvider).toHaveBeenCalledWith(expect.objectContaining({
           apiKey: "",
       }));
+  });
+
+  it("should pass the profile maxTokens override to OpenAICompatibleProvider", () => {
+      const config = createDefaultConfig({
+          activeChatProfile: "openai",
+          profiles: {
+              openai: {
+                  endpoint: "http://api.openai.com",
+                  apiKeyIdentifier: "test-identifier",
+                  resolvedApiKey: "test-key",
+                  model: "gpt-4",
+                  maxTokens: 4096
+              }
+          }
+      });
+
+      getLlmProvider(config, mockHttpClient, mockEventBus);
+
+      expect(OpenAICompatibleProvider).toHaveBeenCalledWith(expect.objectContaining({
+          maxTokens: 4096,
+      }));
+  });
+
+  it("should leave maxTokens undefined for profiles without an override", () => {
+      const config = createDefaultConfig({
+          activeChatProfile: "openai",
+          profiles: {
+              openai: {
+                  endpoint: "http://api.openai.com",
+                  apiKeyIdentifier: "test-key",
+                  model: "gpt-4"
+              }
+          }
+      });
+
+      getLlmProvider(config, mockHttpClient, mockEventBus);
+
+      const args = mockOpenAICompatibleProvider.mock.calls[0][0];
+      if (!args) { throw new Error("provider not constructed"); }
+      expect(args.maxTokens).toBeUndefined();
   });
 
   it("should return null and show error if OpenAI provider is missing endpoint", () => {
