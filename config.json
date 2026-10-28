@@ -3,6 +3,11 @@
   "activeChatProfile": "gemini-3-5-flash-lite",
   "activeCompletionProfile": "groq-qwen-qwen3-8-27b",
   "profiles": {
+    "blockrun-nvidia-lightning-noapikey": {
+      "model": "nvidia/nemotron-3.5-lightning",
+      "endpoint": "https://blockrun.ai/api/v1/chat/completions",
+      "isApiKeyRequired": false
+    },
     "llm7-fast-noapikey": {
       "endpoint": "https://api.llm7.io/v1/chat/completions",
       "model": "fast",
