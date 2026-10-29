@@ -1,6 +1,6 @@
 {
   "$schema": "./resources/config.schema.json",
-  "activeChatProfile": "gemini-3-5-flash-lite",
+  "activeChatProfile": "blockrun-nvidia-lightning-noapikey",
   "activeCompletionProfile": "groq-qwen-qwen3-8-27b",
   "profiles": {
     "blockrun-nvidia-lightning-noapikey": {
