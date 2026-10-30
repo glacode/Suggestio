@@ -63,6 +63,12 @@ Suggestio is designed to leverage providers that offer generous free tiers. Here
 
 ---
 
+## ⚖️ Provider Terms
+
+Suggestio connects to third-party model providers. Whether you use an API key or a keyless endpoint (such as Kilo's free Gateway or the bundled llm7.io profiles), your use of that model is governed by the provider's own terms of service. You are responsible for reviewing and complying with those terms. For example, see [Kilo's Terms](https://kilo.ai/terms).
+
+---
+
 ## Advanced Configuration
 
 While you can do most things through the UI, Suggestio supports a layered configuration system for power users:
