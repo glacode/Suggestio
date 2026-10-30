@@ -33,6 +33,11 @@
       "apiKeyIdentifier": "GROQ_API_KEY",
       "excludeFromChat": true
     },
+    "kilo-dots-3-note-preview-noapikey": {
+      "model": "dots-studio/dots-3-note-preview:free",
+      "endpoint": "https://api.kilo.ai/api/gateway/chat/completions",
+      "isApiKeyRequired": false
+    },
     "ollama-gemma4-31b": {
       "model": "gemma4:31b-cloud",
       "endpoint": "https://ollama.com/v1/chat/completions",
