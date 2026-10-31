@@ -27,6 +27,22 @@
 - Delete tests that pin unreachable implementation details instead of covering
   them with synthetic scenarios.
 
+### Red-first discipline
+- New tests precede the code that satisfies them: run the suite red first
+  and confirm the failure is an assertion diff at the target (not a crash,
+  not a type error) before writing the production change.
+- Keep the failing state otherwise gate-clean: pure type widening (e.g. an
+  optional field) may lead the change so the tests compile; a failing state
+  is working-tree-only — never commit it; only the restored tree enters the
+  full `tsc`/lint gate.
+- New or suspect coverage gets a mutation check: temporarily remove the
+  smallest line of the behavior under test, expect a precise failing set
+  (and account for any test that stays green because it cannot distinguish
+  the break), then `git restore <file>` byte-exact and re-run scoped green.
+- Scoped runs use the repo's launcher: `node --experimental-vm-modules
+  node_modules/.bin/jest <files>`. Bare `npx jest` dies parsing the ESM
+  setup file — never treat that as a test failure.
+
 ### Verification gate (per commit)
 - `npx eslint <touched files>`, `npx tsc --noEmit`, then `jest <test file>`.
 - `npm test` runs `pretest` (compile-tests + compile + lint): `tsc`
