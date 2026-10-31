@@ -1,6 +1,7 @@
 import { WEBVIEW_COMMANDS } from '../constants/protocol.js';
 import type { IWebviewApi, ProfileMetadata, InitialState } from '../types.js';
 import { CustomDropdown } from './webViewUtils.js';
+import { addMaxTokensToPayload, parseMaxTokensInput } from './maxTokensInput.js';
 
 /**
  * Manages the advanced LLM Profile Update form UI.
@@ -12,6 +13,7 @@ export class UpdateLlmProfile {
     private _idInput?: HTMLInputElement;
     private _modelInput?: HTMLInputElement;
     private _endpointInput?: HTMLInputElement;
+    private _maxTokensInput?: HTMLInputElement;
     
     private _isKeyRequiredToggle?: HTMLInputElement;
     private _keyIdentifierInput?: HTMLInputElement;
@@ -26,7 +28,6 @@ export class UpdateLlmProfile {
 
     // Component State
     private _state?: InitialState;
-    private _editingProfile?: ProfileMetadata;
     private _existingEndpoints: string[] = [];
 
     constructor(onDone: () => void) {
@@ -55,8 +56,7 @@ export class UpdateLlmProfile {
      */
     public render(container: HTMLElement, vscode: IWebviewApi, state: InitialState, profile: ProfileMetadata) {
         this._state = state;
-        this._editingProfile = profile;
-        
+
         // Setup suggestions
         this._existingEndpoints = Array.from(new Set(
             (state.profileMetadata || []).map(p => p.endpoint).filter(e => !!e)
@@ -155,6 +155,10 @@ export class UpdateLlmProfile {
                     <span class="checkbox-label">Exclude from Chat View</span>
                 </label>
                 <div class="settings-description small">Keep this model only for inline completions.</div>
+
+                <label class="settings-label small mt-10">Max Tokens (max_tokens)</label>
+                <input type="text" id="updateProfileMaxTokens" value="${profile.maxTokens ?? ''}" class="settings-input">
+                <div class="settings-description small">Sent as the provider's max_tokens; leave blank to use the provider default.</div>
             </div>
 
             <div class="form-actions-row">
@@ -167,6 +171,7 @@ export class UpdateLlmProfile {
     private bindElements(form: HTMLElement): boolean {
         const idInput = form.querySelector('#updateProfileId');
         const modelInput = form.querySelector('#updateProfileModel');
+        const maxTokensInput = form.querySelector('#updateProfileMaxTokens');
         const endpointInput = form.querySelector('#updateProfileEndpoint');
         const endpointDropdownList = form.querySelector('#updateEndpointDropdownList');
         const endpointDropdownWrapper = form.querySelector('.dropdown-input-wrapper');
@@ -182,6 +187,7 @@ export class UpdateLlmProfile {
 
         if (idInput instanceof HTMLInputElement &&
             modelInput instanceof HTMLInputElement &&
+            maxTokensInput instanceof HTMLInputElement &&
             endpointInput instanceof HTMLInputElement &&
             endpointDropdownList instanceof HTMLElement &&
             endpointDropdownWrapper instanceof HTMLElement &&
@@ -196,6 +202,7 @@ export class UpdateLlmProfile {
             
             this._idInput = idInput;
             this._modelInput = modelInput;
+            this._maxTokensInput = maxTokensInput;
             this._endpointInput = endpointInput;
             this._isKeyRequiredToggle = isKeyRequiredToggle;
             this._keyIdentifierInput = keyIdentifierInput;
@@ -213,7 +220,7 @@ export class UpdateLlmProfile {
 
     private attachListeners(vscode: IWebviewApi) {
         if (!this._isKeyRequiredToggle || !this._keyIdentifierInput || !this._setKeyBtn || 
-            !this._saveBtn || !this._cancelBtn || !this._endpointInput || !this._modelInput) {
+            !this._saveBtn || !this._cancelBtn || !this._endpointInput || !this._modelInput || !this._maxTokensInput) {
             return;
         }
 
@@ -227,6 +234,7 @@ export class UpdateLlmProfile {
 
         this._keyIdentifierInput.addEventListener('input', () => this.updateKeyStatus());
         this._modelInput.addEventListener('input', () => this.updateKeyStatus());
+        this._maxTokensInput.addEventListener('input', () => this.updateKeyStatus());
 
         this._setKeyBtn.addEventListener('click', () => {
             const identifier = this._keyIdentifierInput!.value.trim();
@@ -264,8 +272,7 @@ export class UpdateLlmProfile {
             if (!supportsTools) { profilePayload.supportsTools = false; }
             if (excludeFromChat) { profilePayload.excludeFromChat = true; }
 
-            // Only carry the completion budget when the profile declares one
-            if (this._editingProfile?.maxTokens !== undefined) { profilePayload.maxTokens = this._editingProfile.maxTokens; }
+            addMaxTokensToPayload(profilePayload, this._maxTokensInput!.value);
 
             vscode.postMessage({
                 command: WEBVIEW_COMMANDS.ADD_PROFILE,
@@ -279,7 +286,7 @@ export class UpdateLlmProfile {
 
     private updateKeyStatus() {
         if (!this._keyIdentifierInput || !this._keyStatusIndicator || !this._saveBtn || 
-            !this._endpointInput || !this._modelInput || !this._isKeyRequiredToggle) {
+            !this._endpointInput || !this._modelInput || !this._isKeyRequiredToggle || !this._maxTokensInput) {
             return;
         }
 
@@ -291,7 +298,9 @@ export class UpdateLlmProfile {
         // 1. Basic validation
         const isCoreComplete = !!(endpoint && model);
         const isAuthValid = !isKeyRequired || !!identifier;
-        this._saveBtn.disabled = !(isCoreComplete && isAuthValid);
+        const parsedMaxTokens = parseMaxTokensInput(this._maxTokensInput.value);
+        const isMaxTokensValid = parsedMaxTokens.kind !== 'invalid';
+        this._saveBtn.disabled = !(isCoreComplete && isAuthValid && isMaxTokensValid);
 
         // 2. Status Badge
         if (!isKeyRequired) {

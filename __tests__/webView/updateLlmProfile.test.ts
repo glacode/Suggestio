@@ -213,6 +213,76 @@ describe('UpdateLlmProfile Unit Tests (Behavioral)', () => {
         }
     });
 
+    it('should prefill the maxTokens field from the profile configured value', () => {
+        const profileWithMaxTokens = { ...mockProfile, maxTokens: 1024 };
+        updateLlmProfile.render(container, mockVscode, mockState, profileWithMaxTokens);
+
+        const maxTokensInput = container.querySelector('#updateProfileMaxTokens');
+        expect(maxTokensInput).toBeInstanceOf(HTMLInputElement);
+        if (!(maxTokensInput instanceof HTMLInputElement)) { throw new Error('input missing'); }
+
+        expect(maxTokensInput.value).toBe('1024');
+    });
+
+    it('should send an edited maxTokens value in the update payload', () => {
+        const profileWithMaxTokens = { ...mockProfile, maxTokens: 1024 };
+        updateLlmProfile.render(container, mockVscode, mockState, profileWithMaxTokens);
+
+        const maxTokensInput = container.querySelector('#updateProfileMaxTokens');
+        expect(maxTokensInput).toBeInstanceOf(HTMLInputElement);
+        if (!(maxTokensInput instanceof HTMLInputElement)) { throw new Error('input missing'); }
+
+        maxTokensInput.value = '2048';
+
+        const saveBtn = container.querySelector('#updateSaveBtn');
+        if (!(saveBtn instanceof HTMLButtonElement)) { throw new Error('btn missing'); }
+        saveBtn.click();
+
+        const message = mockVscode.messages[0];
+        if (message.command === WEBVIEW_COMMANDS.ADD_PROFILE) {
+            expect(message.profile.maxTokens).toBe(2048);
+        } else {
+            throw new Error('Unexpected message command');
+        }
+    });
+
+    it('should drop maxTokens when the field is cleared', () => {
+        const profileWithMaxTokens = { ...mockProfile, maxTokens: 1024 };
+        updateLlmProfile.render(container, mockVscode, mockState, profileWithMaxTokens);
+
+        const maxTokensInput = container.querySelector('#updateProfileMaxTokens');
+        expect(maxTokensInput).toBeInstanceOf(HTMLInputElement);
+        if (!(maxTokensInput instanceof HTMLInputElement)) { throw new Error('input missing'); }
+
+        maxTokensInput.value = '';
+
+        const saveBtn = container.querySelector('#updateSaveBtn');
+        if (!(saveBtn instanceof HTMLButtonElement)) { throw new Error('btn missing'); }
+        saveBtn.click();
+
+        const message = mockVscode.messages[0];
+        if (message.command === WEBVIEW_COMMANDS.ADD_PROFILE) {
+            expect(message.profile.maxTokens).toBeUndefined();
+        } else {
+            throw new Error('Unexpected message command');
+        }
+    });
+
+    it('should disable Save when the maxTokens input is invalid', () => {
+        updateLlmProfile.render(container, mockVscode, mockState, mockProfile);
+
+        const maxTokensInput = container.querySelector('#updateProfileMaxTokens');
+        expect(maxTokensInput).toBeInstanceOf(HTMLInputElement);
+        if (!(maxTokensInput instanceof HTMLInputElement)) { throw new Error('input missing'); }
+
+        maxTokensInput.value = 'not-a-number';
+        maxTokensInput.dispatchEvent(new Event('input'));
+
+        const saveBtn = container.querySelector('#updateSaveBtn');
+        if (!(saveBtn instanceof HTMLButtonElement)) { throw new Error('btn missing'); }
+        expect(saveBtn.disabled).toBe(true);
+    });
+
     it('should send EDIT_API_KEY when Set Key is clicked', () => {
         updateLlmProfile.render(container, mockVscode, mockState, mockProfile);
         const setKeyBtn = container.querySelector('#updateSetKeyBtn');

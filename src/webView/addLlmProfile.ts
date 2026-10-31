@@ -1,6 +1,7 @@
 import { WEBVIEW_COMMANDS } from '../constants/protocol.js';
 import type { IWebviewApi, InitialState } from '../types.js';
 import { getBrandFromUrl, CustomDropdown } from './webViewUtils.js';
+import { addMaxTokensToPayload, parseMaxTokensInput } from './maxTokensInput.js';
 
 /**
  * Manages the LLM Profile Edit/Add form UI.
@@ -11,6 +12,7 @@ export class AddLlmProfile {
     // Element Caching
     private _idInput?: HTMLInputElement;
     private _modelInput?: HTMLInputElement;
+    private _maxTokensInput?: HTMLInputElement;
     private _endpointInput?: HTMLInputElement;
     private _idValidationMessage?: HTMLElement;
 
@@ -133,6 +135,12 @@ export class AddLlmProfile {
                 <div id="idValidationMessage" class="settings-description mt-4">Unique identifier for this configuration.</div>
             </div>
 
+            <div class="input-group">
+                <label class="settings-label">Max Tokens (max_tokens)</label>
+                <input type="text" id="editProfileMaxTokens" value="" placeholder="e.g. 1024" class="settings-input">
+                <div class="settings-description">Sent as the provider's max_tokens; leave blank to use the provider default.</div>
+            </div>
+
             <div class="settings-section-divider"></div>
 
             <div id="keyCheckSection" class="key-status-container section-disabled">
@@ -186,6 +194,7 @@ export class AddLlmProfile {
         const idInput = form.querySelector('#editProfileId');
         const idValidationMessage = form.querySelector('#idValidationMessage');
         const modelInput = form.querySelector('#editProfileModel');
+        const maxTokensInput = form.querySelector('#editProfileMaxTokens');
         const endpointInput = form.querySelector('#editProfileEndpoint');
         const keyCheckSection = form.querySelector('#keyCheckSection');
         const keySettingsSection = form.querySelector('#keySettingsSection');
@@ -204,6 +213,7 @@ export class AddLlmProfile {
         if (idInput instanceof HTMLInputElement &&
             idValidationMessage instanceof HTMLElement &&
             modelInput instanceof HTMLInputElement &&
+            maxTokensInput instanceof HTMLInputElement &&
             endpointInput instanceof HTMLInputElement &&
             keyCheckSection instanceof HTMLElement &&
             keySettingsSection instanceof HTMLElement &&
@@ -222,6 +232,7 @@ export class AddLlmProfile {
             this._idInput = idInput;
             this._idValidationMessage = idValidationMessage;
             this._modelInput = modelInput;
+            this._maxTokensInput = maxTokensInput;
             this._endpointInput = endpointInput;
             this._keyCheckSection = keyCheckSection;
             this._keySettingsSection = keySettingsSection;
@@ -243,7 +254,7 @@ export class AddLlmProfile {
     }
 
     private attachListeners(vscode: IWebviewApi) {
-        if (!this._endpointInput || !this._modelInput || !this._idInput || !this._keyTypeShared || 
+        if (!this._endpointInput || !this._modelInput || !this._idInput || !this._maxTokensInput || !this._keyTypeShared || 
             !this._keyTypeUnique || !this._setKeyFlowBtn || !this._cancelKeySettingsBtn || 
             !this._setKeyFinalBtn || !this._noKeyRequiredBtn || !this._saveBtn || !this._cancelBtn) {
             return;
@@ -253,6 +264,8 @@ export class AddLlmProfile {
             this.computeSuggestedId();
             this.updateFormState();
         });
+
+        this._maxTokensInput.addEventListener('input', () => this.updateFormState());
 
         this._idInput.addEventListener('input', () => {
             this._isIdManuallyEdited = true;
@@ -288,9 +301,11 @@ export class AddLlmProfile {
             const endpoint = this._endpointInput!.value.trim();
 
             if (id && model && endpoint) {
+                const profilePayload: any = { id, model, endpoint, isApiKeyRequired: false };
+                addMaxTokensToPayload(profilePayload, this._maxTokensInput!.value);
                 vscode.postMessage({
                     command: WEBVIEW_COMMANDS.ADD_PROFILE,
-                    profile: { id, model, endpoint, isApiKeyRequired: false }
+                    profile: profilePayload
                 });
                 this.onDone();
             }
@@ -303,9 +318,11 @@ export class AddLlmProfile {
             const identifier = this.getCurrentIdentifier();
 
             if (id && model && endpoint && identifier) {
+                const profilePayload: any = { id, model, endpoint, apiKeyIdentifier: identifier, isApiKeyRequired: true };
+                addMaxTokensToPayload(profilePayload, this._maxTokensInput!.value);
                 vscode.postMessage({
                     command: WEBVIEW_COMMANDS.ADD_PROFILE,
-                    profile: { id, model, endpoint, apiKeyIdentifier: identifier, isApiKeyRequired: true }
+                    profile: profilePayload
                 });
                 this.onDone();
             }
@@ -383,7 +400,7 @@ export class AddLlmProfile {
 
     private updateFormState() {
         if (!this._endpointInput || !this._modelInput || !this._idInput || 
-            !this._keyCheckSection || !this._previewShared || !this._previewUnique || 
+            !this._maxTokensInput || !this._keyCheckSection || !this._previewShared || !this._previewUnique || 
             !this._keyStatusIndicator || !this._setKeyFlowBtn || !this._noKeyRequiredBtn || !this._saveBtn) {
             return;
         }
@@ -397,7 +414,9 @@ export class AddLlmProfile {
         const isIdUnique = this.validateIdUniqueness();
 
         // 2. Main Validator
-        const isFormComplete = isCoreComplete && isIdUnique;
+        const parsedMaxTokens = parseMaxTokensInput(this._maxTokensInput.value);
+        const isMaxTokensValid = parsedMaxTokens.kind !== 'invalid';
+        const isFormComplete = isCoreComplete && isIdUnique && isMaxTokensValid;
 
         this._keyCheckSection.classList.toggle('section-disabled', !isFormComplete);
 

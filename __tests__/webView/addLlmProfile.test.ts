@@ -496,4 +496,94 @@ describe('AddLlmProfile Unit Tests (Behavioral)', () => {
             done();
         }, 300);
     });
+
+    it('should include a valid maxTokens value in the no-key profile payload', () => {
+        addLlmProfile.render(container, mockVscode, mockState);
+
+        const endpointInput = container.querySelector('#editProfileEndpoint');
+        const modelInput = container.querySelector('#editProfileModel');
+        const maxTokensInput = container.querySelector('#editProfileMaxTokens');
+        const noKeyBtn = container.querySelector('#noKeyRequiredBtn');
+
+        expect(maxTokensInput).toBeInstanceOf(HTMLInputElement);
+        if (!(endpointInput instanceof HTMLInputElement) || !(modelInput instanceof HTMLInputElement) || !(maxTokensInput instanceof HTMLInputElement) || !(noKeyBtn instanceof HTMLButtonElement)) {
+            throw new Error('Elements not found');
+        }
+
+        endpointInput.value = 'http://localhost:11434';
+        endpointInput.dispatchEvent(new Event('input'));
+        modelInput.value = 'local-model';
+        modelInput.dispatchEvent(new Event('input'));
+        maxTokensInput.value = '1024';
+
+        noKeyBtn.click();
+
+        expect(mockVscode.messages).toContainEqual({
+            command: WEBVIEW_COMMANDS.ADD_PROFILE,
+            profile: {
+                id: 'local-local-model',
+                model: 'local-model',
+                endpoint: 'http://localhost:11434',
+                isApiKeyRequired: false,
+                maxTokens: 1024
+            }
+        });
+        expect(onDoneCalled).toBe(true);
+    });
+
+    it('should omit maxTokens when the field is left blank', () => {
+        addLlmProfile.render(container, mockVscode, mockState);
+
+        const endpointInput = container.querySelector('#editProfileEndpoint');
+        const modelInput = container.querySelector('#editProfileModel');
+        const maxTokensInput = container.querySelector('#editProfileMaxTokens');
+        const noKeyBtn = container.querySelector('#noKeyRequiredBtn');
+
+        expect(maxTokensInput).toBeInstanceOf(HTMLInputElement);
+        if (!(endpointInput instanceof HTMLInputElement) || !(modelInput instanceof HTMLInputElement) || !(maxTokensInput instanceof HTMLInputElement) || !(noKeyBtn instanceof HTMLButtonElement)) {
+            throw new Error('Elements not found');
+        }
+
+        endpointInput.value = 'http://localhost:11434';
+        endpointInput.dispatchEvent(new Event('input'));
+        modelInput.value = 'local-model';
+        modelInput.dispatchEvent(new Event('input'));
+        maxTokensInput.value = '';
+
+        noKeyBtn.click();
+
+        expect(mockVscode.messages).toContainEqual({
+            command: WEBVIEW_COMMANDS.ADD_PROFILE,
+            profile: {
+                id: 'local-local-model',
+                model: 'local-model',
+                endpoint: 'http://localhost:11434',
+                isApiKeyRequired: false
+            }
+        });
+        expect(onDoneCalled).toBe(true);
+    });
+
+    it('should disable saving when the maxTokens input is invalid', () => {
+        addLlmProfile.render(container, mockVscode, mockState);
+
+        const endpointInput = container.querySelector('#editProfileEndpoint');
+        const modelInput = container.querySelector('#editProfileModel');
+        const maxTokensInput = container.querySelector('#editProfileMaxTokens');
+        const saveBtn = container.querySelector('#saveProfileBtn');
+
+        expect(maxTokensInput).toBeInstanceOf(HTMLInputElement);
+        if (!(endpointInput instanceof HTMLInputElement) || !(modelInput instanceof HTMLInputElement) || !(maxTokensInput instanceof HTMLInputElement) || !(saveBtn instanceof HTMLButtonElement)) {
+            throw new Error('Elements not found');
+        }
+
+        endpointInput.value = 'http://localhost:11434';
+        endpointInput.dispatchEvent(new Event('input'));
+        modelInput.value = 'local-model';
+        modelInput.dispatchEvent(new Event('input'));
+        maxTokensInput.value = 'not-a-number';
+        maxTokensInput.dispatchEvent(new Event('input'));
+
+        expect(saveBtn.disabled).toBe(true);
+    });
 });
