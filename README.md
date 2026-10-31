@@ -54,7 +54,8 @@ You just need a free API key from a provider like [Google Gemini](https://aistud
 
 Suggestio is designed to leverage providers that offer generous free tiers. Here are our current recommendations for high-quality models that can be used without a paid subscription:
 
-- **Google Gemini 3.5 Flash Lite (default chat profile):** A lightweight, fast Gemini tier with native tool-calling support and now Suggestio's default active chat profile — great for quick agentic tasks.
+- **Kilo Gateway (No API Key Required):** Two bundled profiles — dots-3-note-preview, now Suggestio's default active chat profile, and NVIDIA's Nemotron 3.5 Super VL — run through Kilo's free Gateway without an API key.
+- **Google Gemini 3.5 Flash Lite:** A lightweight, fast Gemini tier with native tool-calling support — great for quick agentic tasks.
 - **Qwen 3.8 27B (via Groq):** The default inline completion profile and the strongest completion quality we've measured so far — a fast, free coding model on Groq's free tier.
 - **Meta Muse Glimmer 30B (via NVIDIA NIM):** Available through NVIDIA's free endpoint registry, with low-latency generation and tool-calling support for agentic tasks.
 - **Z.ai GLM 4.7 Flash:** A fast free coding model from Zhipu AI, ready out of the box with tool-calling support.

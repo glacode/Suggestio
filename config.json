@@ -1,6 +1,6 @@
 {
   "$schema": "./resources/config.schema.json",
-  "activeChatProfile": "blockrun-nvidia-lightning-noapikey",
+  "activeChatProfile": "kilo-dots-3-note-preview-noapikey",
   "activeCompletionProfile": "groq-qwen-qwen3-8-27b",
   "profiles": {
     "blockrun-nvidia-lightning-noapikey": {
@@ -35,6 +35,11 @@
     },
     "kilo-dots-3-note-preview-noapikey": {
       "model": "dots-studio/dots-3-note-preview:free",
+      "endpoint": "https://api.kilo.ai/api/gateway/chat/completions",
+      "isApiKeyRequired": false
+    },
+    "kilo-nvidia-nemotron-3-5-super-vl-noapikey": {
+      "model": "nvidia/nemotron-3.5-super-vl:free",
       "endpoint": "https://api.kilo.ai/api/gateway/chat/completions",
       "isApiKeyRequired": false
     },
