@@ -196,6 +196,23 @@ describe('UpdateLlmProfile Unit Tests (Behavioral)', () => {
         }
     });
 
+    it('should carry the completion budget through the update payload', () => {
+        const budgetedProfile = { ...mockProfile, maxTokens: 1024 };
+        updateLlmProfile.render(container, mockVscode, mockState, budgetedProfile);
+
+        const saveBtn = container.querySelector('#updateSaveBtn');
+        if (!(saveBtn instanceof HTMLButtonElement)) { throw new Error('btn missing'); }
+
+        saveBtn.click();
+
+        const message = mockVscode.messages[0];
+        if (message.command === WEBVIEW_COMMANDS.ADD_PROFILE) {
+            expect(message.profile.maxTokens).toBe(1024);
+        } else {
+            throw new Error('Unexpected message command');
+        }
+    });
+
     it('should send EDIT_API_KEY when Set Key is clicked', () => {
         updateLlmProfile.render(container, mockVscode, mockState, mockProfile);
         const setKeyBtn = container.querySelector('#updateSetKeyBtn');

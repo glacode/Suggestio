@@ -76,6 +76,7 @@ export class ProfileMetadataProvider implements IProfileMetadataProvider {
                 origin: profile?.origin || 'bundled',
                 supportsTools: profile?.supportsTools !== false,
                 excludeFromChat: profile?.excludeFromChat === true,
+                maxTokens: profile?.maxTokens,
                 isActiveChat: id === activeProfile,
                 isActiveCompletion: id === activeCompletionProfile
             };

@@ -85,4 +85,26 @@ describe('ProfileMetadataProvider', () => {
 
         expect(data.chatProfileIds).toEqual(['a', 'b']);
     });
+
+    it('projects the completion budget into the metadata', async () => {
+        const accessor = createMockAccessor({
+            getChatProfiles: () => ['budgeted', 'plain'],
+            getCompletionProfiles: () => ['budgeted', 'plain']
+        });
+        const configContainer = createMockConfigContainer({
+            profiles: {
+                'budgeted': { model: 'mb', origin: 'project', maxTokens: 1024 },
+                'plain': { model: 'mp', origin: 'project' }
+            }
+        });
+        const secretManager = createMockSecretManager();
+
+        const provider = new ProfileMetadataProvider(accessor, configContainer, secretManager);
+        const state = await provider.getStateData();
+
+        const budgeted = state.profileMetadata.find(m => m.id === 'budgeted');
+        const plain = state.profileMetadata.find(m => m.id === 'plain');
+        expect(budgeted?.maxTokens).toBe(1024);
+        expect(plain?.maxTokens).toBeUndefined();
+    });
 });

@@ -26,6 +26,7 @@ export class UpdateLlmProfile {
 
     // Component State
     private _state?: InitialState;
+    private _editingProfile?: ProfileMetadata;
     private _existingEndpoints: string[] = [];
 
     constructor(onDone: () => void) {
@@ -54,6 +55,7 @@ export class UpdateLlmProfile {
      */
     public render(container: HTMLElement, vscode: IWebviewApi, state: InitialState, profile: ProfileMetadata) {
         this._state = state;
+        this._editingProfile = profile;
         
         // Setup suggestions
         this._existingEndpoints = Array.from(new Set(
@@ -261,6 +263,9 @@ export class UpdateLlmProfile {
             // Only add capability overrides if they are NOT defaults
             if (!supportsTools) { profilePayload.supportsTools = false; }
             if (excludeFromChat) { profilePayload.excludeFromChat = true; }
+
+            // Only carry the completion budget when the profile declares one
+            if (this._editingProfile?.maxTokens !== undefined) { profilePayload.maxTokens = this._editingProfile.maxTokens; }
 
             vscode.postMessage({
                 command: WEBVIEW_COMMANDS.ADD_PROFILE,

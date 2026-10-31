@@ -892,6 +892,7 @@ export interface ProfileMetadata {
   origin: 'bundled' | 'user' | 'project';
   supportsTools: boolean;
   excludeFromChat: boolean;
+  maxTokens?: number;
   isActiveChat: boolean;
   isActiveCompletion: boolean;
 }
