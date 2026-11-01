@@ -196,9 +196,9 @@ describe('UpdateLlmProfile Unit Tests (Behavioral)', () => {
         }
     });
 
-    it('should carry the completion budget through the update payload', () => {
-        const budgetedProfile = { ...mockProfile, maxTokens: 1024 };
-        updateLlmProfile.render(container, mockVscode, mockState, budgetedProfile);
+    it('should carry maxTokens through the update payload', () => {
+        const profileWithMaxTokens = { ...mockProfile, maxTokens: 1024 };
+        updateLlmProfile.render(container, mockVscode, mockState, profileWithMaxTokens);
 
         const saveBtn = container.querySelector('#updateSaveBtn');
         if (!(saveBtn instanceof HTMLButtonElement)) { throw new Error('btn missing'); }

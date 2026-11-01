@@ -94,7 +94,7 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
     }));
   });
 
-  describe("completion token budget", () => {
+  describe("maxTokens override", () => {
     it("should request the override maxTokens value in the outgoing body", async () => {
       mockHttpClient.post.mockResolvedValue(createMockResponse({
         json: { choices: [{ message: { content: "ok" } }] }

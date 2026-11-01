@@ -38,7 +38,7 @@ export interface IOpenAICompatibleProviderArgs {
   maxRetries: number;
   /** Initial delay for exponential backoff in ms. */
   initialDelay: number;
-  /** Optional override for the completion budget (see DEFAULT_MAX_TOKENS). */
+  /** Optional override of the profile's maxTokens (see DEFAULT_MAX_TOKENS). */
   maxTokens?: number;
   /** Optional reasoning processor to handle various model formats. */
   reasoningProcessor?: IReasoningProcessor;
