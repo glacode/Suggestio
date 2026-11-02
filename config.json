@@ -64,11 +64,6 @@
       "model": "cohere/north-mini-code:free",
       "apiKeyIdentifier": "OPENROUTER_API_KEY"
     },
-    "openrouter-nvidia-nemotron-3-super-120b-a12b-free": {
-      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
-      "model": "nvidia/nemotron-3-super-120b-a12b:free",
-      "apiKeyIdentifier": "OPENROUTER_API_KEY"
-    },
     "openrouter-poolside-laguna-s-2-1-free": {
       "model": "poolside/laguna-s-2.1:free",
       "endpoint": "https://openrouter.ai/api/v1/chat/completions",
