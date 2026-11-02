@@ -64,12 +64,6 @@
       "model": "cohere/north-mini-code:free",
       "apiKeyIdentifier": "OPENROUTER_API_KEY"
     },
-    "openrouter-poolside-laguna-s-2-1-free": {
-      "model": "poolside/laguna-s-2.1:free",
-      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
-      "apiKeyIdentifier": "OPENROUTER_API_KEY",
-      "isApiKeyRequired": true
-    },
     "huggingface-qwen-qwen3-8-27b-featherless-ai": {
       "model": "Qwen/Qwen3.8-27B:featherless-ai",
       "endpoint": "https://router.huggingface.co/v1/chat/completions",
