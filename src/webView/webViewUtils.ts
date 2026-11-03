@@ -11,7 +11,8 @@ export const KNOWN_PROVIDERS: Record<string, string> = {
     'together.xyz': 'TOGETHER',
     'deepseek.com': 'DEEPSEEK',
     'googleapis.com': 'GOOGLEAPIS',
-    'ollama.com': 'OLLAMA'
+    'ollama.com': 'OLLAMA',
+    'z.ai': 'ZAI'
 };
 
 /**
