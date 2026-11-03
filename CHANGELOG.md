@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.9] - 2026-11-03
+
+### Added
+- **New Providers:** Blockrun (`blockrun-nvidia-lightning-noapikey` — NVIDIA's Nemotron 3.5 Lightning, no API key required) and Kilo Gateway (`kilo-dots-3-note-preview-noapikey` and `kilo-nvidia-nemotron-3-5-super-vl-noapikey` — both no API key required), plus NVIDIA's Nemotron 3.5 Super VL configuration.
+- **Per-Profile Max Tokens:** New optional Max Tokens (max_tokens) field in both the add and edit profile forms. Set it to send the provider's max_tokens explicitly; leave blank to use the provider default.
+
+### Security
+- **Dependency Audit Sweep:** Patched dompurify (3.4.17) and zod (4.6.7) and cleared the remaining npm audit findings via an override matrix — 44 -> 0 without forced downgrades.
+
+### Changed
+- **Default Chat Profile:** Suggestio now defaults to the Kilo Gateway profile `kilo-dots-3-note-preview-noapikey`.
+- **Webview Modularization:** Chat rendering decomposition into dedicated segment modules (message, content, reasoning, tool-call, confirmation), profile selector and chat manager extraction, direct DOM node construction, and a large coverage deepening pass.
+- **CI Runner:** Pinned to ubuntu-24.04 (Playwright 1.58 lacks an Ubuntu 26.04 matrix entry).
+
+### Removed
+- **Unavailable / Rate-Limited Profiles:** OpenRouter Nex AGI n2.5-pro, OpenRouter NVIDIA Nemotron free, Poolside Laguna, and stale endpoints from the bundled config.
+
+### Fixed
+- **Z.ai Key Identifier:** The z.ai domain now generates the ZAI_API_KEY identifier.
+
 ## [0.1.8] - 2026-09-19
 
 ### Added

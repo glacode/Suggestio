@@ -60,7 +60,7 @@ Suggestio is designed to leverage providers that offer generous free tiers. Here
 - **Qwen 3.8 27B (via Groq):** The default inline completion profile and the strongest completion quality we've measured so far — a fast, free coding model on Groq's free tier.
 - **Meta Muse Glimmer 30B (via NVIDIA NIM):** Available through NVIDIA's free endpoint registry, with low-latency generation and tool-calling support for agentic tasks.
 - **Z.ai GLM 4.7 Flash:** A fast free coding model from Zhipu AI, ready out of the box with tool-calling support.
-- **Cohere North Mini Code & Nex AGI N2.5 Pro (via OpenRouter):** Free coding-specialized models now included in the profile list.
+- **Cohere North Mini Code (via OpenRouter):** A free coding-specialized model.
 
 ---
 
@@ -76,6 +76,7 @@ While you can do most things through the UI, Suggestio supports a layered config
 
 - **Suggestio: Edit Global Config**: Opens a JSON file for advanced profile management.
 - **Project Config**: Create a `suggestio.config.json` in your root folder to share model settings (but not keys!) with your teammates.
+- **Per-Profile Max Tokens**: Profiles accept an optional Max Tokens (max_tokens) override, editable from the profile forms — leave blank for the provider default.
 
 ---
 
