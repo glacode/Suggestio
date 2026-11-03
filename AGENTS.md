@@ -31,6 +31,10 @@
 - New tests precede the code that satisfies them: run the suite red first
   and confirm the failure is an assertion diff at the target (not a crash,
   not a type error) before writing the production change.
+- Every red step is visually reviewed by the user before proceeding:
+  after each red run — the born-red proof and each mutation check —
+  show the failing output with the target-line diffs so the user can
+  check it, not just a summary.
 - Keep the failing state otherwise gate-clean: pure type widening (e.g. an
   optional field) may lead the change so the tests compile; a failing state
   is working-tree-only — never commit it; only the restored tree enters the
