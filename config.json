@@ -1,6 +1,6 @@
 {
   "$schema": "./resources/config.schema.json",
-  "activeChatProfile": "kilo-dots-3-note-preview-noapikey",
+  "activeChatProfile": "kilo-nvidia-nemotron-3-5-super-vl-noapikey",
   "activeCompletionProfile": "groq-qwen-qwen3-8-27b",
   "profiles": {
     "blockrun-nvidia-lightning-noapikey": {

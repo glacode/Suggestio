@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Dependency Audit Sweep:** Patched dompurify (3.4.17) and zod (4.6.7) and cleared the remaining npm audit findings via an override matrix — 44 -> 0 without forced downgrades.
 
 ### Changed
-- **Default Chat Profile:** Suggestio now defaults to the Kilo Gateway profile `kilo-dots-3-note-preview-noapikey`.
+- **Default Chat Profile:** Suggestio now defaults to the Kilo Gateway profile `kilo-nvidia-nemotron-3-5-super-vl-noapikey`.
 - **Webview Modularization:** Chat rendering decomposition into dedicated segment modules (message, content, reasoning, tool-call, confirmation), profile selector and chat manager extraction, direct DOM node construction, and a large coverage deepening pass.
 - **CI Runner:** Pinned to ubuntu-24.04 (Playwright 1.58 lacks an Ubuntu 26.04 matrix entry).
 
