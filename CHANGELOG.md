@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **Write Tool Parent Directories:** write_file now creates missing parent directories — previously writing into a folder that did not exist failed with ENOENT on every platform (first surfaced through Windows testing).
+- **Malformed Tool Call Arguments:** Tool calls whose arguments arrive truncated or improperly quoted are now repaired instead of being persisted, so a single malformed model output can no longer deadlock the conversation with provider-side validation errors on every follow-up request; the agent's schema check then guides the model to correct itself.
 - **Z.ai Key Identifier:** The z.ai domain now generates the ZAI_API_KEY identifier.
 
 ## [0.1.8] - 2026-09-19

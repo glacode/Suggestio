@@ -1,4 +1,5 @@
 import { IReasoningProcessor, IReasoningDelta } from "../types.js";
+import { isValidJsonObjectString } from "./toolCallJson.js";
 
 /**
  * Stateful helper to strip tags that might be fragmented across stream chunks.
@@ -109,7 +110,14 @@ export class StandardReasoningProcessor implements IReasoningProcessor {
         // Preserve extra_content only for Google's thought_signature structure
         // Strip it for other cases to ensure compatibility with standard OpenAI APIs
         // and reduce context pollution.
+        // Malformed arguments (truncated / improperly quoted JSON) are repaired to
+        // '{}' so the provider validation never rejects the replayed history and
+        // the agent's own schema check can guide the model to correct itself.
         const cleanedToolCalls = tool_calls?.map((tc: any) => {
+            const repairedArguments = isValidJsonObjectString(tc.function.arguments)
+                ? tc.function.arguments
+                : '{}';
+
             // Check if this is Google's thought_signature structure
             const isGoogleThoughtSignature = tc.extra_content?.google?.thought_signature !== undefined;
             
@@ -118,7 +126,7 @@ export class StandardReasoningProcessor implements IReasoningProcessor {
                 return {
                     id: tc.id,
                     type: tc.type,
-                    function: tc.function,
+                    function: { ...tc.function, arguments: repairedArguments },
                     extra_content: tc.extra_content
                 };
             } else {
@@ -126,7 +134,7 @@ export class StandardReasoningProcessor implements IReasoningProcessor {
                 return {
                     id: tc.id,
                     type: tc.type,
-                    function: tc.function,
+                    function: { ...tc.function, arguments: repairedArguments },
                 };
             }
         });

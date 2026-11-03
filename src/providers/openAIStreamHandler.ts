@@ -13,6 +13,7 @@ import {
 import { APP_EVENTS } from "../constants/protocol.js";
 import { OpenAIStreamDelta, OpenAIStreamingToolCall } from "./openAIResponseParser.js";
 import { LLM_MESSAGES, LLM_LOGS } from "../constants/messages.js";
+import { isValidJsonObjectString } from "./toolCallJson.js";
 
 /**
  * Minimal logger interface for streaming events.
@@ -92,6 +93,12 @@ export class OpenAIStreamHandler implements IOpenAIStreamHandler {
             // fresh, dense one containing only the real tool calls - no holes,
             // no nulls, and no dummy/placeholder objects sent to the model.
             const denseToolCalls = currentToolCalls.filter((tc) => tc !== null && tc !== undefined);
+            for (const toolCall of denseToolCalls) {
+                if (!isValidJsonObjectString(toolCall.function.arguments)) {
+                    this.logger.warn(`Repaired malformed streamed tool call arguments for '${toolCall.function.name}'`);
+                    toolCall.function.arguments = '{}';
+                }
+            }
             messageToPush = { role: 'assistant', content: '', tool_calls: denseToolCalls };
             currentToolCalls = [];
         }

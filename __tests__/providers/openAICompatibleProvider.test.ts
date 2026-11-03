@@ -942,8 +942,11 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
     });
     const response = await provider.queryStream(new TestPrompt([]));
     expect(response).toHaveLength(1);
+    // The name is passed through unrepaired, but missing or malformed
+    // arguments are repaired to '{}' - providers reject replayed history
+    // whose tool call arguments are not a valid JSON object string.
     expect(response[0].tool_calls?.[0].function.name).toBe("");
-    expect(response[0].tool_calls?.[0].function.arguments).toBe("");
+    expect(response[0].tool_calls?.[0].function.arguments).toBe("{}");
   });
 
   it("should handle reasoning tokens in queryStream", async () => {

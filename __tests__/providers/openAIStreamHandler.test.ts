@@ -105,6 +105,31 @@ describe('OpenAIStreamHandler', () => {
     expect(results[0].tool_calls?.[0].function.arguments).toBe('{"q":"test"}');
   });
 
+  it('should repair malformed tool call arguments when flushing the tool_calls phase', async () => {
+    // Arguments whose JSON truncates mid-content ("EOF while parsing") must not
+    // reach the chat history uncorrected: the provider would reject every
+    // follow-up request that replays them.
+    const chunks = [
+      'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"write_file","arguments":"{\\"path\\":\\"x.ts\\",\\"content\\":\\"<h1>oops</h1>"}}]}}]}\n',
+      'data: [DONE]\n'
+    ];
+
+    const response: IHttpResponse = {
+      body: createAsyncIterable(chunks),
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      json: jest.fn<() => Promise<any>>().mockResolvedValue({}),
+      text: jest.fn<() => Promise<string>>().mockResolvedValue('')
+    };
+
+    const results = await handler.handleStream(response);
+
+    expect(results).toHaveLength(1);
+    expect(results[0].tool_calls?.[0].function.name).toBe('write_file');
+    expect(results[0].tool_calls?.[0].function.arguments).toBe('{}');
+  });
+
   it('should throw if response body is missing', async () => {
     const response: IHttpResponse = {
       body: null,

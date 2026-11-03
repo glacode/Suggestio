@@ -159,5 +159,37 @@ describe('StandardReasoningProcessor', () => {
             const nonGoogleResult = processor.prepareHistoryMessage(nonGoogleMessage);
             expect(nonGoogleResult.tool_calls[0].extra_content).toBeUndefined();
         });
+
+        it('should repair malformed tool call arguments for both extra_content variants', () => {
+            // A deadlocked session: arguments truncated mid-JSON (e.g. an
+            // unended write_file content object) must not be replayed to the
+            // provider, or every follow-up request fails validation.
+            const malformedArguments = '{"path": "index.html", "content": "<h1>oops';
+            const googleMessage = {
+                role: 'assistant' as const,
+                content: '',
+                tool_calls: [{
+                    id: '1',
+                    type: 'function',
+                    function: { name: 'write_file', arguments: malformedArguments },
+                    extra_content: { google: { thought_signature: 'abc' } }
+                }]
+            };
+            const googleResult = processor.prepareHistoryMessage(googleMessage);
+            expect(googleResult.tool_calls[0].function.arguments).toBe('{}');
+            expect(googleResult.tool_calls[0].extra_content).toEqual({ google: { thought_signature: 'abc' } });
+
+            const nonGoogleMessage = {
+                role: 'assistant' as const,
+                content: '',
+                tool_calls: [{
+                    id: '2',
+                    type: 'function',
+                    function: { name: 'write_file', arguments: malformedArguments }
+                }]
+            };
+            const nonGoogleResult = processor.prepareHistoryMessage(nonGoogleMessage);
+            expect(nonGoogleResult.tool_calls[0].function.arguments).toBe('{}');
+        });
     });
 });
