@@ -1,8 +1,8 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { WriteFileTool } from "../../src/tools/writeFileTool.js";
-import { IWorkspaceProvider, IPathResolver, IFileContentReader, IFileContentWriter, IEventBus, IIgnoreManager, IUserConfirmationPayload } from "../../src/types.js";
+import { IWorkspaceProvider, IPathResolver, IFileContentReader, IFileContentWriter, IDirectoryCreator, IEventBus, IIgnoreManager, IUserConfirmationPayload } from "../../src/types.js";
 import { AGENT_MESSAGES } from "../../src/constants/messages.js";
-import { createMockPathResolver, createMockFileContentReader, createMockWorkspaceProvider, createMockEventBus, createMockIgnoreManager, createMockFileContentWriter, createMockConfigContainer } from "../testUtils.js";
+import { createMockPathResolver, createMockFileContentReader, createMockWorkspaceProvider, createMockEventBus, createMockIgnoreManager, createMockFileContentWriter, createMockConfigContainer, createMockDirectoryCreator } from "../testUtils.js";
 
 describe("WriteFileTool", () => {
     let tool: WriteFileTool;
@@ -12,6 +12,7 @@ describe("WriteFileTool", () => {
     let pathResolver: jest.Mocked<IPathResolver>;
     let eventBus: jest.Mocked<IEventBus>;
     let ignoreManager: jest.Mocked<IIgnoreManager>;
+    let directoryCreator: jest.Mocked<IDirectoryCreator>;
     const mockRootPath = "/root";
 
     beforeEach(() => {
@@ -24,9 +25,10 @@ describe("WriteFileTool", () => {
         eventBus = createMockEventBus();
         ignoreManager = createMockIgnoreManager();
         ignoreManager.shouldIgnore.mockResolvedValue(false);
+        directoryCreator = createMockDirectoryCreator();
 
         const mockConfigContainer = createMockConfigContainer();
-        tool = new WriteFileTool(workspaceProvider, fileReader, fileWriter, pathResolver, eventBus, ignoreManager, mockConfigContainer);
+        tool = new WriteFileTool(workspaceProvider, fileReader, fileWriter, directoryCreator, pathResolver, eventBus, ignoreManager, mockConfigContainer);
     });
 
     it("should have the correct definition", () => {
@@ -55,6 +57,24 @@ describe("WriteFileTool", () => {
         const result = await tool.execute({ path: "test.ts", content: "test" });
         expect(result.success).toBe(false);
         expect(result.content).toBe(AGENT_MESSAGES.ERROR_PATH_IGNORED("test.ts"));
+    });
+
+    it("should create missing parent directories before writing", async () => {
+        const result = await tool.execute({ path: "task-manager/index.html", content: "<h1>hi</h1>" });
+
+        expect(directoryCreator.mkdir).toHaveBeenCalledWith("/root/task-manager", { recursive: true });
+        expect(result.success).toBe(true);
+    });
+
+    it("should surface directory-creation failures through the write error channel", async () => {
+        directoryCreator.mkdir.mockImplementation(() => {
+            throw new Error("boom");
+        });
+
+        const result = await tool.execute({ path: "task-manager/index.html", content: "x" });
+
+        expect(result.success).toBe(false);
+        expect(result.content).toBe("Error writing to file: boom");
     });
 
     it("should request confirmation and write if allowed", async () => {
@@ -171,7 +191,7 @@ describe("WriteFileTool", () => {
         const toolCallId = "call1";
         const autoAcceptConfig = createMockConfigContainer({ autoAcceptEdits: true });
         
-        tool = new WriteFileTool(workspaceProvider, fileReader, fileWriter, pathResolver, eventBus, ignoreManager, autoAcceptConfig);
+        tool = new WriteFileTool(workspaceProvider, fileReader, fileWriter, directoryCreator, pathResolver, eventBus, ignoreManager, autoAcceptConfig);
 
         const result = await tool.execute({ path: filePath, content }, undefined, toolCallId);
 

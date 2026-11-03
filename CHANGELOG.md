@@ -21,8 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - **Unavailable / Rate-Limited Profiles:** OpenRouter Nex AGI n2.5-pro, OpenRouter NVIDIA Nemotron free, Poolside Laguna, and stale endpoints from the bundled config.
-
 ### Fixed
+
+- **Write Tool Parent Directories:** write_file now creates missing parent directories — previously writing into a folder that did not exist failed with ENOENT on every platform (first surfaced through Windows testing).
 - **Z.ai Key Identifier:** The z.ai domain now generates the ZAI_API_KEY identifier.
 
 ## [0.1.8] - 2026-09-19

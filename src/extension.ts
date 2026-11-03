@@ -269,6 +269,7 @@ export async function activate(context: vscode.ExtensionContext) {
     workspaceProvider,
     fileContentReader,
     fileContentWriter,
+    directoryCreator,
     pathResolver,
     eventBus,
     ignoreManager,

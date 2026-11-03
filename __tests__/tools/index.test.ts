@@ -1,14 +1,15 @@
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { getTools } from "../../src/tools/index.js";
 import { ReadFileTool, WriteFileTool, ReplaceTextTool, ListFilesTool, GrepSearchTool, RunCommandTool } from "../../src/tools/index.js";
-import { createMockWorkspaceProvider, createMockFileContentReader, createMockFileContentWriter, createMockPathResolver, createMockEventBus, createMockIgnoreManager, createMockConfigContainer } from "../testUtils.js";
-import { ICommandExecutor, ICommandValidator, IWorkspaceScanner, IWorkspaceProvider, IFileContentReader, IFileContentWriter, IPathResolver, IEventBus, IIgnoreManager, ICommandAutoAcceptManager } from "../../src/types.js";
+import { createMockWorkspaceProvider, createMockFileContentReader, createMockFileContentWriter, createMockDirectoryCreator, createMockPathResolver, createMockEventBus, createMockIgnoreManager, createMockConfigContainer } from "../testUtils.js";
+import { ICommandExecutor, ICommandValidator, IWorkspaceScanner, IWorkspaceProvider, IFileContentReader, IFileContentWriter, IDirectoryCreator, IPathResolver, IEventBus, IIgnoreManager, ICommandAutoAcceptManager } from "../../src/types.js";
 import { jest } from "@jest/globals";
 
 describe("Tools Index", () => {
     let workspaceProvider: jest.Mocked<IWorkspaceProvider>;
     let fileReader: jest.Mocked<IFileContentReader>;
     let fileWriter: jest.Mocked<IFileContentWriter>;
+    let directoryCreator: jest.Mocked<IDirectoryCreator>;
     let pathResolver: jest.Mocked<IPathResolver>;
     let eventBus: jest.Mocked<IEventBus>;
     let ignoreManager: jest.Mocked<IIgnoreManager>;
@@ -21,6 +22,7 @@ describe("Tools Index", () => {
         workspaceProvider = createMockWorkspaceProvider();
         fileReader = createMockFileContentReader();
         fileWriter = createMockFileContentWriter();
+        directoryCreator = createMockDirectoryCreator();
         pathResolver = createMockPathResolver();
         eventBus = createMockEventBus();
         ignoreManager = createMockIgnoreManager();
@@ -40,6 +42,7 @@ describe("Tools Index", () => {
             workspaceProvider,
             fileReader,
             fileWriter,
+            directoryCreator,
             pathResolver,
             eventBus,
             ignoreManager,
@@ -65,6 +68,7 @@ describe("Tools Index", () => {
             workspaceProvider,
             fileReader,
             fileWriter,
+            directoryCreator,
             pathResolver,
             eventBus,
             ignoreManager,

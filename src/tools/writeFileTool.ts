@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { IWorkspaceProvider, IToolDefinition, IPathResolver, IFileContentReader, IFileContentWriter, IToolResult, IEventBus, IIgnoreManager, IConfigContainer } from '../types.js';
+import { IWorkspaceProvider, IToolDefinition, IPathResolver, IFileContentReader, IFileContentWriter, IDirectoryCreator, IToolResult, IEventBus, IIgnoreManager, IConfigContainer } from '../types.js';
 import { AGENT_MESSAGES } from '../constants/messages.js';
 import { BaseTool } from './baseTool.js';
 
@@ -46,6 +46,7 @@ export class WriteFileTool extends BaseTool<WriteFileArgs> {
         private workspaceProvider: IWorkspaceProvider,
         private fileReader: IFileContentReader,
         private fileWriter: IFileContentWriter,
+        private directoryCreator: IDirectoryCreator,
         private pathResolver: IPathResolver,
         private eventBus: IEventBus,
         private ignoreManager: IIgnoreManager,
@@ -112,6 +113,8 @@ export class WriteFileTool extends BaseTool<WriteFileArgs> {
 
         // 3. Perform the write
         try {
+            const parentDirectory = this.pathResolver.dirname(resolvedPath);
+            this.directoryCreator.mkdir(parentDirectory, { recursive: true });
             this.fileWriter.write(resolvedPath, args.content);
             return { content: `Successfully wrote ${args.path}`, success: true };
         } catch (error: any) {
