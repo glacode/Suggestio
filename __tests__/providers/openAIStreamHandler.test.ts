@@ -3,7 +3,7 @@ import { DAMAGED_ARGUMENTS_STUB } from '../../src/providers/toolCallJson.js';
 import { StandardReasoningProcessor } from '../../src/providers/reasoningProcessor.js';
 import { OpenAIResponseParser } from '../../src/providers/openAIResponseParser.js';
 import { IAnonymizer, IHttpResponse } from '../../src/types.js';
-import { createMockEventBus, createMockLogger, createMockAnonymizer } from '../testUtils.js';
+import { createMockEventBus, createMockLogger, createMockAnonymizer, withoutNodeJsonLineColumn } from '../testUtils.js';
 import { expect, jest } from '@jest/globals';
 
 describe('OpenAIStreamHandler', () => {
@@ -132,8 +132,8 @@ describe('OpenAIStreamHandler', () => {
     expect(results).toHaveLength(1);
     expect(results[0].tool_calls?.[0].function.name).toBe('write_file');
     expect(results[0].tool_calls?.[0].function.arguments).toBe(DAMAGED_ARGUMENTS_STUB);
-    expect(results[0].tool_calls?.[0].argumentsParseError).toBe(
-      'Unterminated string in JSON at position 39 (line 1 column 40)'
+    expect(withoutNodeJsonLineColumn(results[0].tool_calls?.[0].argumentsParseError)).toBe(
+      'Unterminated string in JSON at position 39'
     );
     expect(results[0].tool_calls?.[0].originalDamagedArguments).toBe(
       '{"path":"x.ts","content":"<h1>oops</h1>'

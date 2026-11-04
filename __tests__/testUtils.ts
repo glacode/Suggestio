@@ -398,6 +398,17 @@ export function createMockDomRect(overrides: Partial<DOMRect> = {}): DOMRect {
 }
 
 /**
+ * Normalizes JSON syntax-error text across Node flavors: from Node 21 on,
+ * V8 appends "(line N column N)" to JSON.parse error messages, while older
+ * stacks stop at the byte position. Assertions comparing such messages must
+ * accept both renderings, so tests strip the suffix before comparing.
+ * Nullish inputs normalize to an empty string.
+ */
+export function withoutNodeJsonLineColumn(text: string | null | undefined): string {
+    return (text ?? '').replace(/\s*\(line \d+ column \d+\)/g, '');
+}
+
+/**
  * Loads the real media/chat.css stylesheet into jsdom so tests can assert
  * computed styles against the same CSS the webview ships with.
  */

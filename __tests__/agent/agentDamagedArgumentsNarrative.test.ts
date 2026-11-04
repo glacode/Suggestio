@@ -20,8 +20,8 @@ import { OpenAIResponseParser } from "../../src/providers/openAIResponseParser.j
 import { DAMAGED_ARGUMENTS_STUB } from "../../src/providers/toolCallJson.js";
 import { IHttpResponse, IToolImplementation, IToolDefinition } from "../../src/types.js";
 import { z } from "zod";
+import { withoutNodeJsonLineColumn, createMockEventBus, createMockHistoryManager, createMockLogger, createMockAnonymizer, createDefaultConfig, FakeProvider } from "../testUtils.js";
 import { expect, jest } from "@jest/globals";
-import { createMockEventBus, createMockHistoryManager, createMockLogger, createMockAnonymizer, createDefaultConfig, FakeProvider } from "../testUtils.js";
 
 // ----------------------------------------------------------------------------
 // LEG 1 - the arguments text the model emitted, byte for byte. The unescaped
@@ -31,7 +31,7 @@ const MODEL_RAW_EMITTED_ARGUMENTS =
     '{"path": "task-manager/style.css", "content": "h1 { font-family: "Aria';
 
 const JSON_PARSE_ERROR_FOR_THE_EMITTED_ARGUMENTS =
-    "Expected ',' or '}' after property value in JSON at position 66 (line 1 column 67)";
+    "Expected ',' or '}' after property value in JSON at position 66";
 
 // ----------------------------------------------------------------------------
 // LEG 2 - the model's past call as it re-reads it from the replayed history:
@@ -101,7 +101,9 @@ describe("Damaged tool call arguments, end to end", () => {
     // ... whose visible argument text is the self-describing stub ...
     expect(emittedToolCall?.function.arguments).toBe(TOOL_CALL_ARGUMENTS_THE_MODEL_WOULD_SEE);
     // ... annotated for the composer with the underlying JSON.parse error ...
-    expect(emittedToolCall?.argumentsParseError).toBe(JSON_PARSE_ERROR_FOR_THE_EMITTED_ARGUMENTS);
+    expect(withoutNodeJsonLineColumn(emittedToolCall?.argumentsParseError)).toBe(
+      JSON_PARSE_ERROR_FOR_THE_EMITTED_ARGUMENTS
+    );
     // ... and with the model's verbatim broken bytes.
     expect(emittedToolCall?.originalDamagedArguments).toBe(MODEL_RAW_EMITTED_ARGUMENTS);
 
@@ -171,17 +173,21 @@ describe("Damaged tool call arguments, end to end", () => {
     //   { "role": "tool", "tool_call_id": "call_1",
     //     "content": "The arguments for tool 'write_file' could not be parsed
     //       as JSON: Expected ',' or '}' after property value in JSON at
-    //       position 66 (line 1 column 67).\nOriginal text sent before repair:
+    //       position 66.\nOriginal text sent before repair:
     //       {\"path\": \"task-manager/style.css\", \"content\": \"h1 {
     //       font-family: \"Aria\nRequired parameters: path, content.\nRe-send
     //       with a valid JSON object; escape inner quotes and newlines
     //       (\\\" \\n)." }
+    //
+    // Node 21+ renders the parse error with a trailing "(line N column N)"
+    // marker; the assertion compares the stable diagnostic core, so the
+    // actual content is normalized before the byte-exact comparison.
     // ------------------------------------------------------------------------
     const toolResultMessage = mockHistoryManager.getChatHistory().find(m => m.role === "tool");
 
     // ... and the answer becomes a message TO the model:
     expect(toolResultMessage?.role).toBe("tool");
     expect(toolResultMessage?.tool_call_id).toBe("call_1");
-    expect(toolResultMessage?.content).toBe(TOOL_RESPONSE_CONTENT_THE_MODEL_RECEIVES);
+    expect(withoutNodeJsonLineColumn(toolResultMessage?.content)).toBe(TOOL_RESPONSE_CONTENT_THE_MODEL_RECEIVES);
   });
 });

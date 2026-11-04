@@ -1,4 +1,5 @@
 import { getJsonParseFailure, DAMAGED_ARGUMENTS_STUB } from "../../src/providers/toolCallJson.js";
+import { withoutNodeJsonLineColumn } from "../testUtils.js";
 import { expect } from "@jest/globals";
 
 describe("toolCallJson", () => {
@@ -12,14 +13,14 @@ describe("toolCallJson", () => {
     });
 
     it("should surface the underlying JSON.parse error for truncated arguments", () => {
-        expect(getJsonParseFailure('{"path": "task-manager/style.cs')).toBe(
-            "Unterminated string in JSON at position 31 (line 1 column 32)"
+        expect(withoutNodeJsonLineColumn(getJsonParseFailure('{"path": "task-manager/style.cs'))).toBe(
+            "Unterminated string in JSON at position 31"
         );
     });
 
     it("should surface the underlying JSON.parse error for improperly quoted arguments", () => {
-        expect(getJsonParseFailure('{"path": "x.ts", "content": "h1 { font-family: "Aria')).toBe(
-            "Expected ',' or '}' after property value in JSON at position 48 (line 1 column 49)"
+        expect(withoutNodeJsonLineColumn(getJsonParseFailure('{"path": "x.ts", "content": "h1 { font-family: "Aria'))).toBe(
+            "Expected ',' or '}' after property value in JSON at position 48"
         );
     });
 
