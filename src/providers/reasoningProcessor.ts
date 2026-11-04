@@ -1,5 +1,5 @@
 import { IReasoningProcessor, IReasoningDelta } from "../types.js";
-import { isValidJsonObjectString } from "./toolCallJson.js";
+import { getJsonParseFailure } from "./toolCallJson.js";
 
 /**
  * Stateful helper to strip tags that might be fragmented across stream chunks.
@@ -114,7 +114,7 @@ export class StandardReasoningProcessor implements IReasoningProcessor {
         // '{}' so the provider validation never rejects the replayed history and
         // the agent's own schema check can guide the model to correct itself.
         const cleanedToolCalls = tool_calls?.map((tc: any) => {
-            const repairedArguments = isValidJsonObjectString(tc.function.arguments)
+            const repairedArguments = getJsonParseFailure(tc.function.arguments) === null
                 ? tc.function.arguments
                 : '{}';
 

@@ -191,5 +191,25 @@ describe('StandardReasoningProcessor', () => {
             const nonGoogleResult = processor.prepareHistoryMessage(nonGoogleMessage);
             expect(nonGoogleResult.tool_calls[0].function.arguments).toBe('{}');
         });
+
+        it('should not leak the damaged-argument annotations into the outgoing tool call', () => {
+            // The annotations explain a tool call to the AGENT; the wire
+            // payload to the provider must stay clean, so
+            // prepareHistoryMessage drops them when rebuilding tool calls.
+            const annotatedMessage = {
+                role: 'assistant' as const,
+                content: '',
+                tool_calls: [{
+                    id: '3',
+                    type: 'function',
+                    function: { name: 'write_file', arguments: '{}' },
+                    argumentsParseError: 'Unterminated string in JSON at position 31 (line 1 column 32)',
+                    originalDamagedArguments: '{"path": "task-manager/style.cs'
+                }]
+            };
+            const result = processor.prepareHistoryMessage(annotatedMessage);
+            expect('argumentsParseError' in result.tool_calls[0]).toBe(false);
+            expect('originalDamagedArguments' in result.tool_calls[0]).toBe(false);
+        });
     });
 });

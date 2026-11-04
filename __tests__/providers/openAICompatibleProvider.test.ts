@@ -3,6 +3,7 @@ import { OpenAICompatibleProvider } from "../../src/providers/openAICompatiblePr
 import { IChatMessage, IStoredChatMessage, IAnonymizer, IPrompt, IHttpClient, IHttpResponse, IToolDefinition, IEventBus, IConfig } from "../../src/types.js";
 import { SimpleWordAnonymizer } from "../../src/anonymizer/simpleWordAnonymizer.js";
 import { ShannonEntropyCalculator } from "../../src/utils/shannonEntropyCalculator.js";
+import { DAMAGED_ARGUMENTS_STUB } from "../../src/providers/toolCallJson.js";
 import { createMockEventBus, createDefaultConfig } from "../testUtils.js";
 
 const entropyCalculator = new ShannonEntropyCalculator();
@@ -943,10 +944,13 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
     const response = await provider.queryStream(new TestPrompt([]));
     expect(response).toHaveLength(1);
     // The name is passed through unrepaired, but missing or malformed
-    // arguments are repaired to '{}' - providers reject replayed history
-    // whose tool call arguments are not a valid JSON object string.
+    // arguments are replaced by the self-describing stub and annotated with
+    // the parse error and the original text - providers reject replayed
+    // history whose tool call arguments are not a valid JSON object string.
     expect(response[0].tool_calls?.[0].function.name).toBe("");
-    expect(response[0].tool_calls?.[0].function.arguments).toBe("{}");
+    expect(response[0].tool_calls?.[0].function.arguments).toBe(DAMAGED_ARGUMENTS_STUB);
+    expect(response[0].tool_calls?.[0].argumentsParseError).toBe("Unexpected end of JSON input");
+    expect(response[0].tool_calls?.[0].originalDamagedArguments).toBe("");
   });
 
   it("should handle reasoning tokens in queryStream", async () => {

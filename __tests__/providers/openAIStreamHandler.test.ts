@@ -1,4 +1,5 @@
 import { OpenAIStreamHandler } from '../../src/providers/openAIStreamHandler.js';
+import { DAMAGED_ARGUMENTS_STUB } from '../../src/providers/toolCallJson.js';
 import { StandardReasoningProcessor } from '../../src/providers/reasoningProcessor.js';
 import { OpenAIResponseParser } from '../../src/providers/openAIResponseParser.js';
 import { IAnonymizer, IHttpResponse } from '../../src/types.js';
@@ -108,7 +109,10 @@ describe('OpenAIStreamHandler', () => {
   it('should repair malformed tool call arguments when flushing the tool_calls phase', async () => {
     // Arguments whose JSON truncates mid-content ("EOF while parsing") must not
     // reach the chat history uncorrected: the provider would reject every
-    // follow-up request that replays them.
+    // follow-up request that replays them. The repair replaces them with the
+    // self-describing stub and annotates both the underlying parse error and
+    // the original text, so the agent can tell the model what it actually sent
+    // instead of letting it believe it emitted an empty object.
     const chunks = [
       'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"write_file","arguments":"{\\"path\\":\\"x.ts\\",\\"content\\":\\"<h1>oops</h1>"}}]}}]}\n',
       'data: [DONE]\n'
@@ -127,7 +131,13 @@ describe('OpenAIStreamHandler', () => {
 
     expect(results).toHaveLength(1);
     expect(results[0].tool_calls?.[0].function.name).toBe('write_file');
-    expect(results[0].tool_calls?.[0].function.arguments).toBe('{}');
+    expect(results[0].tool_calls?.[0].function.arguments).toBe(DAMAGED_ARGUMENTS_STUB);
+    expect(results[0].tool_calls?.[0].argumentsParseError).toBe(
+      'Unterminated string in JSON at position 39 (line 1 column 40)'
+    );
+    expect(results[0].tool_calls?.[0].originalDamagedArguments).toBe(
+      '{"path":"x.ts","content":"<h1>oops</h1>'
+    );
   });
 
   it('should throw if response body is missing', async () => {

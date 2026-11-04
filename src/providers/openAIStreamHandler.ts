@@ -13,7 +13,7 @@ import {
 import { APP_EVENTS } from "../constants/protocol.js";
 import { OpenAIStreamDelta, OpenAIStreamingToolCall } from "./openAIResponseParser.js";
 import { LLM_MESSAGES, LLM_LOGS } from "../constants/messages.js";
-import { isValidJsonObjectString } from "./toolCallJson.js";
+import { getJsonParseFailure, DAMAGED_ARGUMENTS_STUB } from "./toolCallJson.js";
 
 /**
  * Minimal logger interface for streaming events.
@@ -94,9 +94,16 @@ export class OpenAIStreamHandler implements IOpenAIStreamHandler {
             // no nulls, and no dummy/placeholder objects sent to the model.
             const denseToolCalls = currentToolCalls.filter((tc) => tc !== null && tc !== undefined);
             for (const toolCall of denseToolCalls) {
-                if (!isValidJsonObjectString(toolCall.function.arguments)) {
+                // Damaged arguments text: replace it with the self-describing
+                // stub and annotate why, so the agent's tool result can tell
+                // the model what it actually sent. The send surface strips the
+                // annotations before replaying the history.
+                const parseFailure = getJsonParseFailure(toolCall.function.arguments);
+                if (parseFailure !== null) {
                     this.logger.warn(`Repaired malformed streamed tool call arguments for '${toolCall.function.name}'`);
-                    toolCall.function.arguments = '{}';
+                    toolCall.originalDamagedArguments = toolCall.function.arguments;
+                    toolCall.argumentsParseError = parseFailure;
+                    toolCall.function.arguments = DAMAGED_ARGUMENTS_STUB;
                 }
             }
             messageToPush = { role: 'assistant', content: '', tool_calls: denseToolCalls };

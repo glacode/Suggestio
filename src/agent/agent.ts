@@ -6,6 +6,7 @@ import { createEventLogger } from "../log/eventLogger.js";
 import { AGENT_MESSAGES, AGENT_LOGS } from "../constants/messages.js";
 import { ChatPrompt } from "../chat/chatPrompt.js";
 import { adaptiveMiddleTruncate } from "../utils/textUtils.js";
+import { composeDamagedArgumentsMessage, composeInvalidArgumentsMessage, extractRequiredParameterNames } from "./toolArgumentMessages.js";
 
 /**
  * Arguments for the Agent constructor.
@@ -151,11 +152,27 @@ export class Agent implements IChatAgent {
         });
 
         try {
+            // Damaged-arguments calls carry the stream finalizer's annotations:
+            // the structured arguments are the self-describing stub, so schema
+            // validation would only blame the stub. The composer answers with
+            // the real parse error, the original text and the required
+            // parameters instead.
+            if (toolCall.argumentsParseError !== undefined) {
+                const requiredParameters = extractRequiredParameterNames(tool.schema);
+                const errorMessage = composeDamagedArgumentsMessage(
+                    toolCall.function.name,
+                    toolCall.argumentsParseError,
+                    toolCall.originalDamagedArguments ?? '',
+                    requiredParameters
+                );
+                this.recordToolResult(toolCall.id, toolCall.function.name, errorMessage, false);
+                return;
+            }
             const parsedArgs = JSON.parse(toolCall.function.arguments);
             const validationResult = tool.schema.safeParse(parsedArgs);
             if (!validationResult.success) {
                 const errorDetails = validationResult.error.issues.map(issue => `${issue.path.join('.')}: ${issue.message}`).join(', ');
-                const errorMessage = `Invalid arguments for tool '${toolCall.function.name}': ${errorDetails}. Please correct the arguments and try again.`;
+                const errorMessage = composeInvalidArgumentsMessage(toolCall.function.name, errorDetails);
                 this.recordToolResult(toolCall.id, toolCall.function.name, errorMessage, false);
                 return;
             }
