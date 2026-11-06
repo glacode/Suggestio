@@ -20,7 +20,7 @@ describe("Agent Tool Argument Validation", () => {
         const mockTool: IToolImplementation<any> = {
             definition,
             schema,
-            execute: jest.fn<any>().mockResolvedValue({ content: "success", success: true }),
+            execute: jest.fn<IToolImplementation<any>["execute"]>().mockResolvedValue({ content: "success", success: true }),
         };
 
         const mockHistoryManager = createMockHistoryManager([]);
@@ -91,7 +91,7 @@ describe("Agent Tool Argument Validation", () => {
         const mockTool: IToolImplementation<any> = {
             definition,
             schema,
-            execute: jest.fn<any>().mockResolvedValue({ content: "Success result", success: true }),
+            execute: jest.fn<IToolImplementation<any>["execute"]>().mockResolvedValue({ content: "Success result", success: true }),
         };
 
         const mockHistoryManager = createMockHistoryManager([]);
@@ -156,7 +156,7 @@ describe("Agent Tool Argument Validation", () => {
         const mockTool: IToolImplementation<any> = {
             definition,
             schema,
-            execute: jest.fn<any>().mockResolvedValue({ content: "Success", success: true }),
+            execute: jest.fn<IToolImplementation<any>["execute"]>().mockResolvedValue({ content: "Success", success: true }),
         };
 
         const mockHistoryManager = createMockHistoryManager([]);
@@ -234,7 +234,7 @@ describe("Agent Tool Argument Validation", () => {
         const mockTool: IToolImplementation<any> = {
             definition,
             schema,
-            execute: jest.fn<any>().mockResolvedValue({ content: "success", success: true }),
+            execute: jest.fn<IToolImplementation<any>["execute"]>().mockResolvedValue({ content: "success", success: true }),
         };
 
         const mockHistoryManager = createMockHistoryManager([]);

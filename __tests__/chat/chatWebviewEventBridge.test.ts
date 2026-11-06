@@ -7,8 +7,8 @@ import { createMockWebview, createMockWebviewView } from '../testUtils.js';
 
 describe('ChatWebviewEventBridge', () => {
     const createMockToolUiProvider = (): IToolUiProvider => ({
-        getToolUI: jest.fn<any>().mockReturnValue({ displayMessage: 'display', uiOptions: {} }),
-        enrichHistory: jest.fn<any>()
+        getToolUI: jest.fn<IToolUiProvider["getToolUI"]>().mockReturnValue({ displayMessage: 'display', uiOptions: {} }),
+        enrichHistory: jest.fn<IToolUiProvider["enrichHistory"]>()
     });
 
     it('forwards agent:token to webview', async () => {

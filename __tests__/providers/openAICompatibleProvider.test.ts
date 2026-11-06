@@ -67,7 +67,7 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
 
   beforeEach(() => {
     mockHttpClient = {
-      post: jest.fn<any>(),
+      post: jest.fn<IHttpClient["post"]>(),
     };
     mockEventBus = createMockEventBus();
   });
@@ -583,8 +583,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
 
   it("should flush deanonymizer on [DONE]", async () => {
     const anonymizer: IAnonymizer = {
-      anonymize: jest.fn<any>(),
-      deanonymize: jest.fn<any>(),
+      anonymize: jest.fn<IAnonymizer["anonymize"]>(),
+      deanonymize: jest.fn<IAnonymizer["deanonymize"]>(),
       createStreamingDeanonymizer: () => ({
         process: (chunk: string) => ({ processed: "", buffer: chunk }),
         flush: () => "flushed"
@@ -605,8 +605,8 @@ describe("OpenAICompatibleProvider (Mocked)", () => {
 
   it("should handle deanonymizer flush returning empty", async () => {
     const anonymizer: IAnonymizer = {
-      anonymize: jest.fn<any>(),
-      deanonymize: jest.fn<any>(),
+      anonymize: jest.fn<IAnonymizer["anonymize"]>(),
+      deanonymize: jest.fn<IAnonymizer["deanonymize"]>(),
       createStreamingDeanonymizer: () => ({
         process: (chunk: string) => ({ processed: chunk, buffer: "" }),
         flush: () => ""

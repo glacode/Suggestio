@@ -198,11 +198,11 @@ export const createMockProvider = (): jest.Mocked<ILlmProvider> => ({
 });
 
 export const createMockEventBus = (): jest.Mocked<IEventBus> => ({
-    on: jest.fn<any>(),
-    once: jest.fn<any>(),
-    off: jest.fn<any>(),
-    emit: jest.fn<any>(),
-    removeAllListeners: jest.fn<any>(),
+    on: jest.fn<IEventBus["on"]>(),
+    once: jest.fn<IEventBus["once"]>(),
+    off: jest.fn<IEventBus["off"]>(),
+    emit: jest.fn<IEventBus["emit"]>(),
+    removeAllListeners: jest.fn<IEventBus["removeAllListeners"]>(),
 });
 
 export const createMockLogger = (): jest.Mocked<ILogger> => ({
@@ -242,8 +242,8 @@ export const createMockPersistentHistoryManager = (recorded: IStoredChatMessage[
 });
 
 export const createMockDiffManager = (): jest.Mocked<IDiffManager> => ({
-    showDiff: jest.fn<any>().mockResolvedValue(undefined),
-    closeDiff: jest.fn<any>().mockResolvedValue(undefined),
+    showDiff: jest.fn<IDiffManager["showDiff"]>().mockResolvedValue(undefined),
+    closeDiff: jest.fn<IDiffManager["closeDiff"]>().mockResolvedValue(undefined),
 });
 
 export const createMockWindowProvider = (): jest.Mocked<IWindowProvider> => ({
@@ -330,7 +330,7 @@ export const createMockConfigProvider = (): jest.Mocked<IConfigProvider> => ({
     getActiveCompletionProfile: jest.fn<() => string | undefined>(),
     deleteProfile: jest.fn<(profileId: string) => Promise<void>>(),
     updateConfig: jest.fn<(key: string, value: any, global: boolean) => Promise<void>>(),
-    onDidChangeConfiguration: jest.fn<any>(),
+    onDidChangeConfiguration: jest.fn<IConfigProvider["onDidChangeConfiguration"]>(),
 });
 
 export const createMockProfileConfig = (overrides: Partial<IProfileConfig> = {}): IProfileConfig => ({
@@ -484,15 +484,15 @@ export const createMockCancellationToken = (): IMockCancellationToken => ({
 });
 
 export const createMockSecretManager = (): jest.Mocked<ISecretManager> => ({
-    getOrRequestAPIKey: jest.fn<any>().mockResolvedValue('resolved-key'),
-    getSecret: jest.fn<any>().mockResolvedValue('resolved-key'),
-    updateAPIKey: jest.fn<any>().mockResolvedValue(undefined),
-    deleteSecret: jest.fn<any>().mockResolvedValue(undefined),
+    getOrRequestAPIKey: jest.fn<ISecretManager["getOrRequestAPIKey"]>().mockResolvedValue('resolved-key'),
+    getSecret: jest.fn<ISecretManager["getSecret"]>().mockResolvedValue('resolved-key'),
+    updateAPIKey: jest.fn<ISecretManager["updateAPIKey"]>().mockResolvedValue(undefined),
+    deleteSecret: jest.fn<ISecretManager["deleteSecret"]>().mockResolvedValue(undefined),
 });
 
 export const createMockToolUiProvider = (): jest.Mocked<IToolUiProvider> => ({
-    getToolUI: jest.fn<any>().mockReturnValue({ displayMessage: 'formatted-message', uiOptions: {} }),
-    enrichHistory: jest.fn<any>().mockImplementation((history: IChatMessage[]) => history)
+    getToolUI: jest.fn<IToolUiProvider["getToolUI"]>().mockReturnValue({ displayMessage: 'formatted-message', uiOptions: {} }),
+    enrichHistory: jest.fn<IToolUiProvider["enrichHistory"]>().mockImplementation((history) => history)
 });
 
 export const createMockExtensionContextMinimal = (overrides: Partial<IExtensionContextMinimal> = {}): IExtensionContextMinimal => ({
@@ -512,8 +512,8 @@ export const createMockEventBridge = (): jest.Mocked<IChatWebviewEventBridge> =>
 
 export const createMockChatWebviewView = (overrides: Partial<IChatWebviewView> = {}): IChatWebviewView => {
     return {
-        updateState: jest.fn<any>().mockResolvedValue(undefined),
-        pushUpdate: jest.fn<any>().mockResolvedValue(undefined),
+        updateState: jest.fn<IChatWebviewView["updateState"]>().mockResolvedValue(undefined),
+        pushUpdate: jest.fn<IChatWebviewView["pushUpdate"]>().mockResolvedValue(undefined),
         ...overrides,
     };
 };

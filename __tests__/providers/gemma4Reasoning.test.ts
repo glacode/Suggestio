@@ -39,7 +39,7 @@ describe("Gemma4 Reasoning Support", () => {
 
   beforeEach(() => {
     mockHttpClient = {
-      post: jest.fn<any>(),
+      post: jest.fn<IHttpClient["post"]>(),
     };
     mockEventBus = createMockEventBus();
   });

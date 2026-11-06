@@ -74,7 +74,7 @@ describe("WorkspaceScanner", () => {
     });
 
     it("should return empty array if no root path", async () => {
-        workspaceProvider.rootPath = jest.fn<any>().mockReturnValue(undefined);
+        workspaceProvider.rootPath = jest.fn<IWorkspaceProvider["rootPath"]>().mockReturnValue(undefined);
         const results = await scanner.scan(mockRootPath, { recursive: false });
         expect(results).toEqual([]);
     });
@@ -82,12 +82,12 @@ describe("WorkspaceScanner", () => {
     it("should handle Windows-style paths from the file system and return normalized results", async () => {
         // Mock directory structure with backslashes
         const winRoot = "C:\\Project";
-        workspaceProvider.rootPath = jest.fn<any>().mockReturnValue(winRoot);
+        workspaceProvider.rootPath = jest.fn<IWorkspaceProvider["rootPath"]>().mockReturnValue(winRoot);
         directoryProvider.readdir.mockReturnValue(["file.ts"]);
         directoryProvider.isDirectory.mockReturnValue(false);
         
         // Manual mock for relative path with backslashes
-        pathResolver.relative = jest.fn<any>().mockReturnValue("src\\file.ts");
+        pathResolver.relative = jest.fn<IPathResolver["relative"]>().mockReturnValue("src\\file.ts");
 
         const results = await scanner.scan(winRoot, { recursive: false });
         

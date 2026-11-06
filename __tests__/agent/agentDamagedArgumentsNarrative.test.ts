@@ -146,7 +146,7 @@ describe("Damaged tool call arguments, end to end", () => {
     const mockTool: IToolImplementation<any> = {
       definition,
       schema,
-      execute: jest.fn<any>().mockResolvedValue({ content: "written", success: true }),
+      execute: jest.fn<IToolImplementation<any>["execute"]>().mockResolvedValue({ content: "written", success: true }),
     };
 
     const mockHistoryManager = createMockHistoryManager([]);

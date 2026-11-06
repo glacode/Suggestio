@@ -23,7 +23,7 @@ describe("GrepSearchTool", () => {
         pathResolver = createMockPathResolver();
         eventBus = createMockEventBus();
         workspaceScanner = {
-            scan: jest.fn<any>().mockResolvedValue(["file1.txt", "src/file2.ts"])
+            scan: jest.fn<IWorkspaceScanner["scan"]>().mockResolvedValue(["file1.txt", "src/file2.ts"])
         };
 
         tool = new GrepSearchTool(workspaceProvider, fileReader, pathResolver, eventBus, workspaceScanner);

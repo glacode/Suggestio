@@ -19,7 +19,7 @@ describe("ListFilesTool Security", () => {
         };
 
         workspaceScanner = {
-            scan: jest.fn<any>().mockResolvedValue(["file1.txt"])
+            scan: jest.fn<IWorkspaceScanner["scan"]>().mockResolvedValue(["file1.txt"])
         };
 
         pathResolver = createMockPathResolver();
