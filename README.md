@@ -31,12 +31,16 @@ Suggestio also provides **ghost-text completions** as you type. It’s lightweig
 
 ## ⚙️ Quick Start
 
-You just need a free API key from a provider like [Google Gemini](https://aistudio.google.com/) or [Mistral](https://mistral.ai/).
+**Try it with no sign-up and no API key** — profiles ending in `-noapikey` never ask for credentials:
 
 1. **Install** Suggestio from the VS Code Marketplace.
 2. **Open the Sidebar:** Click the Suggestio icon (the lightbulb).
-3. **Add your Key:** Click the **Gear icon** (Settings) in the chat view.
-4. **Paste & Go:** Select a profile, paste your API key, and you're ready to code.
+3. **Send a task:** The default profile ends in `-noapikey` and works immediately.
+
+Unlock more free models with free API keys from providers like [OpenRouter](https://openrouter.ai/) or [Google Gemini](https://aistudio.google.com/):
+
+4. **Add your key:** Click the **Gear icon** (Settings) in the chat view.
+5. **Paste & Go:** Select a keyed profile, paste your API key, and you're ready to code — switch profiles any time.
 
 ![Set Api Key Demo](resources/setApiKeyDemo.gif)
 
