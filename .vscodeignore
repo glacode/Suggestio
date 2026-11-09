@@ -30,3 +30,11 @@ dist-e2e/**
 dist/__mocks__/**
 dist/__tests__/**
 dist/e2e-tests/**
+dist/src/**
+suggestio*.vsix
+scripts/**
+eslint.strict.config.mjs
+AGENTS.md
+__tests__/**
+e2e-tests/**
+e2e-tests-playwright/**
