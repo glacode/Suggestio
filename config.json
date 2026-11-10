@@ -43,17 +43,6 @@
       "endpoint": "https://api.kilo.ai/api/gateway/chat/completions",
       "isApiKeyRequired": false
     },
-    "ollama-gemma4-31b": {
-      "model": "gemma4:31b-cloud",
-      "endpoint": "https://ollama.com/v1/chat/completions",
-      "apiKeyIdentifier": "OLLAMA_API_KEY",
-      "isApiKeyRequired": true
-    },
-    "ollama-gpt-oss-120b": {
-      "endpoint": "https://ollama.com/v1/chat/completions",
-      "model": "gpt-oss:120b-cloud",
-      "apiKeyIdentifier": "OLLAMA_API_KEY"
-    },
     "mistral-ministral-14b-2512": {
       "endpoint": "https://api.mistral.ai/v1/chat/completions",
       "model": "ministral-14b-2512",
