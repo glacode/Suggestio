@@ -13,6 +13,7 @@ const CONFIG_PATH = path.join(PROJECT_ROOT, 'config.json');
 const HTML_OUTPUT_PATH = path.join(__dirname, 'test-providers.html');
 
 const DELAY_BETWEEN_REQUESTS_MS = 1500;
+const REQUEST_TIMEOUT_MS = 180000;
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -106,18 +107,37 @@ function createTestPayload(model, isHeavy) {
     };
 }
 
-async function performHttpRequest(endpoint, payload, apiKey) {
+function createRequestHeaders(apiKey) {
     const headers = { 'Content-Type': 'application/json' };
     if (apiKey && apiKey !== 'unused') {
         headers['Authorization'] = `Bearer ${apiKey}`;
     }
+    return headers;
+}
 
-    const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify(payload)
-    });
+/**
+ * Performs the full HTTP exchange (request + JSON body read) under a hard
+ * deadline. The abort signal covers both phases: a hung connection and a
+ * hung body read are both killed after REQUEST_TIMEOUT_MS.
+ */
+async function fetchJsonWithTimeout(endpoint, options) {
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), REQUEST_TIMEOUT_MS);
+    try {
+        const response = await fetch(endpoint, { ...options, signal: abortController.signal });
+        const data = await response.json();
+        return { response, data };
+    } catch (error) {
+        if (abortController.signal.aborted) {
+            throw new Error(`Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s - no response`);
+        }
+        throw error;
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
 
+function collectTokenHeaders(response) {
     const tokenHeaders = {};
     for (const [key, value] of response.headers.entries()) {
         const k = key.toLowerCase();
@@ -125,9 +145,21 @@ async function performHttpRequest(endpoint, payload, apiKey) {
             tokenHeaders[k] = value;
         }
     }
+    return tokenHeaders;
+}
 
-    const data = await response.json();
-    return { ok: response.ok, status: response.status, data, tokenHeaders };
+async function performHttpRequest(endpoint, payload, apiKey) {
+    const { response, data } = await fetchJsonWithTimeout(endpoint, {
+        method: 'POST',
+        headers: createRequestHeaders(apiKey),
+        body: JSON.stringify(payload)
+    });
+    return {
+        ok: response.ok,
+        status: response.status,
+        data,
+        tokenHeaders: collectTokenHeaders(response)
+    };
 }
 
 function analyzeResponse(name, httpResult) {
