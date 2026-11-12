@@ -93,12 +93,6 @@
       "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
       "apiKeyIdentifier": "NVIDIA_API_KEY"
     },
-    "nvidia-meta-muse-glimmer-30b": {
-      "model": "meta/muse-glimmer-30b",
-      "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
-      "apiKeyIdentifier": "NVIDIA_API_KEY",
-      "isApiKeyRequired": true
-    },
     "nvidia-nvidia-nemotron-3-5-super-vl-120b-a12b": {
       "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
       "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
