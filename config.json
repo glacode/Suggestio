@@ -83,6 +83,12 @@
       "apiKeyIdentifier": "GOOGLEAPIS_API_KEY",
       "excludeFromChat": true
     },
+    "nvidia-minimaxai-minimax-m3-1-flash": {
+      "model": "minimaxai/minimax-m3.1-flash",
+      "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
+      "apiKeyIdentifier": "NVIDIA_API_KEY",
+      "isApiKeyRequired": true
+    },
     "nvidia-nemotron-3-ultra-550b-a55b": {
       "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
       "model": "nvidia/nemotron-3-ultra-550b-a55b",
@@ -95,6 +101,12 @@
     },
     "nvidia-nvidia-nemotron-3-5-super-vl-120b-a12b": {
       "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
+      "apiKeyIdentifier": "NVIDIA_API_KEY",
+      "isApiKeyRequired": true
+    },
+    "nvidia-poolside-laguna-xs-2-1": {
+      "model": "poolside/laguna-xs-2.1",
       "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
       "apiKeyIdentifier": "NVIDIA_API_KEY",
       "isApiKeyRequired": true
