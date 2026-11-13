@@ -62,7 +62,7 @@ Suggestio is designed to leverage providers that offer generous free tiers. Here
 - **NVIDIA Lightning via Blockrun (No API Key Required):** The bundled blockrun.ai provider serves NVIDIA's Nemotron 3.5 Lightning without an API key — a reliable, tool-calling route to Suggestio's agentic features right out of the box.
 - **Google Gemini 3.5 Flash Lite:** A lightweight, fast Gemini tier with native tool-calling support — great for quick agentic tasks.
 - **Qwen 3.8 27B (via Groq):** The default inline completion profile and the strongest completion quality we've measured so far — a fast, free coding model on Groq's free tier.
-- **Meta Muse Glimmer 30B (via NVIDIA NIM):** Available through NVIDIA's free endpoint registry, with low-latency generation and tool-calling support for agentic tasks.
+- **MiniMax M3.1 Flash (via NVIDIA NIM):** The new generation of MiniMax's coding model returns to NVIDIA's free endpoint registry, with low-latency generation and tool-calling support for agentic tasks.
 - **Z.ai GLM 4.7 Flash:** A fast free coding model from Zhipu AI, ready out of the box with tool-calling support.
 - **Cohere North Mini Code (via OpenRouter):** A free coding-specialized model.
 

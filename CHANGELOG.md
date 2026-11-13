@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.10] - 2026-11-14
+
+### Added
+- **Damaged Tool Call Narrative:** when a tool call arrives with unparseable arguments, the chat now answers with the real parse error and the parameters the call would have needed, in a four-line self-correction narrative — the call is never executed.
+- **MiniMax M3.1 Flash (via NVIDIA NIM):** the M3 generation returns as `minimaxai/minimax-m3.1-flash` after its predecessor went end of life in September — keyed with `NVIDIA_API_KEY`.
+- **Poolside Laguna XS 2.1 (via NVIDIA NIM):** Laguna returns as `poolside/laguna-xs-2.1`, now served on NVIDIA NIM after the OpenRouter route was discontinued — keyed with `NVIDIA_API_KEY`.
+
+### Changed
+- **Keyless-First Documentation:** the README hero, intro and Quick Start now lead with the no-signup, no-API-key path, and the marketplace listing carries the same clause.
+- **Toolchain:** CI migrated to Node 24 with native Node 24 actions, jest bumped to 30.5.2, and coverage collection restored.
+
+### Removed
+- **vsix Payload Trim:** the packaged extension drops from 141 to 16 inner files (1.29 MB -> 1.07 MB) by ignoring build sources, test suites and scripts the esbuild bundle never loads; packaging now goes through the canonical @vscode/vsce.
+- **Paid-only Ollama Cloud Profiles:** Ollama's free plan ended on November 9, 2026 — the two bundled Ollama Cloud profiles now require a paid account and drop from the config.
+- **Unreachable Muse Glimmer 30B:** the NVIDIA NIM serving endpoint has returned HTTP 404 for days; the model still appears on NVIDIA's web catalog, but a bundled profile that 404s for every user contradicts the free set.
+
 ## [0.1.9] - 2026-11-03
 
 ### Added
