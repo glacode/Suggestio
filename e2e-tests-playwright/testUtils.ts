@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test';
+import { Page, expect } from '@playwright/test';
 
 /**
  * Robustly opens the Suggestio chat view.
@@ -41,6 +41,8 @@ export async function openChatView(page: Page) {
         await triggerCommand();
         await page.waitForSelector(outerSelector, { timeout: 15000 });
     }
+
+    await waitForChatViewReady(page);
 }
 
 /**
@@ -54,6 +56,19 @@ export async function getChatFrames(page: Page) {
     const activeIframe = outer.locator('iframe#active-frame');
     await activeIframe.waitFor({ state: 'visible', timeout: 15000 });
     return outer.frameLocator('iframe#active-frame');
+}
+
+/**
+ * Waits until the chat webview has fully activated: inner frame loaded, message
+ * input rendered, and the initial history load settled. VS Code transfers
+ * keyboard focus into the webview once the inner frame finishes loading, so
+ * editor interaction must not race ahead of this. The overlay hides via
+ * opacity, which Playwright counts as visible — the class is the honest signal.
+ */
+async function waitForChatViewReady(page: Page) {
+    const innerFrame = await getChatFrames(page);
+    await innerFrame.locator('#messageInput').waitFor({ state: 'visible', timeout: 15000 });
+    await expect(innerFrame.locator('#loadingOverlay')).not.toHaveClass(/visible/, { timeout: 15000 });
 }
 
 /**

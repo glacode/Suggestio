@@ -75,14 +75,29 @@ async function focusEditor(page: Page) {
     // Wait for the editor container to be visible
     const editor = page.locator('.monaco-editor').first();
     await editor.waitFor({ state: 'visible', timeout: 5000 });
-    
+
     // Force VS Code to focus the first editor group
     await page.keyboard.press('Control+1');
     await page.waitForTimeout(200);
-    
+
     // Click the editor to focus the cursor
     await editor.click();
     await page.waitForTimeout(200);
+
+    // A pending webview activation can steal keyboard focus right after the
+    // click, so assert the editor truly holds focus instead of assuming it.
+    // VS Code 1.106.2 has no textarea.inputarea: focus lives in the
+    // native-edit-context div; the textarea fallback covers older versions
+    await expect(
+        page.locator('.editor-instance .native-edit-context, .editor-instance textarea.inputarea').first()
+    ).toBeFocused({ timeout: 5000 });
+}
+
+function ghostTextSuggestion(page: Page) {
+    const editor = page.locator('.monaco-editor').first();
+    // Ghost text spans exist only while a suggestion is showing; the hidden
+    // zero-width variant must be excluded so visibility polling is honest
+    return editor.locator('.ghost-text-decoration:not(.ghost-text-hidden), .ghost-text:not(.ghost-text-hidden)').first();
 }
 
 async function createNewFile(page: Page) {
@@ -143,8 +158,9 @@ test.describe('Inline Completion E2E', () => {
         // Simulate typing
         await page.keyboard.type('hello', { delay: 150 });
 
-        // Allow debounce + mock server response + rendering
-        await page.waitForTimeout(2000);
+        // Gate Tab on the request arriving and the suggestion being rendered
+        await expect.poll(() => lastRequestBody, { timeout: 10000 }).not.toBeNull();
+        await expect(ghostTextSuggestion(page)).toBeVisible({ timeout: 10000 });
 
         // Accept the inline suggestion
         await page.keyboard.press('Tab');
@@ -159,9 +175,10 @@ test.describe('Inline Completion E2E', () => {
         // Simulate typing
         await page.keyboard.type('hello john', { delay: 150 });
 
-        // Allow debounce + mock server response + rendering
-        await page.waitForTimeout(3000);
-        
+        // Gate Tab on the request arriving and the suggestion being rendered
+        await expect.poll(() => lastRequestBody, { timeout: 10000 }).not.toBeNull();
+        await expect(ghostTextSuggestion(page)).toBeVisible({ timeout: 10000 });
+
         // Accept the inline suggestion
         await page.keyboard.press('Tab');
         await page.waitForTimeout(1000);

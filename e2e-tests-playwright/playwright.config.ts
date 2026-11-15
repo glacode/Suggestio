@@ -8,6 +8,6 @@ export default defineConfig({
   fullyParallel: false,
   use: {
     headless: false, // Show the browser window
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
   },
 });
