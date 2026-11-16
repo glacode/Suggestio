@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { IWorkspaceProvider, IToolDefinition, IPathResolver, IFileContentReader, IFileContentWriter, IDirectoryCreator, IToolResult, IEventBus, IIgnoreManager, IConfigContainer } from '../types.js';
 import { AGENT_MESSAGES } from '../constants/messages.js';
 import { BaseTool } from './baseTool.js';
+import { resolveWorkspaceTarget } from './pathContainment.js';
 
 const WriteFileSchema = z.object({
     path: z.string().describe('The path of the file to edit (relative to workspace root).'),
@@ -61,18 +62,16 @@ export class WriteFileTool extends BaseTool<WriteFileArgs> {
     }
 
     async execute(args: WriteFileArgs, signal?: AbortSignal, toolCallId?: string): Promise<IToolResult> {
-        const rootPath = this.workspaceProvider.rootPath();
-        if (!rootPath) {
-            return { content: AGENT_MESSAGES.ERROR_NO_WORKSPACE, success: false };
+        const target = resolveWorkspaceTarget(this.pathResolver, this.workspaceProvider.rootPath(), args.path);
+        if (!target.ok) {
+            return {
+                content: target.error === 'NO_WORKSPACE'
+                    ? AGENT_MESSAGES.ERROR_NO_WORKSPACE
+                    : AGENT_MESSAGES.ERROR_PATH_OUTSIDE_WORKSPACE,
+                success: false
+            };
         }
-
-        const fullPath = this.pathResolver.join(rootPath, args.path);
-        const resolvedPath = this.pathResolver.resolve(fullPath);
-
-        // Security check: ensure resolved path is within workspace root
-        if (!resolvedPath.startsWith(rootPath)) {
-            return { content: AGENT_MESSAGES.ERROR_PATH_OUTSIDE_WORKSPACE, success: false };
-        }
+        const resolvedPath = target.resolvedPath;
 
         // Security check: ensure path is not ignored
         if (await this.ignoreManager.shouldIgnore(resolvedPath)) {

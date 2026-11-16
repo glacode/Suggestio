@@ -1130,6 +1130,13 @@ export interface IPathResolver {
   resolve(...paths: string[]): string;
 
   /**
+   * Determines whether a path is absolute.
+   * @param path The path to evaluate.
+   * @returns True if the path is absolute.
+   */
+  isAbsolute(path: string): boolean;
+
+  /**
    * Returns the directory name of a path.
    * @param path The path to evaluate.
    */

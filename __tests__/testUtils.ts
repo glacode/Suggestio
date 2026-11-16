@@ -308,6 +308,7 @@ export const createMockPathResolver = (): jest.Mocked<IPathResolver> => ({
     relative: jest.fn((from: string, to: string) => path.relative(from, to)),
     basename: jest.fn((p: string) => path.basename(p)),
     resolve: jest.fn((...paths: string[]) => path.resolve(...paths)),
+    isAbsolute: jest.fn((p: string) => path.isAbsolute(p)),
     dirname: jest.fn((p: string) => path.dirname(p)),
 });
 

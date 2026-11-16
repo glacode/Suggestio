@@ -39,6 +39,12 @@ describe("ListFilesTool Security", () => {
         expect(result.content).toBe(AGENT_MESSAGES.ERROR_PATH_OUTSIDE_WORKSPACE);
     });
 
+    it("should prevent accessing sibling directories that share the workspace root prefix", async () => {
+        const result = await tool.execute({ directory: "../project-evil", recursive: false });
+        expect(result.success).toBe(false);
+        expect(result.content).toBe(AGENT_MESSAGES.ERROR_PATH_OUTSIDE_WORKSPACE);
+    });
+
     it("should return success: true and call scanner for valid directories", async () => {
         const result = await tool.execute({ directory: "src", recursive: false });
         expect(result.success).toBe(true);

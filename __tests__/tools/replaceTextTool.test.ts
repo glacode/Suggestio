@@ -160,6 +160,12 @@ describe("ReplaceTextTool", () => {
         expect(result.content).toBe(AGENT_MESSAGES.ERROR_PATH_OUTSIDE_WORKSPACE);
     });
 
+    it("should return error if path resolves to a sibling directory sharing the workspace root prefix", async () => {
+        const result = await tool.execute({ path: "../root-evil/file.ts", old_string: "old", new_string: "new" });
+        expect(result.success).toBe(false);
+        expect(result.content).toBe(AGENT_MESSAGES.ERROR_PATH_OUTSIDE_WORKSPACE);
+    });
+
     it("should return error if path is ignored", async () => {
         ignoreManager.shouldIgnore.mockResolvedValue(true);
         const result = await tool.execute({ path: "test.ts", old_string: "old", new_string: "new" });

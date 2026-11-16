@@ -191,6 +191,18 @@ describe("ReadFileTool", () => {
             expect(result.content).toBe(AGENT_MESSAGES.ERROR_PATH_OUTSIDE_WORKSPACE);
         });
 
+        it("should prevent accessing sibling directories that share the workspace root prefix", async () => {
+            const result = await tool.execute({ path: "../project-evil/outside.ts" });
+            expect(result.success).toBe(false);
+            expect(result.content).toBe(AGENT_MESSAGES.ERROR_PATH_OUTSIDE_WORKSPACE);
+        });
+
+        it("should return an error when a workspace file cannot be read", async () => {
+            const result = await tool.execute({ path: "missing.ts" });
+            expect(result.success).toBe(false);
+            expect(result.content).toBe("Error: Failed to read file missing.ts. Ensure the file exists and is accessible.");
+        });
+
         it("should prevent accessing ignored files", async () => {
             const filePath = ".env";
             ignoreManager.shouldIgnore.mockResolvedValue(true);
