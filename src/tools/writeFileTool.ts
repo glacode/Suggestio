@@ -80,9 +80,8 @@ export class WriteFileTool extends BaseTool<WriteFileArgs> {
             if (readResult !== undefined) {
                 oldContent = readResult;
             }
-        } catch (e) {
-            // If file doesn't exist yet, we treat it as empty
-            oldContent = '';
+        } catch (e: any) {
+            return { content: `Error reading file ${args.path}: ${e.message}`, success: false };
         }
 
         // 2. Request confirmation with diff data

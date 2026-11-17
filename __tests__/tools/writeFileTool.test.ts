@@ -83,6 +83,19 @@ describe("WriteFileTool", () => {
         expect(result.content).toBe("Error writing to file: boom");
     });
 
+    it("should return an error when the read operation throws", async () => {
+        fileReader.read.mockImplementation(() => {
+            throw new Error("read boom");
+        });
+
+        const result = await tool.execute({ path: "test.ts", content: "new content" });
+
+        expect(result.success).toBe(false);
+        expect(result.content).toBe("Error reading file test.ts: read boom");
+        expect(fileWriter.write).not.toHaveBeenCalled();
+        expect(directoryCreator.mkdir).not.toHaveBeenCalled();
+    });
+
     it("should request confirmation and write if allowed", async () => {
         const filePath = "test.ts";
         const content = "new content";
@@ -204,5 +217,12 @@ describe("WriteFileTool", () => {
         expect(eventBus.emit).not.toHaveBeenCalledWith("agent:requestConfirmation", expect.anything());
         expect(fileWriter.write).toHaveBeenCalledWith(expect.stringContaining(filePath), content);
         expect(result.success).toBe(true);
+    });
+
+    describe("formatMessage", () => {
+        it("should return a human-readable message for the write", () => {
+            const message = tool.formatMessage({ path: "src/main.ts", content: "text" });
+            expect(message).toBe("Writing file src/main.ts");
+        });
     });
 });
