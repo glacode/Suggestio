@@ -203,6 +203,15 @@ describe("ReadFileTool", () => {
             expect(result.content).toBe("Error: Failed to read file missing.ts. Ensure the file exists and is accessible.");
         });
 
+        it("should return an error when the read operation throws", async () => {
+            fileReader.read.mockImplementation(() => {
+                throw new Error("disk failure");
+            });
+            const result = await tool.execute({ path: "src/main.ts" });
+            expect(result.success).toBe(false);
+            expect(result.content).toBe("Error reading file: disk failure");
+        });
+
         it("should prevent accessing ignored files", async () => {
             const filePath = ".env";
             ignoreManager.shouldIgnore.mockResolvedValue(true);
@@ -231,6 +240,16 @@ describe("ReadFileTool", () => {
         it("should return a human-readable message for partial file read", () => {
             const message = tool.formatMessage({ path: "src/main.ts", start_line: 10, end_line: 20 });
             expect(message).toBe("Reading lines 10 to 20 of file src/main.ts");
+        });
+
+        it("should fall back to line 1 when only the end line is given", () => {
+            const message = tool.formatMessage({ path: "src/main.ts", end_line: 20 });
+            expect(message).toBe("Reading lines 1 to 20 of file src/main.ts");
+        });
+
+        it("should fall back to the end of file when only the start line is given", () => {
+            const message = tool.formatMessage({ path: "src/main.ts", start_line: 10 });
+            expect(message).toBe("Reading lines 10 to end of file src/main.ts");
         });
     });
 
