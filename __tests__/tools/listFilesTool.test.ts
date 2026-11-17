@@ -62,6 +62,15 @@ describe("ListFilesTool Security", () => {
         );
     });
 
+    it("should list the workspace root when no directory is provided", async () => {
+        const result = await tool.execute({ recursive: false });
+        expect(result.success).toBe(true);
+        expect(workspaceScanner.scan).toHaveBeenCalledWith(
+            mockRootPath,
+            { recursive: false }
+        );
+    });
+
     it("should return success: false if scanner throws", async () => {
         workspaceScanner.scan.mockRejectedValue(new Error("Scan failed"));
         const result = await tool.execute({ directory: "", recursive: false });
