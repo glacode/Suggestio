@@ -62,12 +62,7 @@ export class ReadFileTool extends BaseTool<ReadFileArgs> {
     async execute(args: ReadFileArgs, signal?: AbortSignal, toolCallId?: string): Promise<IToolResult> {
         const target = resolveWorkspaceTarget(this.pathResolver, this.workspaceProvider.rootPath(), args.path);
         if (!target.ok) {
-            return {
-                content: target.error === 'NO_WORKSPACE'
-                    ? AGENT_MESSAGES.ERROR_NO_WORKSPACE
-                    : AGENT_MESSAGES.ERROR_PATH_OUTSIDE_WORKSPACE,
-                success: false
-            };
+            return this.workspaceTargetError(target);
         }
         const resolvedPath = target.resolvedPath;
 

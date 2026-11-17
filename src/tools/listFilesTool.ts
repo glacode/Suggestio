@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { IWorkspaceProvider, IToolDefinition, IPathResolver, IToolResult, IWorkspaceScanner } from '../types.js';
-import { AGENT_MESSAGES } from '../constants/messages.js';
 import { BaseTool } from './baseTool.js';
 import { resolveWorkspaceTarget } from './pathContainment.js';
 
@@ -49,12 +48,7 @@ export class ListFilesTool extends BaseTool<ListFilesArgs> {
     async execute(args: ListFilesArgs, _signal?: AbortSignal, _toolCallId?: string): Promise<IToolResult> {
         const target = resolveWorkspaceTarget(this.pathResolver, this.workspaceProvider.rootPath(), args.directory ?? '');
         if (!target.ok) {
-            return {
-                content: target.error === 'NO_WORKSPACE'
-                    ? AGENT_MESSAGES.ERROR_NO_WORKSPACE
-                    : AGENT_MESSAGES.ERROR_PATH_OUTSIDE_WORKSPACE,
-                success: false
-            };
+            return this.workspaceTargetError(target);
         }
         const resolvedPath = target.resolvedPath;
 

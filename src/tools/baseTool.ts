@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { IToolImplementation, IToolDefinition, IToolResult, IEventBus, IUserConfirmationPayload, IToolConfirmationPayload, IConfigContainer } from '../types.js';
+import { AGENT_MESSAGES } from '../constants/messages.js';
+import { WorkspaceTargetRejection } from './pathContainment.js';
 import { APP_EVENTS } from '../constants/protocol.js';
 
 /**
@@ -37,6 +39,21 @@ export abstract class BaseTool<T> implements IToolImplementation<T> {
      * @param args The arguments passed to the tool.
      */
     formatMessage?(args: T): string;
+
+    /**
+     * Maps an unresolved workspace target to the tool error result to
+     * return.
+     * @param target The rejected outcome of resolveWorkspaceTarget.
+     * @returns The error result for the rejection reason.
+     */
+    protected workspaceTargetError(target: WorkspaceTargetRejection): IToolResult {
+        return {
+            content: target.error === 'NO_WORKSPACE'
+                ? AGENT_MESSAGES.ERROR_NO_WORKSPACE
+                : AGENT_MESSAGES.ERROR_PATH_OUTSIDE_WORKSPACE,
+            success: false
+        };
+    }
 
     /**
      * Helper method to request user confirmation for a tool execution.

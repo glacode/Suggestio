@@ -6,13 +6,18 @@ import { IPathResolver } from '../types.js';
 export type WorkspaceTargetError = 'NO_WORKSPACE' | 'OUTSIDE_WORKSPACE';
 
 /**
+ * The rejected outcome of resolving a workspace-relative target path.
+ */
+export type WorkspaceTargetRejection = { ok: false; error: WorkspaceTargetError };
+
+/**
  * Discriminated result of resolving a workspace-relative target path:
  * either the resolved absolute path that is guaranteed to stay within
  * the workspace root, or the reason it was rejected.
  */
 export type ResolvedWorkspaceTarget =
     | { ok: true; resolvedPath: string }
-    | { ok: false; error: WorkspaceTargetError };
+    | WorkspaceTargetRejection;
 
 /**
  * The single owner of workspace path containment. A candidate path is
