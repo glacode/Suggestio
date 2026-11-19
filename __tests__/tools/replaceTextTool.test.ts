@@ -115,6 +115,43 @@ describe("ReplaceTextTool", () => {
         expect(fileWriter.write).toHaveBeenCalledWith(expect.stringContaining(filePath), expectedNewContent);
     });
 
+    it("should return an error when the user denies the replacement", async () => {
+        const filePath = "test.ts";
+        const oldContent = "line1\nline2\nline3";
+        const oldString = "line2";
+        const newString = "line2-replaced";
+        const toolCallId = "call1";
+
+        fileReader.read.mockReturnValue(oldContent);
+
+        // Capture the callback registered by the tool so we can trigger it later
+        let userResponseCallback: (payload: IUserConfirmationPayload) => void;
+        eventBus.on.mockImplementation((event: string, cb: any) => {
+            if (event === "user:confirmationResponse") {
+                userResponseCallback = cb;
+            }
+            return { dispose: () => { } };
+        });
+
+        // When the tool emits 'agent:requestConfirmation', we simulate the user clicking 'Deny'
+        eventBus.emit.mockImplementation((event: string, payload: any) => {
+            if (event === 'agent:requestConfirmation' && payload.toolCallId === toolCallId) {
+                setImmediate(() => {
+                    if (userResponseCallback) {
+                        userResponseCallback({ toolCallId, decision: 'deny' });
+                    }
+                });
+            }
+            return true;
+        });
+
+        const result = await tool.execute({ path: filePath, old_string: oldString, new_string: newString }, undefined, toolCallId);
+
+        expect(result.success).toBe(false);
+        expect(result.content).toBe("Error: User denied permission to replace text in test.ts.");
+        expect(fileWriter.write).not.toHaveBeenCalled();
+    });
+
     it("should return error if old_string is not found", async () => {
         const filePath = "test.ts";
         const oldContent = "line1\nline2\nline3";
@@ -151,6 +188,18 @@ describe("ReplaceTextTool", () => {
 
         expect(result.success).toBe(false);
         expect(result.content).toContain("Could not read file");
+    });
+
+    it("should return an error when the read operation throws", async () => {
+        fileReader.read.mockImplementation(() => {
+            throw new Error("read boom");
+        });
+
+        const result = await tool.execute({ path: "test.ts", old_string: "old", new_string: "new" });
+
+        expect(result.success).toBe(false);
+        expect(result.content).toBe("Error reading file test.ts: read boom");
+        expect(fileWriter.write).not.toHaveBeenCalled();
     });
 
     it("should return error if path is outside workspace", async () => {
@@ -191,5 +240,27 @@ describe("ReplaceTextTool", () => {
         expect(eventBus.emit).not.toHaveBeenCalledWith("agent:requestConfirmation", expect.anything());
         expect(fileWriter.write).toHaveBeenCalledWith(expect.stringContaining(filePath), expectedNewContent);
         expect(result.success).toBe(true);
+    });
+
+    it("should return an error when the write operation throws", async () => {
+        const filePath = "test.ts";
+        const oldContent = "line1\nline2\nline3";
+
+        fileReader.read.mockReturnValue(oldContent);
+        fileWriter.write.mockImplementation(() => {
+            throw new Error("write boom");
+        });
+
+        const result = await tool.execute({ path: filePath, old_string: "line2", new_string: "line2-replaced" });
+
+        expect(result.success).toBe(false);
+        expect(result.content).toBe("Error writing to file: write boom");
+    });
+
+    describe("formatMessage", () => {
+        it("should return a human-readable message for the replace", () => {
+            const message = tool.formatMessage({ path: "src/main.ts", old_string: "old", new_string: "new" });
+            expect(message).toBe("Replacing text in src/main.ts");
+        });
     });
 });
