@@ -57,6 +57,16 @@ describe('RunCommandTool', () => {
         expect(result.content).toContain('Protected');
     });
 
+    it('should use the generic reason when the validator provides none', async () => {
+        mockValidator.validate.mockReturnValue({ allowed: false });
+
+        const result = await tool.execute({ command: 'forbidden' });
+
+        expect(result.success).toBe(false);
+        expect(result.content).toContain('Prohibited pattern detected.');
+        expect(mockCommandExecutor.execute).not.toHaveBeenCalled();
+    });
+
     it('should request user confirmation and proceed if allowed', async () => {
         const toolCallId = 'test-call-id';
         const command = 'npm test';
@@ -148,6 +158,19 @@ describe('RunCommandTool', () => {
         expect(result.content).toContain('exit code: 127');
     });
 
+    it('should report successful execution when the command produces no output', async () => {
+        mockCommandExecutor.execute.mockResolvedValue({
+            stdout: '',
+            stderr: '',
+            exitCode: 0
+        });
+
+        const result = await tool.execute({ command: 'true' });
+
+        expect(result.success).toBe(true);
+        expect(result.content).toBe('Command executed successfully (no output).');
+    });
+
     it('should handle execution exceptions', async () => {
         mockCommandExecutor.execute.mockRejectedValue(new Error('Spawn failed'));
 
@@ -189,6 +212,25 @@ describe('RunCommandTool', () => {
             toolCallId,
             output: 'world'
         });
+    });
+
+    it('should not emit tool output events when no toolCallId is provided', async () => {
+        mockCommandExecutor.execute.mockImplementation(async (_cmd, options) => {
+            options?.onStdout?.('hello');
+            options?.onStderr?.('world');
+            return {
+                stdout: 'hello',
+                stderr: 'world',
+                exitCode: 0
+            };
+        });
+
+        const result = await tool.execute({ command: 'echo hello' });
+
+        expect(mockEventBus.emit).not.toHaveBeenCalledWith('agent:toolOutput', expect.anything());
+        expect(result.success).toBe(true);
+        expect(result.content).toContain('hello');
+        expect(result.content).toContain('world');
     });
 
     it('should bypass confirmation if command is already allowed', async () => {
@@ -281,5 +323,12 @@ describe('RunCommandTool', () => {
 
         await tool.execute({ command: cmd2 }, undefined, toolCallId2);
         expect(mockEventBus.emit).toHaveBeenCalledWith('agent:requestConfirmation', expect.objectContaining({ toolCallId: toolCallId2 }));
+    });
+
+    describe('formatMessage', () => {
+        it('should return a human-readable message for the command', () => {
+            const message = tool.formatMessage({ command: 'npm test' });
+            expect(message).toBe('Executing command: npm test');
+        });
     });
 });
