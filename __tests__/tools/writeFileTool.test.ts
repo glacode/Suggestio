@@ -204,6 +204,41 @@ describe("WriteFileTool", () => {
         expect(fileWriter.write).not.toHaveBeenCalled();
     });
 
+    it("should ignore confirmation responses for other tool calls", async () => {
+        const filePath = "test.ts";
+        const content = "new content";
+        const toolCallId = "call1";
+        fileReader.read.mockReturnValue("old content");
+
+        // Capture the callback registered by the tool so we can trigger it later
+        let userResponseCallback: (payload: IUserConfirmationPayload) => void;
+        eventBus.on.mockImplementation((event: string, cb: any) => {
+            if (event === "user:confirmationResponse") {
+                userResponseCallback = cb;
+            }
+            return { dispose: () => { } };
+        });
+
+        // A foreign response arrives first and must be ignored; the real one follows
+        eventBus.emit.mockImplementation((event: string, payload: any) => {
+            if (event === 'agent:requestConfirmation' && payload.toolCallId === toolCallId) {
+                setImmediate(() => {
+                    if (userResponseCallback) {
+                        userResponseCallback({ toolCallId: "other-call", decision: 'deny' });
+                        userResponseCallback({ toolCallId, decision: 'allow' });
+                    }
+                });
+            }
+            return true;
+        });
+
+        const result = await tool.execute({ path: filePath, content }, undefined, toolCallId);
+
+        expect(result.success).toBe(true);
+        expect(result.content).toContain(`Successfully wrote ${filePath}`);
+        expect(fileWriter.write).toHaveBeenCalledWith(expect.stringContaining(filePath), content);
+    });
+
     it("should bypass confirmation if autoAcceptEdits is enabled", async () => {
         const filePath = "test.ts";
         const content = "new content";
