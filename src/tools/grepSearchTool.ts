@@ -13,6 +13,12 @@ const GrepSearchSchema = z.object({
 
 type GrepSearchArgs = z.infer<typeof GrepSearchSchema>;
 
+interface GrepMatch {
+    path: string;
+    line: number;
+    text: string;
+}
+
 /**
  * Tool for performing a recursive text search across the workspace using regular expressions.
  */
@@ -69,86 +75,105 @@ export class GrepSearchTool extends BaseTool<GrepSearchArgs> {
             return { content: AGENT_MESSAGES.ERROR_NO_WORKSPACE, success: false };
         }
 
-        // 1. Request user confirmation
         if (this.requireUserConfirmation && toolCallId) {
-            const userDecision = await this.requestUserConfirmation(
-                toolCallId,
-                this.eventBus,
-                `Allow Suggestio to search for "${args.pattern}" in the workspace?`,
-                undefined,
-                signal
-            );
-
-            if (userDecision !== 'allow') {
+            const allowed = await this.confirmSearch(args.pattern, toolCallId, signal);
+            if (!allowed) {
                 return { content: `Error: User denied permission to perform search.`, success: false };
             }
         }
 
         try {
-            // 2. Scan workspace for files
             const allFiles = await this.workspaceScanner.scan(rootPath, { recursive: true });
+            const candidateFiles = this.filterCandidateFiles(allFiles, args);
+            const matches = this.searchFiles(candidateFiles, args, rootPath);
 
-            // 3. Filter by include/exclude
-            const candidateFiles = allFiles.filter(filePath => {
-                // Remove trailing slash for directories if any (though scan should return files)
-                const normalizedPath = filePath.endsWith('/') ? filePath.slice(0, -1) : filePath;
-                
-                if (args.include && !matchesGlob(normalizedPath, args.include)) {
-                    return false;
-                }
-                if (args.exclude && matchesGlob(normalizedPath, args.exclude)) {
-                    return false;
-                }
-                return !filePath.endsWith('/'); // Only search in files, not directories
-            });
-
-            // 4. Perform search
-            const regex = new RegExp(args.pattern, args.isCaseSensitive ? 'g' : 'gi');
-            const matches: Array<{ path: string; line: number; text: string }> = [];
-
-            for (const relPath of candidateFiles) {
-                if (matches.length >= this.MAX_MATCHES) {
-                    break;
-                }
-
-                const fullPath = this.pathResolver.join(rootPath, relPath);
-                const content = this.fileReader.read(fullPath);
-                
-                if (content === undefined) {
-                    continue;
-                }
-
-                const lines = content.split('\n');
-                for (let i = 0; i < lines.length; i++) {
-                    const line = lines[i];
-                    if (regex.test(line)) {
-                        matches.push({
-                            path: relPath,
-                            line: i + 1,
-                            text: line.trim()
-                        });
-                        // Reset lastIndex for reuse if needed (though test() does it for 'g' flag)
-                        regex.lastIndex = 0;
-
-                        if (matches.length >= this.MAX_MATCHES) {
-                            break;
-                        }
-                    }
-                }
-            }
-
-            let resultMessage = JSON.stringify(matches, null, 2);
-            if (matches.length >= this.MAX_MATCHES) {
-                resultMessage += '\n\n(Note: Results were truncated to 100 matches.)';
-            }
-
-            return {
-                content: matches.length > 0 ? resultMessage : 'No matches found.',
-                success: true
-            };
-
+            return { content: this.formatMatches(matches), success: true };
         } catch (error: any) {
             return { content: `Error during search: ${error.message}`, success: false };
         }
+    }
+
+    private async confirmSearch(pattern: string, toolCallId: string, signal?: AbortSignal): Promise<boolean> {
+        const userDecision = await this.requestUserConfirmation(
+            toolCallId,
+            this.eventBus,
+            `Allow Suggestio to search for "${pattern}" in the workspace?`,
+            undefined,
+            signal
+        );
+
+        return userDecision === 'allow';
+    }
+
+    private filterCandidateFiles(allFiles: string[], args: GrepSearchArgs): string[] {
+        return allFiles.filter(filePath => {
+            // Remove trailing slash for directories if any (though scan should return files)
+            const normalizedPath = filePath.endsWith('/') ? filePath.slice(0, -1) : filePath;
+
+            if (args.include && !matchesGlob(normalizedPath, args.include)) {
+                return false;
+            }
+            if (args.exclude && matchesGlob(normalizedPath, args.exclude)) {
+                return false;
+            }
+            return !filePath.endsWith('/'); // Only search in files, not directories
+        });
+    }
+
+    private searchFiles(candidateFiles: string[], args: GrepSearchArgs, rootPath: string): GrepMatch[] {
+        const regex = new RegExp(args.pattern, args.isCaseSensitive ? 'g' : 'gi');
+        const matches: GrepMatch[] = [];
+
+        for (const relPath of candidateFiles) {
+            if (matches.length >= this.MAX_MATCHES) {
+                break;
+            }
+
+            this.appendFileMatches(matches, relPath, regex, rootPath);
+        }
+
+        return matches;
+    }
+
+    private appendFileMatches(matches: GrepMatch[], relPath: string, regex: RegExp, rootPath: string): void {
+        const fullPath = this.pathResolver.join(rootPath, relPath);
+        const content = this.fileReader.read(fullPath);
+
+        if (content === undefined) {
+            return;
+        }
+
+        const lines = content.split('\n');
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            if (!regex.test(line)) {
+                continue;
+            }
+
+            matches.push({
+                path: relPath,
+                line: i + 1,
+                text: line.trim()
+            });
+            // test() advances lastIndex on /g regexes; reset so the next line starts fresh.
+            regex.lastIndex = 0;
+
+            if (matches.length >= this.MAX_MATCHES) {
+                return;
+            }
+        }
+    }
+
+    private formatMatches(matches: GrepMatch[]): string {
+        if (matches.length === 0) {
+            return 'No matches found.';
+        }
+
+        let resultMessage = JSON.stringify(matches, null, 2);
+        if (matches.length >= this.MAX_MATCHES) {
+            resultMessage += '\n\n(Note: Results were truncated to 100 matches.)';
+        }
+
+        return resultMessage;
     }
 }
