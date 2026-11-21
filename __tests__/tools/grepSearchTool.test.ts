@@ -1,6 +1,7 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { GrepSearchTool } from "../../src/tools/index.js";
 import { IWorkspaceProvider, IPathResolver, IFileContentReader, IEventBus, IWorkspaceScanner } from "../../src/types.js";
+import { AGENT_MESSAGES } from "../../src/constants/messages.js";
 import { createMockPathResolver, createMockFileContentReader, createMockEventBus } from "../testUtils.js";
 
 describe("GrepSearchTool", () => {
@@ -35,6 +36,20 @@ describe("GrepSearchTool", () => {
             }
             return { dispose: () => {} };
         });
+    });
+
+    it("should return an error if no workspace is open", async () => {
+        const providerWithoutWorkspace: IWorkspaceProvider = {
+            ...workspaceProvider,
+            rootPath: () => undefined
+        };
+        const toolWithoutWorkspace = new GrepSearchTool(providerWithoutWorkspace, fileReader, pathResolver, eventBus, workspaceScanner);
+
+        const result = await toolWithoutWorkspace.execute({ pattern: "anything", isCaseSensitive: false }, undefined, "test-id");
+
+        expect(result.success).toBe(false);
+        expect(result.content).toBe(AGENT_MESSAGES.ERROR_NO_WORKSPACE);
+        expect(workspaceScanner.scan).not.toHaveBeenCalled();
     });
 
     it("should find matches in files", async () => {
@@ -102,6 +117,15 @@ describe("GrepSearchTool", () => {
         expect(result.content).toBe("No matches found.");
     });
 
+    it("should return an error when the scan operation throws", async () => {
+        workspaceScanner.scan.mockRejectedValue(new Error("scan boom"));
+
+        const result = await tool.execute({ pattern: "match", isCaseSensitive: false }, undefined, "test-id");
+
+        expect(result.success).toBe(false);
+        expect(result.content).toBe("Error during search: scan boom");
+    });
+
     it("should deny execution if user denies confirmation", async () => {
         eventBus.on.mockImplementation((event: string, handler: any) => {
             if (event === 'user:confirmationResponse') {
@@ -125,5 +149,12 @@ describe("GrepSearchTool", () => {
         expect(result.success).toBe(true);
         expect(result.content).toContain("match");
         expect(eventBus.emit).not.toHaveBeenCalled();
+    });
+
+    describe("formatMessage", () => {
+        it("should return a human-readable message for the search", () => {
+            const message = tool.formatMessage({ pattern: "hello", isCaseSensitive: false });
+            expect(message).toBe('Searching for "hello" in the workspace');
+        });
     });
 });
