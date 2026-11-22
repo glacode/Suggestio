@@ -107,13 +107,10 @@ export class GrepSearchTool extends BaseTool<GrepSearchArgs> {
 
     private filterCandidateFiles(allFiles: string[], args: GrepSearchArgs): string[] {
         return allFiles.filter(filePath => {
-            // Remove trailing slash for directories if any (though scan should return files)
-            const normalizedPath = filePath.endsWith('/') ? filePath.slice(0, -1) : filePath;
-
-            if (args.include && !matchesGlob(normalizedPath, args.include)) {
+            if (args.include && !matchesGlob(filePath, args.include)) {
                 return false;
             }
-            if (args.exclude && matchesGlob(normalizedPath, args.exclude)) {
+            if (args.exclude && matchesGlob(filePath, args.exclude)) {
                 return false;
             }
             return !filePath.endsWith('/'); // Only search in files, not directories
