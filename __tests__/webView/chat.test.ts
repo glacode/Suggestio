@@ -434,6 +434,48 @@ describe('ChatManager Unit Tests', () => {
             });
         });
 
+        it('should expose the full profile id as a tooltip on every option', () => {
+            const dropdownContent = document.querySelector('.dropdown-content');
+            if (!(dropdownContent instanceof HTMLElement)) {
+                throw new Error('Dropdown content not found');
+            }
+
+            const options = dropdownContent.querySelectorAll('a');
+
+            expect(options[0].title).toBe('profile1');
+            expect(options[1].title).toBe('profile2');
+        });
+
+        it('should expose the active profile id as a tooltip on the collapsed label', () => {
+            const label = document.querySelector('.chat-profile-label');
+            if (!(label instanceof HTMLElement)) {
+                throw new Error('Label not found');
+            }
+
+            expect(label.title).toBe('profile1');
+        });
+
+        it('should update the label tooltip when a different profile is selected', () => {
+            const label = document.querySelector('.chat-profile-label');
+            if (!(label instanceof HTMLElement)) {
+                throw new Error('Label not found');
+            }
+            const dropdownLabel = document.querySelector('.dropdown-label');
+            if (!(dropdownLabel instanceof HTMLElement)) {
+                throw new Error('Dropdown label not found');
+            }
+            const dropdownContent = document.querySelector('.dropdown-content');
+            if (!(dropdownContent instanceof HTMLElement)) {
+                throw new Error('Dropdown content not found');
+            }
+
+            dropdownLabel.dispatchEvent(new MouseEvent('click'));
+            const options = dropdownContent.querySelectorAll('a');
+            options[1].click();
+
+            expect(label.title).toBe('profile2');
+        });
+
         it('should close dropdown when clicking outside', () => {
             const dropdownLabel = document.querySelector('.dropdown-label');
             if (!(dropdownLabel instanceof HTMLElement)) {

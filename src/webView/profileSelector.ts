@@ -62,15 +62,18 @@ export class ProfileSelector {
         }
 
         chatProfileLabel.textContent = activeChatProfileId;
+        chatProfileLabel.setAttribute('title', activeChatProfileId);
         dropdownContent.innerHTML = '';
 
         chatProfileIds.forEach(profileId => {
             const option = document.createElement('a');
             option.href = '#';
             option.textContent = profileId;
+            option.title = profileId;
             option.addEventListener('click', (e) => {
                 e.preventDefault();
                 chatProfileLabel.textContent = profileId;
+                chatProfileLabel.setAttribute('title', profileId);
                 if (dropdownContent instanceof HTMLElement) {
                     dropdownContent.classList.remove('show');
                 }
