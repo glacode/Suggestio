@@ -201,6 +201,10 @@ html, body {
     background-color: var(--vscode-list-hoverBackground);
 }
 
+.dropdown-content a.active-chat-profile {
+    font-weight: 600;
+}
+
 .dropdown-divider {
     height: 1px;
     background-color: var(--vscode-settings-dropdownBorder);

@@ -70,10 +70,17 @@ export class ProfileSelector {
             option.href = '#';
             option.textContent = profileId;
             option.title = profileId;
+            if (profileId === activeChatProfileId) {
+                option.classList.add('active-chat-profile');
+            }
             option.addEventListener('click', (e) => {
                 e.preventDefault();
                 chatProfileLabel.textContent = profileId;
                 chatProfileLabel.setAttribute('title', profileId);
+                dropdownContent.querySelectorAll('a').forEach(anchor => {
+                    anchor.classList.remove('active-chat-profile');
+                });
+                option.classList.add('active-chat-profile');
                 if (dropdownContent instanceof HTMLElement) {
                     dropdownContent.classList.remove('show');
                 }

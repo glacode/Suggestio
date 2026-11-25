@@ -476,6 +476,48 @@ describe('ChatManager Unit Tests', () => {
             expect(label.title).toBe('profile2');
         });
 
+        it('should mark the active profile as selected on render', () => {
+            const dropdownContent = document.querySelector('.dropdown-content');
+            if (!(dropdownContent instanceof HTMLElement)) {
+                throw new Error('Dropdown content not found');
+            }
+
+            const options = dropdownContent.querySelectorAll('a');
+
+            expect(options[0].classList.contains('active-chat-profile')).toBe(true);
+            expect(options[1].classList.contains('active-chat-profile')).toBe(false);
+        });
+
+        it('should move the active marker when a different profile is selected', () => {
+            const dropdownLabel = document.querySelector('.dropdown-label');
+            if (!(dropdownLabel instanceof HTMLElement)) {
+                throw new Error('Dropdown label not found');
+            }
+            const dropdownContent = document.querySelector('.dropdown-content');
+            if (!(dropdownContent instanceof HTMLElement)) {
+                throw new Error('Dropdown content not found');
+            }
+
+            dropdownLabel.dispatchEvent(new MouseEvent('click'));
+            const options = dropdownContent.querySelectorAll('a');
+            options[1].click();
+
+            expect(options[1].classList.contains('active-chat-profile')).toBe(true);
+            expect(options[0].classList.contains('active-chat-profile')).toBe(false);
+        });
+
+        it('should render the active profile option in bold', () => {
+            loadChatStyles();
+            const dropdownContent = document.querySelector('.dropdown-content');
+            if (!(dropdownContent instanceof HTMLElement)) {
+                throw new Error('Dropdown content not found');
+            }
+
+            const options = dropdownContent.querySelectorAll('a');
+
+            expect(window.getComputedStyle(options[0]).getPropertyValue('font-weight')).toBe('600');
+        });
+
         it('should close dropdown when clicking outside', () => {
             const dropdownLabel = document.querySelector('.dropdown-label');
             if (!(dropdownLabel instanceof HTMLElement)) {
