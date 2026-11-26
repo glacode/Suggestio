@@ -110,8 +110,8 @@ export class ChatManager implements IChatManagerActions {
     private setupProfileSelector() {
         this.profileSelector.init();
 
-        const { chatProfileIds, activeChatProfileId } = this.initialState;
-        this.profileSelector.render(chatProfileIds, activeChatProfileId);
+        const { chatProfileIds, activeChatProfileId, profileMetadata } = this.initialState;
+        this.profileSelector.render(chatProfileIds, activeChatProfileId, profileMetadata ?? []);
     }
 
     private setupSendButton() {
@@ -203,7 +203,7 @@ export class ChatManager implements IChatManagerActions {
                     this.settingsOverlay.render(this.vscode, this.initialState);
                     // Update dropdown if full profile list is provided
                     if (event.data.profiles && event.data.activeProfile) {
-                        this.profileSelector.render(event.data.profiles, event.data.activeProfile);
+                        this.profileSelector.render(event.data.profiles, event.data.activeProfile, event.data.metadata);
                     }
                 } catch (e) { }
                 return;

@@ -205,6 +205,18 @@ html, body {
     font-weight: 600;
 }
 
+.dropdown-section-header {
+    padding: 4px 8px;
+    font-size: 11px;
+    color: var(--vscode-descriptionForeground);
+}
+
+.dropdown-section-header:not(:first-child) {
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px solid var(--vscode-settings-dropdownBorder);
+}
+
 .dropdown-divider {
     height: 1px;
     background-color: var(--vscode-settings-dropdownBorder);

@@ -1,5 +1,5 @@
 import { WEBVIEW_COMMANDS } from '../constants/protocol.js';
-import type { IWebviewApi } from '../types.js';
+import type { IWebviewApi, ProfileMetadata } from '../types.js';
 
 /**
  * Owns the model-selector dropdown: element lookup with fail-fast guards,
@@ -52,12 +52,12 @@ export class ProfileSelector {
         document.addEventListener('click', this.handleDocumentClick);
     }
 
-    render(chatProfileIds: string[], activeChatProfileId: string) {
+    render(chatProfileIds: string[], activeChatProfileId: string, profileMetadata: ProfileMetadata[]) {
         const modelSelector = document.getElementById('modelSelector');
         const dropdownContent = modelSelector?.querySelector('.dropdown-content');
         const chatProfileLabel = modelSelector?.querySelector('.chat-profile-label');
 
-        if (!dropdownContent || !chatProfileLabel) {
+        if (!(dropdownContent instanceof HTMLElement) || !(chatProfileLabel instanceof HTMLElement)) {
             return;
         }
 
@@ -65,34 +65,67 @@ export class ProfileSelector {
         chatProfileLabel.setAttribute('title', activeChatProfileId);
         dropdownContent.innerHTML = '';
 
-        chatProfileIds.forEach(profileId => {
-            const option = document.createElement('a');
-            option.href = '#';
-            option.textContent = profileId;
-            option.title = profileId;
-            if (profileId === activeChatProfileId) {
-                option.classList.add('active-chat-profile');
-            }
-            option.addEventListener('click', (e) => {
-                e.preventDefault();
-                chatProfileLabel.textContent = profileId;
-                chatProfileLabel.setAttribute('title', profileId);
-                dropdownContent.querySelectorAll('a').forEach(anchor => {
-                    anchor.classList.remove('active-chat-profile');
-                });
-                option.classList.add('active-chat-profile');
-                if (dropdownContent instanceof HTMLElement) {
-                    dropdownContent.classList.remove('show');
-                }
-                this.vscode.postMessage({
-                    command: WEBVIEW_COMMANDS.CHAT_PROFILE_CHANGED,
-                    model: profileId
-                });
-            });
-            dropdownContent.appendChild(option);
-        });
+        const metadataById = new Map(profileMetadata.map(metadata => [metadata.id, metadata]));
+        const noKeyProfiles = chatProfileIds.filter(profileId => metadataById.get(profileId)?.needsApiKey === false);
+        const withKeyProfiles = chatProfileIds.filter(profileId => metadataById.get(profileId)?.needsApiKey !== false);
 
-        // Add "Manage Models..." entry
+        this.appendSection(dropdownContent, chatProfileLabel, 'Free no API Key', noKeyProfiles, activeChatProfileId);
+        this.appendSection(dropdownContent, chatProfileLabel, 'Free with API Key', withKeyProfiles, activeChatProfileId);
+        this.appendManageModels(dropdownContent);
+    }
+
+    private appendSection(
+        dropdownContent: HTMLElement,
+        chatProfileLabel: HTMLElement,
+        title: string,
+        profileIds: string[],
+        activeChatProfileId: string
+    ): void {
+        if (profileIds.length === 0) {
+            return;
+        }
+
+        const header = document.createElement('div');
+        header.className = 'dropdown-section-header';
+        header.textContent = title;
+        dropdownContent.appendChild(header);
+
+        profileIds.forEach(profileId => {
+            dropdownContent.appendChild(this.createProfileOption(dropdownContent, chatProfileLabel, profileId, activeChatProfileId));
+        });
+    }
+
+    private createProfileOption(
+        dropdownContent: HTMLElement,
+        chatProfileLabel: HTMLElement,
+        profileId: string,
+        activeChatProfileId: string
+    ): HTMLAnchorElement {
+        const option = document.createElement('a');
+        option.href = '#';
+        option.textContent = profileId;
+        option.title = profileId;
+        if (profileId === activeChatProfileId) {
+            option.classList.add('active-chat-profile');
+        }
+        option.addEventListener('click', (e) => {
+            e.preventDefault();
+            chatProfileLabel.textContent = profileId;
+            chatProfileLabel.setAttribute('title', profileId);
+            dropdownContent.querySelectorAll('a').forEach(anchor => {
+                anchor.classList.remove('active-chat-profile');
+            });
+            option.classList.add('active-chat-profile');
+            dropdownContent.classList.remove('show');
+            this.vscode.postMessage({
+                command: WEBVIEW_COMMANDS.CHAT_PROFILE_CHANGED,
+                model: profileId
+            });
+        });
+        return option;
+    }
+
+    private appendManageModels(dropdownContent: HTMLElement): void {
         const divider = document.createElement('div');
         divider.className = 'dropdown-divider';
         dropdownContent.appendChild(divider);
@@ -103,9 +136,7 @@ export class ProfileSelector {
         manageOption.className = 'manage-profiles-item';
         manageOption.addEventListener('click', (e) => {
             e.preventDefault();
-            if (dropdownContent instanceof HTMLElement) {
-                dropdownContent.classList.remove('show');
-            }
+            dropdownContent.classList.remove('show');
             this.openSettings();
         });
         dropdownContent.appendChild(manageOption);

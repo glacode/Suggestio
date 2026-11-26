@@ -7,12 +7,13 @@ import { HistoryOverlay } from '../../src/webView/historyOverlay.js';
 import { SettingsOverlay } from '../../src/webView/settingsOverlay.js';
 import { MockWebviewApi } from '../testUtils.js';
 import { EXTENSION_EVENTS, WEBVIEW_COMMANDS, MESSAGE_SENDERS } from '../../src/constants/protocol.js';
+import type { InitialState } from '../../src/types.js';
 
 describe('Loading Spinner Integration', () => {
     let chatManager: ChatManager;
     let historyOverlay: HistoryOverlay;
     let mockWebviewApi: MockWebviewApi;
-    let initialState: any;
+    let initialState: InitialState;
 
     beforeEach(() => {
         jest.useFakeTimers();
@@ -59,7 +60,7 @@ describe('Loading Spinner Integration', () => {
             activeChatProfileId: 'default',
             allProfileIds: ['default'],
             activeCompletionProfileId: 'default',
-            profileMetadata: {},
+            profileMetadata: [],
             disableSanitizer: false
         };
 

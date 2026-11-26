@@ -518,6 +518,103 @@ describe('ChatManager Unit Tests', () => {
             expect(window.getComputedStyle(options[0]).getPropertyValue('font-weight')).toBe('600');
         });
 
+        it('should group profiles under API key section headers', () => {
+            window.dispatchEvent(new MessageEvent('message', {
+                data: {
+                    type: EXTENSION_EVENTS.UPDATE_PROFILE_METADATA,
+                    metadata: [
+                        createMockProfileMetadata({ id: 'keyless', needsApiKey: false }),
+                        createMockProfileMetadata({ id: 'keyed', needsApiKey: true })
+                    ],
+                    profiles: ['keyless', 'keyed'],
+                    activeProfile: 'keyless'
+                }
+            }));
+
+            const dropdownContent = document.querySelector('.dropdown-content');
+            if (!(dropdownContent instanceof HTMLElement)) {
+                throw new Error('Dropdown content not found');
+            }
+
+            const entries = Array.from(dropdownContent.querySelectorAll('.dropdown-section-header, a')).map(entry =>
+                entry.classList.contains('dropdown-section-header') ? `header:${entry.textContent}` : `option:${entry.textContent}`
+            );
+
+            expect(entries).toEqual([
+                'header:Free no API Key',
+                'option:keyless',
+                'header:Free with API Key',
+                'option:keyed',
+                'option:Manage Models...'
+            ]);
+        });
+
+        it('should hide the no-key section when every profile needs a key', () => {
+            window.dispatchEvent(new MessageEvent('message', {
+                data: {
+                    type: EXTENSION_EVENTS.UPDATE_PROFILE_METADATA,
+                    metadata: [
+                        createMockProfileMetadata({ id: 'keyed1', needsApiKey: true }),
+                        createMockProfileMetadata({ id: 'keyed2', needsApiKey: true })
+                    ],
+                    profiles: ['keyed1', 'keyed2'],
+                    activeProfile: 'keyed1'
+                }
+            }));
+
+            const headers = document.querySelectorAll('.dropdown-section-header');
+
+            expect(Array.from(headers).map(header => header.textContent)).toEqual(['Free with API Key']);
+        });
+
+        it('should hide the with-key section when every profile is keyless', () => {
+            window.dispatchEvent(new MessageEvent('message', {
+                data: {
+                    type: EXTENSION_EVENTS.UPDATE_PROFILE_METADATA,
+                    metadata: [
+                        createMockProfileMetadata({ id: 'keyless1', needsApiKey: false }),
+                        createMockProfileMetadata({ id: 'keyless2', needsApiKey: false })
+                    ],
+                    profiles: ['keyless1', 'keyless2'],
+                    activeProfile: 'keyless1'
+                }
+            }));
+
+            const headers = document.querySelectorAll('.dropdown-section-header');
+
+            expect(Array.from(headers).map(header => header.textContent)).toEqual(['Free no API Key']);
+        });
+
+        it('should place profiles without metadata in the API-key section', () => {
+            window.dispatchEvent(new MessageEvent('message', {
+                data: {
+                    type: EXTENSION_EVENTS.UPDATE_PROFILE_METADATA,
+                    metadata: [
+                        createMockProfileMetadata({ id: 'keyless', needsApiKey: false })
+                    ],
+                    profiles: ['keyless', 'unknown'],
+                    activeProfile: 'keyless'
+                }
+            }));
+
+            const dropdownContent = document.querySelector('.dropdown-content');
+            if (!(dropdownContent instanceof HTMLElement)) {
+                throw new Error('Dropdown content not found');
+            }
+
+            const entries = Array.from(dropdownContent.querySelectorAll('.dropdown-section-header, a')).map(entry =>
+                entry.classList.contains('dropdown-section-header') ? `header:${entry.textContent}` : `option:${entry.textContent}`
+            );
+
+            expect(entries).toEqual([
+                'header:Free no API Key',
+                'option:keyless',
+                'header:Free with API Key',
+                'option:unknown',
+                'option:Manage Models...'
+            ]);
+        });
+
         it('should close dropdown when clicking outside', () => {
             const dropdownLabel = document.querySelector('.dropdown-label');
             if (!(dropdownLabel instanceof HTMLElement)) {
